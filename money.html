@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AssetFlow X</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+    :root {
+        --bg-body: #000000;
+        --bg-card: #1C1C1E;
+        --bg-input: #2C2C2E;
+        --primary: #FF9F0A; /* MoneyForward Orange-ish */
+        --accent: #0A84FF;
+        --text-main: #FFFFFF;
+        --text-sub: #8E8E93;
+        --border: #38383A;
+        --danger: #FF453A;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        margin: 0;
+        padding-bottom: 90px;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+        user-select: none;
+    }
+
+    /* --- LOGIN SCREEN --- */
+    #auth-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--bg-body);
+        z-index: 9999;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        padding: 20px; box-sizing: border-box;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #auth-screen.hidden { transform: translateY(-100%); pointer-events: none; }
+    
+    .auth-logo { font-size: 32px; font-weight: 800; margin-bottom: 40px; background: linear-gradient(90deg, #FF9F0A, #FFD60A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .auth-title { font-size: 18px; margin-bottom: 20px; font-weight: 600; }
+    .pin-input {
+        background: var(--bg-input); border: 1px solid var(--border);
+        color: white; font-size: 24px; padding: 15px; border-radius: 12px;
+        width: 80%; text-align: center; margin-bottom: 20px; letter-spacing: 4px;
+    }
+    .auth-btn {
+        background: var(--primary); color: #000; font-weight: bold;
+        width: 80%; padding: 16px; border-radius: 30px; border: none; font-size: 16px;
+    }
+
+    /* --- MAIN APP --- */
+    /* Header */
+    header {
+        position: sticky; top: 0; z-index: 100;
+        background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        padding: max(16px, env(safe-area-inset-top)) 20px 10px;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .brand { font-size: 18px; font-weight: 700; color: var(--text-main); }
+    
+    /* Layout */
+    .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+    .card {
+        background: var(--bg-card); border-radius: 16px; padding: 20px;
+        margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Total Assets Area */
+    .total-assets-label { font-size: 13px; color: var(--text-sub); margin-bottom: 4px; }
+    .total-assets-value { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+    .total-diff { font-size: 14px; color: var(--text-sub); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+    
+    /* Asset List (Money Forward Style) */
+    .asset-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .asset-row:last-child { border-bottom: none; }
+    .asset-icon {
+        width: 36px; height: 36px; border-radius: 50%; background: #333;
+        display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px;
+    }
+    .asset-info { flex: 1; }
+    .asset-name { font-size: 15px; font-weight: 600; display: block; }
+    .asset-sub { font-size: 11px; color: var(--text-sub); }
+    .asset-amount { font-size: 16px; font-weight: 700; }
+
+    /* Flow Timeline */
+    .flow-card { padding: 16px; border-left: 2px solid var(--border); margin-left: 10px; position: relative; }
+    .flow-card::before {
+        content:''; position: absolute; left: -17px; top: 20px; width: 10px; height: 10px;
+        background: var(--primary); border-radius: 50%; border: 3px solid #000;
+    }
+    .flow-date { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 4px; }
+
+    /* Settings/Inputs */
+    .input-group { margin-bottom: 15px; }
+    .input-label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+    .input-field {
+        width: 100%; background: var(--bg-input); border: none; color: white;
+        padding: 12px; border-radius: 8px; font-size: 16px; box-sizing: border-box;
+    }
+
+    /* Navigation */
+    .nav-bar {
+        position: fixed; bottom: 0; width: 100%; height: 85px;
+        background: rgba(28, 28, 30, 0.95); backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: space-around; padding-top: 10px;
+        z-index: 50; box-sizing: border-box;
+    }
+    .nav-item {
+        display: flex; flex-direction: column; align-items: center;
+        color: #555; font-size: 10px; width: 60px;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-icon { font-size: 24px; margin-bottom: 2px; }
+
+    /* Utilities */
+    .page { display: none; opacity: 0; transition: opacity 0.3s; }
+    .page.active { display: block; opacity: 1; }
+    .num { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+    <div class="auth-logo"><i class="ri-shield-keyhole-line"></i> AssetFlow X</div>
+    <div class="auth-title" id="auth-msg">認証設定</div>
+    <input type="password" id="auth-input" class="pin-input" placeholder="Password" pattern="[0-9]*" inputmode="numeric">
+    <button class="auth-btn" onclick="handleAuth()" id="auth-btn-text">設定して開始</button>
+    <div style="margin-top:20px; font-size:12px; color:#666; text-align:center; line-height:1.5;">
+        セキュリティ保護のため<br>アプリ起動毎にパスワードが必要です
+    </div>
+</div>
+
+<header>
+    <div class="brand">資産推移</div>
+    <div style="font-size:20px;"><i class="ri-notification-3-line"></i></div>
+</header>
+
+<div id="p-home" class="page active container">
+    <div class="card" style="background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);">
+        <div class="total-assets-label">資産総額</div>
+        <div class="total-assets-value num" id="disp-total-assets">¥0</div>
+        <div class="total-diff">
+            <span style="color:#30D158; background:rgba(48,209,88,0.1); padding:2px 6px; border-radius:4px; font-size:11px;">+ 前月比計算中</span>
+            <span>更新: <span id="update-date">Today</span></span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="height:200px; display:flex; justify-content:center;">
+            <canvas id="assetChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card" id="asset-list-container">
+        <div class="total-assets-label" style="margin-bottom:10px;">連携口座 (手動)</div>
+        </div>
+</div>
+
+<div id="p-flow" class="page container">
+    <h2 style="margin-bottom:16px;">資金フロー (今月)</h2>
+    <div id="flow-timeline">
+        </div>
+</div>
+
+<div id="p-settings" class="page container">
+    <h2 style="margin-bottom:16px;">設定</h2>
+    
+    <div class="card">
+        <h3 style="font-size:16px; margin-bottom:12px;">ログイン設定</h3>
+        <button class="auth-btn" style="width:100%; background:#333; color:white;" onclick="resetAuth()">パスワードをリセット</button>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size:16px; margin-bottom:12px;">資産・残高設定</h3>
+        <div id="settings-assets"></div>
+        <button class="auth-btn" style="width:100%; margin-top:10px; background:var(--bg-input); color:var(--primary);" onclick="addAsset()">＋ 口座を追加</button>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size:16px; margin-bottom:12px;">毎月の資金移動</h3>
+        <div id="settings-flows"></div>
+        <button class="auth-btn" style="width:100%; margin-top:10px; background:var(--bg-input); color:var(--primary);" onclick="addFlow()">＋ フローを追加</button>
+    </div>
+</div>
+
+<nav class="nav-bar">
+    <div class="nav-item active" onclick="switchPage('home')">
+        <i class="ri-pie-chart-2-fill nav-icon"></i>
+        資産
+    </div>
+    <div class="nav-item" onclick="switchPage('flow')">
+        <i class="ri-exchange-dollar-line nav-icon"></i>
+        入出金
+    </div>
+    <div class="nav-item" onclick="switchPage('settings')">
+        <i class="ri-settings-4-line nav-icon"></i>
+        設定
+    </div>
+</nav>
+
+<script>
+    // --- AUTH LOGIC ---
+    const STORAGE_KEY_AUTH = 'assetFlowX_Auth'; // Stores password
+    const STORAGE_KEY_DATA = 'assetFlowX_Data'; // Stores user data
+    let isFirstLaunch = false;
+
+    function initAuth() {
+        const storedPw = localStorage.getItem(STORAGE_KEY_AUTH);
+        const screen = document.getElementById('auth-screen');
+        const msg = document.getElementById('auth-msg');
+        const btn = document.getElementById('auth-btn-text');
+
+        if (!storedPw) {
+            // First Time
+            isFirstLaunch = true;
+            msg.innerText = "パスワードを設定してください";
+            btn.innerText = "設定して開始";
+        } else {
+            // Returning User
+            isFirstLaunch = false;
+            msg.innerText = "ロック解除";
+            btn.innerText = "解除";
+        }
+    }
+
+    function handleAuth() {
+        const input = document.getElementById('auth-input');
+        const val = input.value;
+        if (!val) return;
+
+        if (isFirstLaunch) {
+            // Set Password
+            localStorage.setItem(STORAGE_KEY_AUTH, val);
+            unlockApp();
+        } else {
+            // Verify Password
+            const stored = localStorage.getItem(STORAGE_KEY_AUTH);
+            if (val === stored) {
+                unlockApp();
+            } else {
+                alert("パスワードが違います");
+                input.value = "";
+            }
+        }
+    }
+
+    function unlockApp() {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('auth-input').value = ""; // Clear buffer
+        initApp();
+    }
+
+    function resetAuth() {
+        if(confirm("パスワードと全てのデータをリセットしますか？")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    // --- APP LOGIC ---
+    
+    // Default Data
+    const defaultData = {
+        assets: [
+            { id: 1, name: '三井住友 (Olive)', amount: 120000, type: 'bank' },
+            { id: 2, name: '住信SBIネット銀行', amount: 450000, type: 'bank' },
+            { id: 3, name: '楽天証券', amount: 1530000, type: 'invest' },
+            { id: 4, name: 'OneBank (食費)', amount: 12000, type: 'wallet' }
+        ],
+        flows: [
+            { date: 25, title: '給与受取', amount: 30000, from: '会社', to: 'Olive' },
+            { date: 26, title: '投資積立', amount: 30000, from: 'SBI', to: '楽天証券' },
+            { date: 27, title: '家賃振込', amount: 80000, from: 'SBI', to: '大家' }
+        ]
+    };
+
+    let appData = {};
+    let assetChart = null;
+
+    function initApp() {
+        const today = new Date();
+        document.getElementById('update-date').innerText = `${today.getMonth()+1}/${today.getDate()} ${today.getHours()}:${String(today.getMinutes()).padStart(2,'0')}`;
+
+        const saved = localStorage.getItem(STORAGE_KEY_DATA);
+        if (saved) {
+            appData = JSON.parse(saved);
+        } else {
+            appData = JSON.parse(JSON.stringify(defaultData));
+        }
+        
+        renderAll();
+    }
+
+    function renderAll() {
+        // Calculations
+        let total = 0;
+        appData.assets.forEach(a => total += parseInt(a.amount));
+        document.getElementById('disp-total-assets').innerText = '¥' + total.toLocaleString();
+
+        renderAssetList();
+        renderFlow();
+        renderChart();
+        renderSettings();
+    }
+
+    // --- Renderers ---
+
+    function renderAssetList() {
+        const container = document.getElementById('asset-list-container');
+        // Keep header
+        container.innerHTML = `<div class="total-assets-label" style="margin-bottom:10px;">連携口座 (手動)</div>`;
+        
+        appData.assets.forEach(item => {
+            let icon = '🏛';
+            if(item.type === 'invest') icon = '📈';
+            if(item.type === 'wallet') icon = '👛';
+
+            container.innerHTML += `
+            <div class="asset-row">
+                <div style="display:flex; align-items:center;">
+                    <div class="asset-icon">${icon}</div>
+                    <div class="asset-info">
+                        <span class="asset-name">${item.name}</span>
+                        <span class="asset-sub">${item.type.toUpperCase()}</span>
+                    </div>
+                </div>
+                <div class="asset-amount">¥${parseInt(item.amount).toLocaleString()}</div>
+            </div>`;
+        });
+    }
+
+    function renderFlow() {
+        const container = document.getElementById('flow-timeline');
+        container.innerHTML = '';
+        appData.flows.sort((a,b) => a.date - b.date).forEach(f => {
+            container.innerHTML += `
+            <div class="flow-card">
+                <div class="flow-date">${f.date}日</div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>${f.title}</span>
+                    <span>¥${parseInt(f.amount).toLocaleString()}</span>
+                </div>
+                <div style="font-size:12px; color:#888; margin-top:4px;">
+                    ${f.from} <i class="ri-arrow-right-line"></i> ${f.to}
+                </div>
+            </div>`;
+        });
+    }
+
+    function renderChart() {
+        const ctx = document.getElementById('assetChart').getContext('2d');
+        const labels = appData.assets.map(a => a.name);
+        const data = appData.assets.map(a => a.amount);
+
+        if(assetChart) assetChart.destroy();
+
+        assetChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#9CC269', '#5E92F3', '#FF9F0A', '#E0E0E0', '#FF453A'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#888', boxWidth: 10, font:{size:10} } }
+                }
+            }
+        });
+    }
+
+    function renderSettings() {
+        // Assets
+        const setAssets = document.getElementById('settings-assets');
+        setAssets.innerHTML = '';
+        appData.assets.forEach((a, i) => {
+            setAssets.innerHTML += `
+            <div class="input-group">
+                <label class="input-label">${a.name}</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" value="${a.name}" class="input-field" onchange="updAsset(${i}, 'name', this.value)" style="flex:1;">
+                    <input type="number" value="${a.amount}" class="input-field" onchange="updAsset(${i}, 'amount', this.value)" style="flex:1;">
+                    <button onclick="delAsset(${i})" style="background:var(--danger); color:white; border:none; border-radius:8px; width:40px;">×</button>
+                </div>
+            </div>`;
+        });
+
+        // Flows
+        const setFlows = document.getElementById('settings-flows');
+        setFlows.innerHTML = '';
+        appData.flows.forEach((f, i) => {
+            setFlows.innerHTML += `
+            <div class="input-group">
+                <label class="input-label">${f.title} (${f.date}日)</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" value="${f.title}" class="input-field" onchange="updFlow(${i}, 'title', this.value)" style="flex:2;">
+                    <input type="number" value="${f.amount}" class="input-field" onchange="updFlow(${i}, 'amount', this.value)" style="flex:1;">
+                    <button onclick="delFlow(${i})" style="background:var(--danger); color:white; border:none; border-radius:8px; width:40px;">×</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    // --- Data Handlers ---
+    window.updAsset = (i, key, val) => { appData.assets[i][key] = val; save(); };
+    window.delAsset = (i) => { if(confirm('削除しますか？')) { appData.assets.splice(i, 1); save(); } };
+    window.addAsset = () => { appData.assets.push({name:'新規口座', amount:0, type:'bank'}); save(); };
+
+    window.updFlow = (i, key, val) => { appData.flows[i][key] = val; save(); };
+    window.delFlow = (i) => { if(confirm('削除しますか？')) { appData.flows.splice(i, 1); save(); } };
+    window.addFlow = () => { appData.flows.push({date:1, title:'新規振替', amount:0, from:'-', to:'-'}); save(); };
+
+    function save() {
+        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(appData));
+        renderAll();
+    }
+
+    // --- Navigation ---
+    window.switchPage = (page) => {
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        
+        if(page === 'home') {
+            document.getElementById('p-home').classList.add('active');
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+        } else if(page === 'flow') {
+            document.getElementById('p-flow').classList.add('active');
+            document.querySelectorAll('.nav-item')[1].classList.add('active');
+        } else if(page === 'settings') {
+            document.getElementById('p-settings').classList.add('active');
+            document.querySelectorAll('.nav-item')[2].classList.add('active');
+        }
+    };
+
+    // On Load
+    initAuth();
+
+</script>
+</body>
+</html>
