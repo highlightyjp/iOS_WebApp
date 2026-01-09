@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>資産丸</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+    :root {
+        /* Yokohama Navy Blue Palette */
+        --bg-navy: #001E43;
+        --bg-navy-light: #003060;
+        --bg-card: rgba(255, 255, 255, 0.08);
+        --text-main: #FFFFFF;
+        --text-sub: #AABbd5;
+        --accent-gold: #C5A059;
+        --accent-red: #FF453A;
+        --accent-green: #32D74B;
+        --neon-orange: #FF5E00;
+        
+        --font-stack: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "SF Pro Text", sans-serif;
+    }
+
+    body {
+        font-family: var(--font-stack);
+        background-color: var(--bg-navy);
+        color: var(--text-main);
+        margin: 0;
+        padding-bottom: 90px;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+        user-select: none;
+    }
+
+    /* --- NIXIE CLOCK --- */
+    .nixie-container {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(255,94,0, 0.2);
+    }
+    .nixie-clock {
+        font-family: "Courier New", monospace;
+        font-size: 32px;
+        font-weight: bold;
+        color: #ffbba0;
+        text-shadow: 
+            0 0 5px var(--neon-orange),
+            0 0 10px var(--neon-orange),
+            0 0 20px var(--neon-orange);
+        letter-spacing: 2px;
+    }
+    .nixie-label { font-size: 10px; color: var(--neon-orange); opacity: 0.8; letter-spacing: 4px; margin-top: 4px;}
+
+    /* --- LAUNCHER --- */
+    #launcher-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        padding: 20px;
+    }
+    .app-icon {
+        aspect-ratio: 1.1;
+        background: linear-gradient(160deg, var(--bg-navy-light), rgba(255,255,255,0.05));
+        border-radius: 20px;
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: transform 0.1s;
+        position: relative;
+    }
+    .app-icon:active { transform: scale(0.96); background: var(--accent-gold); color: #000; }
+    .icon-symbol { font-size: 36px; margin-bottom: 8px; }
+    .icon-label { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
+
+    /* --- SHARED UI --- */
+    .page {
+        display: none;
+        padding: 20px;
+        padding-top: max(20px, env(safe-area-inset-top));
+        min-height: 100vh; box-sizing: border-box;
+        animation: fadeIn 0.3s ease;
+    }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .header-area { margin-bottom: 20px; border-bottom: 1px solid var(--accent-gold); padding-bottom: 10px; }
+    h2 { font-size: 24px; margin: 0; color: var(--accent-gold); }
+    
+    .card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* --- BALANCE SHEET (B/S) --- */
+    .bs-container { display: flex; gap: 4px; align-items: stretch; margin-top: 10px; }
+    .bs-col { flex: 1; display: flex; flex-direction: column; }
+    .bs-box {
+        padding: 10px; margin-bottom: 4px; border-radius: 4px;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        min-height: 60px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .bs-header { text-align: center; font-weight: bold; margin-bottom: 8px; padding: 4px; background: rgba(255,255,255,0.1); font-size: 12px;}
+    .bs-val { font-size: 16px; font-weight: bold; }
+    .bs-label { font-size: 10px; color: var(--text-sub); }
+    
+    .box-asset { background: rgba(50, 215, 75, 0.15); border-color: var(--accent-green); }
+    .box-debt { background: rgba(255, 69, 58, 0.15); border-color: var(--accent-red); }
+    .box-net { background: rgba(197, 160, 89, 0.15); border-color: var(--accent-gold); flex:1;}
+
+    /* --- SETTINGS & INPUTS --- */
+    input, select {
+        background: rgba(0,0,0,0.3); border: 1px solid var(--text-sub); color: white;
+        padding: 12px; border-radius: 8px; width: 100%; font-size: 16px; box-sizing: border-box;
+        margin-bottom: 8px;
+    }
+    .btn {
+        width: 100%; padding: 14px; border-radius: 10px; border: none;
+        font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;
+    }
+    .btn-primary { background: var(--accent-gold); color: #000; }
+    .btn-danger { background: var(--accent-red); color: white; }
+    .btn-sub { background: rgba(255,255,255,0.1); color: white; }
+
+    /* --- HOME BUTTON --- */
+    #home-btn {
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        width: 64px; height: 64px;
+        background: rgba(0, 30, 67, 0.9);
+        border: 2px solid var(--accent-gold);
+        border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        z-index: 1000;
+        transition: 0.2s;
+        display: none;
+    }
+    #home-btn.visible { display: flex; }
+    #home-btn:active { transform: translateX(-50%) scale(0.9); background: var(--accent-gold); }
+    #home-btn i { font-size: 28px; color: white; }
+
+    /* --- AUTH --- */
+    #auth-screen {
+        position: fixed; inset: 0; background: var(--bg-navy); z-index: 9999;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+    #auth-screen.hidden { display: none; }
+    .lock-icon { font-size: 60px; color: var(--accent-gold); margin-bottom: 20px; }
+
+    /* --- ORDER LIST --- */
+    .order-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px; background: rgba(0,0,0,0.2); margin-bottom: 8px; border-radius: 8px;
+    }
+
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+    <div class="lock-icon"><i class="ri-anchor-line"></i></div>
+    <div style="font-size:24px; font-weight:bold; margin-bottom:20px;">資産丸</div>
+    <input type="password" id="auth-input" placeholder="パスコード" style="width:200px; text-align:center; letter-spacing:4px;" inputmode="numeric">
+    <button class="btn btn-primary" style="width:200px;" onclick="tryLogin()">乗船</button>
+</div>
+
+<div id="home-btn" onclick="goHome()">
+    <i class="ri-home-4-fill"></i>
+</div>
+
+<div id="p-launcher" class="page active" style="padding-top:60px;">
+    <div class="nixie-container">
+        <div class="nixie-clock" id="nixie-clock">0000-00-00</div>
+        <div class="nixie-label">SYSTEM TIME</div>
+    </div>
+    
+    <div id="launcher-grid">
+        </div>
+</div>
+
+<div id="p-bs" class="page">
+    <div class="header-area">
+        <h2>貸借対照表 (B/S)</h2>
+        <div style="font-size:12px; color:var(--text-sub);">資産と負債のバランスシート</div>
+    </div>
+    <div class="bs-container" id="bs-view">
+        </div>
+    <div class="card" style="margin-top:20px;">
+        <div style="font-size:12px; color:var(--text-sub); margin-bottom:5px;">自己資本比率</div>
+        <div style="font-size:24px; font-weight:bold;" id="equity-ratio">--%</div>
+    </div>
+</div>
+
+<div id="p-pl" class="page">
+    <div class="header-area">
+        <h2>損益計算書 (P/L)</h2>
+        <div style="font-size:12px; color:var(--text-sub);">月次収支シミュレーション</div>
+    </div>
+    <div id="pl-list"></div>
+</div>
+
+<div id="p-assets" class="page">
+    <div class="header-area"><h2>資産・負債台帳</h2></div>
+    <div id="asset-list"></div>
+    <button class="btn btn-sub" onclick="addAssetItem()">＋ 項目を追加</button>
+</div>
+
+<div id="p-flows" class="page">
+    <div class="header-area"><h2>資金フロー設定</h2></div>
+    <div id="flow-list"></div>
+    <button class="btn btn-sub" onclick="addFlowItem()">＋ フローを追加</button>
+</div>
+
+<div id="p-calendar" class="page">
+    <div class="header-area"><h2>カレンダー</h2></div>
+    <div id="calendar-view" style="display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center;"></div>
+    <div id="calendar-detail" style="margin-top:20px;"></div>
+</div>
+
+<div id="p-settings" class="page">
+    <div class="header-area"><h2>システム設定</h2></div>
+    
+    <div class="card">
+        <h3>ランチャー並び替え</h3>
+        <div id="launcher-order-list"></div>
+    </div>
+
+    <div class="card">
+        <h3>セキュリティ</h3>
+        <button class="btn btn-primary" onclick="resetPass()">パスワードリセット</button>
+    </div>
+
+    <div class="card" style="text-align:center; opacity:0.7;">
+        <div style="font-size:14px; font-weight:bold;">資産丸 v2.0</div>
+        <div style="font-size:11px; margin-top:4px;">Dev by Y.T</div>
+        <div style="font-size:10px; margin-top:4px;">&copy; 2026 Y.T All Rights Reserved.</div>
+        <div style="font-size:10px; margin-top:2px;">Yokohama Navy Blue Edition</div>
+    </div>
+</div>
+
+<script>
+    /* --- CONFIG & DATA --- */
+    const ST_KEY = 'shisan_maru_data';
+    const PASS_KEY = 'shisan_maru_pass';
+    
+    // Apps Definition
+    const APPS = {
+        'bs': { name: '貸借対照表', icon: 'ri-scales-3-line', color: '#C5A059' },
+        'pl': { name: '損益計算書', icon: 'ri-bar-chart-grouped-line', color: '#32D74B' },
+        'calendar': { name: 'カレンダー', icon: 'ri-calendar-2-line', color: '#FF453A' },
+        'assets': { name: '資産台帳', icon: 'ri-bank-card-line', color: '#FFFFFF' },
+        'flows': { name: 'フロー設定', icon: 'ri-flow-chart', color: '#AABbd5' },
+        'settings': { name: '設定', icon: 'ri-settings-5-line', color: '#888888' }
+    };
+
+    const defaultData = {
+        launcherOrder: ['bs', 'pl', 'calendar', 'assets', 'flows', 'settings'],
+        assets: [
+            { name: '三井住友(Olive)', type: 'asset', val: 150000 },
+            { name: '楽天証券', type: 'asset', val: 1200000 },
+            { name: '住宅ローン', type: 'debt', val: 25000000 }
+        ],
+        flows: [
+            { day: 25, title: '給与', type: 'inc', val: 250000 },
+            { day: 27, title: 'ローン返済', type: 'exp', val: 80000 }
+        ]
+    };
+
+    let data = {};
+
+    /* --- INITIALIZATION --- */
+    function init() {
+        // Load Data
+        const saved = localStorage.getItem(ST_KEY);
+        data = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultData));
+        
+        // Ensure settings exists (migration)
+        if(!data.launcherOrder) data.launcherOrder = [...defaultData.launcherOrder];
+
+        // Auth Check
+        if(!localStorage.getItem(PASS_KEY)) {
+            // First time
+            document.querySelector('#auth-screen h2').innerText = "パスコード設定";
+            document.querySelector('#auth-screen button').innerText = "設定して開始";
+        }
+
+        // Start Clock
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        renderLauncher();
+    }
+
+    function updateClock() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth()+1).padStart(2,'0');
+        const d = String(now.getDate()).padStart(2,'0');
+        document.getElementById('nixie-clock').innerText = `${y}-${m}-${d}`;
+    }
+
+    /* --- AUTH --- */
+    function tryLogin() {
+        const input = document.getElementById('auth-input');
+        const val = input.value;
+        const savedPass = localStorage.getItem(PASS_KEY);
+
+        if (!val) return;
+
+        if (!savedPass) {
+            localStorage.setItem(PASS_KEY, val);
+            unlock();
+        } else {
+            if (val === savedPass) unlock();
+            else { alert('パスコードが違います'); input.value = ''; }
+        }
+    }
+
+    function unlock() {
+        document.getElementById('auth-screen').classList.add('hidden');
+    }
+
+    function resetPass() {
+        if(confirm('パスワードをリセットしますか？再起動後に再設定が必要です。')) {
+            localStorage.removeItem(PASS_KEY);
+            location.reload();
+        }
+    }
+
+    /* --- NAVIGATION --- */
+    function openApp(id) {
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.getElementById('p-' + id).classList.add('active');
+        document.getElementById('p-launcher').classList.remove('active');
+        document.getElementById('home-btn').classList.add('visible');
+
+        // Refresh Data on Open
+        if(id === 'bs') renderBS();
+        if(id === 'pl') renderPL();
+        if(id === 'assets') renderAssetEditor();
+        if(id === 'flows') renderFlowEditor();
+        if(id === 'calendar') renderCalendar();
+        if(id === 'settings') renderSettings();
+    }
+
+    function goHome() {
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.getElementById('p-launcher').classList.add('active');
+        document.getElementById('home-btn').classList.remove('visible');
+        renderLauncher(); // Re-render in case order changed
+    }
+
+    /* --- LAUNCHER LOGIC --- */
+    function renderLauncher() {
+        const grid = document.getElementById('launcher-grid');
+        grid.innerHTML = '';
+        data.launcherOrder.forEach(id => {
+            const app = APPS[id];
+            grid.innerHTML += `
+                <div class="app-icon" onclick="openApp('${id}')">
+                    <i class="${app.icon} icon-symbol" style="color:${app.color}"></i>
+                    <span class="icon-label">${app.name}</span>
+                </div>
+            `;
+        });
+    }
+
+    /* --- B/S LOGIC (Corporate Style) --- */
+    function renderBS() {
+        let totalAsset = 0;
+        let totalDebt = 0;
+        let assetHtml = '';
+        let debtHtml = '';
+
+        data.assets.forEach(a => {
+            const val = parseInt(a.val);
+            const box = `
+                <div class="bs-box ${a.type==='asset'?'box-asset':'box-debt'}">
+                    <span class="bs-label">${a.name}</span>
+                    <span class="bs-val">¥${val.toLocaleString()}</span>
+                </div>`;
+            
+            if(a.type === 'asset') {
+                totalAsset += val;
+                assetHtml += box;
+            } else {
+                totalDebt += val;
+                debtHtml += box;
+            }
+        });
+
+        const netWorth = totalAsset - totalDebt;
+        const netHtml = `
+            <div class="bs-box box-net" style="flex:1;">
+                <span class="bs-label">純資産 (Net Worth)</span>
+                <span class="bs-val">¥${netWorth.toLocaleString()}</span>
+            </div>`;
+
+        const view = document.getElementById('bs-view');
+        view.innerHTML = `
+            <div class="bs-col">
+                <div class="bs-header" style="border-bottom:2px solid var(--accent-green)">資産の部 (Assets)</div>
+                ${assetHtml}
+                <div style="margin-top:auto; padding:10px; text-align:right; font-weight:bold; border-top:1px solid #555;">
+                    計 ¥${totalAsset.toLocaleString()}
+                </div>
+            </div>
+            <div class="bs-col">
+                <div class="bs-header" style="border-bottom:2px solid var(--accent-red)">負債・純資産の部</div>
+                ${debtHtml}
+                ${netHtml}
+                <div style="padding:10px; text-align:right; font-weight:bold; border-top:1px solid #555;">
+                    計 ¥${(totalDebt + netWorth).toLocaleString()}
+                </div>
+            </div>
+        `;
+
+        // Equity Ratio
+        const ratio = totalAsset > 0 ? Math.round((netWorth / totalAsset) * 100) : 0;
+        document.getElementById('equity-ratio').innerText = ratio + '%';
+        document.getElementById('equity-ratio').style.color = ratio > 40 ? 'var(--accent-green)' : (ratio > 10 ? 'var(--accent-gold)' : 'var(--accent-red)');
+    }
+
+    /* --- P/L LOGIC --- */
+    function renderPL() {
+        let inc = 0, exp = 0;
+        let html = '';
+        data.flows.sort((a,b)=>a.day-b.day).forEach(f => {
+            const val = parseInt(f.val);
+            if(f.type === 'inc') inc += val;
+            if(f.type === 'exp') exp += val;
+            
+            html += `
+            <div class="card" style="display:flex; justify-content:space-between; padding:10px;">
+                <span>${f.day}日 ${f.title}</span>
+                <span style="color:${f.type==='inc'?'var(--accent-green)':(f.type==='exp'?'var(--accent-red)':'white')}">
+                    ¥${val.toLocaleString()}
+                </span>
+            </div>`;
+        });
+        
+        const profit = inc - exp;
+        const summary = `
+            <div class="card" style="background:var(--bg-navy-light); border:1px solid var(--accent-gold);">
+                <div style="display:flex; justify-content:space-between;"><span>収入計</span> <span style="color:var(--accent-green)">¥${inc.toLocaleString()}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>支出計</span> <span style="color:var(--accent-red)">▲¥${exp.toLocaleString()}</span></div>
+                <hr style="border-color:#555">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px;">
+                    <span>当月収支</span>
+                    <span style="color:${profit>=0?'var(--accent-gold)':'var(--accent-red)'}">¥${profit.toLocaleString()}</span>
+                </div>
+            </div>
+        `;
+        document.getElementById('pl-list').innerHTML = summary + html;
+    }
+
+    /* --- CALENDAR --- */
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-view');
+        grid.innerHTML = '<div style="color:#888; font-size:10px;">Sun</div><div style="color:#888; font-size:10px;">Mon</div><div style="color:#888; font-size:10px;">Tue</div><div style="color:#888; font-size:10px;">Wed</div><div style="color:#888; font-size:10px;">Thu</div><div style="color:#888; font-size:10px;">Fri</div><div style="color:#888; font-size:10px;">Sat</div>';
+        
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+        const lastDate = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+
+        for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
+        
+        for(let d=1; d<=lastDate; d++) {
+            const hasEvent = data.flows.some(f => parseInt(f.day) === d);
+            grid.innerHTML += `
+                <div style="aspect-ratio:1; background:${hasEvent?'var(--accent-gold)':'#222'}; color:${hasEvent?'#000':'#fff'}; border-radius:4px; display:flex; justify-content:center; align-items:center; font-size:12px;">
+                    ${d}
+                </div>`;
+        }
+    }
+
+    /* --- EDITORS --- */
+    function renderAssetEditor() {
+        const div = document.getElementById('asset-list');
+        div.innerHTML = '';
+        data.assets.forEach((a, i) => {
+            div.innerHTML += `
+            <div class="card">
+                <input type="text" value="${a.name}" onchange="updateArr('assets',${i},'name',this.value)" placeholder="名称">
+                <div style="display:flex; gap:10px;">
+                    <select onchange="updateArr('assets',${i},'type',this.value)">
+                        <option value="asset" ${a.type==='asset'?'selected':''}>プラス資産 (+)</option>
+                        <option value="debt" ${a.type==='debt'?'selected':''}>マイナス負債 (-)</option>
+                    </select>
+                    <input type="number" value="${a.val}" onchange="updateArr('assets',${i},'val',this.value)">
+                </div>
+                <button class="btn btn-danger" style="margin-top:0; padding:8px;" onclick="delArr('assets',${i})">削除</button>
+            </div>`;
+        });
+    }
+
+    function renderFlowEditor() {
+        const div = document.getElementById('flow-list');
+        div.innerHTML = '';
+        data.flows.forEach((f, i) => {
+            div.innerHTML += `
+            <div class="card">
+                <div style="display:flex; gap:10px;">
+                    <input type="number" value="${f.day}" onchange="updateArr('flows',${i},'day',this.value)" style="width:60px" placeholder="日">
+                    <input type="text" value="${f.title}" onchange="updateArr('flows',${i},'title',this.value)" placeholder="名称">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <select onchange="updateArr('flows',${i},'type',this.value)">
+                        <option value="inc" ${f.type==='inc'?'selected':''}>収入</option>
+                        <option value="exp" ${f.type==='exp'?'selected':''}>支出</option>
+                        <option value="mov" ${f.type==='mov'?'selected':''}>振替</option>
+                    </select>
+                    <input type="number" value="${f.val}" onchange="updateArr('flows',${i},'val',this.value)">
+                </div>
+                <button class="btn btn-danger" style="margin-top:0; padding:8px;" onclick="delArr('flows',${i})">削除</button>
+            </div>`;
+        });
+    }
+
+    /* --- SETTINGS: REORDER --- */
+    function renderSettings() {
+        const list = document.getElementById('launcher-order-list');
+        list.innerHTML = '';
+        data.launcherOrder.forEach((id, idx) => {
+            const app = APPS[id];
+            list.innerHTML += `
+                <div class="order-item">
+                    <span>${app.name}</span>
+                    <div>
+                        <button onclick="moveOrder(${idx}, -1)" style="font-size:20px; background:none; border:none; color:white;">⬆️</button>
+                        <button onclick="moveOrder(${idx}, 1)" style="font-size:20px; background:none; border:none; color:white;">⬇️</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function moveOrder(idx, dir) {
+        if(dir === -1 && idx === 0) return;
+        if(dir === 1 && idx === data.launcherOrder.length-1) return;
+        
+        const temp = data.launcherOrder[idx];
+        data.launcherOrder[idx] = data.launcherOrder[idx + dir];
+        data.launcherOrder[idx + dir] = temp;
+        save();
+        renderSettings();
+    }
+
+    /* --- DATA HELPERS --- */
+    window.updateArr = (key, i, field, val) => { data[key][i][field] = val; save(); };
+    window.delArr = (key, i) => { if(confirm('削除しますか？')){ data[key].splice(i,1); save(); key==='assets'?renderAssetEditor():renderFlowEditor(); } };
+    window.addAssetItem = () => { data.assets.push({name:'新規項目', type:'asset', val:0}); save(); renderAssetEditor(); };
+    window.addFlowItem = () => { data.flows.push({day:1, title:'新規フロー', type:'exp', val:0}); save(); renderFlowEditor(); };
+    
+    function save() {
+        localStorage.setItem(ST_KEY, JSON.stringify(data));
+    }
+
+    // BOOT
+    init();
+
+</script>
+</body>
+</html>
