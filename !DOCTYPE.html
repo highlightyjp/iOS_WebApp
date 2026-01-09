@@ -1,0 +1,421 @@
+<!DOCTYPE html>  
+<html lang="ja">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
+<title>My Money Flow</title>  
+<style>  
+    :root {  
+        --primary: #004099; /* Olive/SMBC Blue-ish */  
+        --accent: #e60012; /* Rakuten Red-ish */  
+        --bg: #f2f2f7;  
+        --card: #ffffff;  
+        --text: #1c1c1e;  
+        --subtext: #8e8e93;  
+        --green: #34c759;  
+    }  
+    body {  
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;  
+        background-color: var(--bg);  
+        color: var(--text);  
+        margin: 0;  
+        padding-bottom: 80px; /* For bottom nav */  
+        -webkit-tap-highlight-color: transparent;  
+    }  
+      
+    /* Header */  
+    header {  
+        background: var(--card);  
+        padding: 20px 20px 10px;  
+        position: sticky;  
+        top: 0;  
+        z-index: 100;  
+        border-bottom: 1px solid #e5e5ea;  
+    }  
+    h1 { margin: 0; font-size: 24px; font-weight: 800; }  
+    h2 { font-size: 18px; margin: 20px 0 10px; opacity: 0.8; }  
+      
+    /* Cards */  
+    .container { padding: 16px; }  
+    .card {  
+        background: var(--card);  
+        border-radius: 14px;  
+        padding: 16px;  
+        margin-bottom: 16px;  
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);  
+    }  
+    .card-title { font-size: 14px; color: var(--subtext); margin-bottom: 8px; font-weight: 600; }  
+    .card-value { font-size: 28px; font-weight: 700; }  
+    .card-sub { font-size: 12px; color: var(--subtext); margin-top: 4px; }  
+  
+    /* Flow Timeline */  
+    .flow-item {  
+        display: flex;  
+        align-items: flex-start;  
+        margin-bottom: 20px;  
+        position: relative;  
+    }  
+    .flow-item:last-child { margin-bottom: 0; }  
+    .flow-date {  
+        width: 50px;  
+        font-size: 12px;  
+        font-weight: bold;  
+        color: var(--primary);  
+        padding-top: 4px;  
+    }  
+    .flow-content {  
+        flex: 1;  
+        background: #fff;  
+        border-radius: 10px;  
+        padding: 12px;  
+        border: 1px solid #e5e5ea;  
+    }  
+    .flow-title { font-weight: bold; font-size: 14px; margin-bottom: 4px; }  
+    .flow-desc { font-size: 12px; color: #555; }  
+    .flow-arrow { color: var(--subtext); font-size: 10px; margin-top: 4px; }  
+  
+    /* Settings Inputs */  
+    .input-group { margin-bottom: 16px; }  
+    .input-label { display: block; font-size: 13px; color: var(--subtext); margin-bottom: 6px; }  
+    input[type="number"], input[type="text"] {  
+        width: 100%;  
+        padding: 12px;  
+        font-size: 16px;  
+        border: 1px solid #d1d1d6;  
+        border-radius: 8px;  
+        box-sizing: border-box;  
+        background: #fff;  
+    }  
+    .btn {  
+        background: var(--primary);  
+        color: white;  
+        border: none;  
+        padding: 14px;  
+        width: 100%;  
+        border-radius: 10px;  
+        font-size: 16px;  
+        font-weight: bold;  
+        cursor: pointer;  
+    }  
+    .btn-reset { background: var(--subtext); margin-top: 10px; }  
+  
+    /* Navigation */  
+    .nav-bar {  
+        position: fixed;  
+        bottom: 0;  
+        left: 0;  
+        width: 100%;  
+        background: rgba(255,255,255,0.95);  
+        backdrop-filter: blur(10px);  
+        border-top: 1px solid #c6c6c8;  
+        display: flex;  
+        justify-content: space-around;  
+        padding-bottom: env(safe-area-inset-bottom);  
+    }  
+    .nav-item {  
+        padding: 10px 0;  
+        text-align: center;  
+        flex: 1;  
+        font-size: 10px;  
+        color: #999;  
+        cursor: pointer;  
+    }  
+    .nav-item.active { color: var(--primary); font-weight: bold; }  
+    .nav-icon { font-size: 24px; display: block; margin-bottom: 2px; }  
+  
+    /* Page Visibility */  
+    .page { display: none; }  
+    .page.active { display: block; }  
+  
+    /* Bank Badges */  
+    .badge {  
+        display: inline-block;  
+        padding: 2px 6px;  
+        border-radius: 4px;  
+        font-size: 10px;  
+        font-weight: bold;  
+        color: white;  
+        margin-right: 4px;  
+    }  
+    .b-olive { background-color: #6b8e23; }  
+    .b-sbi { background-color: #004099; }  
+    .b-rakuten { background-color: #e60012; }  
+    .b-one { background-color: #333; }  
+</style>  
+</head>  
+<body>  
+  
+<header id="app-header">  
+    <h1 id="page-title">ダッシュボード</h1>  
+</header>  
+  
+<div id="p-home" class="page active container">  
+    <div class="card">  
+        <div class="card-title">月間想定手取り</div>  
+        <div class="card-value" id="disp-income">¥0</div>  
+        <div class="card-sub">基本生活費を除いた自由資金: <span id="disp-free" style="color:var(--primary)">¥0</span></div>  
+    </div>  
+  
+    <h2>💰 今月の配分状況</h2>  
+    <div class="card" style="display:flex; justify-content:space-between; flex-wrap:wrap;">  
+        <div style="width:48%; margin-bottom:10px;">  
+            <div class="card-title">投資 (楽天証券)</div>  
+            <div style="font-weight:bold;" id="disp-invest">¥30,000</div>  
+        </div>  
+        <div style="width:48%; margin-bottom:10px;">  
+            <div class="card-title">家賃 (折半)</div>  
+            <div style="font-weight:bold;" id="disp-rent">¥80,000</div>  
+        </div>  
+        <div style="width:48%;">  
+            <div class="card-title">食費 (OneBank)</div>  
+            <div style="font-weight:bold;" id="disp-food">¥15,000</div>  
+        </div>  
+        <div style="width:48%;">  
+            <div class="card-title">貯金目標</div>  
+            <div style="font-weight:bold;" id="disp-save">¥40,000</div>  
+        </div>  
+    </div>  
+  
+    <h2>📊 年間シミュレーション</h2>  
+    <div class="card">  
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px;">  
+            <span>年間貯蓄額</span>  
+            <span style="font-weight:bold;" id="year-save">¥480,000</span>  
+        </div>  
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px;">  
+            <span>年間投資額</span>  
+            <span style="font-weight:bold;" id="year-invest">¥360,000</span>  
+        </div>  
+        <div class="card-sub">※ボーナス分を含まない基礎値</div>  
+    </div>  
+</div>  
+  
+<div id="p-flow" class="page container">  
+    <div class="card" style="background:#eaf2ff;">  
+        <div class="card-title" style="color:#004099;">🗓 毎月の資金移動スケジュール</div>  
+    </div>  
+  
+    <div class="flow-item">  
+        <div class="flow-date">25日</div>  
+        <div class="flow-content">  
+            <div class="flow-title">給与受取・仕分け</div>  
+            <div class="flow-desc">  
+                <span class="badge b-olive">Olive</span> 受取②: 30,000円<br>  
+                <span class="badge b-sbi">SBI</span> 受取①: 残額全額  
+            </div>  
+            <div class="flow-arrow">目的: 生活費と基礎資金の分離</div>  
+        </div>  
+    </div>  
+  
+    <div class="flow-item">  
+        <div class="flow-date">26日</div>  
+        <div class="flow-content">  
+            <div class="flow-title">投資資金移動</div>  
+            <div class="flow-desc">  
+                <span class="badge b-sbi">SBI</span> → <span class="badge b-rakuten">楽天</span><br>  
+                金額: <span id="flow-invest">30,000</span>円  
+            </div>  
+            <div class="flow-arrow">自動入金・マネーブリッジ反映</div>  
+        </div>  
+    </div>  
+  
+    <div class="flow-item">  
+        <div class="flow-date">27日</div>  
+        <div class="flow-content">  
+            <div class="flow-title">家賃確保</div>  
+            <div class="flow-desc">  
+                <span class="badge b-sbi">SBI</span>内で振替<br>  
+                金額: <span id="flow-rent">80,000</span>円  
+            </div>  
+            <div class="flow-arrow">家賃用口座へ隔離</div>  
+        </div>  
+    </div>  
+  
+    <div class="flow-item">  
+        <div class="flow-date">29日</div>  
+        <div class="flow-content">  
+            <div class="flow-title">食費チャージ</div>  
+            <div class="flow-desc">  
+                <span class="badge b-sbi">SBI</span> → <span class="badge b-one">OneBank</span><br>  
+                金額: <span id="flow-food">15,000</span>円  
+            </div>  
+            <div class="flow-arrow">食費専用口座へ</div>  
+        </div>  
+    </div>  
+</div>  
+  
+<div id="p-settings" class="page container">  
+    <div class="card">  
+        <div class="card-title">基本収入設定</div>  
+        <div class="input-group">  
+            <label class="input-label">手取り月給 (円)</label>  
+            <input type="number" id="inp-income" value="205000">  
+        </div>  
+    </div>  
+  
+    <div class="card">  
+        <div class="card-title">固定支出・予算設定</div>  
+        <div class="input-group">  
+            <label class="input-label">Olive受取額 (生活費)</label>  
+            <input type="number" id="inp-olive" value="30000">  
+        </div>  
+        <div class="input-group">  
+            <label class="input-label">家賃振込額 (折半)</label>  
+            <input type="number" id="inp-rent" value="80000">  
+        </div>  
+        <div class="input-group">  
+            <label class="input-label">投資積立額</label>  
+            <input type="number" id="inp-invest" value="30000">  
+        </div>  
+        <div class="input-group">  
+            <label class="input-label">食費予算 (OneBank)</label>  
+            <input type="number" id="inp-food" value="15000">  
+        </div>  
+         <div class="input-group">  
+            <label class="input-label">貯金目標額</label>  
+            <input type="number" id="inp-save" value="40000">  
+        </div>  
+    </div>  
+  
+    <button class="btn" onclick="saveSettings()">設定を保存して反映</button>  
+    <button class="btn btn-reset" onclick="resetSettings()">初期値に戻す</button>  
+</div>  
+  
+<nav class="nav-bar">  
+    <div class="nav-item active" onclick="switchPage('home')">  
+        <span class="nav-icon">🏠</span>  
+        ホーム  
+    </div>  
+    <div class="nav-item" onclick="switchPage('flow')">  
+        <span class="nav-icon">🔁</span>  
+        フロー  
+    </div>  
+    <div class="nav-item" onclick="switchPage('settings')">  
+        <span class="nav-icon">⚙️</span>  
+        設定  
+    </div>  
+</nav>  
+  
+<script>  
+    // 初期データ定義  
+    const defaultData = {  
+        income: 205000,  
+        olive: 30000,  
+        rent: 80000,  
+        invest: 30000,  
+        food: 15000,  
+        save: 40000  
+    };  
+  
+    let currentData = {};  
+  
+    function init() {  
+        const saved = localStorage.getItem('myMoneyData');  
+        if (saved) {  
+            currentData = JSON.parse(saved);  
+        } else {  
+            currentData = {...defaultData};  
+        }  
+        updateUI();  
+        updateInputs();  
+    }  
+  
+    function updateUI() {  
+        // 金額フォーマット  
+        const fmt = (num) => '¥' + Number(num).toLocaleString();  
+          
+        // ホーム画面  
+        document.getElementById('disp-income').innerText = fmt(currentData.income);  
+        document.getElementById('disp-rent').innerText = fmt(currentData.rent);  
+        document.getElementById('disp-invest').innerText = fmt(currentData.invest);  
+        document.getElementById('disp-food').innerText = fmt(currentData.food);  
+        document.getElementById('disp-save').innerText = fmt(currentData.save);  
+  
+        // 年間計算  
+        document.getElementById('year-save').innerText = fmt(currentData.save * 12);  
+        document.getElementById('year-invest').innerText = fmt(currentData.invest * 12);  
+  
+        // 自由資金計算 (収入 - (Olive生活費 + 家賃 + 投資 + 食費 + 貯金))  
+        // ※Olive生活費は給与②として既に引かれているが、全体管理のためここでは支出とみなすか、  
+        // あるいはSBIに残る「予備費」を計算するか。  
+        // ここでは「すべて引いたあとに残る純粋な予備費」を計算します。  
+        const totalFixed =   
+            parseInt(currentData.olive) +   
+            parseInt(currentData.rent) +   
+            parseInt(currentData.invest) +   
+            parseInt(currentData.food) +  
+            parseInt(currentData.save);  
+          
+        const free = parseInt(currentData.income) - totalFixed;  
+        document.getElementById('disp-free').innerText = fmt(free);  
+  
+        // フロー画面の反映  
+        document.getElementById('flow-invest').innerText = Number(currentData.invest).toLocaleString();  
+        document.getElementById('flow-rent').innerText = Number(currentData.rent).toLocaleString();  
+        document.getElementById('flow-food').innerText = Number(currentData.food).toLocaleString();  
+    }  
+  
+    function updateInputs() {  
+        document.getElementById('inp-income').value = currentData.income;  
+        document.getElementById('inp-olive').value = currentData.olive;  
+        document.getElementById('inp-rent').value = currentData.rent;  
+        document.getElementById('inp-invest').value = currentData.invest;  
+        document.getElementById('inp-food').value = currentData.food;  
+        document.getElementById('inp-save').value = currentData.save;  
+    }  
+  
+    function saveSettings() {  
+        currentData.income = document.getElementById('inp-income').value;  
+        currentData.olive = document.getElementById('inp-olive').value;  
+        currentData.rent = document.getElementById('inp-rent').value;  
+        currentData.invest = document.getElementById('inp-invest').value;  
+        currentData.food = document.getElementById('inp-food').value;  
+        currentData.save = document.getElementById('inp-save').value;  
+  
+        localStorage.setItem('myMoneyData', JSON.stringify(currentData));  
+        alert('設定を保存しました');  
+        updateUI();  
+        switchPage('home');  
+    }  
+  
+    function resetSettings() {  
+        if(confirm('初期値に戻しますか？')) {  
+            currentData = {...defaultData};  
+            localStorage.removeItem('myMoneyData');  
+            updateUI();  
+            updateInputs();  
+            alert('リセットしました');  
+        }  
+    }  
+  
+    function switchPage(pageId) {  
+        // Nav active state  
+        const navs = document.querySelectorAll('.nav-item');  
+        navs.forEach(el => el.classList.remove('active'));  
+          
+        // Page visibility  
+        const pages = document.querySelectorAll('.page');  
+        pages.forEach(el => el.classList.remove('active'));  
+  
+        // Target activation  
+        if (pageId === 'home') {  
+            document.getElementById('p-home').classList.add('active');  
+            navs[0].classList.add('active');  
+            document.getElementById('page-title').innerText = 'ダッシュボード';  
+        } else if (pageId === 'flow') {  
+            document.getElementById('p-flow').classList.add('active');  
+            navs[1].classList.add('active');  
+            document.getElementById('page-title').innerText = '資金フロー';  
+        } else if (pageId === 'settings') {  
+            document.getElementById('p-settings').classList.add('active');  
+            navs[2].classList.add('active');  
+            document.getElementById('page-title').innerText = '設定';  
+        }  
+        window.scrollTo(0,0);  
+    }  
+  
+    // Start  
+    init();  
+</script>  
+</body>  
+</html>  
