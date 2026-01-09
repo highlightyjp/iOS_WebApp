@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AssetOS</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+    :root {
+        --bg-body: #000000;
+        --bg-glass: rgba(28, 28, 30, 0.65);
+        --bg-card: #1C1C1E;
+        --bg-input: #2C2C2E;
+        --primary: #0A84FF;
+        --accent: #BF5AF2; /* Purple */
+        --success: #30D158;
+        --danger: #FF453A;
+        --text-main: #FFFFFF;
+        --text-sub: #8E8E93;
+        --border: rgba(255,255,255,0.1);
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        margin: 0;
+        padding-bottom: 80px; /* Space for Home Button */
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+        user-select: none;
+    }
+
+    /* --- AUTH OVERLAY --- */
+    #auth-screen {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #000; display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        transition: transform 0.4s ease-in-out;
+    }
+    #auth-screen.hidden { transform: translateY(-100%); pointer-events: none; }
+    .pin-input {
+        background: #1c1c1e; border: 1px solid #333; color: white;
+        font-size: 24px; padding: 12px; border-radius: 12px;
+        width: 200px; text-align: center; letter-spacing: 5px; margin-bottom: 20px;
+    }
+    .btn-auth {
+        background: var(--primary); color: white; border: none;
+        padding: 12px 40px; border-radius: 30px; font-weight: bold; font-size: 16px;
+    }
+
+    /* --- LAUNCHER (HOME) --- */
+    #launcher {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        padding: 20px;
+        padding-top: max(60px, env(safe-area-inset-top));
+        box-sizing: border-box;
+        animation: fadeIn 0.3s ease;
+    }
+    .app-icon {
+        aspect-ratio: 1;
+        background: linear-gradient(145deg, #2c2c2e, #1c1c1e);
+        border-radius: 22px;
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        border: 1px solid var(--border);
+        transition: transform 0.1s;
+    }
+    .app-icon:active { transform: scale(0.96); }
+    .icon-symbol { font-size: 42px; margin-bottom: 8px; }
+    .icon-label { font-size: 13px; font-weight: 600; color: #ddd; }
+    
+    /* Colors for Icons */
+    .ic-cal { color: #FF3B30; }
+    .ic-pl { color: #30D158; }
+    .ic-set { color: #8E8E93; }
+    .ic-flow { color: #0A84FF; }
+
+    /* --- SHARED LAYOUT --- */
+    .page {
+        display: none;
+        padding: 20px;
+        padding-top: max(20px, env(safe-area-inset-top));
+        animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        min-height: 100vh;
+        box-sizing: border-box;
+        background: var(--bg-body);
+    }
+    .page.active { display: block; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+    h2 { font-size: 28px; font-weight: 800; margin: 0 0 20px 0; letter-spacing: -0.5px; }
+    h3 { font-size: 18px; color: var(--text-sub); margin: 20px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px;}
+
+    .card {
+        background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 16px;
+        border: 1px solid var(--border);
+    }
+
+    /* --- CALENDAR --- */
+    .calendar-grid {
+        display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+        text-align: center;
+    }
+    .cal-header { font-size: 11px; color: var(--text-sub); padding-bottom: 8px; }
+    .cal-day {
+        aspect-ratio: 0.8; background: #111; border-radius: 6px;
+        font-size: 12px; padding-top: 4px; position: relative;
+        border: 1px solid transparent;
+    }
+    .cal-day.has-event { border-color: var(--primary); background: #1a1a1a; }
+    .cal-dot {
+        width: 4px; height: 4px; border-radius: 50%;
+        position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    }
+    .dot-inc { background: var(--success); }
+    .dot-exp { background: var(--danger); }
+    .dot-mov { background: var(--primary); }
+    
+    .event-list-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 0; border-bottom: 1px solid #333;
+    }
+
+    /* --- PL / BS SHEETS --- */
+    .fin-row {
+        display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #333; font-size: 14px;
+    }
+    .fin-row.total { font-weight: bold; font-size: 16px; border-top: 1px solid #fff; border-bottom: none; margin-top: 5px; padding-top: 15px;}
+    .val-pos { color: var(--success); }
+    .val-neg { color: var(--danger); }
+
+    /* --- HOME BUTTON --- */
+    #home-btn {
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        width: 60px; height: 60px; background: rgba(50,50,50,0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 30px; border: 1px solid #555;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        z-index: 1000;
+        transition: transform 0.1s, background 0.2s;
+        display: none; /* Hidden on Launcher */
+    }
+    #home-btn.visible { display: flex; }
+    #home-btn:active { transform: translateX(-50%) scale(0.9); background: #fff; color: #000; }
+    
+    /* --- INPUTS --- */
+    select, input {
+        background: var(--bg-input); border: none; color: white;
+        padding: 10px; border-radius: 8px; width: 100%; font-size: 16px; box-sizing: border-box;
+    }
+    .input-row { display: grid; grid-template-columns: 0.5fr 1.5fr 1fr; gap: 8px; margin-bottom: 10px; align-items: center;}
+
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+    <div style="font-size:40px; margin-bottom:20px;">🔒</div>
+    <div style="color:#888; margin-bottom:10px;">Security Lock</div>
+    <input type="password" id="auth-input" class="pin-input" pattern="[0-9]*" inputmode="numeric">
+    <button class="btn-auth" onclick="handleAuth()" id="auth-btn">Unlock</button>
+</div>
+
+<div id="home-btn" onclick="goHome()">
+    <i class="ri-function-line" style="font-size:24px;"></i>
+</div>
+
+<div id="p-launcher" class="page active" style="padding-top:80px;">
+    <div style="text-align:center; margin-bottom:30px;">
+        <h1 style="margin:0; font-size:32px;">Asset OS</h1>
+        <div style="color:#666; font-size:12px;" id="current-date"></div>
+    </div>
+
+    <div id="launcher">
+        <div class="app-icon" onclick="openApp('calendar')">
+            <i class="ri-calendar-event-line icon-symbol ic-cal"></i>
+            <span class="icon-label">カレンダー</span>
+        </div>
+        <div class="app-icon" onclick="openApp('financial')">
+            <i class="ri-bar-chart-box-line icon-symbol ic-pl"></i>
+            <span class="icon-label">PL / BS</span>
+        </div>
+        <div class="app-icon" onclick="openApp('settings')">
+            <i class="ri-equalizer-line icon-symbol ic-flow"></i>
+            <span class="icon-label">フロー設定</span>
+        </div>
+        <div class="app-icon" onclick="openApp('assets')">
+            <i class="ri-bank-card-line icon-symbol" style="color:#FF9F0A"></i>
+            <span class="icon-label">資産管理</span>
+        </div>
+    </div>
+</div>
+
+<div id="p-calendar" class="page">
+    <h2>Monthly Flow</h2>
+    <div class="card">
+        <div class="calendar-grid" style="margin-bottom:10px;">
+            <div class="cal-header">Sun</div><div class="cal-header">Mon</div><div class="cal-header">Tue</div>
+            <div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div>
+        </div>
+        <div class="calendar-grid" id="cal-body"></div>
+    </div>
+    <h3>予定リスト</h3>
+    <div id="cal-events-list"></div>
+</div>
+
+<div id="p-financial" class="page">
+    <h2>Financial Report</h2>
+    
+    <div class="card">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <i class="ri-file-list-3-line ic-pl" style="font-size:20px;"></i>
+            <span style="font-weight:bold;">損益計算書 (P/L)</span>
+        </div>
+        <div style="font-size:11px; color:#666; margin-bottom:10px;">※設定された月次フローに基づく予測</div>
+        
+        <div id="pl-container"></div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <i class="ri-scale-line" style="color:#0A84FF; font-size:20px;"></i>
+            <span style="font-weight:bold;">貸借対照表 (B/S)</span>
+        </div>
+        <div style="font-size:11px; color:#666; margin-bottom:10px;">※現在の資産残高スナップショット</div>
+        
+        <div id="bs-container"></div>
+    </div>
+</div>
+
+<div id="p-settings" class="page">
+    <h2>Flow Editor</h2>
+    <div style="font-size:12px; color:#888; margin-bottom:20px;">
+        毎月の資金の動き（給与、家賃、振替など）を定義します。
+    </div>
+    
+    <div id="flow-editor-list"></div>
+    
+    <button onclick="addFlowItem()" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">
+        ＋ フローを追加
+    </button>
+</div>
+
+<div id="p-assets" class="page">
+    <h2>Assets</h2>
+    <div style="font-size:12px; color:#888; margin-bottom:20px;">
+        現在の保有資産残高を入力してください。
+    </div>
+    <div id="asset-editor-list"></div>
+    <button onclick="addAssetItem()" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">
+        ＋ 口座を追加
+    </button>
+    <div style="margin-top:40px; text-align:center;">
+        <button onclick="resetAll()" style="color:var(--danger); background:none; border:none;">Reset All Data</button>
+    </div>
+</div>
+
+<script>
+    /* --- DATA MODEL --- */
+    const STORAGE_KEY = 'AssetOS_Data_v1';
+    const AUTH_KEY = 'AssetOS_Auth';
+    
+    const defaultData = {
+        flows: [
+            { id:1, day:25, title:'給与受取', type:'inc', amount:205000 },
+            { id:2, day:25, title:'Olive生活費', type:'exp', amount:30000 },
+            { id:3, day:26, title:'投資積立', type:'mov', amount:30000 },
+            { id:4, day:27, title:'家賃支払', type:'exp', amount:80000 },
+            { id:5, day:29, title:'食費振替', type:'mov', amount:15000 }
+        ],
+        assets: [
+            { id:1, name:'三井住友(Olive)', amount:50000 },
+            { id:2, name:'住信SBIネット', amount:420000 },
+            { id:3, name:'楽天証券', amount:1500000 },
+            { id:4, name:'財布/One', amount:12000 }
+        ]
+    };
+    
+    let appData = {};
+    let isFirstRun = false;
+
+    /* --- INIT & AUTH --- */
+    function init() {
+        const today = new Date();
+        document.getElementById('current-date').innerText = today.toLocaleDateString('ja-JP', { weekday:'long', year:'numeric', month:'long', day:'numeric'});
+        
+        // Auth Check
+        const pw = localStorage.getItem(AUTH_KEY);
+        if(!pw) {
+            isFirstRun = true;
+            document.getElementById('auth-btn').innerText = "Set Passcode";
+        }
+        
+        // Data Load
+        const saved = localStorage.getItem(STORAGE_KEY);
+        appData = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultData));
+    }
+
+    function handleAuth() {
+        const input = document.getElementById('auth-input');
+        const val = input.value;
+        if(!val) return;
+
+        if(isFirstRun) {
+            localStorage.setItem(AUTH_KEY, val);
+            unlock();
+        } else {
+            if(val === localStorage.getItem(AUTH_KEY)) unlock();
+            else { alert('Wrong Passcode'); input.value=''; }
+        }
+    }
+
+    function unlock() {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('auth-input').value = '';
+    }
+
+    /* --- NAVIGATION --- */
+    function openApp(appId) {
+        // Hide all pages
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        // Show target
+        document.getElementById('p-' + appId).classList.add('active');
+        // Show home button
+        document.getElementById('home-btn').classList.add('visible');
+        
+        // Render specific app logic
+        if(appId === 'calendar') renderCalendar();
+        if(appId === 'financial') renderFinancial();
+        if(appId === 'settings') renderFlowEditor();
+        if(appId === 'assets') renderAssetEditor();
+    }
+
+    function goHome() {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('p-launcher').classList.add('active');
+        document.getElementById('home-btn').classList.remove('visible');
+        saveData(); // Auto save on exit
+    }
+
+    /* --- CALENDAR LOGIC --- */
+    function renderCalendar() {
+        const grid = document.getElementById('cal-body');
+        const list = document.getElementById('cal-events-list');
+        grid.innerHTML = '';
+        list.innerHTML = '';
+        
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+
+        // Empty cells for previous month
+        for(let i=0; i<firstDay; i++) {
+            grid.innerHTML += `<div></div>`;
+        }
+
+        // Days
+        for(let d=1; d<=lastDate; d++) {
+            // Find events
+            const events = appData.flows.filter(f => parseInt(f.day) === d);
+            
+            let dotHtml = '';
+            events.forEach(e => {
+                let colorClass = e.type === 'inc' ? 'dot-inc' : (e.type === 'exp' ? 'dot-exp' : 'dot-mov');
+                dotHtml = `<div class="cal-dot ${colorClass}"></div>`; // Show one dot max for simplicity or stack them
+            });
+
+            grid.innerHTML += `
+                <div class="cal-day ${events.length > 0 ? 'has-event' : ''}">
+                    ${d}
+                    ${dotHtml}
+                </div>
+            `;
+
+            if(events.length > 0) {
+                events.forEach(e => {
+                    let icon = e.type === 'inc' ? '📥' : (e.type === 'exp' ? '💸' : '🔄');
+                    list.innerHTML += `
+                        <div class="event-list-item">
+                            <div>
+                                <span style="font-weight:bold; color:var(--primary); margin-right:8px;">${d}日</span>
+                                <span>${icon} ${e.title}</span>
+                            </div>
+                            <div style="font-family:monospace;">¥${parseInt(e.amount).toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+    }
+
+    /* --- FINANCIAL LOGIC (PL/BS) --- */
+    function renderFinancial() {
+        // PL Calculation
+        let totalInc = 0;
+        let totalExp = 0;
+        let plHtml = '';
+
+        // Sort by day
+        const sortedFlows = [...appData.flows].sort((a,b) => a.day - b.day);
+
+        sortedFlows.forEach(f => {
+            if(f.type === 'inc') totalInc += parseInt(f.amount);
+            if(f.type === 'exp') totalExp += parseInt(f.amount);
+            // 'mov' does not affect PL directly unless we track cash flow, but PL is usually Inc - Exp
+        });
+
+        const netIncome = totalInc - totalExp;
+
+        plHtml += `
+            <div class="fin-row"><span>収入合計 (Revenue)</span> <span class="val-pos">¥${totalInc.toLocaleString()}</span></div>
+            <div class="fin-row"><span>支出合計 (Expense)</span> <span class="val-neg">▲ ¥${totalExp.toLocaleString()}</span></div>
+            <div class="fin-row total">
+                <span>当月純利益 (Net Income)</span>
+                <span class="${netIncome >= 0 ? 'val-pos' : 'val-neg'}">¥${netIncome.toLocaleString()}</span>
+            </div>
+        `;
+        document.getElementById('pl-container').innerHTML = plHtml;
+
+        // BS Calculation
+        let totalAssets = 0;
+        let bsHtml = '';
+        
+        appData.assets.forEach(a => {
+            totalAssets += parseInt(a.amount);
+            bsHtml += `<div class="fin-row"><span>${a.name}</span> <span>¥${parseInt(a.amount).toLocaleString()}</span></div>`;
+        });
+
+        bsHtml += `
+            <div class="fin-row total">
+                <span>総資産 (Total Assets)</span>
+                <span style="color:var(--text-main)">¥${totalAssets.toLocaleString()}</span>
+            </div>
+            <div style="font-size:10px; color:#666; margin-top:5px; text-align:right;">(純資産 = 総資産 - 負債0)</div>
+        `;
+        document.getElementById('bs-container').innerHTML = bsHtml;
+    }
+
+    /* --- EDITORS --- */
+    function renderFlowEditor() {
+        const el = document.getElementById('flow-editor-list');
+        el.innerHTML = '';
+        
+        appData.flows.forEach((f, i) => {
+            el.innerHTML += `
+                <div class="card">
+                    <div class="input-row">
+                        <input type="number" value="${f.day}" onchange="updFlow(${i}, 'day', this.value)" min="1" max="31">
+                        <input type="text" value="${f.title}" onchange="updFlow(${i}, 'title', this.value)">
+                        <button onclick="delFlow(${i})" style="background:var(--danger); border:none; color:white; border-radius:8px;">削除</button>
+                    </div>
+                    <div class="input-row">
+                        <select onchange="updFlow(${i}, 'type', this.value)">
+                            <option value="inc" ${f.type=='inc'?'selected':''}>📥 収入</option>
+                            <option value="exp" ${f.type=='exp'?'selected':''}>💸 支出</option>
+                            <option value="mov" ${f.type=='mov'?'selected':''}>🔄 振替</option>
+                        </select>
+                        <input type="number" value="${f.amount}" onchange="updFlow(${i}, 'amount', this.value)" style="grid-column: span 2;">
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function renderAssetEditor() {
+        const el = document.getElementById('asset-editor-list');
+        el.innerHTML = '';
+        appData.assets.forEach((a, i) => {
+            el.innerHTML += `
+                <div class="card" style="display:flex; gap:10px;">
+                    <input type="text" value="${a.name}" onchange="updAsset(${i}, 'name', this.value)" style="flex:2">
+                    <input type="number" value="${a.amount}" onchange="updAsset(${i}, 'amount', this.value)" style="flex:1">
+                    <button onclick="delAsset(${i})" style="background:var(--danger); color:white; border:none; border-radius:8px; width:40px;">×</button>
+                </div>
+            `;
+        });
+    }
+
+    /* --- DATA ACTIONS --- */
+    window.updFlow = (i, k, v) => { appData.flows[i][k] = v; saveData(); };
+    window.delFlow = (i) => { if(confirm('削除?')) { appData.flows.splice(i,1); renderFlowEditor(); saveData(); }};
+    window.addFlowItem = () => { appData.flows.push({day:1, title:'新規項目', type:'exp', amount:0}); renderFlowEditor(); saveData(); };
+
+    window.updAsset = (i, k, v) => { appData.assets[i][k] = v; saveData(); };
+    window.delAsset = (i) => { if(confirm('削除?')) { appData.assets.splice(i,1); renderAssetEditor(); saveData(); }};
+    window.addAssetItem = () => { appData.assets.push({name:'新規口座', amount:0}); renderAssetEditor(); saveData(); };
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    }
+
+    window.resetAll = () => {
+        if(confirm('完全にリセットしますか？')) {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(AUTH_KEY);
+            location.reload();
+        }
+    };
+
+    // BOOT
+    init();
+</script>
+</body>
+</html>
