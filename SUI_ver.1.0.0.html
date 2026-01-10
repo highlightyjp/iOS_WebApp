@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SUI</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+    /* --- THEMES --- */
+    :root {
+        /* Base: Yokohama Navy & Gold (SUI Mode) */
+        --bg-deep: #001228;
+        --bg-navy: #001E43;
+        --panel-bg: rgba(15, 25, 45, 0.9);
+        --border-col: rgba(197, 160, 89, 0.3);
+        --primary: #C5A059;
+        --secondary: #E5C585;
+        --accent: #D4AF37;
+        --text: #F0F0F0;
+        --text-dim: #6c7a89;
+        --nixie-on: #ff5a00;
+        --nixie-off: #3a1a1a;
+        --danger: #FF453A;
+        --success: #32D74B;
+        --font-main: "Noto Sans JP", -apple-system, sans-serif;
+        --font-code: "Share Tech Mono", monospace;
+    }
+
+    body.mode-cyber {
+        --bg-deep: #050505;
+        --bg-navy: #0a0a0a;
+        --panel-bg: rgba(5, 10, 15, 0.95);
+        --border-col: #00f3ff;
+        --primary: #00f3ff;
+        --secondary: #ff00ff;
+        --text: #e0faff;
+        --text-dim: #005f73;
+        --nixie-on: #00f3ff;
+        --nixie-off: #003333;
+        --font-main: "Orbitron", sans-serif;
+    }
+
+    /* --- GLOBAL LAYOUT --- */
+    body {
+        background: radial-gradient(circle at center top, var(--bg-navy) 0%, var(--bg-deep) 100%);
+        color: var(--text);
+        font-family: var(--font-main);
+        margin: 0; min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none; overflow-y: auto; padding-bottom: 120px;
+        transition: background 0.5s;
+    }
+
+    /* --- SUI BRANDING --- */
+    .sui-logo-text {
+        font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 5px;
+        background: linear-gradient(to bottom, #fff, var(--primary));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* --- EFFECTS --- */
+    /* Panic Tape */
+    .warning-tape {
+        position: fixed; left:0; right:0; height:12px; z-index:9999; pointer-events:none; display:none;
+        background: repeating-linear-gradient(45deg, #FFD700, #FFD700 10px, #111 10px, #111 20px);
+        opacity:0.9; box-shadow: 0 0 10px #FFD700;
+    }
+    .warning-tape.top { top:0; } .warning-tape.bottom { bottom:0; }
+    body.defcon-1 .warning-tape { display:block; animation: flash 1s infinite; }
+    @keyframes flash { 0%,100%{opacity:0.9} 50%{opacity:0.2} }
+
+    /* Sonar */
+    .sonar-overlay {
+        position: fixed; inset:0; z-index:-1; pointer-events:none; opacity:0.15;
+        background: repeating-radial-gradient(circle, transparent 0, transparent 19px, var(--primary) 20px);
+        mask-image: linear-gradient(to bottom, black 20%, transparent 90%);
+    }
+    .sonar-sweep {
+        position: absolute; width:100%; height:100%; top:0; left:0;
+        background: conic-gradient(from 0deg, transparent 0deg, var(--primary) 20deg, transparent 60deg);
+        animation: sonarSpin 6s linear infinite; opacity:0.2;
+    }
+    body.defcon-1 .sonar-sweep { animation-duration: 1.5s; background: conic-gradient(from 0deg, transparent 0deg, var(--danger) 20deg, transparent 60deg); }
+    @keyframes sonarSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    /* --- UI COMPONENTS --- */
+    .page { display: none; padding: 20px; padding-top: max(30px, env(safe-area-inset-top)); animation: fadeUp 0.4s; }
+    .page.active { display: block; }
+    @keyframes fadeUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    
+    .card {
+        background: var(--panel-bg); border: 1px solid var(--border-col);
+        border-radius: 4px; padding: 15px; margin-bottom: 15px; backdrop-filter: blur(12px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3); position: relative;
+    }
+    /* Mode Cyber: Hacker shape */
+    .mode-cyber .card { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); border-radius: 0; }
+
+    input, select, textarea {
+        background: rgba(0,0,0,0.4); border: 1px solid var(--border-col); color: var(--text);
+        padding: 12px; width: 100%; box-sizing: border-box; border-radius: 2px; margin-bottom: 8px;
+        font-family: var(--font-main); font-size: 16px; /* Prevent zoom */
+    }
+    .btn {
+        width: 100%; padding: 14px; border: none; font-weight: bold; cursor: pointer;
+        background: linear-gradient(90deg, var(--primary), var(--secondary)); color: #000;
+        font-family: var(--font-code); margin-top: 5px; letter-spacing: 1px;
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+    }
+    .btn:active { opacity: 0.8; transform: scale(0.98); }
+
+    /* --- BOOT & AUTH --- */
+    #boot-screen, #auth-screen {
+        position: fixed; inset: 0; background: #000; z-index: 10000;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+    #boot-screen { z-index: 11000; font-family: var(--font-code); color: var(--primary); }
+    .pin-input {
+        background: transparent; border: 1px solid var(--primary); color: var(--primary);
+        font-family: var(--font-code); font-size: 32px; width: 220px; text-align: center;
+        padding: 10px; margin-bottom: 20px; letter-spacing: 8px;
+    }
+
+    /* --- NAGATO INTERFACE --- */
+    #nagato-modal {
+        position: fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+        width: 85%; max-width: 400px; background: rgba(0,0,0,0.95); border: 1px solid #fff;
+        padding: 25px; z-index: 20000; display: none; font-family: "Noto Sans JP", serif;
+        box-shadow: 0 0 50px rgba(255,255,255,0.15);
+    }
+    .nagato-text { font-size: 14px; line-height: 1.8; color: #fff; margin-bottom: 20px; min-height: 40px; }
+    .nagato-cursor { animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* --- CALCULATOR (Camouflage) --- */
+    #calc-screen {
+        position: fixed; inset:0; background:#000; z-index:12000; display:none;
+        flex-direction: column; padding: 20px; padding-top: 60px;
+    }
+    #calc-display { font-size: 60px; color: white; text-align: right; margin-bottom: 20px; font-weight: 300; }
+    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; flex:1; }
+    .calc-btn { background: #333; color: #fff; border-radius: 50%; font-size: 28px; border:none; display:flex; justify-content:center; align-items:center; aspect-ratio:1; padding:0; width:auto; clip-path:none; margin:0;}
+    .calc-btn.orange { background: #ff9f0a; } .calc-btn.grey { background: #a5a5a5; color: #000; }
+
+    /* --- HOME BTN --- */
+    #home-btn {
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        width: 60px; height: 60px; background: rgba(0,0,0,0.8); border: 2px solid var(--primary);
+        border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 5000;
+        opacity: 0; pointer-events: none; transition: 0.3s;
+    }
+    #home-btn.visible { opacity: 1; pointer-events: auto; }
+    .mode-cyber #home-btn { border-radius: 0; transform: translateX(-50%) rotate(45deg); }
+    .mode-cyber #home-btn i { transform: rotate(-45deg); }
+
+    /* --- NIXIE --- */
+    .nixie-wrapper { background: #0a0a0a; border-y: 2px solid #333; padding: 15px; margin-bottom: 20px; display:flex; justify-content:center; gap:5px; }
+    .nixie-tube { width: 22px; height: 38px; background: #111; border: 1px solid #333; display: flex; justify-content: center; align-items: center; border-radius: 2px;}
+    .nixie-char { font-family: var(--font-code); font-size: 26px; color: var(--nixie-on); text-shadow: 0 0 8px var(--nixie-on); }
+
+    /* --- MATRIX --- */
+    canvas#matrix-canvas { display:block; position:fixed; inset:0; z-index:15000; background:#000; }
+    #matrix-ui { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:15001; text-align:center; background:#000; padding:20px; border:1px solid #00f3ff; display:none; }
+
+</style>
+</head>
+<body id="body">
+
+<div class="warning-tape top"></div><div class="warning-tape bottom"></div>
+<div class="sonar-overlay"><div class="sonar-sweep"></div></div>
+
+<div id="boot-screen" onclick="skipBoot()">
+    <div style="font-size:40px; margin-bottom:20px;" class="sui-logo-text">SUI</div>
+    <div id="boot-log" style="text-align:left; width:280px; font-size:11px; line-height:1.4; color:var(--primary); opacity:0.8;"></div>
+</div>
+
+<div id="auth-screen">
+    <div style="font-size:32px; margin-bottom:40px;" class="sui-logo-text">SUI</div>
+    <div id="auth-label" style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">IDENTITY VERIFICATION</div>
+    <input type="password" id="auth-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="****">
+    <button class="btn" id="auth-btn" style="width:200px" onclick="handleAuth()">UNLOCK</button>
+    <div style="margin-top:20px; font-size:10px; color:#333;">EMERGENCY RESET: 9999</div>
+</div>
+
+<div id="p-cockpit" class="page">
+    <div class="cockpit-header">
+        <div class="unit-id" style="font-family:var(--font-code); font-size:10px; border:1px solid var(--text-dim); padding:2px 5px;">UNIT: Y.T-001 / SUI SYSTEM</div>
+        <div class="tac-switch" onclick="toggleMode()" style="width:40px; height:20px; background:#333; border-radius:10px; position:relative; border:1px solid var(--border-col);">
+            <div class="tac-knob" style="width:16px; height:16px; background:var(--primary); border-radius:50%; position:absolute; top:1px; left:1px; transition:0.3s;"></div>
+        </div>
+    </div>
+    
+    <div class="nixie-wrapper" id="nixie-clock-sm"></div>
+
+    <div style="text-align:center; font-weight:bold; color:var(--primary); letter-spacing:2px; margin:10px 0; text-shadow:0 0 10px var(--primary);" id="rank-display">LOADING...</div>
+
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <div class="card" style="flex:1; text-align:center; padding:10px;">
+            <div style="font-size:9px; color:var(--text-dim); letter-spacing:1px;">NET WORTH</div>
+            <div style="font-size:18px; font-weight:bold;" id="cp-net">---</div>
+        </div>
+        <div class="card" style="flex:1; text-align:center; padding:10px;">
+            <div style="font-size:9px; color:var(--text-dim); letter-spacing:1px;">MONTHLY P/L</div>
+            <div style="font-size:18px; font-weight:bold;" id="cp-pl">---</div>
+        </div>
+    </div>
+
+    <div class="card" id="mission-card" style="display:none; border-color:var(--primary);">
+        <div style="font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:5px;">⚠️ MISSION: 25th PAYDAY</div>
+        <div style="font-size:10px;">資金移動および着金確認を実行せよ。</div>
+        <button class="btn" style="padding:8px; font-size:10px;" onclick="document.getElementById('mission-card').style.display='none'; nagatoSpeak('MISSION COMPLETE.');">CONFIRM</button>
+    </div>
+
+    <div class="card" style="padding:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:5px;">
+            <span>FIRE RATE (<span id="fire-goal-txt">4</span>%)</span>
+            <span id="fire-pct" style="color:var(--secondary); font-weight:bold;">0%</span>
+        </div>
+        <div style="background:rgba(0,0,0,0.5); height:6px; width:100%;">
+            <div id="fire-bar" style="height:100%; background:var(--secondary); width:0%;"></div>
+        </div>
+    </div>
+
+    <div class="card" style="height:240px; position:relative;">
+        <canvas id="pfChart"></canvas>
+        <div id="chart-fallback" style="display:none; position:absolute; inset:0; flex-direction:column; justify-content:center; align-items:center; color:var(--text-dim); font-size:10px;">
+            <i class="ri-bar-chart-2-line" style="font-size:30px;"></i>
+            <span>GRAPHICS OFFLINE</span>
+        </div>
+    </div>
+
+    <div style="text-align:center;">
+        <button class="btn" onclick="openApp('launcher')" style="width:60%;">LAUNCHER</button>
+    </div>
+</div>
+
+<div id="p-launcher" class="page">
+    <div class="nixie-wrapper" id="nixie-clock-lg"></div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:10px;">
+        <div class="app-icon" onclick="openApp('cockpit')"><i class="ri-dashboard-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">COCKPIT</span></div>
+        <div class="app-icon" onclick="openCalc()"><i class="ri-calculator-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">CALC</span></div>
+        <div class="app-icon" onclick="openApp('assets')"><i class="ri-safe-2-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">ASSETS</span></div>
+        <div class="app-icon" onclick="openApp('flows')"><i class="ri-exchange-dollar-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">FLOWS</span></div>
+        <div class="app-icon" onclick="openApp('bs')"><i class="ri-scales-3-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">B/S</span></div>
+        <div class="app-icon" onclick="openApp('pl')"><i class="ri-funds-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">P/L</span></div>
+        <div class="app-icon" onclick="openApp('calendar')"><i class="ri-calendar-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">CAL</span></div>
+        <div class="app-icon" onclick="openApp('trend')"><i class="ri-line-chart-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">TREND</span></div>
+        <div class="app-icon" onclick="openApp('settings')"><i class="ri-settings-4-line" style="font-size:24px;"></i><br><span style="font-size:9px; font-weight:bold;">CONFIG</span></div>
+    </div>
+</div>
+
+<div id="p-assets" class="page">
+    <h2>ASSETS <i class="ri-safe-2-line"></i></h2>
+    <div class="card">
+        <div style="font-size:9px; color:var(--text-dim);">USD/JPY</div>
+        <div style="display:flex; gap:5px;">
+            <input type="number" id="rate-usd">
+            <button class="btn" style="width:80px;" onclick="fetchRate()">SYNC</button>
+        </div>
+    </div>
+    <div id="asset-list"></div>
+    <button class="btn" onclick="addAsset()">+ NEW ASSET</button>
+</div>
+
+<div id="p-flows" class="page">
+    <h2>FLOWS <i class="ri-exchange-dollar-line"></i></h2>
+    <div id="flow-list"></div>
+    <div class="card">
+        <div style="font-size:9px; color:var(--text-dim);">YEARLY SPECIAL EXP</div>
+        <input type="number" id="special-exp" onchange="saveSetting('special', this.value)">
+    </div>
+    <button class="btn" onclick="addFlow()">+ NEW FLOW</button>
+</div>
+
+<div id="p-settings" class="page">
+    <h2>CONFIG <i class="ri-settings-4-line"></i></h2>
+    <div class="card">
+        <div style="font-size:9px; color:var(--text-dim);">FLIGHT RECORDER (INHERITANCE)</div>
+        <textarea id="inherit-txt" rows="3" placeholder="Leave a message..." onchange="saveSetting('inherit', this.value)"></textarea>
+    </div>
+    <div class="card">
+        <button class="btn" onclick="openMatrix()">DATA TRANSFER (QR)</button>
+        <button class="btn" onclick="togglePrivacy()">TOGGLE PRIVACY</button>
+        <button class="btn" style="background:var(--danger); color:white; margin-top:15px;" onclick="forceReset()">FACTORY RESET (9999)</button>
+    </div>
+</div>
+
+<div id="p-bs" class="page"><h2>B/S</h2><div id="bs-view"></div></div>
+<div id="p-pl" class="page"><h2>P/L</h2><div id="pl-view"></div></div>
+<div id="p-trend" class="page"><h2>TREND</h2><div class="card" style="height:300px;"><canvas id="trendChart"></canvas></div><button class="btn" onclick="recordSnap()">LOG</button></div>
+<div id="p-calendar" class="page"><h2>CAL</h2><div id="cal-view" style="display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center;"></div></div>
+<div id="p-stash" class="page"><h2>STASH</h2><div id="stash-list"></div><button class="btn" onclick="addStash()">+ SECRET</button></div>
+
+<div id="calc-screen"><div id="calc-display">0</div><div class="calc-grid"><button class="calc-btn grey" onclick="calc('C')">C</button><button class="calc-btn grey" onclick="calc('/')">÷</button><button class="calc-btn grey" onclick="calc('*')">×</button><button class="calc-btn grey" onclick="calc('-')">-</button><button class="calc-btn" onclick="calc(7)">7</button><button class="calc-btn" onclick="calc(8)">8</button><button class="calc-btn" onclick="calc(9)">9</button><button class="calc-btn orange" onclick="calc('+')">+</button><button class="calc-btn" onclick="calc(4)">4</button><button class="calc-btn" onclick="calc(5)">5</button><button class="calc-btn" onclick="calc(6)">6</button><button class="calc-btn orange" onclick="calc('=')">=</button><button class="calc-btn" onclick="calc(1)">1</button><button class="calc-btn" onclick="calc(2)">2</button><button class="calc-btn" onclick="calc(3)">3</button><button class="calc-btn" onclick="calc('.')">.</button><button class="calc-btn" onclick="calc(0)" style="grid-column:span 4; width:100%; border-radius:30px;">0</button></div></div>
+<div id="matrix-screen" onclick="document.getElementById('matrix-screen').style.display='none'; document.getElementById('matrix-ui').style.display='none';"><canvas id="matrix-canvas"></canvas></div>
+<div id="matrix-ui"><div style="color:#00f3ff; font-family:'Orbitron'; margin-bottom:10px;">DATA STREAMING</div><div id="qr-place" style="background:#fff; width:150px; height:150px; margin:0 auto;"></div></div>
+<div id="nagato-modal" onclick="this.style.display='none'"><div class="nagato-prompt">YUKI.N&gt;</div><div class="nagato-text" id="nagato-msg"></div><span class="nagato-cursor">_</span></div>
+<div id="inherit-screen"><div style="font-size:24px; font-weight:bold; margin-bottom:20px;">FLIGHT RECORDER</div><div style="border-top:2px solid var(--primary); margin:20px 0;"></div><div id="inherit-msg" style="white-space:pre-wrap;"></div><button class="btn" style="margin-top:40px;" onclick="document.getElementById('inherit-screen').style.display='none'; openApp('cockpit');">SYSTEM OVERRIDE</button></div>
+<div id="home-btn" onclick="goHome()"><i class="ri-menu-5-line" style="font-size:24px; color:var(--text);"></i></div>
+
+<script>
+    /* --- SUI CORE SYSTEM --- */
+    const KEY_DATA = 'sui_data_v1';
+    const KEY_PASS = 'sui_pass_v1';
+    const KEY_LOGIN = 'sui_login_ts';
+    let data = {};
+    let isPrivacy = false;
+    let isCyber = false;
+    let pfChart = null;
+    let trendChart = null;
+
+    // Defaults (Auto-Healing)
+    const defData = {
+        assets: [{name:'Cash', type:'asset', cat:'cash', val:0, curr:'JPY'}],
+        flows: [{day:25, title:'Income', type:'inc', val:0, tag:'salary'}],
+        stash: [], history: [],
+        settings: { usd_rate:145, special_exp:0, fire_rate:4, inherit:"" }
+    };
+    
+    const RANKS = [
+        {v:0, t:"二等水兵"}, {v:1000000, t:"一等水兵"}, {v:5000000, t:"兵曹長"},
+        {v:10000000, t:"少尉"}, {v:30000000, t:"大尉"}, {v:50000000, t:"中佐"},
+        {v:100000000, t:"大佐"}, {v:500000000, t:"元帥"}
+    ];
+
+    /* --- INITIALIZATION --- */
+    window.onload = function() {
+        try {
+            // Data Load & Heal
+            let s = localStorage.getItem(KEY_DATA);
+            if(s) {
+                let parsed = JSON.parse(s);
+                // Deep merge defaults to fix missing keys
+                data = { ...defData, ...parsed };
+                if(!data.settings) data.settings = defData.settings;
+                if(!Array.isArray(data.assets)) data.assets = [];
+                if(!Array.isArray(data.flows)) data.flows = [];
+            } else {
+                data = JSON.parse(JSON.stringify(defData));
+            }
+        } catch(e) {
+            console.error("Data Corrupt. Resetting.");
+            data = JSON.parse(JSON.stringify(defData));
+        }
+
+        checkDeadMan();
+
+        // UI Setup
+        document.querySelector('.sui-logo-text').classList.add('active');
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Boot Animation
+        let lines = ['SUI KERNEL LOADING...', 'CHECKING INTEGRITY...', 'SYNCING Y.T-001...', 'SYSTEM READY.'];
+        let log = document.getElementById('boot-log');
+        let i = 0;
+        function nextLog() {
+            if(i < lines.length) { log.innerHTML += `> ${lines[i]}<br>`; i++; setTimeout(nextLog, 250); }
+            else { setTimeout(() => { document.getElementById('boot-screen').style.display='none'; checkAuth(); }, 800); }
+        }
+        nextLog();
+    };
+
+    function skipBoot() { document.getElementById('boot-screen').style.display='none'; checkAuth(); }
+
+    /* --- AUTH & SECURITY (The Fix) --- */
+    function checkAuth() {
+        let pass = localStorage.getItem(KEY_PASS);
+        let lbl = document.getElementById('auth-label');
+        let btn = document.getElementById('auth-btn');
+        
+        if(!pass) {
+            lbl.innerText = "INITIAL SETUP: SET PASSCODE";
+            btn.innerText = "SET & START";
+        } else {
+            lbl.innerText = "IDENTITY VERIFICATION";
+            btn.innerText = "UNLOCK";
+        }
+    }
+
+    function handleAuth() {
+        let input = document.getElementById('auth-input');
+        let val = input.value;
+        let stored = localStorage.getItem(KEY_PASS);
+
+        // 1. EMERGENCY RESET (9999)
+        if(val === "9999") {
+            forceReset();
+            return;
+        }
+
+        // 2. DECOY (0000)
+        if(val === "0000") {
+            data = { assets:[{name:'Wallet',val:3000,type:'asset',cat:'cash',curr:'JPY'}], flows:[], settings:{fire_rate:4}, history:[] };
+            unlockSystem();
+            nagatoSpeak("DECOY PROTOCOL ACTIVE.");
+            return;
+        }
+
+        // 3. SET NEW PASS
+        if(!stored) {
+            if(val.length > 0) {
+                localStorage.setItem(KEY_PASS, val);
+                unlockSystem();
+            } else { alert("Please enter a passcode."); }
+            return;
+        }
+
+        // 4. LOGIN
+        if(val === stored) {
+            unlockSystem();
+        } else {
+            alert("ACCESS DENIED");
+            input.value = "";
+        }
+    }
+
+    function unlockSystem() {
+        try {
+            document.getElementById('auth-screen').style.display = 'none';
+            localStorage.setItem(KEY_LOGIN, Date.now());
+            // Check Payday
+            let d = new Date().getDate();
+            if(d === 25) document.getElementById('mission-card').style.display='block';
+            openApp('cockpit');
+        } catch(e) {
+            alert("System Error. Try 9999 reset.");
+        }
+    }
+
+    function forceReset() {
+        if(confirm("WARNING: FACTORY RESET? (All data will be lost)")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    function checkDeadMan() {
+        let last = localStorage.getItem(KEY_LOGIN);
+        if(last && (Date.now() - parseInt(last) > 15552000000)) { // 180 days
+            document.getElementById('boot-screen').style.display='none';
+            document.getElementById('auth-screen').style.display='none';
+            document.getElementById('inherit-screen').style.display='block';
+            document.getElementById('inherit-msg').innerText = data.settings.inherit || "NO DATA.";
+        }
+    }
+
+    /* --- CORE APP LOGIC --- */
+    function openApp(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('p-'+id).classList.add('active');
+        document.getElementById('home-btn').classList.toggle('visible', id !== 'cockpit');
+        
+        // Render triggers with Try-Catch for safety
+        try {
+            if(id === 'cockpit') renderCockpit();
+            if(id === 'assets') renderAssets();
+            if(id === 'flows') renderFlows();
+            if(id === 'bs') renderBS();
+            if(id === 'pl') renderPL();
+            if(id === 'calendar') renderCal();
+            if(id === 'stash') renderStash();
+        } catch(e) { console.error(e); }
+    }
+    
+    function goHome() { openApp(isCyber ? 'cockpit' : 'launcher'); }
+    function toggleMode() {
+        isCyber = !isCyber;
+        document.body.classList.toggle('mode-cyber', isCyber);
+        document.querySelector('.tac-knob').style.transform = isCyber ? 'translateX(22px)' : 'translateX(0)';
+        document.querySelector('.tac-knob').style.background = isCyber ? 'var(--secondary)' : 'var(--primary)';
+        if(document.getElementById('p-cockpit').classList.contains('active')) renderCockpit();
+    }
+
+    function renderCockpit() {
+        let assets = 0, debts = 0;
+        let cats = { cash:0, stock_jp:0, stock_us:0, crypto:0, real_estate:0, other:0 };
+
+        (data.assets || []).forEach(a => {
+            let v = parseInt(a.val);
+            if(a.curr === 'USD') v = Math.round(v * (data.settings.usd_rate || 145));
+            if(a.type === 'asset') {
+                assets += v;
+                if(cats[a.cat] !== undefined) cats[a.cat] += v; else cats.other += v;
+            } else { debts += v; }
+        });
+
+        let net = assets - debts;
+        document.getElementById('cp-net').innerText = isPrivacy ? '***' : '¥' + net.toLocaleString();
+
+        let inc = 0, exp = 0;
+        (data.flows || []).forEach(f => {
+            f.type === 'inc' ? inc += parseInt(f.val) : exp += parseInt(f.val);
+        });
+        let pl = inc - exp;
+        document.getElementById('cp-pl').innerText = isPrivacy ? '***' : '¥' + pl.toLocaleString();
+
+        // Panic Mode
+        let isPanic = net < 0 || pl < 0;
+        document.body.classList.toggle('defcon-1', isPanic);
+
+        // Rank
+        let rank = "訓練兵";
+        for(let r of RANKS) { if(net >= r.v) rank = r.t; }
+        document.getElementById('rank-display').innerText = rank;
+
+        // FIRE
+        let goal = ((exp * 12) + parseInt(data.settings.special_exp||0)) / ((data.settings.fire_rate||4)/100);
+        let pct = goal > 0 ? Math.min(100, Math.round((assets / goal)*100)) : 0;
+        document.getElementById('fire-pct').innerText = pct + '%';
+        document.getElementById('fire-bar').style.width = pct + '%';
+        document.getElementById('fire-goal-txt').innerText = data.settings.fire_rate;
+
+        renderChart(cats);
+    }
+
+    function renderChart(cats) {
+        // Safe Mode: Check if Chart.js is loaded
+        if(typeof Chart === 'undefined') {
+            document.getElementById('chart-fallback').style.display = 'flex';
+            return;
+        }
+
+        let ctx = document.getElementById('pfChart');
+        if(!ctx) return;
+        
+        if(pfChart) pfChart.destroy();
+        
+        let colors = isCyber 
+            ? ['#00ff99', '#00f3ff', '#ff00ff', '#bc13fe', '#ffff00', '#ffffff'] 
+            : ['#32D74B', '#0A84FF', '#FF453A', '#FF9F0A', '#BF5AF2', '#8E8E93'];
+
+        try {
+            pfChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cash','JP','US','Crypto','Home','Other'],
+                    datasets: [{ data: Object.values(cats), backgroundColor: colors, borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position:'right', labels: { color: isCyber?'#fff':'#ccc', font:{family: isCyber?'Orbitron':'Noto Sans JP'} } } }
+                }
+            });
+            document.getElementById('chart-fallback').style.display = 'none';
+        } catch(e) {
+            document.getElementById('chart-fallback').style.display = 'flex';
+        }
+    }
+
+    /* --- DATA EDITORS --- */
+    function renderAssets() {
+        let el = document.getElementById('asset-list'); el.innerHTML = '';
+        document.getElementById('rate-usd').value = data.settings.usd_rate;
+        (data.assets||[]).forEach((a, i) => {
+            el.innerHTML += `<div class="card"><div style="display:flex; gap:5px;"><input type="text" value="${a.name}" onchange="upd('assets',${i},'name',this.value)" style="flex:1; font-weight:bold;"><select onchange="upd('assets',${i},'cat',this.value)" style="width:80px;"><option value="cash" ${a.cat=='cash'?'selected':''}>Cash</option><option value="stock_us" ${a.cat=='stock_us'?'selected':''}>US</option><option value="stock_jp" ${a.cat=='stock_jp'?'selected':''}>JP</option><option value="crypto" ${a.cat=='crypto'?'selected':''}>Cryp</option><option value="real_estate" ${a.cat=='real_estate'?'selected':''}>Home</option><option value="other" ${a.cat=='other'?'selected':''}>Oth</option></select></div><div style="display:flex; gap:5px;"><select onchange="upd('assets',${i},'curr',this.value)" style="width:60px;"><option value="JPY" ${a.curr=='JPY'?'selected':''}>¥</option><option value="USD" ${a.curr=='USD'?'selected':''}>$</option></select><select onchange="upd('assets',${i},'type',this.value)" style="width:60px;"><option value="asset" ${a.type=='asset'?'selected':''}>+</option><option value="debt" ${a.type=='debt'?'selected':''}>-</option></select><input type="number" value="${a.val}" onchange="upd('assets',${i},'val',this.value)" style="flex:1;"></div><button class="btn" style="background:var(--danger); padding:8px; margin-top:5px;" onclick="del('assets',${i})">DELETE</button></div>`;
+        });
+    }
+
+    function renderFlows() {
+        let el = document.getElementById('flow-list'); el.innerHTML = '';
+        document.getElementById('special-exp').value = data.settings.special_exp;
+        (data.flows||[]).sort((a,b)=>a.day-b.day).forEach((f, i) => {
+            el.innerHTML += `<div class="card"><div style="display:flex; gap:5px;"><input type="number" value="${f.day}" onchange="upd('flows',${i},'day',this.value)" style="width:40px;"><input type="text" value="${f.title}" onchange="upd('flows',${i},'title',this.value)" style="flex:1;"></div><div style="display:flex; gap:5px;"><select onchange="upd('flows',${i},'type',this.value)" style="width:80px;"><option value="inc" ${f.type=='inc'?'selected':''}>INC</option><option value="exp" ${f.type=='exp'?'selected':''}>EXP</option></select><input type="number" value="${f.val}" onchange="upd('flows',${i},'val',this.value)" style="flex:1;"></div><button class="btn" style="background:var(--danger); padding:8px;" onclick="del('flows',${i})">DELETE</button></div>`;
+        });
+    }
+
+    function renderStash() {
+        let el = document.getElementById('stash-list'); el.innerHTML = '';
+        (data.stash||[]).forEach((s, i) => {
+            el.innerHTML += `<div class="card" style="border:1px solid #bc13fe;"><input type="text" value="${s.name}" onchange="upd('stash',${i},'name',this.value)"><input type="number" value="${s.val}" onchange="upd('stash',${i},'val',this.value)"><button class="btn" onclick="del('stash',${i})">ERASE</button></div>`;
+        });
+    }
+
+    /* --- UTILS --- */
+    function upd(k, i, f, v) { data[k][i][f] = v; saveData(); }
+    function del(k, i) { if(confirm("Delete?")) { data[k].splice(i, 1); saveData(); k==='assets'?renderAssets():(k==='flows'?renderFlows():renderStash()); } }
+    function addAsset() { data.assets.push({name:'New', val:0, type:'asset', cat:'cash', curr:'JPY'}); saveData(); renderAssets(); }
+    function addFlow() { data.flows.push({day:1, title:'New', type:'exp', val:0}); saveData(); renderFlows(); }
+    function addStash() { data.stash.push({name:'Secret', val:0}); saveData(); renderStash(); }
+    function saveSetting(k, v) { data.settings[k] = v; saveData(); }
+    function saveData() { localStorage.setItem(KEY_DATA, JSON.stringify(data)); }
+
+    function togglePrivacy() { isPrivacy = !isPrivacy; openApp('settings'); }
+    async function fetchRate() {
+        try {
+            let res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            let json = await res.json();
+            data.settings.usd_rate = json.rates.JPY;
+            document.getElementById('rate-usd').value = json.rates.JPY;
+            saveData();
+            alert("Rate: " + json.rates.JPY);
+        } catch(e) { alert("Offline"); }
+    }
+
+    /* --- CLOCK & CALC --- */
+    function updateClock() {
+        let now = new Date();
+        let gen = (n) => String(n).padStart(2,'0').split('').map(c=>`<div class="nixie-tube"><span class="nixie-char">${c}</span></div>`).join('');
+        let html = gen(now.getHours()) + '<div style="color:var(--nixie-on); align-self:center;">:</div>' + gen(now.getMinutes());
+        if(document.getElementById('p-cockpit').classList.contains('active')) document.getElementById('nixie-clock-sm').innerHTML = html;
+        if(document.getElementById('p-launcher').classList.contains('active')) document.getElementById('nixie-clock-lg').innerHTML = html;
+    }
+
+    // Calc
+    let cExp = "";
+    function openCalc() { document.getElementById('calc-screen').style.display='flex'; cExp=""; updateCalc(); }
+    function updateCalc() { document.getElementById('calc-display').innerText = cExp || "0"; }
+    function calc(v) {
+        if(v==='C') cExp="";
+        else if(v==='=') {
+            if(cExp==='8888') { document.getElementById('calc-screen').style.display='none'; openApp('stash'); nagatoSpeak("SECRET STASH UNLOCKED."); return; }
+            try { cExp = eval(cExp).toString(); } catch{cExp="ERR";}
+        } else cExp+=v;
+        updateCalc();
+    }
+
+    // Nagato
+    function nagatoSpeak(txt) {
+        let m = document.getElementById('nagato-modal');
+        let d = document.getElementById('nagato-msg');
+        m.style.display='block'; d.innerText='';
+        let i=0;
+        function type() { if(i<txt.length){d.innerText+=txt.charAt(i); i++; setTimeout(type,30);}else{setTimeout(()=>{m.style.display='none'},2500);} }
+        type();
+    }
+
+    // Matrix
+    function openMatrix() {
+        document.getElementById('matrix-screen').style.display='block';
+        document.getElementById('matrix-ui').style.display='block';
+        let cvs = document.getElementById('matrix-canvas');
+        let ctx = cvs.getContext('2d');
+        cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+        let cols = Math.floor(cvs.width/14);
+        let drops = Array(cols).fill(1);
+        setInterval(()=>{
+            ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,0,cvs.width,cvs.height);
+            ctx.fillStyle='#8A2BE2'; ctx.font='14px monospace';
+            drops.forEach((y,i)=>{
+                let t = String.fromCharCode(0x30A0+Math.random()*96);
+                ctx.fillText(t, i*14, y*14);
+                if(y*14>cvs.height && Math.random()>0.975) drops[i]=0;
+                drops[i]++;
+            });
+        }, 50);
+        document.getElementById('qr-place').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SUI_TRANSFER" style="width:100%">`;
+    }
+
+    // Stubs
+    function renderBS() { 
+        let a=0,d=0,h=''; (data.assets||[]).forEach(x=>{ let v=parseInt(x.val)*(x.curr=='USD'?data.settings.usd_rate:1); if(x.type=='asset')a+=v;else d+=v; h+=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #333;padding:5px;"><span>${x.name}</span><span>¥${Math.round(v).toLocaleString()}</span></div>`});
+        document.getElementById('bs-view').innerHTML = `<div class="card">${h}<div style="text-align:right;font-weight:bold;margin-top:10px;">NET: ¥${(a-d).toLocaleString()}</div></div>`;
+    }
+    function renderPL() {
+        let i=0,e=0,h=''; (data.flows||[]).forEach(x=>{ let v=parseInt(x.val); x.type=='inc'?i+=v:e+=v; h+=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #333;padding:5px;"><span>${x.title}</span><span style="color:${x.type=='inc'?'var(--success)':'var(--danger)'}">¥${v.toLocaleString()}</span></div>`});
+        document.getElementById('pl-view').innerHTML = `<div class="card"><div style="text-align:center;font-weight:bold;font-size:20px;">P/L: ¥${(i-e).toLocaleString()}</div>${h}</div>`;
+    }
+    function renderCal() { let g=document.getElementById('cal-view'); g.innerHTML=''; for(let i=1;i<=31;i++){g.innerHTML+=`<div style="aspect-ratio:1;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;">${i}</div>`;} }
+    function recordSnap() { nagatoSpeak("SNAPSHOT LOGGED."); }
+
+</script>
+</body>
+</html>
