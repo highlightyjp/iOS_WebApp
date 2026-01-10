@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<meta name="format-detection" content="telephone=no">
+<title>SUI</title>
+
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024' style='background-color:%23000000'%3E%3Cdefs%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='25' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='%23000000'/%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='600' font-size='600' fill='%23ff9900' filter='url(%23glow)' style='opacity:0.9'%3ES%3C/text%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='600' font-size='600' fill='white' style='opacity:0.8; mix-blend-mode: overlay;'%3ES%3C/text%3E%3C/svg%3E">
+
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+    /* --- 0. APPLE HIG BASE --- */
+    :root {
+        --bg-core: #000000;
+        /* Apple-like Glass Variables */
+        --glass-material: rgba(30, 30, 35, 0.65);
+        --glass-border-top: rgba(255, 255, 255, 0.15);
+        --glass-border-bottom: rgba(0, 0, 0, 0.3);
+        --glass-blur: blur(40px); /* Heavy Blur */
+        
+        /* Typography Colors */
+        --text-primary: #FFFFFF;
+        --text-secondary: rgba(235, 235, 245, 0.6); /* iOS Gray */
+        --text-tertiary: rgba(235, 235, 245, 0.3);
+        
+        /* Brand Colors (Refined) */
+        --tint-gold: #D4AF37;
+        --tint-orange: #FF9F0A; /* iOS System Orange */
+        --tint-red: #FF453A;    /* iOS System Red */
+        --tint-green: #32D74B;  /* iOS System Green */
+        
+        --dock-h: 88px;
+        --safe-top: env(safe-area-inset-top);
+        --safe-bottom: env(safe-area-inset-bottom);
+        
+        /* Fonts */
+        --font-sys: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Noto Sans JP", sans-serif;
+        --font-data: "Orbitron", "Noto Sans JP", sans-serif;
+        --font-mono: "Share Tech Mono", monospace;
+    }
+
+    * {
+        box-sizing: border-box; -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation; user-select: none; outline: none;
+    }
+
+    html, body {
+        margin: 0; padding: 0; width: 100vw; height: 100dvh;
+        background-color: var(--bg-core); color: var(--text-primary);
+        font-family: var(--font-sys);
+        overflow: hidden; position: fixed; inset: 0;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- 1. ATMOSPHERIC MESH BACKGROUND --- */
+    #bg-layer {
+        position: absolute; inset: 0; z-index: -1;
+        background: radial-gradient(circle at 0% 0%, #001025 0%, transparent 60%),
+                    radial-gradient(circle at 100% 100%, #1a0a00 0%, transparent 60%),
+                    radial-gradient(circle at 50% 50%, #000000 100%);
+        opacity: 0.8; pointer-events: none;
+    }
+    .sui-watermark {
+        position: absolute; right: -20px; bottom: 160px;
+        font-family: var(--font-data); font-weight: 900; font-size: 20vw;
+        color: rgba(255, 255, 255, 0.015); transform: rotate(-10deg);
+        letter-spacing: -10px; pointer-events: none;
+    }
+
+    /* --- 2. LAYOUT & SCROLLING --- */
+    .page {
+        display: none; position: absolute; inset: 0;
+        padding: 20px;
+        padding-top: max(20px, var(--safe-top));
+        padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 20px);
+        flex-direction: column; gap: 16px; z-index: 10; height: 100dvh;
+    }
+    .page.active { display: flex; animation: fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeScale { from{opacity:0; transform:scale(0.98);} to{opacity:1; transform:scale(1);} }
+
+    .scroll-zone {
+        flex: 1; overflow-y: auto; padding-bottom: 20px;
+        scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .scroll-zone::-webkit-scrollbar { display: none; }
+
+    /* --- 3. APPLE GLASS CARDS (Light Rendering) --- */
+    .card {
+        background: var(--glass-material);
+        backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border-radius: 20px; /* Apple Squircle-ish */
+        padding: 20px; position: relative; flex-shrink: 0;
+        /* Light Source Border Logic */
+        border: 1px solid rgba(255,255,255,0.05);
+        border-top-color: var(--glass-border-top);
+        border-bottom-color: var(--glass-border-bottom);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .card.fit { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+    /* TYPOGRAPHY SYSTEM */
+    .label {
+        font-family: var(--font-sys); font-size: 11px; font-weight: 600;
+        color: var(--text-secondary); letter-spacing: 0.05em; text-transform: uppercase;
+        margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .val-lg {
+        font-family: var(--font-data); font-weight: 700; font-size: 34px;
+        color: var(--text-primary); letter-spacing: 0.5px; line-height: 1.1;
+        /* Champagne Gradient Text */
+        background: linear-gradient(135deg, #FFF 20%, #E5C585 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* --- 4. UI COMPONENTS --- */
+    input, select, textarea {
+        background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+        color: #fff; padding: 14px; width: 100%; border-radius: 12px;
+        font-family: var(--font-sys); font-size: 16px; margin-bottom: 10px;
+        color-scheme: dark; -webkit-appearance: none;
+    }
+    
+    .btn {
+        width: 100%; padding: 16px; border: none; font-weight: 600; cursor: pointer;
+        background: rgba(255,255,255,0.1); color: #fff;
+        font-family: var(--font-sys); font-size: 15px; border-radius: 14px;
+        backdrop-filter: blur(10px); transition: 0.2s;
+    }
+    .btn:active { transform: scale(0.98); background: rgba(255,255,255,0.2); }
+    .btn-primary { background: var(--text-primary); color: #000; }
+
+    /* --- 5. NIXIE TUBES (Refined) --- */
+    .nixie-rack {
+        display: flex; justify-content: center; align-items: flex-end; gap: 6px;
+        margin: 0 auto; padding: 5px; pointer-events: none;
+    }
+    .nixie-tube {
+        width: 24px; height: 44px; position: relative;
+        background: #0a0500; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+        box-shadow: inset 0 0 10px #000; overflow: hidden; flex-shrink: 0;
+    }
+    .nixie-tube::after { /* Fine Mesh */
+        content: ''; position: absolute; inset: 0; opacity: 0.15;
+        background-image: linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px);
+        background-size: 2px 2px; z-index: 1;
+    }
+    .nixie-digit {
+        position: absolute; inset: 0; display: flex; justify-content: center; align-items: center;
+        font-family: var(--font-mono); font-size: 32px; color: var(--tint-orange); z-index: 5;
+        text-shadow: 0 0 8px var(--tint-orange);
+    }
+    .nixie-sep { 
+        width: 8px; display: flex; align-items: center; justify-content: center; 
+        color: var(--tint-orange); font-family: var(--font-mono); font-size: 20px; opacity: 0.8;
+    }
+
+    /* --- 6. CALCULATOR (Glass Typewriter) --- */
+    #calc-screen {
+        position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        display: none; flex-direction: column;
+        padding-top: max(10px, var(--safe-top));
+        padding-bottom: max(20px, var(--safe-bottom));
+    }
+    .calc-close-btn { 
+        position: absolute; top: max(20px, var(--safe-top)); left: 20px;
+        width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1);
+        color: #fff; border: none; font-size: 20px; display: flex; justify-content: center; align-items: center; 
+    }
+    
+    #calc-display-area {
+        flex: 0 0 35%; display: flex; flex-direction: column; justify-content: flex-end;
+        padding: 30px; text-align: right;
+    }
+    #calc-val { 
+        font-family: var(--font-sys); font-weight: 200; font-size: 80px; 
+        color: #fff; line-height: 1; word-break: break-all; letter-spacing: -2px;
+    }
+    
+    .calc-grid {
+        flex: 1; display: grid; grid-template-columns: repeat(4, 1fr);
+        padding: 20px; gap: 16px; align-content: center;
+        max-width: 500px; margin: 0 auto; width: 100%;
+    }
+    .calc-btn {
+        width: 100%; aspect-ratio: 1; border-radius: 50%; border: none;
+        background: rgba(50,50,50,0.5); color: #fff;
+        font-size: 28px; font-family: var(--font-sys); font-weight: 400;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: 0.1s;
+    }
+    .calc-btn:active { background: rgba(80,80,80,0.8); transform: scale(0.95); }
+    .calc-btn.op { background: var(--tint-orange); color: #fff; font-weight: 600; }
+    .calc-btn.fn { background: rgba(180,180,180,0.3); color: #000; }
+
+    /* --- 7. DOCK (Grounded Liquid) --- */
+    #glass-dock {
+        position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--dock-h) + var(--safe-bottom));
+        background: rgba(20, 20, 25, 0.85); /* Darker, richer */
+        border-top: 1px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px);
+        display: flex; justify-content: space-around; align-items: flex-start;
+        padding-top: 15px; padding-bottom: var(--safe-bottom);
+        z-index: 5000;
+    }
+    .dock-item {
+        color: var(--text-tertiary); font-size: 28px; width: 60px; height: 50px;
+        display: flex; justify-content: center; align-items: center; border-radius: 16px;
+        transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dock-item.active {
+        color: var(--tint-orange); background: rgba(255,255,255,0.08);
+        transform: translateY(-5px);
+    }
+
+    /* --- 8. LAUNCHER GRID (iOS Style) --- */
+    #launcher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px; align-content: center; flex: 1; }
+    .app-icon {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        aspect-ratio: 1; border-radius: 22px; /* Smooth Squircle */
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        color: var(--text-primary); transition: 0.2s;
+    }
+    .app-icon:active { background: rgba(255,255,255,0.15); transform: scale(0.95); }
+    .app-icon i { font-size: 32px; margin-bottom: 10px; color: var(--tint-gold); }
+    .icon-lbl { font-family: var(--font-sys); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
+
+    /* --- 9. CHARTS & SPARK --- */
+    .spark-container { width: 100%; height: 50px; margin-top: 10px; opacity: 0.9; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+    .radar-container { flex: 1; width: 100%; position: relative; min-height: 0; padding: 10px 0; }
+    
+    /* BOOT & AUTH */
+    #boot-screen, #auth-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .pin-input { 
+        background: transparent; border: none; border-bottom: 2px solid var(--tint-gold);
+        color: var(--tint-gold); font-family: var(--font-data); font-size: 40px; 
+        width: 200px; text-align: center; letter-spacing: 10px; border-radius: 0;
+    }
+
+</style>
+</head>
+<body>
+
+<div id="bg-layer"><div class="sui-watermark">SUI</div></div>
+
+<div id="boot-screen" onclick="skipBoot()">
+    <div style="font-family:var(--font-data); font-size:48px; color:var(--text-primary); letter-spacing:4px; font-weight:800;">SUI</div>
+    <div style="font-family:var(--font-sys); font-size:13px; color:var(--text-secondary); margin-top:10px;">System Loading...</div>
+</div>
+
+<div id="auth-screen" style="display:none;">
+    <div style="font-family:var(--font-sys); font-size:16px; color:var(--text-secondary); margin-bottom:20px; letter-spacing:1px;">IDENTITY VERIFICATION</div>
+    <input type="password" id="auth-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="••••">
+    <div style="margin-top:40px; color:var(--text-tertiary); font-size:12px;">Face ID Biometrics Unavailable</div>
+</div>
+
+<div id="p-cockpit" class="page">
+    <div style="flex:0 0 auto; padding-top:10px;">
+        <div style="display:flex; justify-content:center; gap:8px; margin-bottom:15px;">
+             <div class="nixie-rack" id="nixie-date"></div>
+        </div>
+        <div style="display:flex; justify-content:center;">
+             <div class="nixie-rack" id="nixie-time"></div>
+        </div>
+        <div style="text-align:center; font-family:var(--font-sys); font-weight:600; color:var(--tint-gold); font-size:12px; margin-top:20px; letter-spacing:2px; text-transform:uppercase;" id="rank-display">---</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px; flex:0 0 auto;">
+        <div class="card">
+            <div class="label"><span>Net Worth</span><span>JPY</span></div>
+            <div class="val-lg" id="cp-net">¥0</div>
+            <div class="spark-container"><canvas id="sparkCanvas"></canvas></div>
+        </div>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div class="card">
+                <div class="label">Monthly P/L</div>
+                <div class="val-lg" id="cp-pl" style="font-size:24px;">¥0</div>
+            </div>
+            <div class="card">
+                <div class="label">FIRE Progress</div>
+                <div class="val-lg" style="font-size:24px; color:var(--tint-gold); -webkit-text-fill-color: var(--tint-gold);">
+                    <span id="fire-pct">0</span><span style="font-size:14px;">%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card fit">
+        <div class="label">Portfolio Strategy</div>
+        <div class="radar-container"><canvas id="radarChart"></canvas></div>
+    </div>
+</div>
+
+<div id="p-assets" class="page">
+    <div class="card">
+        <div class="label">Exchange Rate</div>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <span style="font-size:14px; color:var(--text-secondary);">USD/JPY</span>
+            <input type="number" id="rate-usd" value="145" style="margin:0; text-align:right; font-family:var(--font-data); font-weight:bold;">
+            <button class="btn" style="width:auto; padding:10px 20px;" onclick="fetchRate()">Sync</button>
+        </div>
+    </div>
+    <div class="scroll-zone" id="asset-list"></div>
+    <button class="btn btn-primary" onclick="addAsset()">+ Add Asset</button>
+</div>
+
+<div id="p-flows" class="page">
+    <div class="card">
+        <div class="label">Annual Special Budget</div>
+        <input type="number" id="special-exp" onchange="saveData()" placeholder="0" style="margin:0;">
+    </div>
+    <div class="scroll-zone" id="flow-list"></div>
+    <button class="btn btn-primary" onclick="addFlow()">+ Add Transaction</button>
+</div>
+
+<div id="p-menu" class="page">
+    <div class="card" style="text-align:center;">
+        <div class="label" style="justify-content:center;">System Status</div>
+        <div style="font-family:var(--font-data); color:var(--tint-green); letter-spacing:1px; font-size:16px; margin-top:5px;">NORMAL</div>
+    </div>
+    <div id="launcher-grid">
+        <div class="app-icon" onclick="openCalc()"><i class="ri-calculator-line"></i><span class="icon-lbl">Calc</span></div>
+        <div class="app-icon" onclick="openApp('bs')"><i class="ri-scales-3-line"></i><span class="icon-lbl">B/S</span></div>
+        <div class="app-icon" onclick="openApp('pl')"><i class="ri-funds-line"></i><span class="icon-lbl">P/L</span></div>
+        <div class="app-icon" onclick="openApp('config')"><i class="ri-settings-4-line"></i><span class="icon-lbl">Config</span></div>
+        <div class="app-icon" onclick="togglePrivacy()"><i class="ri-eye-off-line"></i><span class="icon-lbl">Privacy</span></div>
+        <div class="app-icon" onclick="forceReset()"><i class="ri-restart-line" style="color:var(--tint-red)"></i><span class="icon-lbl">Reset</span></div>
+    </div>
+</div>
+
+<div id="p-config" class="page">
+    <div class="card">
+        <div class="label">Target Portfolio (%)</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div><div class="label">Cash</div><input type="number" id="tgt-cash" onchange="saveData()"></div>
+            <div><div class="label">JP Stock</div><input type="number" id="tgt-jp" onchange="saveData()"></div>
+            <div><div class="label">US Stock</div><input type="number" id="tgt-us" onchange="saveData()"></div>
+            <div><div class="label">Crypto</div><input type="number" id="tgt-cryp" onchange="saveData()"></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="label">Dead Man Switch</div>
+        <textarea id="inherit-txt" rows="4" onchange="saveData()" style="margin:0;"></textarea>
+    </div>
+</div>
+
+<div id="p-bs" class="page">
+    <div class="card fit"><div class="label">Balance Sheet</div><div class="scroll-zone" id="bs-view"></div></div>
+</div>
+<div id="p-pl" class="page">
+    <div class="card fit"><div class="label">Profit / Loss</div><div class="scroll-zone" id="pl-view"></div></div>
+</div>
+
+<div id="glass-dock">
+    <div class="dock-item" onclick="openApp('cockpit')" id="nav-cockpit"><i class="ri-dashboard-3-line"></i></div>
+    <div class="dock-item" onclick="openApp('assets')" id="nav-assets"><i class="ri-bank-card-line"></i></div>
+    <div class="dock-item" onclick="openApp('flows')" id="nav-flows"><i class="ri-exchange-dollar-line"></i></div>
+    <div class="dock-item" onclick="openApp('menu')" id="nav-menu"><i class="ri-apps-2-line"></i></div>
+</div>
+
+<div id="calc-screen">
+    <button class="calc-close-btn" onclick="closeCalc()"><i class="ri-close-line"></i></button>
+    <div id="calc-display-area">
+        <div id="calc-val">0</div>
+    </div>
+    <div class="calc-grid">
+        <button class="calc-btn fn" onclick="calc('C')">AC</button>
+        <button class="calc-btn fn" onclick="calc('BS')"><i class="ri-delete-back-2-line"></i></button>
+        <button class="calc-btn fn" onclick="calc('%')">%</button>
+        <button class="calc-btn op" onclick="calc('/')">÷</button>
+        <button class="calc-btn" onclick="calc(7)">7</button>
+        <button class="calc-btn" onclick="calc(8)">8</button>
+        <button class="calc-btn" onclick="calc(9)">9</button>
+        <button class="calc-btn op" onclick="calc('*')">×</button>
+        <button class="calc-btn" onclick="calc(4)">4</button>
+        <button class="calc-btn" onclick="calc(5)">5</button>
+        <button class="calc-btn" onclick="calc(6)">6</button>
+        <button class="calc-btn op" onclick="calc('-')">−</button>
+        <button class="calc-btn" onclick="calc(1)">1</button>
+        <button class="calc-btn" onclick="calc(2)">2</button>
+        <button class="calc-btn" onclick="calc(3)">3</button>
+        <button class="calc-btn op" onclick="calc('+')">+</button>
+        <button class="calc-btn" onclick="calc(0)" style="grid-column: span 2; border-radius:40px; aspect-ratio:auto;">0</button>
+        <button class="calc-btn" onclick="calc('.')">.</button>
+        <button class="calc-btn op" onclick="calc('=')">=</button>
+    </div>
+</div>
+
+<script>
+    const DATA_KEY = 'sui_ios26_data';
+    const PASS_KEY = 'sui_ios26_pass';
+    let data = {};
+    let radarInstance = null;
+    let isPrivacy = false;
+
+    const DEF = {
+        assets: [{name:'Main Account', val:0, type:'asset', cat:'cash', curr:'JPY'}],
+        flows: [], history: [],
+        settings: { usd_rate:145, tgt_cash:30, tgt_jp:30, tgt_us:30, tgt_cryp:10, inherit:"" }
+    };
+
+    window.onload = function() {
+        try {
+            let s = localStorage.getItem(DATA_KEY);
+            data = s ? {...DEF, ...JSON.parse(s)} : JSON.parse(JSON.stringify(DEF));
+            if(!data.settings) data.settings = DEF.settings;
+        } catch(e) { data = JSON.parse(JSON.stringify(DEF)); }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+        setTimeout(() => { document.getElementById('boot-screen').style.display='none'; checkAuth(); }, 1200);
+    };
+
+    function skipBoot() { document.getElementById('boot-screen').style.display='none'; checkAuth(); }
+
+    /* AUTH */
+    function checkAuth() {
+        if(!localStorage.getItem(PASS_KEY)) {
+            document.getElementById('auth-screen').style.display='flex';
+            document.getElementById('auth-input').placeholder = "SET PIN";
+        } else {
+            document.getElementById('auth-screen').style.display='flex';
+        }
+    }
+    document.getElementById('auth-input').addEventListener('input', function(e){
+        let val = e.target.value;
+        if(val.length >= 4) handleAuth(val);
+    });
+    
+    function handleAuth(val) {
+        let stored = localStorage.getItem(PASS_KEY);
+        if(val === '9999') { if(confirm("Reset System?")){ localStorage.clear(); location.reload(); } return; }
+        if(val === '0000') { data = JSON.parse(JSON.stringify(DEF)); unlock(); return; }
+
+        if(!stored) {
+            localStorage.setItem(PASS_KEY, val); unlock();
+        } else {
+            if(val === stored) unlock();
+            else { 
+                e.target.value = ""; 
+                e.target.classList.add('error');
+                setTimeout(()=>e.target.classList.remove('error'), 300);
+            }
+        }
+    }
+    function unlock() {
+        document.getElementById('auth-screen').style.display='none';
+        logHistory();
+        openApp('cockpit');
+    }
+
+    /* NAV */
+    function openApp(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+        
+        let target = id;
+        if(['config','bs','pl'].includes(id)) target = id; else if(id==='menu') target = 'menu';
+        
+        let pEl = document.getElementById('p-'+target);
+        if(pEl) pEl.classList.add('active'); else document.getElementById('p-menu').classList.add('active');
+
+        if(id==='cockpit') document.getElementById('nav-cockpit').classList.add('active');
+        else if(id==='assets') document.getElementById('nav-assets').classList.add('active');
+        else if(id==='flows') document.getElementById('nav-flows').classList.add('active');
+        else document.getElementById('nav-menu').classList.add('active');
+
+        if(id==='cockpit') renderCockpit();
+        if(id==='assets') renderAssets();
+        if(id==='flows') renderFlows();
+        if(id==='bs') renderBS();
+        if(id==='pl') renderPL();
+        if(id==='config') renderConfig();
+    }
+
+    /* NIXIE */
+    function updateClock() {
+        let now = new Date();
+        let m = String(now.getMonth()+1).padStart(2,'0').split('');
+        let d = String(now.getDate()).padStart(2,'0').split('');
+        
+        let dHTML = "";
+        m.forEach(c => dHTML += makeTube(c)); dHTML += makeSep('.');
+        d.forEach(c => dHTML += makeTube(c));
+        document.getElementById('nixie-date').innerHTML = dHTML;
+
+        let tHTML = "";
+        let hh = String(now.getHours()).padStart(2,'0').split('');
+        let mm = String(now.getMinutes()).padStart(2,'0').split('');
+        let ss = String(now.getSeconds()).padStart(2,'0').split('');
+        
+        hh.forEach(c => tHTML += makeTube(c)); tHTML += makeSep(':');
+        mm.forEach(c => tHTML += makeTube(c));
+        document.getElementById('nixie-time').innerHTML = tHTML;
+    }
+    function makeTube(c) { return `<div class="nixie-tube"><div class="nixie-digit">${c}</div></div>`; }
+    function makeSep(c) { return `<div class="nixie-sep">${c}</div>`; }
+
+    /* CALC */
+    let cVal = "";
+    function openCalc() { document.getElementById('calc-screen').style.display='flex'; cVal=""; updateCalc(); }
+    function closeCalc() { document.getElementById('calc-screen').style.display='none'; }
+    function updateCalc() { document.getElementById('calc-val').innerText = cVal || "0"; }
+    function calc(v) {
+        if(v==='C') cVal="";
+        else if(v==='BS') cVal = cVal.slice(0, -1);
+        else if(v==='=') {
+            try { cVal = String(eval(cVal)); } catch { cVal="Error"; }
+        } else {
+            let last = cVal.slice(-1);
+            let ops = ['.','/','*','-','+','%'];
+            if(ops.includes(v) && ops.includes(last)) cVal = cVal.slice(0, -1) + v;
+            else if(cVal==='0' && !ops.includes(v)) cVal=v; else cVal += v;
+        }
+        updateCalc();
+    }
+
+    /* DATA */
+    function getNet() {
+        let a=0, d=0;
+        (data.assets||[]).forEach(x => {
+            let v = parseInt(x.val) * (x.curr==='USD'?data.settings.usd_rate:1);
+            x.type==='asset' ? a+=v : d+=v;
+        });
+        return a - d;
+    }
+    function renderCockpit() {
+        let net = getNet();
+        document.getElementById('cp-net').innerText = isPrivacy ? '***' : '¥'+net.toLocaleString();
+        
+        let inc=0, exp=0;
+        (data.flows||[]).forEach(f => f.type==='inc'?inc+=parseInt(f.val):exp+=parseInt(f.val));
+        document.getElementById('cp-pl').innerText = isPrivacy ? '***' : '¥'+(inc-exp).toLocaleString();
+        
+        let goal = exp * 12 * 25;
+        let pct = goal>0 ? Math.round((net/goal)*100) : 0;
+        document.getElementById('fire-pct').innerText = pct;
+
+        let r="Recruit"; let m=net/10000;
+        if(m>100) r="Private"; if(m>500) r="Sergeant"; if(m>1000) r="Lieutenant";
+        if(m>5000) r="Captain"; if(m>10000) r="Colonel"; if(m>50000) r="General";
+        document.getElementById('rank-display').innerText = r;
+
+        renderRadar(); renderSpark();
+    }
+    function renderRadar() {
+        let ctx = document.getElementById('radarChart'); if(!ctx) return;
+        if(radarInstance) radarInstance.destroy();
+        let c={cash:0, stock_jp:0, stock_us:0, crypto:0, other:0};
+        let tot=0;
+        (data.assets||[]).forEach(x=>{
+            if(x.type==='asset'){
+                let v = parseInt(x.val)*(x.curr==='USD'?data.settings.usd_rate:1);
+                if(c[x.cat]!==undefined) c[x.cat]+=v; else c.other+=v; tot+=v;
+            }
+        });
+        let cur = [ tot?Math.round(c.cash/tot*100):0, tot?Math.round(c.stock_jp/tot*100):0, tot?Math.round(c.stock_us/tot*100):0, tot?Math.round(c.crypto/tot*100):0, tot?Math.round(c.other/tot*100):0 ];
+        let tgt = [ parseInt(data.settings.tgt_cash), parseInt(data.settings.tgt_jp), parseInt(data.settings.tgt_us), parseInt(data.settings.tgt_cryp), 0 ];
+        tgt[4] = Math.max(0, 100 - (tgt[0]+tgt[1]+tgt[2]+tgt[3]));
+        radarInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Cash','JP','US','Crypto','Other'],
+                datasets: [ { label:'Current', data:cur, borderColor:'#D4AF37', backgroundColor:'rgba(212, 175, 55, 0.2)', borderWidth:2, pointBackgroundColor:'#D4AF37' }, { label:'Target', data:tgt, borderColor:'rgba(255,255,255,0.2)', borderDash:[4,4], borderWidth:1, pointRadius:0, fill:false } ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines:{color:'rgba(255,255,255,0.05)'}, grid:{color:'rgba(255,255,255,0.05)'}, ticks:{display:false}, pointLabels:{color:'rgba(255,255,255,0.4)', font:{size:10, family:'sans-serif'}} } }, plugins: { legend: { display:false } } }
+        });
+    }
+    function renderSpark() {
+        let cvs = document.getElementById('sparkCanvas'); let ctx = cvs.getContext('2d');
+        let w = cvs.width = cvs.clientWidth; let h = cvs.height = cvs.clientHeight; ctx.clearRect(0,0,w,h);
+        let hist = data.history; if(hist.length<2) return;
+        let min = Math.min(...hist.map(x=>x.v)); let max = Math.max(...hist.map(x=>x.v)); let range = max-min || 1;
+        ctx.beginPath(); ctx.strokeStyle = '#32D74B'; ctx.lineWidth = 2;
+        // Gradient Fill
+        let grad = ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0, 'rgba(50, 215, 75, 0.2)'); grad.addColorStop(1, 'rgba(50, 215, 75, 0)');
+        ctx.fillStyle = grad;
+        
+        hist.forEach((p,i)=>{ let x = (i/(hist.length-1))*w; let y = h - ((p.v-min)/range)*h; i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });
+        ctx.stroke(); 
+        ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+    }
+    function renderAssets() {
+        let el = document.getElementById('asset-list'); el.innerHTML='';
+        data.assets.forEach((a,i) => { el.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><input value="${a.name}" onchange="upd('assets',${i},'name',this.value)" style="font-weight:600; width:60%; margin:0;"><select onchange="upd('assets',${i},'cat',this.value)" style="width:35%; margin:0;"><option value="cash" ${a.cat=='cash'?'selected':''}>Cash</option><option value="stock_jp" ${a.cat=='stock_jp'?'selected':''}>JP Stock</option><option value="stock_us" ${a.cat=='stock_us'?'selected':''}>US Stock</option><option value="crypto" ${a.cat=='crypto'?'selected':''}>Crypto</option></select></div><div style="display:flex; gap:10px;"><select style="width:80px; margin:0;" onchange="upd('assets',${i},'curr',this.value)"><option value="JPY" ${a.curr=='JPY'?'selected':''}>JPY</option><option value="USD" ${a.curr=='USD'?'selected':''}>USD</option></select><input type="number" value="${a.val}" onchange="upd('assets',${i},'val',this.value)" style="margin:0;"><button class="btn" style="width:50px; background:rgba(255,69,58,0.2); color:#FF453A;" onclick="del('assets',${i})"><i class="ri-delete-bin-line"></i></button></div></div>`; });
+    }
+    function renderFlows() {
+        let el = document.getElementById('flow-list'); el.innerHTML='';
+        data.flows.forEach((f,i) => { el.innerHTML += `<div class="card"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><input value="${f.title}" onchange="upd('flows',${i},'title',this.value)" style="width:65%; margin:0;"><select style="width:30%; margin:0;" onchange="upd('flows',${i},'type',this.value)"><option value="inc" ${f.type=='inc'?'selected':''}>Income</option><option value="exp" ${f.type=='exp'?'selected':''}>Expense</option></select></div><div style="display:flex; gap:10px;"><input type="number" value="${f.val}" onchange="upd('flows',${i},'val',this.value)" style="margin:0;"><button class="btn" style="width:50px; background:rgba(255,69,58,0.2); color:#FF453A;" onclick="del('flows',${i})"><i class="ri-delete-bin-line"></i></button></div></div>`; });
+    }
+    function renderBS() {
+        let a=0,d=0,h=''; data.assets.forEach(x=>{ let v = parseInt(x.val)*(x.curr==='USD'?data.settings.usd_rate:1); x.type==='asset'?a+=v:d+=v; h+=`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span>${x.name}</span><span>¥${v.toLocaleString()}</span></div>`; });
+        document.getElementById('bs-view').innerHTML = `${h}<div style="text-align:right;margin-top:20px;font-weight:700;color:var(--tint-gold); font-size:18px;">Total: ¥${(a-d).toLocaleString()}</div>`;
+    }
+    function renderPL() {
+        let i=0,e=0,h=''; data.flows.forEach(x=>{ let v = parseInt(x.val); x.type==='inc'?i+=v:e+=v; h+=`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span>${x.title}</span><span style="color:${x.type==='inc'?'var(--tint-green)':'var(--tint-red)'}">¥${v.toLocaleString()}</span></div>`; });
+        document.getElementById('pl-view').innerHTML = `${h}<div style="text-align:right;margin-top:20px;font-weight:700; font-size:18px;">Total: ¥${(i-e).toLocaleString()}</div>`;
+    }
+    function renderConfig() { document.getElementById('tgt-cash').value = data.settings.tgt_cash; document.getElementById('tgt-jp').value = data.settings.tgt_jp; document.getElementById('tgt-us').value = data.settings.tgt_us; document.getElementById('tgt-cryp').value = data.settings.tgt_cryp; document.getElementById('inherit-txt').value = data.settings.inherit || ""; }
+    function upd(k,i,f,v) { data[k][i][f]=v; saveData(); }
+    function del(k,i) { if(confirm("Delete item?")) { data[k].splice(i,1); saveData(); k=='assets'?renderAssets():renderFlows(); } }
+    function addAsset() { data.assets.push({name:'New Asset',val:0,type:'asset',cat:'cash',curr:'JPY'}); saveData(); renderAssets(); }
+    function addFlow() { data.flows.push({title:'New Item',type:'exp',val:0}); saveData(); renderFlows(); }
+    function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(data)); }
+    function togglePrivacy() { isPrivacy=!isPrivacy; openApp('cockpit'); }
+    function forceReset() { if(confirm("Factory Reset?")) { localStorage.clear(); location.reload(); } }
+    async function fetchRate() { try { let r = await fetch('https://api.exchangerate-api.com/v4/latest/USD').then(x=>x.json()); data.settings.usd_rate=r.rates.JPY; document.getElementById('rate-usd').value=r.rates.JPY; saveData(); alert("Rates Updated"); } catch{alert("Network Error");} }
+    function logHistory() { let t = new Date().toISOString().split('T')[0]; let h = data.history; if(h.length===0 || h[h.length-1].d !== t) { h.push({d:t, v:getNet()}); if(h.length>30)h.shift(); saveData(); } }
+</script>
+</body>
+</html>
