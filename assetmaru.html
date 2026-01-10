@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>資産丸 FIXED</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+    /* --- THEMES --- */
+    :root {
+        /* Base: Yokohama Navy & Gold */
+        --bg-deep: #001228;
+        --bg-navy: #001E43;
+        --panel-bg: rgba(20, 30, 50, 0.9);
+        --border-col: rgba(197, 160, 89, 0.4);
+        --primary: #C5A059;
+        --secondary: #E5C585;
+        --accent: #D4AF37;
+        --text: #F0F0F0;
+        --text-dim: #8FA0B5;
+        --nixie-on: #ff5a00;
+        --nixie-off: #3a1a1a;
+        --danger: #FF453A;
+        --success: #32D74B;
+        --font-main: "Noto Sans JP", sans-serif;
+        --font-code: "Share Tech Mono", monospace;
+    }
+
+    body.mode-cyber {
+        --bg-deep: #050505;
+        --bg-navy: #0a0a0a;
+        --panel-bg: rgba(0, 10, 20, 0.95);
+        --border-col: #00f3ff;
+        --primary: #00f3ff;
+        --secondary: #ff00ff;
+        --text: #e0faff;
+        --text-dim: #005f73;
+        --nixie-on: #00f3ff;
+        --nixie-off: #003333;
+        --font-main: "Orbitron", sans-serif;
+    }
+
+    /* --- GLOBAL LAYOUT --- */
+    body {
+        background: radial-gradient(circle at center top, var(--bg-navy) 0%, var(--bg-deep) 100%);
+        color: var(--text);
+        font-family: var(--font-main);
+        margin: 0; min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none; overflow-y: auto; padding-bottom: 100px;
+        transition: background 0.5s;
+    }
+
+    /* --- SPECIAL EFFECTS --- */
+    .warning-tape {
+        position: fixed; left:0; right:0; height:12px; z-index:9000; pointer-events:none; display:none;
+        background: repeating-linear-gradient(45deg, #FFD700, #FFD700 10px, #111 10px, #111 20px);
+        opacity:0.8;
+    }
+    .warning-tape.top { top:0; } .warning-tape.bottom { bottom:0; }
+    body.defcon-1 .warning-tape { display:block; animation: flash 1s infinite; }
+    @keyframes flash { 0%,100%{opacity:0.8} 50%{opacity:0.2} }
+
+    .sonar-overlay {
+        position: fixed; inset:0; z-index:-1; pointer-events:none; opacity:0.1;
+        background: repeating-radial-gradient(circle, transparent 0, transparent 19px, var(--primary) 20px);
+        mask-image: linear-gradient(to bottom, black, transparent);
+    }
+    .sonar-sweep {
+        position: absolute; width:100%; height:100%; top:0; left:0;
+        background: conic-gradient(from 0deg, transparent 0deg, var(--primary) 30deg, transparent 60deg);
+        animation: sonarSpin 4s linear infinite; opacity:0.1;
+    }
+    body.defcon-1 .sonar-sweep { animation-duration: 1s; background: conic-gradient(from 0deg, transparent 0deg, var(--danger) 30deg, transparent 60deg); }
+    @keyframes sonarSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    /* --- MODALS --- */
+    #nagato-modal {
+        position: fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+        width: 80%; max-width: 400px; background: #000; border: 1px solid #fff;
+        padding: 20px; z-index: 20000; display: none; font-family: "Noto Sans JP", serif;
+        box-shadow: 0 0 30px rgba(255,255,255,0.2);
+    }
+    .nagato-text { font-size: 14px; line-height: 1.8; color: #fff; margin-bottom: 20px; min-height: 60px; }
+    .nagato-prompt { color: #888; font-size: 12px; margin-bottom: 5px; font-family: monospace; }
+    
+    #matrix-screen {
+        position: fixed; inset:0; background:#000; z-index:15000; display:none;
+    }
+    canvas#matrix-canvas { display:block; }
+    
+    #calc-screen {
+        position: fixed; inset:0; background:#1c1c1e; z-index:12000; display:none;
+        flex-direction: column; padding: 20px; padding-top: 60px;
+    }
+    #calc-display {
+        font-size: 60px; color: white; text-align: right; margin-bottom: 20px;
+        font-weight: 300; letter-spacing: 2px;
+    }
+    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex:1; }
+    .calc-btn {
+        background: #333; color: #fff; border-radius: 50%; font-size: 28px; border:none;
+        display:flex; justify-content:center; align-items:center; aspect-ratio:1;
+    }
+    .calc-btn.orange { background: #ff9f0a; }
+    .calc-btn.grey { background: #a5a5a5; color: #000; }
+    
+    /* Boot & Auth */
+    #boot-screen, #auth-screen {
+        position: fixed; inset: 0; background: #000; z-index: 10000;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+    #boot-screen { font-family: var(--font-code); color: var(--primary); z-index: 11000; }
+    .pin-input {
+        background: transparent; border: 1px solid var(--primary); color: var(--primary);
+        font-family: var(--font-code); font-size: 32px; width: 200px; text-align: center;
+        padding: 10px; border-radius: 4px; letter-spacing: 8px; margin-bottom: 20px;
+    }
+    
+    /* Main UI */
+    .page { display: none; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: 120px; animation: fadeUp 0.4s; }
+    .page.active { display: block; }
+    @keyframes fadeUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    
+    .cockpit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .unit-id { font-family: var(--font-code); font-size: 10px; color: var(--text-dim); border: 1px solid var(--text-dim); padding: 2px 4px; }
+    .tac-switch { width: 50px; height: 26px; background: #333; border-radius: 13px; position: relative; border: 1px solid var(--border-col); }
+    .tac-knob { width: 22px; height: 22px; background: var(--primary); border-radius: 50%; position: absolute; top:1px; left:1px; transition:0.3s; }
+    .mode-cyber .tac-knob { transform: translateX(24px); background: var(--secondary); }
+    
+    .rank-badge { text-align: center; margin: 10px 0; font-family: var(--font-main); font-weight: bold; color: var(--primary); letter-spacing: 2px; text-shadow: 0 0 10px var(--primary); }
+
+    .card {
+        background: var(--panel-bg); border: 1px solid var(--border-col);
+        border-radius: 8px; padding: 15px; margin-bottom: 15px; backdrop-filter: blur(10px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    h2 { font-size: 18px; color: var(--primary); border-bottom: 1px solid var(--border-col); margin: 0 0 15px 0; padding-bottom: 5px; display: flex; justify-content: space-between;}
+    
+    input, select {
+        background: rgba(0,0,0,0.5); border: 1px solid var(--border-col); color: var(--text);
+        padding: 12px; width: 100%; box-sizing: border-box; border-radius: 4px; margin-bottom: 8px;
+    }
+    .btn {
+        width: 100%; padding: 12px; border: none; font-weight: bold; cursor: pointer;
+        background: linear-gradient(90deg, var(--primary), var(--secondary)); color: #000;
+        font-family: var(--font-code); margin-top: 5px;
+    }
+
+    .nixie-wrapper { background: #111; border-top: 2px solid #333; border-bottom: 2px solid #333; padding: 15px; margin-bottom: 20px; }
+    .nixie-row { display: flex; justify-content: center; gap: 4px; }
+    .nixie-tube {
+        width: 24px; height: 40px; background: rgba(20,10,10,0.95); border: 1px solid #333; border-radius: 4px;
+        display: flex; justify-content: center; align-items: center; box-shadow: inset 0 0 10px #000;
+    }
+    .nixie-char { font-family: var(--font-code); font-size: 28px; color: var(--nixie-on); text-shadow: 0 0 5px var(--nixie-on); }
+    .nixie-sep { color: var(--secondary); align-self: flex-end; padding-bottom: 6px; }
+
+    #launcher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
+    .app-icon {
+        aspect-ratio: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-col);
+        display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px;
+    }
+    .icon-i { font-size: 28px; margin-bottom: 5px; } .icon-lbl { font-size: 10px; font-weight: bold; }
+
+    #home-btn {
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        width: 60px; height: 60px; background: rgba(0,0,0,0.8); border: 2px solid var(--primary);
+        border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 5000;
+        opacity: 0; pointer-events: none; transition: 0.3s;
+    }
+    #home-btn.visible { opacity: 1; pointer-events: auto; }
+
+    #inherit-screen {
+        position:fixed; inset:0; background:#000; z-index:18000; display:none; padding:40px;
+        font-family: "Noto Sans JP"; color:#fff;
+    }
+    .wave-line { height: 2px; background: var(--primary); width: 100%; margin: 20px 0; animation: wave 1s infinite alternate; }
+    @keyframes wave { from{transform:scaleY(1)} to{transform:scaleY(5)} }
+
+</style>
+</head>
+<body id="body">
+
+<div class="warning-tape top"></div><div class="warning-tape bottom"></div>
+<div class="sonar-overlay"><div class="sonar-sweep"></div></div>
+
+<div id="boot-screen" onclick="skipBoot()">
+    <div id="boot-log" style="text-align:left; width:280px; font-size:12px; line-height:1.5;"></div>
+</div>
+
+<div id="auth-screen">
+    <div style="font-family:'Orbitron'; font-size:24px; color:var(--primary); margin-bottom:30px; letter-spacing:3px;">ASSET MARU</div>
+    <div id="auth-label" style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">ENTER PASSCODE</div>
+    <input type="password" id="auth-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="****">
+    <button class="btn" id="auth-btn" style="width:200px" onclick="handleAuth()">UNLOCK</button>
+</div>
+
+<div id="calc-screen">
+    <div id="calc-display">0</div>
+    <div class="calc-grid">
+        <button class="calc-btn grey" onclick="calc('C')">C</button><button class="calc-btn grey" onclick="calc('pm')">±</button><button class="calc-btn grey" onclick="calc('%')">%</button><button class="calc-btn orange" onclick="calc('/')">÷</button>
+        <button class="calc-btn" onclick="calc(7)">7</button><button class="calc-btn" onclick="calc(8)">8</button><button class="calc-btn" onclick="calc(9)">9</button><button class="calc-btn orange" onclick="calc('*')">×</button>
+        <button class="calc-btn" onclick="calc(4)">4</button><button class="calc-btn" onclick="calc(5)">5</button><button class="calc-btn" onclick="calc(6)">6</button><button class="calc-btn orange" onclick="calc('-')">-</button>
+        <button class="calc-btn" onclick="calc(1)">1</button><button class="calc-btn" onclick="calc(2)">2</button><button class="calc-btn" onclick="calc(3)">3</button><button class="calc-btn orange" onclick="calc('+')">+</button>
+        <button class="calc-btn" onclick="calc(0)" style="grid-column:span 2; aspect-ratio:auto; border-radius:40px;">0</button><button class="calc-btn" onclick="calc('.')">.</button><button class="calc-btn orange" onclick="calc('=')">=</button>
+    </div>
+</div>
+
+<div id="matrix-screen" onclick="closeMatrix()">
+    <canvas id="matrix-canvas"></canvas>
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; background:#000; padding:20px; border:1px solid #00f3ff;">
+        <div style="color:#00f3ff; font-family:'Orbitron'; margin-bottom:10px;">DATA STREAMING</div>
+        <div id="qr-placeholder" style="width:150px; height:150px; background:white; margin:0 auto;"></div>
+        <div style="color:#fff; font-size:10px; margin-top:10px;">SCAN TO TRANSFER</div>
+    </div>
+</div>
+
+<div id="inherit-screen">
+    <div style="font-size:24px; font-weight:bold; margin-bottom:20px;">FLIGHT RECORDER</div>
+    <div class="wave-line"></div>
+    <div id="inherit-msg" style="line-height:1.8; font-size:14px; white-space:pre-wrap;"></div>
+    <button class="btn" style="margin-top:30px;" onclick="document.getElementById('inherit-screen').style.display='none'; openApp('cockpit');">SYSTEM OVERRIDE</button>
+</div>
+
+<div id="nagato-modal" onclick="this.style.display='none'">
+    <div class="nagato-prompt">YUKI.N&gt;</div>
+    <div class="nagato-text" id="nagato-msg"></div>
+    <div style="text-align:right; font-size:10px; animation:blink 1s infinite;">_</div>
+</div>
+
+<div id="home-btn" onclick="goHome()"><i class="ri-menu-5-line" style="font-size:24px; color:var(--text);"></i></div>
+
+<div id="p-cockpit" class="page">
+    <div class="cockpit-header">
+        <div class="unit-id">UNIT: Y.T-001 / ASSET-MARU</div>
+        <div class="tac-switch" onclick="toggleMode()"><div class="tac-knob"></div></div>
+    </div>
+    
+    <div class="nixie-wrapper" style="padding:10px; margin-bottom:10px; border:1px solid #333;">
+        <div class="nixie-row" id="nixie-clock-sm" style="transform:scale(0.8);"></div>
+    </div>
+
+    <div class="rank-badge" id="rank-display">二等水兵</div>
+
+    <div class="card" id="mission-card" style="display:none; border-color:var(--primary);">
+        <div style="font-size:12px; color:var(--primary); font-weight:bold;">⚠️ MISSION ALERT: 25th</div>
+        <div style="font-size:10px; margin-top:5px;">給与着金確認および資金移動を実行せよ。</div>
+        <button class="btn" style="padding:8px; font-size:10px; margin-top:5px;" onclick="completeMission()">MISSION COMPLETE</button>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <div class="card" style="flex:1; margin-right:5px; text-align:center;">
+            <div style="font-size:10px; color:var(--text-dim);">NET WORTH</div>
+            <div style="font-size:18px; font-weight:bold; color:var(--text);" id="cp-net">Loading...</div>
+        </div>
+        <div class="card" style="flex:1; margin-left:5px; text-align:center;">
+            <div style="font-size:10px; color:var(--text-dim);">MONTHLY P/L</div>
+            <div style="font-size:18px; font-weight:bold;" id="cp-pl">Loading...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:5px;">
+            <span>FIRE RATE (4%)</span>
+            <span id="fire-pct" style="color:var(--secondary); font-weight:bold;">0%</span>
+        </div>
+        <div style="background:rgba(0,0,0,0.5); height:10px; width:100%; border:1px solid var(--border-col);">
+            <div id="fire-bar" style="height:100%; background:var(--secondary); width:0%;"></div>
+        </div>
+    </div>
+
+    <div class="card" style="height:220px;">
+        <canvas id="pfChart"></canvas>
+    </div>
+    <div id="rebalance-msg" style="font-size:10px; color:var(--accent); text-align:center; margin-top:-10px; margin-bottom:15px; display:none;"></div>
+
+    <div style="text-align:center;">
+        <button class="btn" onclick="openApp('launcher')" style="width:60%;">LAUNCH MENU</button>
+    </div>
+</div>
+
+<div id="p-launcher" class="page">
+    <div class="nixie-wrapper">
+        <div class="nixie-row" id="nixie-date"></div>
+        <div class="nixie-row" id="nixie-time"></div>
+    </div>
+    <div id="launcher-grid"></div>
+</div>
+
+<div id="p-assets" class="page">
+    <h2>資産台帳 <i class="ri-safe-2-line"></i></h2>
+    <div class="card">
+        <div style="font-size:10px; color:var(--text-dim);">USD/JPY RATE</div>
+        <div style="display:flex; gap:5px;">
+            <input type="number" id="rate-usd">
+            <button class="btn" style="width:80px;" onclick="fetchRate()">SYNC</button>
+        </div>
+    </div>
+    <div id="asset-list"></div>
+    <button class="btn" onclick="addAsset()">+ ADD ASSET</button>
+</div>
+
+<div id="p-flows" class="page">
+    <h2>資金フロー <i class="ri-exchange-dollar-line"></i></h2>
+    <div id="flow-list"></div>
+    <div class="card">
+        <div style="font-size:10px; color:var(--text-dim);">SPECIAL EXPENSES (YEARLY)</div>
+        <input type="number" id="special-exp" onchange="saveSetting('special', this.value)">
+    </div>
+    <button class="btn" onclick="addFlow()">+ ADD FLOW</button>
+</div>
+
+<div id="p-settings" class="page">
+    <h2>設定 <i class="ri-settings-4-line"></i></h2>
+    <div class="card">
+        <div style="font-size:10px; color:var(--text-dim);">INHERITANCE MESSAGE</div>
+        <textarea id="inherit-txt" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--border-col); color:white; border-radius:4px; padding:10px;" rows="4" placeholder="遺言メッセージを入力" onchange="saveSetting('inherit_msg', this.value)"></textarea>
+    </div>
+    <div class="card">
+        <button class="btn" onclick="openMatrix()">DATA TRANSFER (QR)</button>
+        <button class="btn" onclick="togglePrivacy()" id="btn-priv">PRIVACY MODE</button>
+        <button class="btn" style="background:var(--danger); margin-top:20px;" onclick="resetAll()">FACTORY RESET</button>
+    </div>
+    <div style="text-align:center; font-family:var(--font-code); font-size:10px; color:var(--text-dim); margin-top:30px;" onclick="tapDebug()">
+        UNIT: Y.T-001<br>DEV BY Y.T
+    </div>
+</div>
+
+<div id="p-bs" class="page"><h2>B/S <i class="ri-scales-3-line"></i></h2><div id="bs-view"></div></div>
+<div id="p-pl" class="page"><h2>P/L <i class="ri-funds-line"></i></h2><div id="pl-view"></div></div>
+<div id="p-trend" class="page"><h2>Trend <i class="ri-line-chart-line"></i></h2><div class="card" style="height:300px;"><canvas id="trendChart"></canvas></div><button class="btn" onclick="recordSnap()">LOG</button></div>
+<div id="p-calendar" class="page"><h2>Calendar <i class="ri-calendar-line"></i></h2><div id="cal-view" style="display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center;"></div></div>
+<div id="p-stash" class="page"><h2>Secret Stash <i class="ri-eye-off-line"></i></h2><div id="stash-list"></div><button class="btn" onclick="addStash()">+ ADD SECRET</button></div>
+
+<script>
+    const KEY_DATA = 'am_final_data';
+    const KEY_PASS = 'am_final_pass';
+    const KEY_LOGIN = 'am_final_last_login';
+    let data = {};
+    let isPrivacy = false;
+    let isCyber = false;
+    let debugCount = 0;
+    let pfChart, trendChart;
+    
+    // Default Data
+    const defData = {
+        assets: [{name:'Cash', type:'asset', cat:'cash', val:100000, curr:'JPY'}],
+        flows: [{day:25, title:'Salary', type:'inc', val:200000, tag:'salary'}],
+        stash: [], history: [],
+        settings: { usd_rate:145, special_exp:0, fire_rate:4, inherit_msg:"" }
+    };
+
+    const RANKS = [
+        {val:0, title:"二等水兵"}, {val:1000000, title:"一等水兵"}, {val:5000000, title:"兵曹長"},
+        {val:10000000, title:"少尉"}, {val:30000000, title:"大尉"}, {val:50000000, title:"中佐"},
+        {val:100000000, title:"大佐"}, {val:500000000, title:"元帥 (Admiral)"}
+    ];
+
+    const APPS = {
+        'cockpit': {name:'COCKPIT', icon:'ri-dashboard-line'},
+        'calc': {name:'CALC', icon:'ri-calculator-line'},
+        'bs': {name:'B/S', icon:'ri-scales-3-line'},
+        'pl': {name:'P/L', icon:'ri-funds-line'},
+        'assets': {name:'ASSETS', icon:'ri-safe-2-line'},
+        'flows': {name:'FLOWS', icon:'ri-exchange-dollar-line'},
+        'trend': {name:'TREND', icon:'ri-line-chart-line'},
+        'calendar': {name:'CALENDAR', icon:'ri-calendar-line'},
+        'settings': {name:'SETTINGS', icon:'ri-settings-4-line'}
+    };
+
+    window.onload = () => {
+        try { loadData(); } catch(e) { data = JSON.parse(JSON.stringify(defData)); }
+        // Ensure data integrity on boot
+        if(!data.stash) data.stash=[];
+        if(!data.history) data.history=[];
+
+        checkDeadMan();
+        // Boot Sequence
+        let lines = ['BOOT SEQ INIT...', 'CHECKING STORAGE...', 'CONNECTING Y.T-NET...', 'SYSTEM READY.'];
+        let i=0;
+        const next = () => {
+            if(i<lines.length) { document.getElementById('boot-log').innerHTML += `> ${lines[i]}<br>`; i++; setTimeout(next, 200); }
+            else { setTimeout(() => { document.getElementById('boot-screen').style.display='none'; checkAuth(); }, 800); }
+        };
+        next();
+        setInterval(updateClock, 1000);
+    };
+
+    function skipBoot() { document.getElementById('boot-screen').style.display='none'; checkAuth(); }
+
+    function checkAuth() {
+        if(!localStorage.getItem(KEY_PASS)) {
+            document.getElementById('auth-label').innerText = "初回セキュリティ設定";
+            document.getElementById('auth-btn').innerText = "パスコード設定";
+        } else {
+            document.getElementById('auth-btn').innerText = "ロック解除";
+        }
+    }
+
+    function handleAuth() {
+        const inputVal = document.getElementById('auth-input').value;
+        const storedPass = localStorage.getItem(KEY_PASS);
+
+        // EMERGENCY RESET
+        if(inputVal === "9999") {
+            if(confirm("⚠ 緊急初期化を実行しますか？全データが削除されます。")) {
+                localStorage.clear();
+                alert("初期化完了。リロードします。");
+                location.reload();
+            }
+            return;
+        }
+
+        // First Setup
+        if(!storedPass) {
+            if(inputVal) { localStorage.setItem(KEY_PASS, inputVal); unlock(); }
+            else { alert("パスコードを入力してください"); }
+            return;
+        }
+
+        // Login
+        if(inputVal === storedPass) { unlock(); }
+        else if(inputVal === "0000") { unlockDecoy(); }
+        else { alert('認証エラー: パスコードが違います'); document.getElementById('auth-input').value = ""; }
+    }
+
+    function unlock() {
+        try {
+            document.getElementById('boot-screen').style.display='none';
+            document.getElementById('auth-screen').classList.add('hidden');
+            localStorage.setItem(KEY_LOGIN, Date.now());
+            if(new Date().getDate() === 25) document.getElementById('mission-card').style.display='block';
+            openApp('cockpit');
+        } catch(e) {
+            alert("システムエラー発生。緊急リセットコード '9999' を使用してください。");
+            console.error(e);
+        }
+    }
+
+    function unlockDecoy() {
+        data = { assets: [{name:'Wallet', type:'asset', cat:'cash', val:3000, curr:'JPY'}], flows: [], settings: {fire_rate:4}, history:[] };
+        document.getElementById('boot-screen').style.display='none';
+        document.getElementById('auth-screen').classList.add('hidden');
+        openApp('cockpit');
+        nagatoSpeak("DECOY MODE ACTIVE. DUMMY DATA LOADED.");
+    }
+
+    function checkDeadMan() {
+        const last = localStorage.getItem(KEY_LOGIN);
+        if(last && (Date.now() - parseInt(last) > 180*24*60*60*1000)) {
+            document.getElementById('boot-screen').style.display='none';
+            document.getElementById('auth-screen').style.display='none';
+            document.getElementById('inherit-screen').style.display='block';
+            document.getElementById('inherit-msg').innerText = data.settings.inherit_msg || "NO MESSAGE RECORDED.";
+        }
+    }
+
+    /* --- APP LOGIC --- */
+    function openApp(id) {
+        if(id === 'calc') { openCalc(); return; }
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('p-'+id).classList.add('active');
+        document.getElementById('home-btn').classList.toggle('visible', id!=='cockpit');
+        
+        // Render
+        if(id==='cockpit') renderCockpit();
+        if(id==='launcher') renderLauncher();
+        if(id==='assets') renderAssetList();
+        if(id==='flows') renderFlowList();
+        if(id==='bs') renderBS();
+        if(id==='pl') renderPL();
+        if(id==='trend') renderTrend();
+        if(id==='calendar') renderCal();
+        if(id==='stash') renderStash();
+    }
+    
+    function renderCockpit() {
+        // Safe calculation
+        let assets=0, debts=0, cash=0;
+        let cats = {cash:0, stock_jp:0, stock_us:0, crypto:0, real_estate:0, other:0};
+        
+        (data.assets || []).forEach(a => {
+            let v = parseInt(a.val);
+            if(a.curr==='USD') v = Math.round(v * (data.settings.usd_rate || 145));
+            if(a.type==='asset') { 
+                assets+=v; 
+                if(cats[a.cat]!==undefined) cats[a.cat]+=v; else cats.other+=v; 
+                if(a.cat==='cash') cash+=v;
+            } else { debts+=v; }
+        });
+
+        const net = assets - debts;
+        document.getElementById('cp-net').innerText = isPrivacy ? '***' : '¥'+net.toLocaleString();
+        
+        let inc=0, exp=0;
+        (data.flows || []).forEach(f => { f.type==='inc'?inc+=parseInt(f.val):exp+=parseInt(f.val); });
+        const pl = inc - exp;
+        document.getElementById('cp-pl').innerText = isPrivacy ? '***' : '¥'+pl.toLocaleString();
+
+        // Rank
+        let rank = "訓練兵";
+        for(let r of RANKS) { if(net >= r.val) rank = r.title; }
+        document.getElementById('rank-display').innerText = rank;
+        if(rank === "元帥 (Admiral)") document.getElementById('rank-display').style.color = "#FFD700";
+
+        // FIRE
+        const yrExp = (exp*12) + parseInt(data.settings.special_exp||0);
+        const goal = yrExp / ((data.settings.fire_rate||4)/100);
+        const pct = goal>0 ? Math.min(100, Math.round((assets/goal)*100)) : 0;
+        document.getElementById('fire-pct').innerText = pct+'%';
+        document.getElementById('fire-bar').style.width = pct+'%';
+
+        // Chart
+        renderChart(cats);
+    }
+
+    function renderChart(cats) {
+        const ctx = document.getElementById('pfChart');
+        if(!ctx) return;
+        if(typeof Chart === 'undefined') return; // Safe mode if offline
+
+        if(pfChart) pfChart.destroy();
+        const colors = isCyber 
+            ? ['#00ff99', '#00f3ff', '#ff00ff', '#bc13fe', '#ffff00', '#ffffff'] 
+            : ['#32D74B', '#0A84FF', '#FF453A', '#FF9F0A', '#BF5AF2', '#8E8E93'];
+        
+        pfChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['現金','国内株','米国株','暗号','不動産','他'],
+                datasets: [{ data:Object.values(cats), backgroundColor:colors, borderWidth:0 }]
+            },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{color:isCyber?'#fff':'#ccc'}}} }
+        });
+    }
+
+    /* --- DATA UTILS --- */
+    function loadData() {
+        const s = localStorage.getItem(KEY_DATA);
+        if(s) {
+            const parsed = JSON.parse(s);
+            // Merge defaults to prevent crashes
+            data = Object.assign({}, defData, parsed);
+            if(!data.settings) data.settings = defData.settings;
+            if(!data.assets) data.assets = [];
+            if(!data.flows) data.flows = [];
+        } else {
+            data = JSON.parse(JSON.stringify(defData));
+        }
+    }
+    function saveData() { localStorage.setItem(KEY_DATA, JSON.stringify(data)); }
+    function upd(k,i,f,v){ data[k][i][f]=v; saveData(); }
+    function del(k,i){ if(confirm('削除しますか？')){ data[k].splice(i,1); saveData(); k==='assets'?renderAssetList():(k==='flows'?renderFlowList():renderStash()); }}
+    function addAsset(){ data.assets.push({name:'新規', val:0, type:'asset', cat:'cash', curr:'JPY'}); saveData(); renderAssetList(); }
+    function resetAll(){ if(confirm('全データ消去？')){ localStorage.removeItem(KEY_DATA); localStorage.removeItem(KEY_PASS); location.reload(); }}
+
+    /* --- OTHER FUNCTIONS --- */
+    function goHome() { openApp(isCyber ? 'cockpit' : 'launcher'); }
+    function toggleMode() { isCyber=!isCyber; document.body.classList.toggle('mode-cyber', isCyber); if(document.getElementById('p-cockpit').classList.contains('active')) renderCockpit(); }
+    function togglePrivacy() { isPrivacy=!isPrivacy; renderCockpit(); }
+    function tapDebug() { debugCount++; if(debugCount===10) { alert('DEBUG: ENABLED'); openApp('stash'); } }
+    
+    function nagatoSpeak(msg) {
+        const m = document.getElementById('nagato-modal');
+        const t = document.getElementById('nagato-msg');
+        m.style.display = 'block'; t.innerText = '';
+        let i = 0;
+        const type = () => { if(i < msg.length) { t.innerText += msg.charAt(i); i++; setTimeout(type, 30); } else { setTimeout(() => { m.style.display='none'; }, 3000); } };
+        type();
+    }
+    
+    // Stub renders
+    function renderLauncher() {
+        const g = document.getElementById('launcher-grid'); g.innerHTML='';
+        const order = ['cockpit','calc','bs','pl','assets','flows','trend','calendar','settings'];
+        order.forEach(k=>{ g.innerHTML+=`<div class="app-icon" onclick="openApp('${k}')"><i class="${APPS[k].icon} icon-i" style="color:${isCyber?'var(--primary)':'var(--text)'}"></i><span class="icon-lbl">${APPS[k].name}</span></div>`; });
+    }
+    function renderAssetList() {
+        const el = document.getElementById('asset-list'); el.innerHTML='';
+        document.getElementById('rate-usd').value = data.settings.usd_rate;
+        data.assets.forEach((a,i) => {
+             el.innerHTML += `<div class="card"><div style="display:flex;gap:5px"><input type="text" value="${a.name}" onchange="upd('assets',${i},'name',this.value)"><select onchange="upd('assets',${i},'cat',this.value)" style="width:100px"><option value="cash" ${a.cat==='cash'?'selected':''}>Cash</option><option value="stock_us" ${a.cat==='stock_us'?'selected':''}>US</option><option value="stock_jp" ${a.cat==='stock_jp'?'selected':''}>JP</option></select></div><div style="display:flex;gap:5px"><select onchange="upd('assets',${i},'curr',this.value)" style="width:60px"><option value="JPY" ${a.curr==='JPY'?'selected':''}>¥</option><option value="USD" ${a.curr==='USD'?'selected':''}>$</option></select><input type="number" value="${a.val}" onchange="upd('assets',${i},'val',this.value)"></div><button class="btn" onclick="del('assets',${i})" style="background:var(--danger)">DEL</button></div>`;
+        });
+    }
+    function renderFlowList(){ 
+        const el = document.getElementById('flow-list'); el.innerHTML='';
+        data.flows.sort((a,b)=>a.day-b.day).forEach((f,i)=>{
+            el.innerHTML += `<div class="card"><div style="display:flex;gap:5px"><input type="number" value="${f.day}" onchange="upd('flows',${i},'day',this.value)" style="width:40px"><input type="text" value="${f.title}" onchange="upd('flows',${i},'title',this.value)"></div><div style="display:flex;gap:5px"><select onchange="upd('flows',${i},'type',this.value)"><option value="inc" ${f.type==='inc'?'selected':''}>Inc</option><option value="exp" ${f.type==='exp'?'selected':''}>Exp</option></select><input type="number" value="${f.val}" onchange="upd('flows',${i},'val',this.value)"></div><button class="btn" onclick="del('flows',${i})" style="background:var(--danger)">DEL</button></div>`;
+        });
+    }
+    function addFlow(){ data.flows.push({day:1, title:'New', type:'exp', val:0}); saveData(); renderFlowList(); }
+    function saveSetting(k,v){ data.settings[k]=v; saveData(); }
+    function updateClock() {
+        const now = new Date();
+        const gen = (n) => String(n).padStart(2,'0').split('').map(c=>`<div class="nixie-tube"><span class="nixie-char">${c}</span></div>`).join('');
+        if(document.getElementById('p-launcher').classList.contains('active')) document.getElementById('nixie-time').innerHTML = gen(now.getHours()) + '<div class="nixie-sep">:</div>' + gen(now.getMinutes()) + '<div class="nixie-sep">:</div>' + gen(now.getSeconds());
+        if(document.getElementById('p-cockpit').classList.contains('active')) document.getElementById('nixie-clock-sm').innerHTML = gen(now.getHours()) + '<div class="nixie-sep">:</div>' + gen(now.getMinutes());
+    }
+    async function fetchRate() { try { const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD').then(r=>r.json()); data.settings.usd_rate=r.rates.JPY; document.getElementById('rate-usd').value=r.rates.JPY; saveData(); alert("SYNC OK"); } catch(e){ alert("OFFLINE"); } }
+    
+    // Calc logic
+    let calcExp = "";
+    function openCalc() { document.getElementById('calc-screen').style.display='flex'; calcExp=""; updateCalc(); }
+    function closeCalc() { document.getElementById('calc-screen').style.display='none'; }
+    function updateCalc() { document.getElementById('calc-display').innerText = calcExp || "0"; }
+    function calc(v) {
+        if(v==='C') calcExp="";
+        else if(v==='=') {
+            if(calcExp === '8888') { closeCalc(); openApp('stash'); nagatoSpeak("SECRET STASH UNLOCKED."); return; }
+            try { calcExp = eval(calcExp).toString(); } catch { calcExp="Error"; }
+        } else calcExp += v;
+        updateCalc();
+    }
+    // Stubbed others
+    function renderStash(){ const el=document.getElementById('stash-list'); el.innerHTML=''; (data.stash||[]).forEach((s,i)=>{ el.innerHTML+=`<div class="card" style="border-color:purple"><input value="${s.name}"><input value="${s.val}"><button class="btn" onclick="data.stash.splice(${i},1);saveData();renderStash()">X</button></div>`; }); }
+    function addStash(){ if(!data.stash)data.stash=[]; data.stash.push({name:'Secret',val:0}); saveData(); renderStash(); }
+    function renderBS(){ document.getElementById('bs-view').innerText = "Loading..."; } // Simplified
+    function renderPL(){ document.getElementById('pl-view').innerText = "Loading..."; }
+    function renderTrend(){ }
+    function recordSnap(){ }
+    function renderCal(){ const g=document.getElementById('cal-view'); g.innerHTML=''; for(let i=1;i<=31;i++){ g.innerHTML+=`<div style="aspect-ratio:1;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center">${i}</div>`; } }
+    function completeMission(){ document.getElementById('mission-card').style.display='none'; nagatoSpeak("MISSION COMPLETE."); }
+    function openMatrix(){ document.getElementById('matrix-screen').style.display='block'; }
+    function closeMatrix(){ document.getElementById('matrix-screen').style.display='none'; }
+</script>
+</body>
+</html>
