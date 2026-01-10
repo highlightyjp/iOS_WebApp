@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SUI SYSTEM</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+    /* --- CORE THEME & RESET --- */
+    :root {
+        --bg-deep: #000810;
+        --bg-navy: #001228;
+        --glass-bg: rgba(20, 30, 50, 0.4);
+        --glass-border: rgba(100, 200, 255, 0.1);
+        --glass-blur: blur(20px);
+        --primary: #C5A059;
+        --secondary: #E5C585;
+        --nixie-bg: #110500;
+        --nixie-mesh: rgba(255, 200, 100, 0.03);
+        --nixie-off: #2a1100;
+        --nixie-on: #ff5a00;
+        --text: #e0faff;
+        --text-dim: #5c6a79;
+        --danger: #FF453A;
+        --font-main: "Noto Sans JP", sans-serif;
+        --font-code: "Share Tech Mono", monospace;
+        --dock-h: 90px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+    body {
+        background: radial-gradient(circle at center top, #001E43 0%, #000000 120%);
+        color: var(--text);
+        font-family: var(--font-main);
+        margin: 0; padding: 0;
+        /* SCROLL BAN & FULL FIT */
+        width: 100vw; height: 100dvh;
+        overflow: hidden; position: fixed; inset: 0;
+        overscroll-behavior: none;
+    }
+
+    /* --- WATERMARK --- */
+    .sui-watermark {
+        position: fixed; right: -40px; bottom: 120px;
+        font-family: 'Orbitron'; font-weight: 900; font-size: 200px;
+        color: rgba(255, 255, 255, 0.02); z-index: 0; pointer-events: none;
+        transform: rotate(-15deg);
+    }
+
+    /* --- PAGE CONTAINER --- */
+    .page {
+        display: none; position: absolute; inset: 0; bottom: var(--dock-h);
+        padding: 20px; padding-top: max(20px, env(safe-area-inset-top));
+        z-index: 10;
+        /* FLEX LAYOUT FOR AUTO-FIT */
+        flex-direction: column; gap: 15px;
+    }
+    .page.active { display: flex; animation: slideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    @keyframes slideIn { from{opacity:0; transform:scale(0.98);} to{opacity:1; transform:scale(1);} }
+
+    /* Scrollable content area for Lists */
+    .scroll-zone { flex: 1; overflow-y: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
+
+    /* --- GLASS CARDS --- */
+    .card {
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        border-radius: 8px; padding: 16px; position: relative;
+        backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        flex-shrink: 0; /* Prevent crushing */
+    }
+    .card.fit { flex: 1; min-height: 0; display: flex; flex-direction: column; } /* Auto expand */
+
+    /* --- TYPOGRAPHY & UI --- */
+    .label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display:flex; justify-content:space-between; }
+    .val-lg { font-size: 28px; font-family: 'Orbitron'; font-weight: 700; letter-spacing: 1px; text-shadow: 0 0 10px rgba(197, 160, 89, 0.3); }
+
+    input, select, textarea {
+        background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text);
+        padding: 12px; width: 100%; border-radius: 4px; font-family: var(--font-code); font-size: 16px;
+    }
+    .btn {
+        width: 100%; padding: 14px; border: none; font-weight: bold; cursor: pointer;
+        background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #001228;
+        font-family: var(--font-code); border-radius: 4px; letter-spacing: 2px;
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+    .btn:active { transform: scale(0.98); opacity: 0.9; }
+
+    /* --- NIXIE TUBE (DIVERGENCE METER STYLE) --- */
+    .nixie-rack {
+        display: flex; justify-content: center; align-items: flex-end; gap: 4px;
+        margin: 0 auto; padding: 5px;
+        /* Remove background to fix "Black Shadow" issue */
+        background: transparent;
+    }
+    .nixie-tube {
+        width: 24px; height: 48px; position: relative;
+        background: var(--nixie-bg); border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: inset 0 0 10px #000, 0 0 10px rgba(0,0,0,0.5);
+        overflow: hidden; flex-shrink: 0;
+    }
+    /* Mesh Grid Background */
+    .nixie-tube::after {
+        content: ''; position: absolute; inset: 0; opacity: 0.3;
+        background-image: repeating-linear-gradient(0deg, transparent, transparent 1px, var(--nixie-mesh) 1px, var(--nixie-mesh) 2px),
+                          repeating-linear-gradient(90deg, transparent, transparent 1px, var(--nixie-mesh) 1px, var(--nixie-mesh) 2px);
+        background-size: 4px 4px; pointer-events: none; z-index: 1;
+    }
+    /* Glass Reflection */
+    .nixie-tube::before {
+        content: ''; position: absolute; inset: 0; z-index: 10;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
+        border-radius: 12px; pointer-events: none;
+    }
+    /* The Digit */
+    .nixie-digit {
+        position: absolute; inset: 0; display: flex; justify-content: center; align-items: center;
+        font-family: 'Share Tech Mono', monospace; font-size: 36px; line-height: 1;
+        color: var(--nixie-on); z-index: 5;
+        text-shadow: 0 0 2px var(--nixie-on), 0 0 5px var(--nixie-on), 0 0 10px #ff0000;
+        filter: blur(0.5px);
+    }
+    /* Ghost Digit (Unlit filament effect) */
+    .nixie-ghost {
+        position: absolute; inset: 0; display: flex; justify-content: center; align-items: center;
+        font-family: 'Share Tech Mono', monospace; font-size: 36px;
+        color: var(--nixie-off); z-index: 0; opacity: 0.2;
+    }
+    .nixie-dot { width: 12px; border:none; background:transparent; box-shadow:none; display:flex; align-items:flex-end; padding-bottom:5px; }
+    .nixie-dot .nixie-digit { font-size: 20px; position:relative; }
+
+    /* --- FULL SCREEN CALCULATOR --- */
+    #calc-screen {
+        position: fixed; inset: 0; z-index: 9000; background: #080808;
+        display: none; flex-direction: column;
+        padding: 0; /* Full edge */
+        padding-top: max(20px, env(safe-area-inset-top));
+    }
+    #calc-display-area {
+        padding: 20px; flex: 0 0 auto; text-align: right;
+        display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    #calc-val { font-family: 'Orbitron'; font-size: 64px; color: #fff; line-height: 1; }
+    .calc-grid {
+        flex: 1; display: grid; grid-template-columns: repeat(4, 1fr);
+        /* NO GAP for seamless look */
+        gap: 1px; background: #222; border-top: 1px solid #333;
+    }
+    .calc-btn {
+        width: 100%; height: 100%; border: none; border-radius: 0; clip-path: none;
+        background: #1c1c1e; color: #fff; font-size: 32px; font-family: 'Share Tech Mono';
+        display: flex; justify-content: center; align-items: center;
+        transition: background 0.1s;
+    }
+    .calc-btn:active { background: #444; }
+    .calc-btn.op { background: #333; color: var(--primary); }
+    .calc-btn.eq { background: var(--primary); color: #000; }
+    .calc-close-btn {
+        position: absolute; top: max(30px, env(safe-area-inset-top)); left: 20px;
+        width: 40px; height: 40px; border-radius: 50%; background: rgba(50,50,50,0.8);
+        color: #fff; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 9100;
+    }
+
+    /* --- GLASS DOCK --- */
+    #glass-dock {
+        position: fixed; bottom: 20px; left: 20px; right: 20px; height: 70px;
+        background: rgba(10, 20, 30, 0.6); border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+        border-radius: 35px; display: flex; justify-content: space-around; align-items: center;
+        z-index: 5000; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .dock-item {
+        color: var(--text-dim); font-size: 26px; width: 55px; height: 55px;
+        display: flex; justify-content: center; align-items: center; border-radius: 50%;
+        transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .dock-item.active {
+        color: var(--primary); background: rgba(255,255,255,0.05);
+        box-shadow: 0 0 20px rgba(197, 160, 89, 0.15); transform: translateY(-5px);
+    }
+
+    /* --- CHART CONTAINERS --- */
+    .radar-container { flex: 1; position: relative; min-height: 0; width: 100%; }
+    .spark-container { width: 100%; height: 40px; margin-top: 5px; }
+
+    /* --- AUTH & BOOT --- */
+    #boot-screen, #auth-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .pin-input { background: transparent; border: 1px solid var(--primary); color: var(--primary); font-family: 'Orbitron'; font-size: 32px; width: 200px; text-align: center; padding: 10px; margin-bottom: 20px; letter-spacing: 8px; border-radius: 4px; }
+
+    /* --- LAUNCHER --- */
+    #launcher-grid {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+        align-content: center; flex: 1;
+    }
+    .app-icon {
+        background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+        aspect-ratio: 1; border-radius: 16px; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; color: var(--text);
+        backdrop-filter: blur(10px);
+    }
+    .app-icon i { font-size: 32px; margin-bottom: 8px; color: var(--primary); }
+    .icon-lbl { font-size: 10px; font-weight: bold; letter-spacing: 1px; }
+
+</style>
+</head>
+<body>
+
+<div class="sui-watermark">SUI</div>
+
+<div id="boot-screen" onclick="checkAuth()">
+    <div style="font-family:'Orbitron'; font-size:40px; color:var(--primary); letter-spacing:6px; margin-bottom:20px;">SUI</div>
+    <div id="boot-log" style="font-family:var(--font-code); font-size:12px; color:var(--text-dim);">SYSTEM INITIALIZING...</div>
+</div>
+
+<div id="auth-screen" style="display:none;">
+    <div style="font-family:'Orbitron'; font-size:24px; color:var(--primary); margin-bottom:30px;">IDENTITY CHECK</div>
+    <div id="auth-msg" style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">ENTER PASSCODE</div>
+    <input type="password" id="auth-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="****">
+    <button class="btn" style="width:200px" onclick="handleAuth()">UNLOCK</button>
+</div>
+
+<div id="p-cockpit" class="page">
+    <div style="display:flex; flex-direction:column; gap:5px; align-items:center; margin-bottom:5px;">
+        <div class="nixie-rack" id="nixie-date"></div>
+        <div class="nixie-rack" id="nixie-time"></div>
+    </div>
+
+    <div style="text-align:center; font-family:'Noto Sans JP'; font-weight:bold; color:var(--primary); letter-spacing:2px; text-shadow:0 0 10px rgba(197,160,89,0.5);" id="rank-display">---</div>
+
+    <div style="display:flex; gap:10px;">
+        <div class="card" style="flex:1;">
+            <div class="label">純資産総額</div>
+            <div class="val-lg" id="cp-net" style="font-size:24px;">¥0</div>
+            <div class="spark-container"><canvas id="sparkCanvas"></canvas></div>
+        </div>
+        <div class="card" style="flex:1;">
+            <div class="label">月次収支 / FIRE</div>
+            <div class="val-lg" id="cp-pl" style="font-size:20px; color:var(--text);">¥0</div>
+            <div style="text-align:right; font-family:'Orbitron'; font-size:14px; color:var(--secondary); margin-top:5px;">
+                <span id="fire-pct">0</span>%
+            </div>
+        </div>
+    </div>
+
+    <div class="card fit">
+        <div class="label">ポートフォリオ戦略 (STRATEGY)</div>
+        <div class="radar-container"><canvas id="radarChart"></canvas></div>
+    </div>
+</div>
+
+<div id="p-assets" class="page">
+    <div class="card">
+        <div class="label">USD/JPY RATE</div>
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="rate-usd" style="font-size:20px; font-weight:bold;" value="145">
+            <button class="btn" style="width:80px;" onclick="fetchRate()">SYNC</button>
+        </div>
+    </div>
+    <div class="scroll-zone" id="asset-list"></div>
+    <button class="btn" onclick="addAsset()">＋ 資産追加</button>
+</div>
+
+<div id="p-flows" class="page">
+    <div class="card">
+        <div class="label">年間特別費予算</div>
+        <input type="number" id="special-exp" onchange="saveData()" placeholder="0">
+    </div>
+    <div class="scroll-zone" id="flow-list"></div>
+    <button class="btn" onclick="addFlow()">＋ 収支追加</button>
+</div>
+
+<div id="p-menu" class="page">
+    <div class="card" style="text-align:center;">
+        <div class="label">SYSTEM STATUS</div>
+        <div style="font-family:'Orbitron'; color:var(--success);">ALL GREEN</div>
+    </div>
+    <div id="launcher-grid">
+        <div class="app-icon" onclick="openCalc()">
+            <i class="ri-calculator-fill"></i><span class="icon-lbl">電卓</span>
+        </div>
+        <div class="app-icon" onclick="openApp('bs')">
+            <i class="ri-scales-3-fill"></i><span class="icon-lbl">B/S</span>
+        </div>
+        <div class="app-icon" onclick="openApp('pl')">
+            <i class="ri-funds-fill"></i><span class="icon-lbl">P/L</span>
+        </div>
+        <div class="app-icon" onclick="openApp('config')">
+            <i class="ri-settings-4-fill"></i><span class="icon-lbl">設定</span>
+        </div>
+        <div class="app-icon" onclick="togglePrivacy()">
+            <i class="ri-eye-off-fill"></i><span class="icon-lbl">隠蔽</span>
+        </div>
+        <div class="app-icon" onclick="forceReset()">
+            <i class="ri-alert-fill" style="color:var(--danger)"></i><span class="icon-lbl">初期化</span>
+        </div>
+    </div>
+</div>
+
+<div id="p-config" class="page">
+    <h2>システム設定</h2>
+    <div class="card">
+        <div class="label">理想ポートフォリオ比率 (%)</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div><span class="label">現金</span><input type="number" id="tgt-cash" onchange="saveData()"></div>
+            <div><span class="label">国内株</span><input type="number" id="tgt-jp" onchange="saveData()"></div>
+            <div><span class="label">米国株</span><input type="number" id="tgt-us" onchange="saveData()"></div>
+            <div><span class="label">暗号資産</span><input type="number" id="tgt-cryp" onchange="saveData()"></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="label">デッドマンスイッチ (遺言)</div>
+        <textarea id="inherit-txt" rows="4" onchange="saveData()"></textarea>
+    </div>
+</div>
+
+<div id="p-bs" class="page"><h2>貸借対照表 (B/S)</h2><div class="scroll-zone" id="bs-view"></div></div>
+<div id="p-pl" class="page"><h2>損益計算書 (P/L)</h2><div class="scroll-zone" id="pl-view"></div></div>
+
+<div id="calc-screen">
+    <div class="calc-close-btn" onclick="closeCalc()"><i class="ri-close-line" style="font-size:24px;"></i></div>
+    <div id="calc-display-area">
+        <div id="calc-val">0</div>
+    </div>
+    <div class="calc-grid">
+        <button class="calc-btn op" onclick="calc('C')">C</button>
+        <button class="calc-btn op" onclick="calc('/')">÷</button>
+        <button class="calc-btn op" onclick="calc('*')">×</button>
+        <button class="calc-btn op" onclick="calc('-')">-</button>
+        <button class="calc-btn" onclick="calc(7)">7</button>
+        <button class="calc-btn" onclick="calc(8)">8</button>
+        <button class="calc-btn" onclick="calc(9)">9</button>
+        <button class="calc-btn eq" onclick="calc('+')">+</button>
+        <button class="calc-btn" onclick="calc(4)">4</button>
+        <button class="calc-btn" onclick="calc(5)">5</button>
+        <button class="calc-btn" onclick="calc(6)">6</button>
+        <button class="calc-btn eq" onclick="calc('=')" style="grid-row: span 3;">=</button>
+        <button class="calc-btn" onclick="calc(1)">1</button>
+        <button class="calc-btn" onclick="calc(2)">2</button>
+        <button class="calc-btn" onclick="calc(3)">3</button>
+        <button class="calc-btn" onclick="calc(0)" style="grid-column: span 2">0</button>
+        <button class="calc-btn" onclick="calc('.')">.</button>
+    </div>
+</div>
+
+<div id="glass-dock">
+    <div class="dock-item" onclick="openApp('cockpit')" id="nav-cockpit"><i class="ri-dashboard-line"></i></div>
+    <div class="dock-item" onclick="openApp('assets')" id="nav-assets"><i class="ri-safe-2-line"></i></div>
+    <div class="dock-item" onclick="openApp('flows')" id="nav-flows"><i class="ri-exchange-dollar-line"></i></div>
+    <div class="dock-item" onclick="openApp('menu')" id="nav-menu"><i class="ri-menu-5-line"></i></div>
+</div>
+
+<script>
+    /* --- SYSTEM KERNEL --- */
+    const KEY = 'sui_final_data';
+    const KEY_PASS = 'sui_pass';
+    let data = {};
+    let radarInstance = null;
+    let isPrivacy = false;
+
+    const DEF = {
+        assets: [{name:'メイン口座', val:0, type:'asset', cat:'cash', curr:'JPY'}],
+        flows: [], history: [],
+        settings: { usd_rate:145, tgt_cash:30, tgt_jp:30, tgt_us:30, tgt_cryp:10, inherit:"" }
+    };
+
+    window.onload = () => {
+        // Load Data
+        try {
+            let s = localStorage.getItem(KEY);
+            data = s ? {...DEF, ...JSON.parse(s)} : JSON.parse(JSON.stringify(DEF));
+            if(!data.settings) data.settings = DEF.settings;
+        } catch(e) { data = JSON.parse(JSON.stringify(DEF)); }
+
+        // Start Clock
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Boot
+        setTimeout(() => {
+            document.getElementById('boot-screen').style.display='none';
+            checkAuth();
+        }, 1500);
+    };
+
+    /* --- AUTH --- */
+    function checkAuth() {
+        if(!localStorage.getItem(KEY_PASS)) {
+            document.getElementById('auth-screen').style.display='flex';
+            document.getElementById('auth-msg').innerText = "NEW USER: SET PASSCODE";
+        } else {
+            document.getElementById('auth-screen').style.display='flex';
+        }
+    }
+    function handleAuth() {
+        let val = document.getElementById('auth-input').value;
+        let stored = localStorage.getItem(KEY_PASS);
+        if(val==='9999') { localStorage.clear(); location.reload(); return; }
+        
+        if(!stored) {
+            if(val) { localStorage.setItem(KEY_PASS, val); unlock(); }
+        } else {
+            if(val===stored) unlock();
+            else { alert("INVALID"); document.getElementById('auth-input').value=''; }
+        }
+    }
+    function unlock() {
+        document.getElementById('auth-screen').style.display='none';
+        logHistory();
+        openApp('cockpit');
+    }
+
+    /* --- NAVIGATION --- */
+    function openApp(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+        
+        let target = id;
+        if(id==='config' || id==='bs' || id==='pl') target = id; 
+        else if(id==='menu') target = 'menu';
+        
+        // Handle sub-pages mapped to main pages if needed, but here simple
+        let pageId = 'p-' + (['bs','pl','config'].includes(id) ? id : id);
+        if(document.getElementById(pageId)) document.getElementById(pageId).classList.add('active');
+        else document.getElementById('p-menu').classList.add('active'); // Fallback
+
+        // Dock Highlight
+        if(id==='cockpit') document.getElementById('nav-cockpit').classList.add('active');
+        if(id==='assets') document.getElementById('nav-assets').classList.add('active');
+        if(id==='flows') document.getElementById('nav-flows').classList.add('active');
+        if(['menu','config','bs','pl'].includes(id)) document.getElementById('nav-menu').classList.add('active');
+
+        // Render Triggers
+        if(id==='cockpit') renderCockpit();
+        if(id==='assets') renderAssets();
+        if(id==='flows') renderFlows();
+        if(id==='bs') renderBS();
+        if(id==='pl') renderPL();
+        if(id==='config') renderConfig();
+    }
+
+    /* --- NIXIE TUBE RENDERER (DIVERGENCE METER) --- */
+    function renderNixie(containerId, text) {
+        let c = document.getElementById(containerId);
+        c.innerHTML = '';
+        for (let char of text) {
+            let tube = document.createElement('div');
+            // Check if it's a separator or distinct char
+            if (['.', ':', '[', ']', ' '].includes(char)) {
+                // Separators can be smaller or just tubes with symbols
+                tube.className = (char===' ' ? 'nixie-dot' : 'nixie-tube');
+                if(char===' ') { 
+                    c.appendChild(tube); continue; 
+                }
+            } else {
+                tube.className = 'nixie-tube';
+            }
+            
+            // Lit digit
+            let digit = document.createElement('div');
+            digit.className = 'nixie-digit';
+            digit.innerText = char;
+            
+            // Ghost digit (8) for realism
+            let ghost = document.createElement('div');
+            ghost.className = 'nixie-ghost';
+            ghost.innerText = '8';
+
+            tube.appendChild(ghost);
+            tube.appendChild(digit);
+            c.appendChild(tube);
+        }
+    }
+
+    function updateClock() {
+        let now = new Date();
+        // Date: 2026.01.10 [SAT]
+        let y = now.getFullYear();
+        let m = String(now.getMonth()+1).padStart(2,'0');
+        let d = String(now.getDate()).padStart(2,'0');
+        let w = ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
+        renderNixie('nixie-date', `${y}.${m}.${d}[${w}]`);
+
+        // Time: 14:25:30
+        let hh = String(now.getHours()).padStart(2,'0');
+        let mm = String(now.getMinutes()).padStart(2,'0');
+        let ss = String(now.getSeconds()).padStart(2,'0');
+        renderNixie('nixie-time', `${hh}:${mm}:${ss}`);
+    }
+
+    /* --- CALCULATOR --- */
+    let cVal = "";
+    function openCalc() { document.getElementById('calc-screen').style.display='flex'; cVal=""; updateCalc(); }
+    function closeCalc() { document.getElementById('calc-screen').style.display='none'; }
+    function updateCalc() { document.getElementById('calc-val').innerText = cVal || "0"; }
+    function calc(v) {
+        if(v==='C') cVal="";
+        else if(v==='=') {
+            try { cVal = eval(cVal).toString(); } catch { cVal="ERR"; }
+        } else {
+            cVal += v;
+        }
+        updateCalc();
+    }
+
+    /* --- DATA LOGIC --- */
+    function saveData() {
+        data.settings.tgt_cash = document.getElementById('tgt-cash').value;
+        data.settings.tgt_jp = document.getElementById('tgt-jp').value;
+        data.settings.tgt_us = document.getElementById('tgt-us').value;
+        data.settings.tgt_cryp = document.getElementById('tgt-cryp').value;
+        data.settings.inherit = document.getElementById('inherit-txt').value;
+        localStorage.setItem(KEY, JSON.stringify(data));
+    }
+    
+    function logHistory() {
+        let today = new Date().toISOString().split('T')[0];
+        let net = getNet();
+        let h = data.history;
+        if(h.length===0 || h[h.length-1].d !== today) {
+            h.push({d:today, v:net});
+            if(h.length>30) h.shift();
+            saveData();
+        }
+    }
+
+    function getNet() {
+        let a=0, d=0;
+        (data.assets||[]).forEach(x => {
+            let v = parseInt(x.val) * (x.curr==='USD'?data.settings.usd_rate:1);
+            x.type==='asset' ? a+=v : d+=v;
+        });
+        return a - d;
+    }
+
+    /* --- RENDERERS --- */
+    function renderCockpit() {
+        let net = getNet();
+        document.getElementById('cp-net').innerText = isPrivacy ? '***' : '¥'+net.toLocaleString();
+        
+        let inc=0, exp=0;
+        (data.flows||[]).forEach(f => f.type==='inc'?inc+=parseInt(f.val):exp+=parseInt(f.val));
+        document.getElementById('cp-pl').innerText = isPrivacy ? '***' : '¥'+(inc-exp).toLocaleString();
+        
+        let goal = exp * 12 * 25; 
+        let pct = goal>0 ? Math.round((net/goal)*100) : 0;
+        document.getElementById('fire-pct').innerText = pct;
+        
+        // Rank
+        let rank="訓練兵";
+        let man = net/10000;
+        if(man>500) rank="一等水兵"; if(man>1000) rank="兵曹長"; if(man>5000) rank="少尉";
+        if(man>10000) rank="大尉"; if(man>50000) rank="中佐"; if(man>100000) rank="大佐";
+        document.getElementById('rank-display').innerText = rank;
+
+        renderRadar();
+        renderSpark();
+    }
+
+    function renderRadar() {
+        let ctx = document.getElementById('radarChart');
+        if(!ctx) return;
+        if(radarInstance) radarInstance.destroy();
+
+        let cats = {cash:0, stock_jp:0, stock_us:0, crypto:0, other:0};
+        let tot = 0;
+        (data.assets||[]).forEach(x => {
+            if(x.type==='asset') {
+                let v = parseInt(x.val) * (x.curr==='USD'?data.settings.usd_rate:1);
+                if(cats[x.cat]!==undefined) cats[x.cat]+=v; else cats.other+=v;
+                tot += v;
+            }
+        });
+
+        let cur = [
+            tot?Math.round(cats.cash/tot*100):0,
+            tot?Math.round(cats.stock_jp/tot*100):0,
+            tot?Math.round(cats.stock_us/tot*100):0,
+            tot?Math.round(cats.crypto/tot*100):0,
+            tot?Math.round(cats.other/tot*100):0
+        ];
+        let tgt = [
+            parseInt(data.settings.tgt_cash), parseInt(data.settings.tgt_jp),
+            parseInt(data.settings.tgt_us), parseInt(data.settings.tgt_cryp), 0
+        ];
+        tgt[4] = 100 - (tgt[0]+tgt[1]+tgt[2]+tgt[3]);
+
+        radarInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['現金','国内株','米国株','暗号','その他'],
+                datasets: [
+                    { label:'現在', data:cur, borderColor:'#C5A059', backgroundColor:'rgba(197,160,89,0.4)', borderWidth:2 },
+                    { label:'理想', data:tgt, borderColor:'rgba(255,255,255,0.3)', borderDash:[4,4], borderWidth:1, fill:false }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { r: { angleLines:{color:'rgba(255,255,255,0.1)'}, grid:{color:'rgba(255,255,255,0.1)'}, ticks:{display:false}, pointLabels:{color:'#8FA0B5', font:{size:10}} } },
+                plugins: { legend: { display:false } }
+            }
+        });
+    }
+
+    function renderSpark() {
+        let cvs = document.getElementById('sparkCanvas');
+        let ctx = cvs.getContext('2d');
+        let w = cvs.width = cvs.clientWidth; let h = cvs.height = cvs.clientHeight;
+        ctx.clearRect(0,0,w,h);
+        
+        let hist = data.history;
+        if(hist.length<2) return;
+        
+        let min = Math.min(...hist.map(x=>x.v));
+        let max = Math.max(...hist.map(x=>x.v));
+        let range = max-min || 1;
+        
+        ctx.beginPath();
+        ctx.strokeStyle = '#32D74B'; ctx.lineWidth = 2;
+        hist.forEach((p,i)=>{
+            let x = (i/(hist.length-1))*w;
+            let y = h - ((p.v-min)/range)*h;
+            i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+    }
+
+    function renderAssets() {
+        let el = document.getElementById('asset-list'); el.innerHTML='';
+        data.assets.forEach((a,i) => {
+            el.innerHTML += `<div class="card"><div style="display:flex;gap:5px;margin-bottom:5px;"><input value="${a.name}" onchange="upd('assets',${i},'name',this.value)" style="font-weight:bold"><select onchange="upd('assets',${i},'cat',this.value)"><option value="cash" ${a.cat=='cash'?'selected':''}>現金</option><option value="stock_jp" ${a.cat=='stock_jp'?'selected':''}>国内株</option><option value="stock_us" ${a.cat=='stock_us'?'selected':''}>米国株</option><option value="crypto" ${a.cat=='crypto'?'selected':''}>暗号</option></select></div><div style="display:flex;gap:5px;"><select style="width:70px" onchange="upd('assets',${i},'curr',this.value)"><option value="JPY" ${a.curr=='JPY'?'selected':''}>¥</option><option value="USD" ${a.curr=='USD'?'selected':''}>$</option></select><input type="number" value="${a.val}" onchange="upd('assets',${i},'val',this.value)"><button class="btn" style="width:50px; background:var(--danger)" onclick="del('assets',${i})">×</button></div></div>`;
+        });
+    }
+    
+    function renderFlows() {
+        let el = document.getElementById('flow-list'); el.innerHTML='';
+        data.flows.forEach((f,i) => {
+            el.innerHTML += `<div class="card"><div style="display:flex;gap:5px;"><input value="${f.title}" onchange="upd('flows',${i},'title',this.value)"><select style="width:80px" onchange="upd('flows',${i},'type',this.value)"><option value="inc" ${f.type=='inc'?'selected':''}>収入</option><option value="exp" ${f.type=='exp'?'selected':''}>支出</option></select></div><div style="display:flex;gap:5px;margin-top:5px;"><input type="number" value="${f.val}" onchange="upd('flows',${i},'val',this.value)"><button class="btn" style="width:50px; background:var(--danger)" onclick="del('flows',${i})">×</button></div></div>`;
+        });
+    }
+
+    function renderBS() {
+        let a=0,d=0,h='';
+        data.assets.forEach(x=>{
+            let v = parseInt(x.val)*(x.curr==='USD'?data.settings.usd_rate:1);
+            x.type==='asset'?a+=v:d+=v;
+            h+=`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.1)"><span>${x.name}</span><span>¥${v.toLocaleString()}</span></div>`;
+        });
+        document.getElementById('bs-view').innerHTML = `<div class="card">${h}<div style="text-align:right;margin-top:10px;font-weight:bold;color:var(--primary)">純資産: ¥${(a-d).toLocaleString()}</div></div>`;
+    }
+    function renderPL() {
+        let i=0,e=0,h='';
+        data.flows.forEach(x=>{
+            let v = parseInt(x.val); x.type==='inc'?i+=v:e+=v;
+            h+=`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.1)"><span>${x.title}</span><span style="color:${x.type==='inc'?'var(--success)':'var(--danger)'}">¥${v.toLocaleString()}</span></div>`;
+        });
+        document.getElementById('pl-view').innerHTML = `<div class="card">${h}<div style="text-align:right;margin-top:10px;font-weight:bold">収支: ¥${(i-e).toLocaleString()}</div></div>`;
+    }
+    function renderConfig() {
+        document.getElementById('tgt-cash').value = data.settings.tgt_cash;
+        document.getElementById('tgt-jp').value = data.settings.tgt_jp;
+        document.getElementById('tgt-us').value = data.settings.tgt_us;
+        document.getElementById('tgt-cryp').value = data.settings.tgt_cryp;
+        document.getElementById('inherit-txt').value = data.settings.inherit || "";
+    }
+
+    /* --- HELPERS --- */
+    function upd(k,i,f,v) { data[k][i][f]=v; saveData(); }
+    function del(k,i) { if(confirm("削除？")) { data[k].splice(i,1); saveData(); k=='assets'?renderAssets():renderFlows(); } }
+    function addAsset() { data.assets.push({name:'新規',val:0,type:'asset',cat:'cash',curr:'JPY'}); saveData(); renderAssets(); }
+    function addFlow() { data.flows.push({title:'新規',type:'exp',val:0}); saveData(); renderFlows(); }
+    function togglePrivacy() { isPrivacy=!isPrivacy; openApp('cockpit'); }
+    function forceReset() { if(confirm("全データ削除？")) { localStorage.clear(); location.reload(); } }
+    async function fetchRate() {
+        try { let r = await fetch('https://api.exchangerate-api.com/v4/latest/USD').then(x=>x.json()); data.settings.usd_rate=r.rates.JPY; document.getElementById('rate-usd').value=r.rates.JPY; saveData(); alert("SYNC OK"); } catch{alert("OFFLINE");}
+    }
+</script>
+</body>
+</html>
