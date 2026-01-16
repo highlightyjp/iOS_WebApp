@@ -1,948 +1,525 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ESTATE OS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ESTATE OS v45.0</title>
+<style>
+    :root {
+        --bg: #0f172a; --card: rgba(30,41,59,0.9); --menu: #0f172a;
+        --gold: #fbbf24; --cyan: #06b6d4; --red: #f43f5e; --green: #10b981;
+        --text: #f8fafc; --sub: #94a3b8;
+        --safe-top: env(safe-area-inset-top); --safe-btm: env(safe-area-inset-bottom);
+        --font: "Hiragino Sans", "Meiryo", sans-serif;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+    body { 
+        margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); 
+        height: 100dvh; overflow: hidden; display: flex; flex-direction: column; line-height: 1.5;
+    }
+
+    /* Typography */
+    .num { font-family: "Courier New", Courier, monospace; }
+    .text-gold { color: var(--gold); } .text-cyan { color: var(--cyan); }
+    .text-red { color: var(--red); } .text-green { color: var(--green); }
+    .text-small { font-size: 11px; color: var(--sub); }
+
+    /* Layout */
+    header {
+        height: calc(50px + var(--safe-top)); padding-top: var(--safe-top);
+        background: rgba(15,23,42,0.98); border-bottom: 1px solid rgba(255,255,255,0.1);
+        display: flex; align-items: center; padding-left: 15px; z-index: 1000;
+    }
+    .brand { font-weight: 900; letter-spacing: 1px; font-size: 18px; }
     
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjogIzBmMTcyYTsiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZCIgeDE9IjAlIiB5MT0iMTAwJSIgeDI9IjEwMCUiIHkyPSIwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2IzODcyZTtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNmZmQ3MDA7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwZjE3MmEiLz48cGF0aCBkPSJNMjU2IDQwIEwxNjAgNDcyIEwzNTIgNDcyIFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTI1NiA4MCBMMjU2IDQ3MiNNMjA2IDQ3MiBMMjA2IDIwMCBMMzE2IDIwMCBMMzE2IDQ3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjI1NiIgY3k9IjgwIiByPSIxMiIgZmlsbD0idXJsKCNnb2xkKSIvPjxjaXJjbGUgY3g9IjIwNiIgY3k9IjIwMCIgcj0iOCIgZmlsbD0idXJsKCNnb2xkKSIvPjxjaXJjbGUgY3g9IjMxNiIgY3k9IjIwMCIgcj0iOCIgZmlsbD0idXJsKCNnb2xkKSIvPjxjaXJjbGUgY3g9IjI1NiIgY3k9IjMyMCIgcj0iOCIgZmlsbD0idXJsKCNnb2xkKSIvPjwvc3ZnPg==">
+    main { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: calc(80px + var(--safe-btm)); }
+    
+    .hud-fixed {
+        position: sticky; top: 0; background: var(--bg); z-index: 500;
+        padding-bottom: 10px; border-bottom: 2px solid var(--gold); margin-bottom: 20px;
+    }
 
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --accent-gold: #fbbf24;
-            --accent-cyan: #06b6d4;
-            --accent-red: #f43f5e;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --font-stack: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
-        }
+    .glass {
+        background: var(--card); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
+        padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        body {
-            margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: var(--font-stack);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+    /* Components */
+    .acc-btn { 
+        width: 100%; text-align: left; background: none; border: none; color: var(--cyan);
+        font-weight: bold; padding: 10px 0; border-bottom: 1px solid rgba(6,182,212,0.2);
+        display: flex; justify-content: space-between; cursor: pointer;
+    }
+    .acc-content { padding-top: 15px; }
+    
+    label { display: block; font-size: 12px; color: var(--sub); margin-bottom: 4px; margin-top: 10px; }
+    input, select {
+        width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #334155;
+        border-radius: 6px; color: #fff; padding: 10px; font-size: 15px;
+    }
+    input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(6,182,212,0.3); }
 
-        /* Utility Classes */
-        .hidden { display: none !important; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .center { align-items: center; justify-content: center; }
-        .glass { background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
-        .text-gold { color: var(--accent-gold); }
-        .text-cyan { color: var(--accent-cyan); }
-        .text-red { color: var(--accent-red); }
-        .w-full { width: 100%; }
-        .mt-2 { margin-top: 0.5rem; }
-        .p-2 { padding: 0.5rem; }
-        .p-4 { padding: 1rem; }
-        .rounded { border-radius: 12px; }
-        .btn {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-main);
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        .btn:active { transform: scale(0.98); background: rgba(255,255,255,0.2); }
-        .btn-primary { background: var(--accent-cyan); color: #000; border: none; }
-        .btn-gold { background: var(--accent-gold); color: #000; border: none; }
-        
-        /* Inputs & Sliders */
-        input[type="text"], input[type="number"], select {
-            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #334155;
-            color: #fff; padding: 10px; border-radius: 6px; font-size: 16px; margin-bottom: 8px;
-        }
-        input[type="range"] {
-            width: 100%; height: 4px; background: #334155; border-radius: 2px; outline: none; appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            appearance: none; width: 20px; height: 20px; background: var(--accent-cyan); border-radius: 50%;
-        }
+    /* Switch Component */
+    .toggle-group { display: flex; background: #0f172a; border-radius: 8px; padding: 3px; border: 1px solid #334155; }
+    .toggle-btn { 
+        flex: 1; text-align: center; padding: 8px; font-size: 12px; border-radius: 6px; 
+        cursor: pointer; color: var(--sub); transition: 0.2s;
+    }
+    .toggle-btn.active { background: var(--cyan); color: #000; font-weight: bold; }
 
-        /* --- Lock Screen --- */
-        #lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 9999; background: var(--bg-color);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .lock-msg { margin-bottom: 20px; font-size: 14px; color: var(--text-sub); letter-spacing: 2px; }
-        #pattern-canvas { touch-action: none; }
+    .btn {
+        width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold;
+        font-size: 16px; cursor: pointer; transition: 0.1s;
+    }
+    .btn-p { background: linear-gradient(135deg, var(--cyan), #0891b2); color: #000; }
+    .btn-s { background: #1e293b; color: #fff; border: 1px solid #334155; }
+    .btn:active { transform: scale(0.98); opacity: 0.9; }
 
-        /* --- App Layout --- */
-        header {
-            padding: calc(var(--safe-top) + 10px) 16px 10px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            background: rgba(15, 23, 42, 0.9);
-        }
-        .app-title { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
-        .app-icon-mini { width: 24px; height: 24px; margin-right: 8px; vertical-align: middle; }
+    /* Report Table */
+    .report-card { border: 1px solid var(--gold); padding: 20px; background: #1e293b; border-radius: 12px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #334155; font-size: 13px; }
+    .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+    .bg-green { background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid var(--green); }
+    .bg-red { background: rgba(244,63,94,0.2); color: var(--red); border: 1px solid var(--red); }
+    .bg-gold { background: rgba(251,191,36,0.2); color: var(--gold); border: 1px solid var(--gold); }
 
-        main { flex: 1; overflow-y: auto; padding-bottom: 80px; scroll-behavior: smooth; }
-        .tab-content { display: none; padding: 16px; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    /* Oracle Section */
+    .oracle { border-left: 3px solid var(--gold); padding-left: 15px; margin-top: 20px; font-style: italic; }
+    
+    /* Toast */
+    #toast {
+        position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 30px;
+        font-size: 12px; z-index: 2000; opacity: 0; transition: 0.3s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
 
-        /* --- Components --- */
-        .radar-container { width: 100%; max-width: 300px; margin: 0 auto; position: relative; }
-        .gauge-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-        .gauge-fill { height: 100%; width: 0%; transition: width 0.5s ease; }
-        .compare-row { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0; }
-        
-        .station-suggest-list {
-            position: absolute; background: #1e293b; border: 1px solid #334155;
-            width: 100%; max-height: 150px; overflow-y: auto; z-index: 100;
-            border-radius: 0 0 8px 8px;
-        }
-        .suggest-item { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+    /* Lock Screen */
+    #lock-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg);
+        z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
 
-        /* --- Tab Bar --- */
-        nav.tab-bar {
-            position: fixed; bottom: 0; width: 100%; height: calc(60px + var(--safe-bottom));
-            background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex; justify-content: space-around; padding-top: 10px; padding-bottom: var(--safe-bottom);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        }
-        .tab-btn {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            color: var(--text-sub); font-size: 10px; background: none; border: none; cursor: pointer;
-        }
-        .tab-btn.active { color: var(--accent-cyan); }
-        .tab-icon { font-size: 20px; margin-bottom: 4px; }
-
-        /* --- Footer --- */
-        .copyright { text-align: center; color: #475569; font-size: 10px; margin-top: 40px; padding-bottom: 20px; }
-
-    </style>
+    @media print {
+        header, .hud-fixed, .btn, .no-print { display: none !important; }
+        body { background: #fff; color: #000; overflow: visible; }
+        .glass, .report-card { border: 1px solid #000; background: none; color: #000; page-break-inside: avoid; }
+        .text-cyan, .text-gold, .text-red { color: #000 !important; }
+    }
+</style>
 </head>
 <body>
 
-    <div id="lock-screen">
-        <div class="app-title text-gold" style="margin-bottom:10px; font-size:24px;">ESTATE OS</div>
-        <div id="lock-msg" class="lock-msg">CONNECT CIRCUIT TO BOOT</div>
-        <canvas id="pattern-canvas" width="300" height="300"></canvas>
+<div id="lock-screen">
+    <div class="brand text-gold" style="font-size: 32px; margin-bottom: 40px;">ESTATE OS</div>
+    <div class="text-small" style="margin-bottom: 20px;">パターン入力で解除</div>
+    <canvas id="lock-cvs" width="300" height="300"></canvas>
+</div>
+
+<header>
+    <div class="brand">ESTATE <span class="text-cyan">OS</span> <span class="text-small">v45.0 Oracle</span></div>
+</header>
+
+<main>
+    <div class="hud-fixed">
+        <div class="text-small">月額実質負担（ローン＋維持費－控除）</div>
+        <div class="text-gold num" style="font-size: 28px; font-weight: 900;"><span id="hud-total">0</span> <span style="font-size: 14px;">円</span></div>
+        <div class="text-small flex" style="display:flex; justify-content: space-between;">
+            <span>判定ランク: <span id="hud-rank" class="num">--</span></span>
+            <span>将来増額リスク: <span id="hud-risk" class="text-red">--</span></span>
+        </div>
     </div>
 
-    <div id="app-container" class="hidden">
-        
-        <header>
-            <div class="btn" style="padding:4px 8px; font-size:16px;" onclick="resetToHome()">🏠</div>
-            <div class="app-title">ESTATE <span class="text-cyan">OS</span></div>
-            <div class="btn text-gold" style="padding:4px 8px; font-size:12px;" onclick="toggleLock()">🔒</div>
-        </header>
-
-        <main>
-            <div id="tab-home" class="tab-content active">
-                <div class="glass rounded p-4 mb-4">
-                    <h2 class="text-cyan" style="margin:0 0 10px 0;">STATUS</h2>
-                    <div class="flex" style="justify-content:space-between; margin-bottom:10px;">
-                        <span>ターゲット (2027/08) まで</span>
-                        <span class="text-gold" style="font-weight:bold;"><span id="days-left">0</span> Days</span>
-                    </div>
-                    <div style="font-size:12px; color:var(--text-sub);">現在スコア (Latest)</div>
-                    <div style="font-size:48px; font-weight:800; line-height:1;" id="dash-score">--</div>
-                    <div id="dash-rank" style="font-size:18px; color:#fbbf24; margin-bottom:10px;">--</div>
-                    <div class="gauge-bar"><div id="dash-gauge" class="gauge-fill" style="background:var(--accent-red);"></div></div>
-                    <div style="font-size:10px; text-align:right; margin-top:4px;">予算消化率</div>
-                </div>
-
-                <div class="glass rounded p-4">
-                    <h3>History</h3>
-                    <div id="history-list" style="font-size:12px;">
-                        <div style="padding:10px; text-align:center; color:gray;">No Data</div>
-                    </div>
-                </div>
+    <div class="glass">
+        <button class="acc-btn" onclick="toggleAcc('acc-fin')">【 1 】 資金・ローン戦略 <span id="icon-fin">▼</span></button>
+        <div id="acc-fin" class="acc-content">
+            <label>借入形式</label>
+            <div class="toggle-group">
+                <div class="toggle-btn active" id="btn-single" onclick="setLoan('single')">夫単独</div>
+                <div class="toggle-btn" id="btn-pair" onclick="setLoan('pair')">ペアローン</div>
             </div>
-
-            <div id="tab-input" class="tab-content">
-                <div class="glass rounded p-4 mb-4">
-                    <h3 class="text-cyan">PROPERTY SPEC</h3>
-                    <input type="text" id="prop-name" placeholder="物件名 (例: センター南タワー)">
-                    
-                    <div class="mt-2">価格: <span id="disp-price" class="text-gold">4500</span> 万円</div>
-                    <input type="range" id="in-price" min="2000" max="8000" step="50" value="4500" oninput="updateDisp('price')">
-                    
-                    <div class="flex mt-2" style="gap:10px;">
-                        <div class="w-full">
-                            <label>管理費等(円)</label>
-                            <input type="number" id="in-fee" value="25000">
-                        </div>
-                        <div class="w-full">
-                            <label>専有面積(㎡)</label>
-                            <input type="number" id="in-area" value="60">
-                        </div>
-                    </div>
-                    <div class="flex" style="gap:10px;">
-                        <div class="w-full">
-                            <label>築年(西暦)</label>
-                            <input type="number" id="in-year" value="2005">
-                        </div>
-                        <div class="w-full">
-                            <label>駅徒歩(分)</label>
-                            <input type="number" id="in-walk" value="5">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass rounded p-4 mb-4">
-                    <h3 class="text-cyan">LOCATION & MARKET</h3>
-                    <div style="position:relative;">
-                        <label>最寄駅 (東京・神奈川)</label>
-                        <input type="text" id="in-station" placeholder="駅名を入力..." oninput="suggestStation(this.value)">
-                        <div id="station-suggest" class="station-suggest-list hidden"></div>
-                    </div>
-                    
-                    <div class="mt-2 text-gold" style="font-size:12px;" id="station-info"></div>
-
-                    <div class="mt-2">
-                        <label>相場乖離チェック</label>
-                        <button class="btn w-full" style="font-size:12px; margin-bottom:5px;" onclick="openMarketSearch()">📊 相場・地価を検索 (Web)</button>
-                        <input type="number" id="in-market-price" placeholder="調査したエリア坪単価 (万円)">
-                    </div>
-
-                    <div class="mt-2">
-                        <label>周辺施設 (分)</label>
-                        <div class="flex" style="gap:5px;">
-                            <input type="number" id="in-conbini" placeholder="コンビニ">
-                            <input type="number" id="in-super" placeholder="スーパー">
-                        </div>
-                    </div>
-                </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;"><label>物件価格 (万円)</label><input type="number" id="in-price" value="6000" oninput="calc()"></div>
+                <div style="flex:1;"><label>頭金 (万円)</label><input type="number" id="in-down" value="500" oninput="calc()"></div>
             </div>
-
-            <div id="tab-access" class="tab-content">
-                <div class="glass rounded p-4 mb-4" style="height:320px; position:relative;">
-                    <h3 class="text-cyan" style="position:absolute; top:10px; left:16px;">ACCESS MAP</h3>
-                    <canvas id="access-canvas" width="300" height="250" style="width:100%; height:100%; object-fit:contain;"></canvas>
-                </div>
-
-                <div class="glass rounded p-4">
-                    <h3>Commute Data (Min)</h3>
-                    <div class="flex" style="gap:10px; align-items:flex-end;">
-                        <div class="w-full">
-                            <label>夫 (To <span id="lbl-work-h">Work</span>)</label>
-                            <input type="number" id="commute-h">
-                        </div>
-                        <button class="btn" onclick="searchRoute('husband')">🔍</button>
-                    </div>
-                    <div class="flex mt-2" style="gap:10px; align-items:flex-end;">
-                        <div class="w-full">
-                            <label>妻 (To <span id="lbl-work-w">Work</span>)</label>
-                            <input type="number" id="commute-w">
-                        </div>
-                        <button class="btn" onclick="searchRoute('wife')">🔍</button>
-                    </div>
-                    <div class="mt-2 text-sub" style="font-size:12px;">
-                        ※羽田空港タクシー: <span id="taxi-haneda">--</span>円<br>
-                        ※新幹線アクセス: <span id="shinkansen-acc">--</span>
-                    </div>
-                </div>
+            <label>金利テスト (%)</label>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <input type="range" min="0.3" max="4.0" step="0.01" value="0.47" id="sl-rate" style="flex:1;" oninput="syncRate(this.value)">
+                <span class="num text-gold" id="dsp-rate" style="width:50px;">0.47</span>
             </div>
-
-            <div id="tab-config" class="tab-content">
-                
-                <div class="glass rounded p-4 mb-4" style="border: 1px solid var(--accent-gold);">
-                    <h2 class="text-gold" style="text-align:center;">JUDGMENT</h2>
-                    <div class="radar-container">
-                        <canvas id="radar-chart"></canvas>
-                    </div>
-                    <div id="judge-comment" style="font-size:13px; margin-top:10px; line-height:1.4;"></div>
-                    
-                    <div id="finance-alert" class="hidden" style="background:rgba(244,63,94,0.2); color:#f43f5e; padding:10px; border-radius:8px; margin-top:10px; font-size:12px;">
-                        ⚠️ 資金不足警告: <span id="shortage-amt">0</span>万円不足
-                    </div>
-
-                    <div class="flex mt-2" style="gap:10px;">
-                        <button class="btn w-full btn-gold" onclick="saveHistory()">💾 記録</button>
-                        <button class="btn w-full" onclick="generatePrompt()">🤖 AI相談</button>
-                    </div>
-                    <button class="btn w-full mt-2" style="background:linear-gradient(90deg, #0f172a, #1e293b);" onclick="generateShareImage()">📸 パートナー共有画像作成</button>
-                </div>
-
-                <div class="glass rounded p-4">
-                    <h3 class="text-cyan" onclick="toggleSettings()">⚙️ SYSTEM CONFIG (Tap to Open)</h3>
-                    <div id="settings-area" class="hidden">
-                        <label>戦略モード</label>
-                        <select id="conf-mode" onchange="calc()">
-                            <option value="dinks">🦁 Power DINKs (資産・通勤)</option>
-                            <option value="family">🐥 Family (広さ・環境)</option>
-                            <option value="senior">🐢 Senior (病院・フラット)</option>
-                        </select>
-
-                        <label class="mt-2">夫: 月収/賞与(万)</label>
-                        <div class="flex" style="gap:5px;">
-                            <input type="number" id="conf-sal-h-m" value="30">
-                            <input type="number" id="conf-sal-h-b" value="100">
-                        </div>
-                        <label>妻: 年収(万)</label>
-                        <input type="number" id="conf-sal-w" value="400">
-                        
-                        <label>頭金(万)</label>
-                        <input type="number" id="conf-downpay" value="400">
-
-                        <label>職場最寄駅</label>
-                        <div class="flex" style="gap:5px;">
-                            <input type="text" id="conf-st-h" placeholder="夫職場">
-                            <input type="text" id="conf-st-w" placeholder="妻職場">
-                        </div>
-
-                        <hr style="border-color:rgba(255,255,255,0.1); margin:15px 0;">
-                        
-                        <div class="flex" style="gap:10px;">
-                            <button class="btn w-full" onclick="exportData()">📤 バックアップ</button>
-                            <button class="btn w-full" onclick="importData()">📥 復元</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="copyright">
-                    Mansion Scorer 2027 (Infinity Model)<br>
-                    Ver 4.0.0<br>
-                    Created by Y.T<br>
-                    © 2025-2027 Y.T All Rights Reserved.
-                </div>
+            <label>夫 年収(万) / 妻 年収(万)</label>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="in-inc-h" value="800" oninput="calc()">
+                <input type="number" id="in-inc-w" value="500" oninput="calc()">
             </div>
-        </main>
-
-        <nav class="tab-bar">
-            <button class="tab-btn active" onclick="switchTab('home')">
-                <span class="tab-icon">🏠</span>STATUS
-            </button>
-            <button class="tab-btn" onclick="switchTab('input')">
-                <span class="tab-icon">📝</span>INPUT
-            </button>
-            <button class="tab-btn" onclick="switchTab('access')">
-                <span class="tab-icon">🧭</span>ACCESS
-            </button>
-            <button class="tab-btn" onclick="switchTab('config')">
-                <span class="tab-icon">📊</span>JUDGE
-            </button>
-        </nav>
+        </div>
     </div>
 
-    <canvas id="share-canvas" width="600" height="800" style="display:none;"></canvas>
+    <div class="glass">
+        <button class="acc-btn" onclick="toggleAcc('acc-prop')">【 2 】 物件・快適性情報 <span id="icon-prop">▼</span></button>
+        <div id="acc-prop" class="acc-content">
+            <label>物件名（自動検索対象）</label>
+            <input type="text" id="in-name" placeholder="物件名を入力" oninput="checkMaster(this.value)">
+            <div id="gov-status" class="text-small mt-5"></div>
+            
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="flex:1;"><label>専有面積 (㎡)</label><input type="number" id="in-area" value="65" oninput="calc()"></div>
+                <div style="flex:1;"><label>築年 (西暦)</label><input type="number" id="in-year" value="2015" oninput="calc()"></div>
+            </div>
 
-    <script>
-        // --- 1. Global State & Config ---
-        const APP_KEY = 'estate_os_v4_data';
-        const LOCK_KEY = 'estate_os_lock';
+            <label>エアコン設置状況</label>
+            <div class="toggle-group">
+                <div class="toggle-btn active" onclick="setAC('ok', this)">全室可</div>
+                <div class="toggle-btn" onclick="setAC('risk', this)">隠蔽配管</div>
+                <div class="toggle-btn" onclick="setAC('ng', this)">不可部屋有</div>
+            </div>
+
+            <label>2024年省エネ基準</label>
+            <div class="toggle-group">
+                <div class="toggle-btn" onclick="setEnergy('low', this)">適合なし</div>
+                <div class="toggle-btn active" onclick="setEnergy('high', this)">ZEH/省エネ</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass">
+        <button class="acc-btn" onclick="toggleAcc('acc-gov')">【 3 】 管理・建て替えポテンシャル <span id="icon-gov">▼</span></button>
+        <div id="acc-gov" class="acc-content">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;"><label>管理費 (円/月)</label><input type="number" id="in-fee-m" value="15000" oninput="calc()"></div>
+                <div style="flex:1;"><label>積立金 (円/月)</label><input type="number" id="in-fee-r" value="12000" oninput="calc()"></div>
+            </div>
+            <label>積立方式</label>
+            <div class="toggle-group">
+                <div class="toggle-btn active" onclick="setFund('step', this)">段階増額</div>
+                <div class="toggle-btn" onclick="setFund('flat', this)">均等積立</div>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="flex:1;"><label>総戸数</label><input type="number" id="in-units" value="50" oninput="calc()"></div>
+                <div style="flex:1;"><label>敷地面積 (㎡)</label><input type="number" id="in-land" value="2000" oninput="calc()"></div>
+            </div>
+            <label>容積率（都市計画 %）</label>
+            <input type="number" id="in-yoseki" value="200" oninput="calc()">
+        </div>
+    </div>
+
+    <div class="glass">
+        <button class="acc-btn" onclick="toggleAcc('acc-loc')">【 4 】 立地・ハザード <span id="icon-loc">▼</span></button>
+        <div id="acc-loc" class="acc-content">
+            <label>最寄駅</label>
+            <input type="text" id="in-st" value="センター南" oninput="calc()">
+            <label>徒歩分数（広告表記）</label>
+            <input type="number" id="in-walk" value="8" oninput="calc()">
+            <label>地形・道路補正</label>
+            <div class="toggle-group">
+                <div class="toggle-btn active" onclick="setLoc('flat', this)">平坦</div>
+                <div class="toggle-btn" onclick="setLoc('slope', this)">坂道/信号多</div>
+            </div>
+            <label>ハザードマップ判定</label>
+            <div class="toggle-group">
+                <div class="toggle-btn active" onclick="setHaz('safe', this)">安全</div>
+                <div class="toggle-btn" onclick="setHaz('warn', this)">浸水注意</div>
+                <div class="toggle-btn" onclick="setHaz('danger', this)">レッドゾーン</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-p" onclick="showReport()">⚡ 監査レポートを生成</button>
+    <div style="height:20px;"></div>
+    <button class="btn btn-s no-print" onclick="openMaster()">🛠 マスタデータ管理</button>
+
+    <div id="report-area" style="display:none; margin-top:30px;">
+        <div class="report-card">
+            <div style="text-align:center; border-bottom:2px solid var(--gold); padding-bottom:10px; margin-bottom:20px;">
+                <div class="text-small">不動産戦略 監査報告書</div>
+                <div id="rep-name" style="font-size:20px; font-weight:bold;">物件名</div>
+            </div>
+
+            <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
+                <div style="text-align:center;">
+                    <div class="text-small">総合格付</div>
+                    <div id="res-rank" style="font-size:48px; font-weight:900; line-height:1;">A</div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="text-small">総合スコア</div>
+                    <div id="res-score" style="font-size:32px; font-weight:bold;">--</div>
+                    <div class="text-small">/ 100点</div>
+                </div>
+            </div>
+
+            <div class="row"><span>借入可能額判定</span><span id="res-loan-limit">--</span></div>
+            <div class="row"><span>世帯片翼耐性</span><span id="res-one-wing">--</span></div>
+            <div class="row"><span>夫婦居住適正</span><span id="res-dinks">--</span></div>
+            <div class="row"><span>エアコン全室</span><span id="res-ac">--</span></div>
+            <div class="row"><span>建て替え余力</span><span id="res-reb">--</span></div>
+            <div class="row"><span>土地下値保証</span><span id="res-land-val">--</span></div>
+
+            <div class="oracle">
+                <div class="text-gold" style="font-size:12px; font-weight:bold;">🔮 未来予知インサイト</div>
+                <div id="res-oracle" class="text-small" style="line-height:1.6; margin-top:8px;"></div>
+            </div>
+        </div>
         
-        let state = {
-            profile: {
-                salary_h_m: 30, salary_h_b: 100, salary_w_y: 400,
-                down_payment: 400,
-                station_h: '東京', station_w: '二子玉川',
-                mode: 'dinks'
-            },
-            property: {
-                name: '', price: 4500, fee: 25000, area: 60, year: 2005, walk: 5,
-                station: 'センター南', market_price: 0,
-                commute_h: 50, commute_w: 40,
-                conbini: 3, super: 5
-            },
-            history: []
-        };
+        <div style="margin-top:20px; display:flex; gap:10px;" class="no-print">
+            <button class="btn btn-p" style="flex:2;" onclick="copyLine()">📋 LINE共有用コピー</button>
+            <button class="btn btn-s" style="flex:1;" onclick="window.print()">🖨 印刷</button>
+        </div>
+    </div>
+</main>
 
-        // Station DB (Compression: Name: [LineType, Express, Rank, Lat, Lon, Bus, Note])
-        // LineType: 0=Other, 1=Blue/Green, 2=DenEn, 3=JR
-        // Rank: 3=S, 2=A, 1=B, 0=C
-        const stationDB = {
-            "センター南": [1, 1, 3, 35.54, 139.57, 1, "本命・渇望エリア"],
-            "センター北": [1, 1, 3, 35.55, 139.57, 1, "本命・対抗エリア"],
-            "長津田": [2, 1, 2, 35.53, 139.49, 0, "始発・利便性高"],
-            "あざみ野": [1, 1, 2, 35.56, 139.55, 1, "ブルーライン接続"],
-            "二子玉川": [2, 1, 3, 35.61, 139.62, 1, "妻職場・高相場"],
-            "新横浜": [1, 1, 3, 35.50, 139.61, 1, "新幹線・相鉄直通"],
-            "横浜": [3, 1, 3, 35.46, 139.62, 1, "ターミナル"],
-            "町田": [3, 1, 2, 35.54, 139.44, 1, "商業充実"]
-        };
-        const HANEDA_COORDS = [35.54, 139.77];
-        
-        // --- 2. Lock Screen Logic (Pattern) ---
-        let pattern = [];
-        let isSetup = false;
-        const lockCanvas = document.getElementById('pattern-canvas');
-        const ctx = lockCanvas.getContext('2d');
-        let isDrawing = false;
-        const dots = [];
+<div id="toast"></div>
 
-        function initLock() {
-            // Calc dot positions
-            const step = 300 / 4;
-            for(let i=0; i<3; i++){
-                for(let j=0; j<3; j++){
-                    dots.push({x: step*(j+1), y: step*(i+1), id: i*3+j});
-                }
-            }
-            
-            // Check stored pattern
-            const saved = localStorage.getItem(LOCK_KEY);
-            if(!saved) {
-                isSetup = true;
-                document.getElementById('lock-msg').innerText = "NEW SYSTEM: DRAW PATTERN TO SET";
-            } else {
-                isSetup = false;
-            }
+<div id="modal-master" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:2000; padding:20px; overflow-y:auto;">
+    <div class="brand text-gold mb-10">マスタデータ管理</div>
+    <div class="text-small">編集した内容は即座に保存されます。</div>
+    <textarea id="mst-edit" style="width:100%; height:300px; font-family:monospace; font-size:10px; margin-top:10px;"></textarea>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn btn-p" onclick="saveMaster()">保存して反映</button>
+        <button class="btn btn-s" onclick="closeMaster()">閉じる</button>
+    </div>
+</div>
 
-            // Events
-            lockCanvas.addEventListener('touchstart', startDraw, {passive:false});
-            lockCanvas.addEventListener('touchmove', moveDraw, {passive:false});
-            lockCanvas.addEventListener('touchend', endDraw);
-            lockCanvas.addEventListener('mousedown', startDraw);
-            lockCanvas.addEventListener('mousemove', moveDraw);
-            lockCanvas.addEventListener('mouseup', endDraw);
-            
-            renderLock();
+<script>
+// --- 初期データ (Ver 45.0 Oracle) ---
+const CSV_GV = `ID,BukkenMei,Hoshi,Tensu,Nintei,Kigen
+1,パークシティ武蔵小杉ミッドスカイタワー,5,96,true,2027/12
+2,ザ・ヨコハマタワーズ,5,98,true,2027/01
+3,港北センタープレイス,5,92,true,2026/09
+4,ベルジェンドセンター南,5,91,true,2026/07
+5,イニシア港北ニュータウン,5,98,true,2027/02
+6,広尾ガーデンヒルズ,5,95,true,2026/04`;
+
+// --- 状態管理 ---
+let loanMode = 'single';
+let acStatus = 'ok';
+let energyStatus = 'high';
+let fundMode = 'step';
+let locMode = 'flat';
+let hazStatus = 'safe';
+let masterData = [];
+
+// --- アプリ初期化 ---
+window.onload = () => { initLock(); loadMaster(); calc(); };
+
+function initLock() {
+    const c = document.getElementById('lock-cvs'), ctx = c.getContext('2d');
+    let pts = [], dots = [];
+    for(let i=0; i<3; i++) for(let j=0; j<3; j++) dots.push({x:75*(j+1), y:75*(i+1), i: i*3+j});
+    
+    const redraw = (cur) => {
+        ctx.clearRect(0,0,300,300);
+        if(pts.length) {
+            ctx.beginPath(); ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 6; ctx.lineCap='round';
+            ctx.moveTo(dots[pts[0]].x, dots[pts[0]].y);
+            pts.slice(1).forEach(k => ctx.lineTo(dots[k].x, dots[k].y));
+            if(cur) ctx.lineTo(cur.x, cur.y);
+            ctx.stroke();
         }
+        dots.forEach(d => {
+            ctx.beginPath(); ctx.arc(d.x, d.y, 8, 0, 7);
+            ctx.fillStyle = pts.includes(d.i) ? '#fbbf24' : '#334155';
+            ctx.fill();
+        });
+    };
 
-        function getPos(e) {
-            const rect = lockCanvas.getBoundingClientRect();
-            let cx, cy;
-            if(e.touches) { cx=e.touches[0].clientX; cy=e.touches[0].clientY; }
-            else { cx=e.clientX; cy=e.clientY; }
-            return {x: cx - rect.left, y: cy - rect.top};
+    let drawing = false;
+    const getPos = e => {
+        const r = c.getBoundingClientRect(), t = e.touches ? e.touches[0] : e;
+        return {x: t.clientX - r.left, y: t.clientY - r.top};
+    };
+
+    c.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; pts = []; redraw(getPos(e)); });
+    c.addEventListener('touchmove', e => {
+        if(!drawing) return;
+        const p = getPos(e); redraw(p);
+        dots.forEach(d => {
+            if(Math.hypot(d.x - p.x, d.y - p.y) < 25 && !pts.includes(d.i)) pts.push(d.i);
+        });
+    });
+    c.addEventListener('touchend', () => {
+        drawing = false; 
+        if(pts.length >= 4) {
+            const key = localStorage.getItem('eo_lock');
+            const now = JSON.stringify(pts);
+            if(!key) { localStorage.setItem('eo_lock', now); unlock(); }
+            else if(key === now) unlock();
+            else { pts = []; redraw(); showToast('パターンが違います'); }
         }
+    });
+    redraw();
+}
 
-        function startDraw(e) { e.preventDefault(); isDrawing = true; pattern = []; renderLock(); checkDot(getPos(e)); }
-        function moveDraw(e) { if(!isDrawing) return; e.preventDefault(); renderLock(getPos(e)); checkDot(getPos(e)); }
-        function endDraw() {
-            isDrawing = false; renderLock();
-            verifyPattern();
-        }
+function unlock() { document.getElementById('lock-screen').style.display = 'none'; }
 
-        function checkDot(pos) {
-            dots.forEach(d => {
-                const dist = Math.sqrt((d.x-pos.x)**2 + (d.y-pos.y)**2);
-                if(dist < 30 && !pattern.includes(d.id)) {
-                    pattern.push(d.id);
-                    // Haptic feedback if supported
-                    if(navigator.vibrate) navigator.vibrate(10);
-                }
-            });
-        }
+function loadMaster() {
+    const raw = localStorage.getItem('eo_mst_gv') || CSV_GV;
+    document.getElementById('mst-edit').value = raw;
+    const rows = raw.trim().split('\n');
+    masterData = rows.slice(1).map(r => {
+        const c = r.split(',');
+        return { name: c[1], star: parseInt(c[2]), score: parseInt(c[3]), cert: c[4]==='true' };
+    });
+}
 
-        function renderLock(currPos = null) {
-            ctx.clearRect(0,0,300,300);
-            
-            // Lines
-            if(pattern.length > 0) {
-                ctx.beginPath();
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = '#fbbf24';
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                const first = dots[pattern[0]];
-                ctx.moveTo(first.x, first.y);
-                for(let i=1; i<pattern.length; i++) {
-                    const d = dots[pattern[i]];
-                    ctx.lineTo(d.x, d.y);
-                }
-                if(currPos) ctx.lineTo(currPos.x, currPos.y);
-                ctx.stroke();
-            }
+function saveMaster() {
+    localStorage.setItem('eo_mst_gv', document.getElementById('mst-edit').value);
+    loadMaster();
+    closeMaster();
+    showToast('マスタを更新しました');
+}
 
-            // Dots
-            dots.forEach(d => {
-                ctx.beginPath();
-                ctx.arc(d.x, d.y, 6, 0, Math.PI*2);
-                ctx.fillStyle = pattern.includes(d.id) ? '#fbbf24' : '#334155';
-                ctx.fill();
-                // Glow
-                if(pattern.includes(d.id)){
-                    ctx.shadowBlur = 10; ctx.shadowColor = '#fbbf24';
-                    ctx.stroke(); ctx.shadowBlur=0;
-                }
-            });
-        }
+function openMaster() { document.getElementById('modal-master').style.display = 'block'; }
+function closeMaster() { document.getElementById('modal-master').style.display = 'none'; }
 
-        function verifyPattern() {
-            if(pattern.length < 3) {
-                resetLock("TOO SHORT"); return;
-            }
-            const patStr = JSON.stringify(pattern);
-            
-            if(isSetup) {
-                localStorage.setItem(LOCK_KEY, patStr);
-                unlockApp();
-            } else {
-                const saved = localStorage.getItem(LOCK_KEY);
-                if(saved === patStr) {
-                    unlockApp();
-                } else {
-                    resetLock("ACCESS DENIED");
-                    // Flash red
-                    document.getElementById('lock-msg').style.color = 'red';
-                }
-            }
-        }
+function toggleAcc(id) {
+    const el = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id.split('-')[1]);
+    const isHidden = el.style.display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+    icon.innerText = isHidden ? '▲' : '▼';
+}
 
-        function resetLock(msg) {
-            document.getElementById('lock-msg').innerText = msg;
-            pattern = []; renderLock();
-        }
+// --- 判定ロジック ---
+function setLoan(m) { loanMode = m; updateToggle('btn-single', m==='single'); updateToggle('btn-pair', m==='pair'); calc(); }
+function setAC(v, el) { acStatus = v; updateToggleGroup(el); calc(); }
+function setEnergy(v, el) { energyStatus = v; updateToggleGroup(el); calc(); }
+function setFund(v, el) { fundMode = v; updateToggleGroup(el); calc(); }
+function setLoc(v, el) { locMode = v; updateToggleGroup(el); calc(); }
+function setHaz(v, el) { hazStatus = v; updateToggleGroup(el); calc(); }
 
-        function unlockApp() {
-            document.getElementById('lock-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            initApp();
-        }
-        
-        function toggleLock() {
-            location.reload(); // Simple re-lock
-        }
+function updateToggle(id, active) { document.getElementById(id).classList.toggle('active', active); }
+function updateToggleGroup(el) {
+    Array.from(el.parentElement.children).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+}
 
-        // --- 3. App Logic ---
-        
-        function initApp() {
-            loadData();
-            // Populate Inputs
-            document.getElementById('in-price').value = state.property.price;
-            document.getElementById('in-fee').value = state.property.fee;
-            document.getElementById('in-area').value = state.property.area;
-            document.getElementById('in-year').value = state.property.year;
-            document.getElementById('in-station').value = state.property.station;
-            document.getElementById('in-walk').value = state.property.walk;
-            document.getElementById('prop-name').value = state.property.name;
-            
-            document.getElementById('conf-sal-h-m').value = state.profile.salary_h_m;
-            document.getElementById('conf-sal-h-b').value = state.profile.salary_h_b;
-            document.getElementById('conf-sal-w').value = state.profile.salary_w_y;
-            document.getElementById('conf-downpay').value = state.profile.down_payment;
-            document.getElementById('conf-st-h').value = state.profile.station_h;
-            document.getElementById('conf-st-w').value = state.profile.station_w;
-            document.getElementById('conf-mode').value = state.profile.mode;
+function syncRate(v) { document.getElementById('dsp-rate').innerText = v; calc(); }
 
-            document.getElementById('commute-h').value = state.property.commute_h;
-            document.getElementById('commute-w').value = state.property.commute_w;
-            
-            // Calc Target Days
-            const target = new Date('2027-08-31');
-            const now = new Date();
-            const diff = Math.ceil((target - now)/(1000*60*60*24));
-            document.getElementById('days-left').innerText = diff;
-            
-            // Labels
-            document.getElementById('lbl-work-h').innerText = state.profile.station_h || "Work";
-            document.getElementById('lbl-work-w').innerText = state.profile.station_w || "Work";
+function checkMaster(name) {
+    const hit = masterData.find(m => name.includes(m.name));
+    const status = document.getElementById('gov-status');
+    if(hit) {
+        status.innerHTML = `<span class="text-green">✅ 公的評価登録済: ★${hit.star} (${hit.score}点)</span>`;
+        return hit;
+    } else {
+        status.innerHTML = `<span class="text-small">未登録物件です（Google検索推奨）</span>`;
+        return null;
+    }
+}
 
-            calc();
-        }
+function calc() {
+    const price = parseFloat(document.getElementById('in-price').value) || 0;
+    const down = parseFloat(document.getElementById('in-down').value) || 0;
+    const loan = Math.max(0, price - down);
+    const rate = parseFloat(document.getElementById('sl-rate').value) / 100 / 12;
+    const months = 35 * 12;
+    
+    // ローン返済
+    const pmt = loan > 0 ? Math.floor(loan * 10000 * (rate * Math.pow(1+rate, months)) / (Math.pow(1+rate, months) - 1)) : 0;
+    
+    // 維持費
+    const feeM = parseFloat(document.getElementById('in-fee-m').value) || 0;
+    const feeR = parseFloat(document.getElementById('in-fee-r').value) || 0;
+    
+    // 住宅ローン控除 (2024年以降簡略化モデル)
+    const year = parseInt(document.getElementById('in-year').value);
+    let deduction = 0;
+    if (energyStatus === 'high') {
+        deduction = Math.min(loan * 10000 * 0.007 / 12, 400000 / 12);
+    } else if (year >= 1982) {
+        deduction = Math.min(loan * 10000 * 0.007 / 12, 200000 / 12);
+    }
 
-        function loadData() {
-            const saved = localStorage.getItem(APP_KEY);
-            if(saved) {
-                const parsed = JSON.parse(saved);
-                state = { ...state, ...parsed }; // Merge
-            }
-        }
+    const total = pmt + feeM + feeR - deduction;
+    document.getElementById('hud-total').innerText = Math.floor(total).toLocaleString();
+    
+    // 将来リスク
+    const risk = fundMode === 'step' ? '将来2.5倍増額' : 'なし';
+    document.getElementById('hud-risk').innerText = risk;
 
-        function saveData() {
-            // Update state from inputs
-            state.profile.salary_h_m = parseInt(document.getElementById('conf-sal-h-m').value) || 0;
-            state.profile.salary_h_b = parseInt(document.getElementById('conf-sal-h-b').value) || 0;
-            state.profile.salary_w_y = parseInt(document.getElementById('conf-sal-w').value) || 0;
-            state.profile.down_payment = parseInt(document.getElementById('conf-downpay').value) || 0;
-            state.profile.station_h = document.getElementById('conf-st-h').value;
-            state.profile.station_w = document.getElementById('conf-st-w').value;
-            state.profile.mode = document.getElementById('conf-mode').value;
-            
-            state.property.name = document.getElementById('prop-name').value;
-            state.property.price = parseInt(document.getElementById('in-price').value);
-            state.property.fee = parseInt(document.getElementById('in-fee').value);
-            state.property.area = parseInt(document.getElementById('in-area').value);
-            state.property.year = parseInt(document.getElementById('in-year').value);
-            state.property.walk = parseInt(document.getElementById('in-walk').value);
-            state.property.station = document.getElementById('in-station').value;
-            state.property.commute_h = parseInt(document.getElementById('commute-h').value) || 0;
-            state.property.commute_w = parseInt(document.getElementById('commute-w').value) || 0;
-            state.property.market_price = parseInt(document.getElementById('in-market-price').value) || 0;
-            state.property.conbini = parseInt(document.getElementById('in-conbini').value) || 5;
-            state.property.super = parseInt(document.getElementById('in-super').value) || 10;
+    return { total, pmt, feeM, feeR, loan, price, deduction };
+}
 
-            localStorage.setItem(APP_KEY, JSON.stringify(state));
-        }
+function showReport() {
+    const d = calc();
+    const name = document.getElementById('in-name').value || "未設定の物件";
+    const master = checkMaster(name);
+    
+    let score = 60;
+    let reasons = [];
 
-        function updateDisp(id) {
-            const val = document.getElementById('in-'+id).value;
-            document.getElementById('disp-'+id).innerText = val;
-            calc();
-        }
+    // 1. 資金面
+    const incH = parseFloat(document.getElementById('in-inc-h').value) || 0;
+    const incW = parseFloat(document.getElementById('in-inc-w').value) || 0;
+    const hhInc = loanMode === 'pair' ? (incH + incW) : incH;
+    const ratio = (d.pmt * 12) / (hhInc * 10000) * 100;
+    
+    if (ratio < 20) score += 15;
+    else if (ratio < 28) score += 5;
+    else score -= 20;
 
-        function suggestStation(val) {
-            const list = document.getElementById('station-suggest');
-            list.innerHTML = '';
-            if(val.length < 1) { list.classList.add('hidden'); return; }
-            
-            Object.keys(stationDB).forEach(key => {
-                if(key.includes(val)) {
-                    const div = document.createElement('div');
-                    div.className = 'suggest-item';
-                    div.innerText = key;
-                    div.onclick = () => {
-                        document.getElementById('in-station').value = key;
-                        list.classList.add('hidden');
-                        calc();
-                    };
-                    list.appendChild(div);
-                }
-            });
-            list.classList.remove('hidden');
-        }
+    // 片翼耐性
+    const oneWingRatio = (d.pmt * 12) / (incH * 10000) * 100;
+    document.getElementById('res-one-wing').innerText = oneWingRatio < 35 ? "維持可能" : "危険(要保険)";
 
-        // --- 4. The CORE Logic ---
-        function calc() {
-            saveData();
-            let points = 0;
-            const p = state.property;
-            const u = state.profile;
-            const mode = u.mode;
+    // 2. 面積・夫婦適正
+    const area = parseFloat(document.getElementById('in-area').value);
+    if (area >= 55 && area <= 70) { score += 10; document.getElementById('res-dinks').innerText = "黄金比(S)"; }
+    else if (area < 40) { score -= 30; document.getElementById('res-dinks').innerText = "狭小(DANGER)"; }
+    else { document.getElementById('res-dinks').innerText = "許容範囲"; }
 
-            // 1. Finance (Max 30)
-            const h_annual = (u.salary_h_m * 12) + u.salary_h_b;
-            const total_inc = h_annual + u.salary_w_y;
-            const net_monthly = (total_inc * 0.8) / 12; // 手取り概算
-            
-            // Loan Calc (0.5% 35y)
-            const loan_amt = Math.max(0, p.price - u.down_payment);
-            const r = 0.005 / 12;
-            const n = 35 * 12;
-            const monthly_repay = Math.floor(loan_amt * 10000 * r * Math.pow(1+r, n) / (Math.pow(1+r, n)-1));
-            const total_monthly_cost = monthly_repay + p.fee;
-            
-            const ratio = (total_monthly_cost / (net_monthly*10000)) * 100;
-            
-            // Score
-            if(ratio <= 20) points += 30;
-            else if(ratio <= 25) points += 20;
-            else if(ratio <= 30) points += 10;
-            else points -= 10;
-            
-            // 借入限度チェック (DINKs戦略: 夫単独8倍安全圏 or 世帯7倍)
-            const safe_loan = h_annual * 8; 
-            const shortage = Math.max(0, loan_amt - safe_loan);
-            
-            if(shortage > 0) {
-                document.getElementById('finance-alert').classList.remove('hidden');
-                document.getElementById('shortage-amt').innerText = shortage;
-                points -= 10;
-            } else {
-                document.getElementById('finance-alert').classList.add('hidden');
-            }
+    // 3. 空調
+    if (acStatus === 'ok') score += 5;
+    else if (acStatus === 'ng') score -= 15;
+    document.getElementById('res-ac').innerText = acStatus === 'ok' ? "全室完備" : "一部不可/制約有";
 
-            // 2. Location (Max 30)
-            const stData = stationDB[p.station];
-            if(stData) {
-                if(p.station.includes('センター南')) points += 20; // 渇望
-                else if(p.station.includes('センター北')) points += 15;
-                else if(stData[2] >= 3) points += 10; // S Rank
-                
-                document.getElementById('station-info').innerText = stData[6] + (stData[5] ? " [🚌空港バス有]" : "");
-                
-                // Haneda Taxi Calc (Approx distance from LatLon)
-                const lat1 = stData[3], lon1 = stData[4];
-                const lat2 = HANEDA_COORDS[0], lon2 = HANEDA_COORDS[1];
-                const dist = Math.sqrt(Math.pow(lat1-lat2, 2) + Math.pow(lon1-lon2, 2)) * 111; // km
-                const taxi_price = Math.floor(dist * 1.2 * 350 + 1000); // 概算
-                document.getElementById('taxi-haneda').innerText = taxi_price.toLocaleString();
-                document.getElementById('shinkansen-acc').innerText = p.station.includes('新横浜') || [1,3].includes(stData[0]) ? "◎直通" : "○乗換";
+    // 4. 管理・建て替え
+    const units = parseInt(document.getElementById('in-units').value);
+    const land = parseFloat(document.getElementById('in-land').value);
+    const mochimochi = land / units;
+    document.getElementById('res-reb').innerText = mochimochi > 30 ? "高(土地持分多)" : "中(一般)";
+    if (mochimochi > 30) score += 10;
+    
+    if (master) score += 10;
 
-            } else {
-                document.getElementById('station-info').innerText = "データなし";
-                document.getElementById('taxi-haneda').innerText = "--";
-            }
+    // ハザード Kill Switch
+    if (hazStatus === 'danger') score = 0;
 
-            if(p.walk <= 5) points += 10;
-            else if(p.walk > 10) points -= 5;
+    // 最終表示
+    const scoreFinal = Math.min(100, Math.max(0, score));
+    const rank = scoreFinal >= 90 ? 'S' : (scoreFinal >= 75 ? 'A' : (scoreFinal >= 60 ? 'B' : 'C'));
+    if (hazStatus === 'danger') { document.getElementById('res-rank').innerText = 'E'; document.getElementById('res-rank').className = 'text-red'; }
+    else { document.getElementById('res-rank').innerText = rank; document.getElementById('res-rank').className = 'text-gold'; }
+    
+    document.getElementById('res-score').innerText = scoreFinal;
+    document.getElementById('rep-name').innerText = name;
+    document.getElementById('res-loan-limit').innerText = ratio.toFixed(1) + "%";
+    document.getElementById('res-land-val').innerText = (mochimochi * 50).toFixed(0) + "万円(推定)";
 
-            // 3. Spec (Max 20)
-            if(p.area >= 60) points += 10;
-            else if(p.area >= 50) points += 5;
-            else points -= 10;
-            
-            if(p.year >= 2000) points += 5;
+    // オラクル
+    const oracle = `【2035年】自動運転普及により周辺の静寂性が価値に。光熱費上昇に伴い省エネ性能が差別化の鍵。
+【2045年】2026年改正法に基づき再生決議が現実化。土地持分${mochimochi.toFixed(1)}㎡が資産の盾となります。
+【2055年】気候変動が進む中、${hazStatus==='safe'?'本高台立地は希少な安全圏':'水防対策の徹底'}が求められる時代へ。`;
+    document.getElementById('res-oracle').innerText = oracle;
 
-            // 4. Commute (Max 20)
-            // 夫:50分 妻:40分以内が理想
-            if(p.commute_h <= 50) points += 5;
-            if(p.commute_w <= 40) points += 15; // 妻優先
-            else if(p.commute_w > 60) points -= 20; // 妻NG
+    document.getElementById('report-area').style.display = 'block';
+    document.getElementById('report-area').scrollIntoView({behavior: 'smooth'});
+}
 
-            // 5. Market (Bonus)
-            if(p.market_price > 0) {
-                const unit_price = p.price / (p.area * 0.3025);
-                const diff = (unit_price / p.market_price) - 1;
-                if(diff < -0.05) points += 5; // Bargain
-                else if(diff > 0.1) points -= 10; // Overpriced
-            }
+function showToast(m) {
+    const t = document.getElementById('toast');
+    t.innerText = m; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+}
 
-            // Mode Adjustment
-            if(mode === 'family') {
-                // 広さ重視
-                if(p.area < 65) points -= 10;
-            }
-
-            // Render Score
-            document.getElementById('dash-score').innerText = points;
-            let rank = 'C';
-            if(points >= 85) rank = 'S (THE AXIS)';
-            else if(points >= 75) rank = 'A (Excellent)';
-            else if(points >= 65) rank = 'B (Standard)';
-            
-            const rEl = document.getElementById('dash-rank');
-            rEl.innerText = rank;
-            rEl.style.color = points >= 75 ? '#fbbf24' : '#94a3b8';
-
-            // Gauge
-            const bud_pct = Math.min(100, (p.price / safe_loan) * 100);
-            document.getElementById('dash-gauge').style.width = bud_pct + '%';
-            document.getElementById('dash-gauge').style.background = bud_pct > 110 ? '#f43f5e' : '#06b6d4';
-
-            // Draw Charts
-            drawRadar([
-                Math.min(5, (p.station.includes('センター') ? 5 : 3)), 
-                Math.min(5, p.area/15),
-                Math.min(5, (100-ratio)/15),
-                Math.min(5, (60-p.commute_h)/10),
-                Math.min(5, (60-p.commute_w)/10)
-            ]);
-            drawAccessMap();
-            
-            // History check
-            renderHistory();
-        }
-
-        function drawRadar(data) {
-            const cvs = document.getElementById('radar-chart');
-            const c = cvs.getContext('2d');
-            cvs.width = 300; cvs.height = 300;
-            const cx=150, cy=150, r=100;
-            
-            c.clearRect(0,0,300,300);
-            
-            // Grid
-            c.strokeStyle = '#334155';
-            c.lineWidth = 1;
-            for(let i=1; i<=5; i++){
-                c.beginPath();
-                for(let j=0; j<5; j++){
-                    const ang = (Math.PI*2/5)*j - Math.PI/2;
-                    const rad = (r/5)*i;
-                    c.lineTo(cx + Math.cos(ang)*rad, cy + Math.sin(ang)*rad);
-                }
-                c.closePath(); c.stroke();
-            }
-
-            // Data
-            c.beginPath();
-            c.strokeStyle = '#06b6d4';
-            c.fillStyle = 'rgba(6,182,212,0.3)';
-            c.lineWidth = 2;
-            for(let j=0; j<5; j++){
-                const ang = (Math.PI*2/5)*j - Math.PI/2;
-                const val = Math.max(0, data[j]);
-                const rad = (r/5)*val;
-                const x = cx + Math.cos(ang)*rad;
-                const y = cy + Math.sin(ang)*rad;
-                if(j==0) c.moveTo(x,y); else c.lineTo(x,y);
-            }
-            c.closePath(); c.fill(); c.stroke();
-            
-            // Labels
-            c.fillStyle = '#fff'; c.font='10px Arial'; c.textAlign='center';
-            const labs = ['Location','Spec','Fund','Acc(H)','Acc(W)'];
-            for(let j=0; j<5; j++){
-                const ang = (Math.PI*2/5)*j - Math.PI/2;
-                c.fillText(labs[j], cx + Math.cos(ang)*(r+20), cy + Math.sin(ang)*(r+20));
-            }
-        }
-
-        function drawAccessMap() {
-            const cvs = document.getElementById('access-canvas');
-            const c = cvs.getContext('2d');
-            // Simple visualizer
-            c.clearRect(0,0,300,250);
-            const cx=150, cy=125;
-            
-            // Home Node
-            c.fillStyle = '#fbbf24'; c.beginPath(); c.arc(cx, cy, 8, 0, Math.PI*2); c.fill();
-            
-            // Targets
-            const targets = [
-                {l:'夫Work', t:state.property.commute_h, a:-Math.PI/2},
-                {l:'妻Work', t:state.property.commute_w, a:Math.PI/6},
-                {l:'実家', t:120, a:Math.PI*5/6}, // Dummy fixed
-                {l:'羽田', t:60, a:Math.PI}
-            ];
-            
-            targets.forEach(t => {
-                const len = Math.min(100, t.t * 1.5);
-                const ex = cx + Math.cos(t.a)*len;
-                const ey = cy + Math.sin(t.a)*len;
-                
-                c.beginPath();
-                c.strokeStyle = t.t > 60 ? '#f43f5e' : '#06b6d4';
-                c.lineWidth = 2;
-                c.moveTo(cx, cy); c.lineTo(ex, ey); c.stroke();
-                
-                c.fillStyle = '#fff'; c.font='10px Arial';
-                c.fillText(t.l, ex-10, ey-10);
-                c.fillText(t.t+'min', ex-10, ey+5);
-            });
-        }
-
-        // --- 5. Interactions & Output ---
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.getElementById('tab-'+id).classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            window.scrollTo(0,0);
-        }
-
-        function resetToHome() {
-            switchTab('home');
-        }
-
-        function toggleSettings() {
-            const el = document.getElementById('settings-area');
-            el.classList.toggle('hidden');
-        }
-
-        function openMarketSearch() {
-            const st = document.getElementById('in-station').value;
-            if(!st) return alert("駅名を入力してください");
-            window.open(`https://www.google.com/search?q=${st}+マンション相場+坪単価`);
-        }
-
-        function searchRoute(who) {
-            const from = document.getElementById('in-station').value;
-            const to = who==='husband' ? state.profile.station_h : state.profile.station_w;
-            if(!from || !to) return alert("駅名を設定してください");
-            window.open(`https://transit.yahoo.co.jp/search/result?from=${from}&to=${to}`);
-        }
-
-        function generatePrompt() {
-            const text = `ESTATE OS Analysis Request:
-Please evaluate this property based on my 2027 strategy.
-
-■ Property
-Name: ${state.property.name}
-Price: ${state.property.price}万 / ${state.property.area}㎡
-Station: ${state.property.station} (${state.property.walk}min)
-
-■ My Status (2027)
-Score: ${document.getElementById('dash-score').innerText} points
-Shortage: ${document.getElementById('shortage-amt').innerText}万円
-Commute: H(${state.property.commute_h}min) / W(${state.property.commute_w}min)
-
-■ Ask
-1. Is this realistic for a Power DINKs couple?
-2. Asset value risk?
-3. Compare with Center Minami specs.`;
-            
-            navigator.clipboard.writeText(text).then(()=>alert("AI依頼用テキストをコピーしました"));
-        }
-
-        function saveHistory() {
-            const rec = {
-                name: state.property.name || 'No Name',
-                score: document.getElementById('dash-score').innerText,
-                date: new Date().toLocaleDateString()
-            };
-            state.history.unshift(rec);
-            saveData();
-            renderHistory();
-            alert("履歴に保存しました");
-        }
-
-        function renderHistory() {
-            const div = document.getElementById('history-list');
-            div.innerHTML = '';
-            state.history.forEach(h => {
-                const r = document.createElement('div');
-                r.className = 'compare-row';
-                r.innerHTML = `<span>${h.name}</span> <span class="text-gold">${h.score}pt</span>`;
-                div.appendChild(r);
-            });
-        }
-
-        function exportData() {
-            const str = "MS27_" + btoa(JSON.stringify(state));
-            navigator.clipboard.writeText(str).then(()=>alert("バックアップコードをコピーしました。\nメモ帳などに保存してください。"));
-        }
-
-        function importData() {
-            const str = prompt("バックアップコード(MS27_...)を貼り付けてください");
-            if(str && str.startsWith("MS27_")) {
-                try {
-                    const json = atob(str.replace("MS27_", ""));
-                    state = JSON.parse(json);
-                    saveData();
-                    location.reload();
-                } catch(e) { alert("データ破損"); }
-            }
-        }
-        
-        function generateShareImage() {
-            const cvs = document.getElementById('share-canvas');
-            const c = cvs.getContext('2d');
-            
-            // BG
-            const grad = c.createLinearGradient(0,0,0,800);
-            grad.addColorStop(0, '#0f172a'); grad.addColorStop(1, '#1e293b');
-            c.fillStyle = grad; c.fillRect(0,0,600,800);
-            
-            // Title
-            c.fillStyle = '#06b6d4'; c.font = 'bold 40px sans-serif';
-            c.fillText("ESTATE OS REPORT", 50, 80);
-            
-            // Prop Name
-            c.fillStyle = '#fff'; c.font = 'bold 36px sans-serif';
-            c.fillText(state.property.name || "Target Property", 50, 150);
-            
-            // Score
-            c.fillStyle = '#fbbf24'; c.font = 'bold 100px sans-serif';
-            c.fillText(document.getElementById('dash-score').innerText, 50, 280);
-            c.font = '30px sans-serif'; c.fillText("POINTS", 200, 280);
-            
-            // Details
-            c.fillStyle = '#94a3b8'; c.font = '24px sans-serif';
-            c.fillText(`Price: ${state.property.price}万円`, 50, 360);
-            c.fillText(`Commute: 夫${state.property.commute_h}分 / 妻${state.property.commute_w}分`, 50, 400);
-            c.fillText(`Area: ${state.property.area}㎡ (${state.property.walk}min walk)`, 50, 440);
-            
-            // Footer
-            c.fillStyle = '#334155'; c.fillRect(50, 700, 500, 2);
-            c.fillStyle = '#64748b'; c.font = '20px sans-serif';
-            c.fillText("Created by Y.T", 50, 740);
-
-            // Download
-            const link = document.createElement('a');
-            link.download = 'estate_os_report.png';
-            link.href = cvs.toDataURL();
-            link.click();
-        }
-
-        // Init
-        window.onload = initLock;
-
-    </script>
+function copyLine() {
+    const name = document.getElementById('in-name').value;
+    const rank = document.getElementById('res-rank').innerText;
+    const total = document.getElementById('hud-total').innerText;
+    const txt = `【検討物件】${name}\n---\n判定: ${rank}ランク\n月額実質: ${total}円\n将来土地値: ${document.getElementById('res-land-val').innerText}\n---\n#ESTATE_OS`;
+    navigator.clipboard.writeText(txt).then(() => showToast('コピーしました'));
+}
+</script>
 </body>
 </html>
