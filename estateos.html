@@ -1,525 +1,1081 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ESTATE OS v45.0</title>
-<style>
-    :root {
-        --bg: #0f172a; --card: rgba(30,41,59,0.9); --menu: #0f172a;
-        --gold: #fbbf24; --cyan: #06b6d4; --red: #f43f5e; --green: #10b981;
-        --text: #f8fafc; --sub: #94a3b8;
-        --safe-top: env(safe-area-inset-top); --safe-btm: env(safe-area-inset-bottom);
-        --font: "Hiragino Sans", "Meiryo", sans-serif;
-    }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-    body { 
-        margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); 
-        height: 100dvh; overflow: hidden; display: flex; flex-direction: column; line-height: 1.5;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ESTATE OS | TRIAD</title>
+    <style>
+        /* =========================================
+           CORE SYSTEM: NOIR THEME & RESET
+           ========================================= */
+        :root {
+            --bg-color: #000000;
+            --text-main: #E0E0E0;
+            --text-dim: #555555;
+            --accent-main: #FF8C00; /* Amber Orange (MAGI Lines) */
+            --accent-blue: #00FFFF; /* LOGOS */
+            --accent-yellow: #FFD700; /* AEGIS */
+            --accent-red: #FF0055; /* HEDON */
+            --font-mincho: "Hiragino Mincho ProN", "Yu Mincho", serif;
+            --font-mono: "Courier New", Consolas, monospace;
+            --glass: rgba(20, 20, 20, 0.9);
+            --border-width: 2px;
+        }
 
-    /* Typography */
-    .num { font-family: "Courier New", Courier, monospace; }
-    .text-gold { color: var(--gold); } .text-cyan { color: var(--cyan); }
-    .text-red { color: var(--red); } .text-green { color: var(--green); }
-    .text-small { font-size: 11px; color: var(--sub); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+            font-size: 14px;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+        }
 
-    /* Layout */
-    header {
-        height: calc(50px + var(--safe-top)); padding-top: var(--safe-top);
-        background: rgba(15,23,42,0.98); border-bottom: 1px solid rgba(255,255,255,0.1);
-        display: flex; align-items: center; padding-left: 15px; z-index: 1000;
-    }
-    .brand { font-weight: 900; letter-spacing: 1px; font-size: 18px; }
-    
-    main { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: calc(80px + var(--safe-btm)); }
-    
-    .hud-fixed {
-        position: sticky; top: 0; background: var(--bg); z-index: 500;
-        padding-bottom: 10px; border-bottom: 2px solid var(--gold); margin-bottom: 20px;
-    }
+        /* Utility */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .center { align-items: center; justify-content: center; }
+        .w-full { width: 100%; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-accent { color: var(--accent-main); }
+        .text-blue { color: var(--accent-blue); }
+        .text-yellow { color: var(--accent-yellow); }
+        .text-red { color: var(--accent-red); }
 
-    .glass {
-        background: var(--card); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
-        padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
+        /* =========================================
+           UI COMPONENT: NEO-MAGI INTERFACE
+           ========================================= */
+        /* The Container */
+        .triad-console {
+            position: relative;
+            width: 100%;
+            padding: 20px 10px;
+            background: #000;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
 
-    /* Components */
-    .acc-btn { 
-        width: 100%; text-align: left; background: none; border: none; color: var(--cyan);
-        font-weight: bold; padding: 10px 0; border-bottom: 1px solid rgba(6,182,212,0.2);
-        display: flex; justify-content: space-between; cursor: pointer;
-    }
-    .acc-content { padding-top: 15px; }
-    
-    label { display: block; font-size: 12px; color: var(--sub); margin-bottom: 4px; margin-top: 10px; }
-    input, select {
-        width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #334155;
-        border-radius: 6px; color: #fff; padding: 10px; font-size: 15px;
-    }
-    input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(6,182,212,0.3); }
+        /* Headers (提訴 / 決議) */
+        .magi-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 4px double var(--accent-main);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .magi-title {
+            font-family: var(--font-mincho);
+            font-weight: 900;
+            font-size: 2rem;
+            color: var(--accent-main);
+            transform: scale(1, 0.85); /* 平体 */
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+        .magi-meta {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--accent-main);
+            line-height: 1.2;
+            text-align: left;
+        }
 
-    /* Switch Component */
-    .toggle-group { display: flex; background: #0f172a; border-radius: 8px; padding: 3px; border: 1px solid #334155; }
-    .toggle-btn { 
-        flex: 1; text-align: center; padding: 8px; font-size: 12px; border-radius: 6px; 
-        cursor: pointer; color: var(--sub); transition: 0.2s;
-    }
-    .toggle-btn.active { background: var(--cyan); color: #000; font-weight: bold; }
+        /* The Triangle Layout */
+        .triad-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 10px;
+            position: relative;
+        }
 
-    .btn {
-        width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold;
-        font-size: 16px; cursor: pointer; transition: 0.1s;
-    }
-    .btn-p { background: linear-gradient(135deg, var(--cyan), #0891b2); color: #000; }
-    .btn-s { background: #1e293b; color: #fff; border: 1px solid #334155; }
-    .btn:active { transform: scale(0.98); opacity: 0.9; }
+        /* Hexagon Modules (LOGOS, AEGIS, HEDON) */
+        .magi-module {
+            position: relative;
+            height: 100px;
+            background: #000;
+            border: var(--border-width) solid var(--accent-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer; /* Tap for details */
+        }
+        /* Top Center (AEGIS) */
+        .module-top {
+            grid-column: 1 /span 2;
+            width: 60%;
+            margin: 0 auto;
+            clip-path: polygon(0 0, 100% 0, 100% 70%, 80% 100%, 20% 100%, 0 70%);
+            border-bottom: none; /* clip-path limitation fix by logic */
+        }
+        /* Bottom Left (HEDON) */
+        .module-left {
+            clip-path: polygon(0 0, 80% 0, 100% 20%, 100% 100%, 0 100%);
+        }
+        /* Bottom Right (LOGOS) */
+        .module-right {
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%, 0 20%);
+        }
 
-    /* Report Table */
-    .report-card { border: 1px solid var(--gold); padding: 20px; background: #1e293b; border-radius: 12px; }
-    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #334155; font-size: 13px; }
-    .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-    .bg-green { background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid var(--green); }
-    .bg-red { background: rgba(244,63,94,0.2); color: var(--red); border: 1px solid var(--red); }
-    .bg-gold { background: rgba(251,191,36,0.2); color: var(--gold); border: 1px solid var(--gold); }
+        .module-label {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-dim);
+            z-index: 2;
+        }
 
-    /* Oracle Section */
-    .oracle { border-left: 3px solid var(--gold); padding-left: 15px; margin-top: 20px; font-style: italic; }
-    
-    /* Toast */
-    #toast {
-        position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-        background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 30px;
-        font-size: 12px; z-index: 2000; opacity: 0; transition: 0.3s; pointer-events: none;
-    }
-    #toast.show { opacity: 1; }
+        /* Status Stamps (承認/否定) */
+        .stamp {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(2);
+            font-family: var(--font-mincho);
+            font-weight: 900;
+            font-size: 2.5rem;
+            border: 3px solid currentColor;
+            padding: 5px 10px;
+            opacity: 0;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .stamp.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
 
-    /* Lock Screen */
-    #lock-screen {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg);
-        z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
+        /* Verdict Center */
+        .verdict-display {
+            position: absolute;
+            top: 55%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .verdict-rank {
+            font-family: var(--font-mono);
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--text-main);
+            text-shadow: 0 0 10px var(--accent-main);
+        }
+        .verdict-msg {
+            font-size: 0.7rem;
+            color: var(--accent-main);
+            background: #000;
+            padding: 2px 5px;
+        }
 
-    @media print {
-        header, .hud-fixed, .btn, .no-print { display: none !important; }
-        body { background: #fff; color: #000; overflow: visible; }
-        .glass, .report-card { border: 1px solid #000; background: none; color: #000; page-break-inside: avoid; }
-        .text-cyan, .text-gold, .text-red { color: #000 !important; }
-    }
-</style>
+        /* "Thinking" Animation */
+        .blink { animation: blinker 0.1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* Status Colors */
+        .status-logos.active { background: rgba(0, 255, 255, 0.2); box-shadow: inset 0 0 20px var(--accent-blue); border-color: var(--accent-blue); }
+        .status-aegis.active { background: rgba(255, 215, 0, 0.2); box-shadow: inset 0 0 20px var(--accent-yellow); border-color: var(--accent-yellow); }
+        .status-hedon.active { background: rgba(255, 0, 85, 0.2); box-shadow: inset 0 0 20px var(--accent-red); border-color: var(--accent-red); }
+
+        /* =========================================
+           INPUT FORMS & LAYOUT
+           ========================================= */
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        
+        .section-title {
+            border-left: 4px solid var(--accent-main);
+            padding-left: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 30px 0 15px 0;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-group { margin-bottom: 15px; position: relative; }
+        .input-label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            appearance: none;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-main);
+            box-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+        }
+
+        .btn-action {
+            background: #222;
+            color: var(--accent-main);
+            border: 1px solid var(--accent-main);
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .btn-action:active { background: var(--accent-main); color: #000; }
+
+        /* Address Search Button inside input */
+        .search-icon {
+            position: absolute;
+            right: 10px; top: 32px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* Detail Modal (Slide Down) */
+        .detail-panel {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-top: 5px;
+            display: none;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        .detail-panel.open { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .score-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 5px 0; }
+        .score-val { color: #fff; font-weight: bold; }
+
+    </style>
 </head>
 <body>
 
-<div id="lock-screen">
-    <div class="brand text-gold" style="font-size: 32px; margin-bottom: 40px;">ESTATE OS</div>
-    <div class="text-small" style="margin-bottom: 20px;">パターン入力で解除</div>
-    <canvas id="lock-cvs" width="300" height="300"></canvas>
-</div>
+<div id="app">
+    <div class="triad-console">
+        <div class="magi-header">
+            <div>
+                <div class="magi-meta">CODE: ESTATE_63<br>PRIORITY: AAA</div>
+                <div class="magi-title">物件審査</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="magi-meta">MODE: SELF_GOVERNANCE<br>TARGET: LOCKED</div>
+                <div class="magi-title">判決</div>
+            </div>
+        </div>
 
-<header>
-    <div class="brand">ESTATE <span class="text-cyan">OS</span> <span class="text-small">v45.0 Oracle</span></div>
-</header>
+        <div class="triad-grid" id="triad_ui">
+            <div class="magi-module module-top status-aegis" onclick="app.toggleDetail('aegis')">
+                <div class="module-label">AEGIS・2</div>
+                <div class="stamp text-yellow" id="stamp_aegis">承認</div>
+            </div>
+            <div class="magi-module module-left status-hedon" onclick="app.toggleDetail('hedon')">
+                <div class="module-label">HEDON・3</div>
+                <div class="stamp text-red" id="stamp_hedon">承認</div>
+            </div>
+            <div class="magi-module module-right status-logos" onclick="app.toggleDetail('logos')">
+                <div class="module-label">LOGOS・1</div>
+                <div class="stamp text-blue" id="stamp_logos">承認</div>
+            </div>
 
-<main>
-    <div class="hud-fixed">
-        <div class="text-small">月額実質負担（ローン＋維持費－控除）</div>
-        <div class="text-gold num" style="font-size: 28px; font-weight: 900;"><span id="hud-total">0</span> <span style="font-size: 14px;">円</span></div>
-        <div class="text-small flex" style="display:flex; justify-content: space-between;">
-            <span>判定ランク: <span id="hud-rank" class="num">--</span></span>
-            <span>将来増額リスク: <span id="hud-risk" class="text-red">--</span></span>
+            <div class="verdict-display">
+                <div class="verdict-rank" id="final_rank">--</div>
+                <div class="verdict-msg blink" id="system_status">STANDBY</div>
+            </div>
+        </div>
+
+        <div id="detail_aegis" class="detail-panel">
+            <div class="text-yellow mb-4">[AEGIS SYSTEM LOG]</div>
+            <div id="log_aegis">NO DATA</div>
+            <button class="btn-action w-full mt-2" onclick="window.open('https://disaportal.gsi.go.jp/maps/', '_blank')">ハザードマップ起動</button>
+        </div>
+        <div id="detail_hedon" class="detail-panel">
+            <div class="text-red mb-4">[HEDON SYSTEM LOG]</div>
+            <div id="log_hedon">NO DATA</div>
+        </div>
+        <div id="detail_logos" class="detail-panel">
+            <div class="text-blue mb-4">[LOGOS SYSTEM LOG]</div>
+            <div id="log_logos">NO DATA</div>
         </div>
     </div>
 
-    <div class="glass">
-        <button class="acc-btn" onclick="toggleAcc('acc-fin')">【 1 】 資金・ローン戦略 <span id="icon-fin">▼</span></button>
-        <div id="acc-fin" class="acc-content">
-            <label>借入形式</label>
-            <div class="toggle-group">
-                <div class="toggle-btn active" id="btn-single" onclick="setLoan('single')">夫単独</div>
-                <div class="toggle-btn" id="btn-pair" onclick="setLoan('pair')">ペアローン</div>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <div style="flex:1;"><label>物件価格 (万円)</label><input type="number" id="in-price" value="6000" oninput="calc()"></div>
-                <div style="flex:1;"><label>頭金 (万円)</label><input type="number" id="in-down" value="500" oninput="calc()"></div>
-            </div>
-            <label>金利テスト (%)</label>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <input type="range" min="0.3" max="4.0" step="0.01" value="0.47" id="sl-rate" style="flex:1;" oninput="syncRate(this.value)">
-                <span class="num text-gold" id="dsp-rate" style="width:50px;">0.47</span>
-            </div>
-            <label>夫 年収(万) / 妻 年収(万)</label>
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="in-inc-h" value="800" oninput="calc()">
-                <input type="number" id="in-inc-w" value="500" oninput="calc()">
-            </div>
-        </div>
-    </div>
-
-    <div class="glass">
-        <button class="acc-btn" onclick="toggleAcc('acc-prop')">【 2 】 物件・快適性情報 <span id="icon-prop">▼</span></button>
-        <div id="acc-prop" class="acc-content">
-            <label>物件名（自動検索対象）</label>
-            <input type="text" id="in-name" placeholder="物件名を入力" oninput="checkMaster(this.value)">
-            <div id="gov-status" class="text-small mt-5"></div>
-            
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <div style="flex:1;"><label>専有面積 (㎡)</label><input type="number" id="in-area" value="65" oninput="calc()"></div>
-                <div style="flex:1;"><label>築年 (西暦)</label><input type="number" id="in-year" value="2015" oninput="calc()"></div>
-            </div>
-
-            <label>エアコン設置状況</label>
-            <div class="toggle-group">
-                <div class="toggle-btn active" onclick="setAC('ok', this)">全室可</div>
-                <div class="toggle-btn" onclick="setAC('risk', this)">隠蔽配管</div>
-                <div class="toggle-btn" onclick="setAC('ng', this)">不可部屋有</div>
-            </div>
-
-            <label>2024年省エネ基準</label>
-            <div class="toggle-group">
-                <div class="toggle-btn" onclick="setEnergy('low', this)">適合なし</div>
-                <div class="toggle-btn active" onclick="setEnergy('high', this)">ZEH/省エネ</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="glass">
-        <button class="acc-btn" onclick="toggleAcc('acc-gov')">【 3 】 管理・建て替えポテンシャル <span id="icon-gov">▼</span></button>
-        <div id="acc-gov" class="acc-content">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;"><label>管理費 (円/月)</label><input type="number" id="in-fee-m" value="15000" oninput="calc()"></div>
-                <div style="flex:1;"><label>積立金 (円/月)</label><input type="number" id="in-fee-r" value="12000" oninput="calc()"></div>
-            </div>
-            <label>積立方式</label>
-            <div class="toggle-group">
-                <div class="toggle-btn active" onclick="setFund('step', this)">段階増額</div>
-                <div class="toggle-btn" onclick="setFund('flat', this)">均等積立</div>
-            </div>
-            
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <div style="flex:1;"><label>総戸数</label><input type="number" id="in-units" value="50" oninput="calc()"></div>
-                <div style="flex:1;"><label>敷地面積 (㎡)</label><input type="number" id="in-land" value="2000" oninput="calc()"></div>
-            </div>
-            <label>容積率（都市計画 %）</label>
-            <input type="number" id="in-yoseki" value="200" oninput="calc()">
-        </div>
-    </div>
-
-    <div class="glass">
-        <button class="acc-btn" onclick="toggleAcc('acc-loc')">【 4 】 立地・ハザード <span id="icon-loc">▼</span></button>
-        <div id="acc-loc" class="acc-content">
-            <label>最寄駅</label>
-            <input type="text" id="in-st" value="センター南" oninput="calc()">
-            <label>徒歩分数（広告表記）</label>
-            <input type="number" id="in-walk" value="8" oninput="calc()">
-            <label>地形・道路補正</label>
-            <div class="toggle-group">
-                <div class="toggle-btn active" onclick="setLoc('flat', this)">平坦</div>
-                <div class="toggle-btn" onclick="setLoc('slope', this)">坂道/信号多</div>
-            </div>
-            <label>ハザードマップ判定</label>
-            <div class="toggle-group">
-                <div class="toggle-btn active" onclick="setHaz('safe', this)">安全</div>
-                <div class="toggle-btn" onclick="setHaz('warn', this)">浸水注意</div>
-                <div class="toggle-btn" onclick="setHaz('danger', this)">レッドゾーン</div>
-            </div>
-        </div>
-    </div>
-
-    <button class="btn btn-p" onclick="showReport()">⚡ 監査レポートを生成</button>
-    <div style="height:20px;"></div>
-    <button class="btn btn-s no-print" onclick="openMaster()">🛠 マスタデータ管理</button>
-
-    <div id="report-area" style="display:none; margin-top:30px;">
-        <div class="report-card">
-            <div style="text-align:center; border-bottom:2px solid var(--gold); padding-bottom:10px; margin-bottom:20px;">
-                <div class="text-small">不動産戦略 監査報告書</div>
-                <div id="rep-name" style="font-size:20px; font-weight:bold;">物件名</div>
-            </div>
-
-            <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
-                <div style="text-align:center;">
-                    <div class="text-small">総合格付</div>
-                    <div id="res-rank" style="font-size:48px; font-weight:900; line-height:1;">A</div>
-                </div>
-                <div style="text-align:center;">
-                    <div class="text-small">総合スコア</div>
-                    <div id="res-score" style="font-size:32px; font-weight:bold;">--</div>
-                    <div class="text-small">/ 100点</div>
-                </div>
-            </div>
-
-            <div class="row"><span>借入可能額判定</span><span id="res-loan-limit">--</span></div>
-            <div class="row"><span>世帯片翼耐性</span><span id="res-one-wing">--</span></div>
-            <div class="row"><span>夫婦居住適正</span><span id="res-dinks">--</span></div>
-            <div class="row"><span>エアコン全室</span><span id="res-ac">--</span></div>
-            <div class="row"><span>建て替え余力</span><span id="res-reb">--</span></div>
-            <div class="row"><span>土地下値保証</span><span id="res-land-val">--</span></div>
-
-            <div class="oracle">
-                <div class="text-gold" style="font-size:12px; font-weight:bold;">🔮 未来予知インサイト</div>
-                <div id="res-oracle" class="text-small" style="line-height:1.6; margin-top:8px;"></div>
-            </div>
+    <div class="container">
+        <div class="section-title">
+            <span>I. 物件・立地</span>
+            <span class="text-dim" style="font-size:0.7rem">GEO-SPATIAL</span>
         </div>
         
-        <div style="margin-top:20px; display:flex; gap:10px;" class="no-print">
-            <button class="btn btn-p" style="flex:2;" onclick="copyLine()">📋 LINE共有用コピー</button>
-            <button class="btn btn-s" style="flex:1;" onclick="window.print()">🖨 印刷</button>
+        <div class="input-group">
+            <label class="input-label">郵便番号 (7桁・自動補完)</label>
+            <input type="tel" id="inp_zip" placeholder="123-4567" onblur="app.fetchAddress()">
         </div>
-    </div>
-</main>
+        
+        <div class="input-group">
+            <label class="input-label">住所 (自動入力)</label>
+            <input type="text" id="inp_address" placeholder="東京都千代田区...">
+            <span class="search-icon" onclick="app.fetchCoords()">📍</span>
+        </div>
 
-<div id="toast"></div>
+        <div class="flex" style="gap:10px;">
+            <div class="input-group w-full">
+                <label class="input-label">物件価格 (万円)</label>
+                <input type="tel" id="inp_price" class="sanitizer" placeholder="5000">
+            </div>
+            <div class="input-group w-full">
+                <label class="input-label">管理費+修繕 (円/月)</label>
+                <input type="tel" id="inp_cost" class="sanitizer" placeholder="25000">
+            </div>
+        </div>
 
-<div id="modal-master" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:2000; padding:20px; overflow-y:auto;">
-    <div class="brand text-gold mb-10">マスタデータ管理</div>
-    <div class="text-small">編集した内容は即座に保存されます。</div>
-    <textarea id="mst-edit" style="width:100%; height:300px; font-family:monospace; font-size:10px; margin-top:10px;"></textarea>
-    <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn btn-p" onclick="saveMaster()">保存して反映</button>
-        <button class="btn btn-s" onclick="closeMaster()">閉じる</button>
-    </div>
+        <div class="section-title">
+            <span>II. 世帯・職業</span>
+            <span class="text-dim" style="font-size:0.7rem">FINANCIAL-CORE</span>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">現在の年齢 (夫/妻)</label>
+            <div class="flex" style="gap:10px;">
+                <input type="number" id="inp_age_h" placeholder="35">
+                <input type="number" id="inp_age_w" placeholder="32">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">世帯年収 (万円)</label>
+            <input type="tel" id="inp_income" class="sanitizer" placeholder="800">
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">職業タイプ (昇給カーブ適用)</label>
+            <select id="inp_career">
+                <option value="standard">一般企業 (標準)</option>
+                <option value="public">公務員 (安定/退職金)</option>
+                <option value="maker">大手メーカー (年功序列)</option>
+                <option value="it">IT・メガベンチャー (短期集中)</option>
+                <option value="finance">金融・商社 (高収入/激務)</option>
+                <option value="free">フリーランス/自営業 (保障なし)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">教育プラン</label>
+            <select id="inp_edu">
+                <option value="public">All公立 (標準)</option>
+                <option value="mix">大学のみ私立</option>
+                <option value="elite">中高大私立 (エリート)</option>
+            </select>
+        </div>
+
+        <div class="section-title">
+            <span>III. リスク補正</span>
+            <span class="text-dim" style="font-size:0.7rem">RISK-FACTOR</span>
+        </div>
+        
+        <div class="input-group">
+            <label class="input-label">最寄駅ランク (自己申告)</label>
+            <select id="inp_station_rank">
+                <option value="1">★1 (支線・バス便)</option>
+                <option value="3" selected>★3 (急行停車/Hub)</option>
+                <option value="5">★5 (Core/複数路線)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">通勤ストレス (夫婦合計)</label>
+            <select id="inp_commute_stress">
+                <option value="low">低 (快適/リモート)</option>
+                <option value="mid" selected>中 (標準的)</option>
+                <option value="high">高 (満員・乗換多)</option>
+                <option value="hell">地獄 (限界)</option>
+            </select>
+        </div>
+        
+        <div style="height: 100px;"></div> </div>
 </div>
 
 <script>
-// --- 初期データ (Ver 45.0 Oracle) ---
-const CSV_GV = `ID,BukkenMei,Hoshi,Tensu,Nintei,Kigen
-1,パークシティ武蔵小杉ミッドスカイタワー,5,96,true,2027/12
-2,ザ・ヨコハマタワーズ,5,98,true,2027/01
-3,港北センタープレイス,5,92,true,2026/09
-4,ベルジェンドセンター南,5,91,true,2026/07
-5,イニシア港北ニュータウン,5,98,true,2027/02
-6,広尾ガーデンヒルズ,5,95,true,2026/04`;
+/* =========================================
+   COMPRESSED MASTER DATA (The Knowledge)
+   ========================================= */
 
-// --- 状態管理 ---
-let loanMode = 'single';
-let acStatus = 'ok';
-let energyStatus = 'high';
-let fundMode = 'step';
-let locMode = 'flat';
-let hazStatus = 'safe';
-let masterData = [];
+// 1. 税務マスタ (2026 Basis) - Income Tax Brackets [UpperLimit(Man), Rate(%), Deduction(Man)]
+const TAX_MAP = [
+    [195, 5, 0], [330, 10, 9.75], [695, 20, 42.75], [900, 23, 63.6],
+    [1800, 33, 153.6], [4000, 40, 279.6], [Infinity, 45, 479.6]
+];
+const SOCIAL_RATES = { health: 0.05, pension: 0.0915, emp: 0.006, care: 0.009 }; // Half split assumed
 
-// --- アプリ初期化 ---
-window.onload = () => { initLock(); loadMaster(); calc(); };
+// 2. キャリアカーブ (Age vs Salary Multiplier %)
+// 22=100 as base. Interpolated at runtime.
+const CAREER_CURVES = {
+    standard: [[22,100], [30,130], [45,160], [55,170], [60,100]],
+    public:   [[22,100], [35,140], [50,180], [60,180], [65,120]], // Stable
+    maker:    [[22,100], [30,120], [40,160], [55,200], [60,120]], // Seniority
+    it:       [[22,110], [30,180], [40,200], [50,180], [60,80]],  // Early peak
+    finance:  [[22,120], [30,180], [45,250], [55,250], [60,50]],  // High risk
+    free:     [[22,100], [30,150], [40,150], [50,120], [60,80]]   // Unstable
+};
 
-function initLock() {
-    const c = document.getElementById('lock-cvs'), ctx = c.getContext('2d');
-    let pts = [], dots = [];
-    for(let i=0; i<3; i++) for(let j=0; j<3; j++) dots.push({x:75*(j+1), y:75*(i+1), i: i*3+j});
-    
-    const redraw = (cur) => {
-        ctx.clearRect(0,0,300,300);
-        if(pts.length) {
-            ctx.beginPath(); ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 6; ctx.lineCap='round';
-            ctx.moveTo(dots[pts[0]].x, dots[pts[0]].y);
-            pts.slice(1).forEach(k => ctx.lineTo(dots[k].x, dots[k].y));
-            if(cur) ctx.lineTo(cur.x, cur.y);
-            ctx.stroke();
-        }
-        dots.forEach(d => {
-            ctx.beginPath(); ctx.arc(d.x, d.y, 8, 0, 7);
-            ctx.fillStyle = pts.includes(d.i) ? '#fbbf24' : '#334155';
-            ctx.fill();
-        });
-    };
+// 3. 教育費イベント (Age of Child: Cost in Man-Yen)
+const EDU_COSTS = {
+    public: { 6:30, 12:50, 15:50, 18:250 }, // 入学時など要所のみ
+    mix:    { 6:30, 12:50, 15:100, 18:500 },
+    elite:  { 6:100, 12:400, 15:300, 18:600 }
+};
 
-    let drawing = false;
-    const getPos = e => {
-        const r = c.getBoundingClientRect(), t = e.touches ? e.touches[0] : e;
-        return {x: t.clientX - r.left, y: t.clientY - r.top};
-    };
+// 4. 地理ハブ (For Distance Calculation)
+// [Name, Lat, Lon, EcoScore]
+const GEO_HUBS = [
+    ["Tokyo", 35.681, 139.767, 100], ["Shinjuku", 35.690, 139.700, 95],
+    ["Yokohama", 35.466, 139.622, 90], ["Omiya", 35.906, 139.624, 85],
+    ["Chiba", 35.613, 140.113, 80], ["Osaka", 34.702, 135.495, 95],
+    ["Nagoya", 35.170, 136.881, 90], ["Hakata", 33.590, 130.420, 90]
+];
 
-    c.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; pts = []; redraw(getPos(e)); });
-    c.addEventListener('touchmove', e => {
-        if(!drawing) return;
-        const p = getPos(e); redraw(p);
-        dots.forEach(d => {
-            if(Math.hypot(d.x - p.x, d.y - p.y) < 25 && !pts.includes(d.i)) pts.push(d.i);
-        });
-    });
-    c.addEventListener('touchend', () => {
-        drawing = false; 
-        if(pts.length >= 4) {
-            const key = localStorage.getItem('eo_lock');
-            const now = JSON.stringify(pts);
-            if(!key) { localStorage.setItem('eo_lock', now); unlock(); }
-            else if(key === now) unlock();
-            else { pts = []; redraw(); showToast('パターンが違います'); }
-        }
-    });
-    redraw();
-}
+// 5. 圧縮駅マスタ (Major Stations only for brevity in this output, normally 2000+)
+// Format: Name|Rank|Lat|Lon (Shortened lat/lon)
+const STATION_DB_RAW = 
+"東京|5|35.68|139.76;新宿|5|35.69|139.70;横浜|5|35.46|139.62;渋谷|5|35.65|139.70;" +
+"池袋|5|35.72|139.71;品川|5|35.62|139.74;上野|4|35.71|139.77;立川|4|35.69|139.41;" +
+"大宮|4|35.90|139.62;浦和|3|35.85|139.65;川崎|4|35.53|139.69;武蔵小杉|4|35.57|139.65;" +
+"二子玉川|3|35.61|139.62;たまプラーザ|3|35.57|139.55;センター南|3|35.54|139.57;" +
+"町田|3|35.54|139.44;藤沢|3|35.33|139.48;船橋|3|35.70|139.98;柏|3|35.86|139.97";
 
-function unlock() { document.getElementById('lock-screen').style.display = 'none'; }
+/* =========================================
+   UTILITIES (Sanitizers & Formatters)
+   ========================================= */
+const Utils = {
+    // 全角→半角, 不要文字削除, 数値化
+    sanitizeNum: (val) => {
+        if (!val) return 0;
+        let s = val.toString().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+        s = s.replace(/[^0-9.-]/g, '');
+        return parseFloat(s) || 0;
+    },
+    // 郵便番号正規化 (123-4567 -> 1234567)
+    sanitizeZip: (val) => {
+        if (!val) return "";
+        let s = val.toString().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+        return s.replace(/[^0-9]/g, '').substring(0, 7);
+    },
+    formatCurrency: (num) => {
+        return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num);
+    },
+    // 直線距離 (Haversine simplified)
+    calcDist: (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+};
+</script>
+/* =========================================
+   CORE LOGIC: THE SONAR (API Connection)
+   ========================================= */
+class Sonar {
+    constructor() {
+        this.cache = {}; // Simple memory cache
+    }
 
-function loadMaster() {
-    const raw = localStorage.getItem('eo_mst_gv') || CSV_GV;
-    document.getElementById('mst-edit').value = raw;
-    const rows = raw.trim().split('\n');
-    masterData = rows.slice(1).map(r => {
-        const c = r.split(',');
-        return { name: c[1], star: parseInt(c[2]), score: parseInt(c[3]), cert: c[4]==='true' };
-    });
-}
-
-function saveMaster() {
-    localStorage.setItem('eo_mst_gv', document.getElementById('mst-edit').value);
-    loadMaster();
-    closeMaster();
-    showToast('マスタを更新しました');
-}
-
-function openMaster() { document.getElementById('modal-master').style.display = 'block'; }
-function closeMaster() { document.getElementById('modal-master').style.display = 'none'; }
-
-function toggleAcc(id) {
-    const el = document.getElementById(id);
-    const icon = document.getElementById('icon-' + id.split('-')[1]);
-    const isHidden = el.style.display === 'none';
-    el.style.display = isHidden ? 'block' : 'none';
-    icon.innerText = isHidden ? '▲' : '▼';
-}
-
-// --- 判定ロジック ---
-function setLoan(m) { loanMode = m; updateToggle('btn-single', m==='single'); updateToggle('btn-pair', m==='pair'); calc(); }
-function setAC(v, el) { acStatus = v; updateToggleGroup(el); calc(); }
-function setEnergy(v, el) { energyStatus = v; updateToggleGroup(el); calc(); }
-function setFund(v, el) { fundMode = v; updateToggleGroup(el); calc(); }
-function setLoc(v, el) { locMode = v; updateToggleGroup(el); calc(); }
-function setHaz(v, el) { hazStatus = v; updateToggleGroup(el); calc(); }
-
-function updateToggle(id, active) { document.getElementById(id).classList.toggle('active', active); }
-function updateToggleGroup(el) {
-    Array.from(el.parentElement.children).forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-}
-
-function syncRate(v) { document.getElementById('dsp-rate').innerText = v; calc(); }
-
-function checkMaster(name) {
-    const hit = masterData.find(m => name.includes(m.name));
-    const status = document.getElementById('gov-status');
-    if(hit) {
-        status.innerHTML = `<span class="text-green">✅ 公的評価登録済: ★${hit.star} (${hit.score}点)</span>`;
-        return hit;
-    } else {
-        status.innerHTML = `<span class="text-small">未登録物件です（Google検索推奨）</span>`;
+    // GSI Address Search (住所 -> 緯度経度)
+    async searchAddress(query) {
+        if (!query) return null;
+        const url = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const loc = data[0].geometry.coordinates; // [lon, lat]
+                return { lat: loc[1], lon: loc[0], title: data[0].properties.title };
+            }
+        } catch (e) { console.error("Sonar GSI Error:", e); }
         return null;
     }
-}
 
-function calc() {
-    const price = parseFloat(document.getElementById('in-price').value) || 0;
-    const down = parseFloat(document.getElementById('in-down').value) || 0;
-    const loan = Math.max(0, price - down);
-    const rate = parseFloat(document.getElementById('sl-rate').value) / 100 / 12;
-    const months = 35 * 12;
-    
-    // ローン返済
-    const pmt = loan > 0 ? Math.floor(loan * 10000 * (rate * Math.pow(1+rate, months)) / (Math.pow(1+rate, months) - 1)) : 0;
-    
-    // 維持費
-    const feeM = parseFloat(document.getElementById('in-fee-m').value) || 0;
-    const feeR = parseFloat(document.getElementById('in-fee-r').value) || 0;
-    
-    // 住宅ローン控除 (2024年以降簡略化モデル)
-    const year = parseInt(document.getElementById('in-year').value);
-    let deduction = 0;
-    if (energyStatus === 'high') {
-        deduction = Math.min(loan * 10000 * 0.007 / 12, 400000 / 12);
-    } else if (year >= 1982) {
-        deduction = Math.min(loan * 10000 * 0.007 / 12, 200000 / 12);
+    // ZipCloud (郵便番号 -> 住所)
+    async searchZip(zip) {
+        const z = Utils.sanitizeZip(zip);
+        if (z.length !== 7) return null;
+        const url = `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${z}`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data && data.results) {
+                const r = data.results[0];
+                return `${r.address1}${r.address2}${r.address3}`;
+            }
+        } catch (e) { console.error("Sonar Zip Error:", e); }
+        return null;
     }
 
-    const total = pmt + feeM + feeR - deduction;
-    document.getElementById('hud-total').innerText = Math.floor(total).toLocaleString();
-    
-    // 将来リスク
-    const risk = fundMode === 'step' ? '将来2.5倍増額' : 'なし';
-    document.getElementById('hud-risk').innerText = risk;
+    // Overpass API (周辺施設探索) - with Timeout Safety
+    async scanArea(lat, lon) {
+        // Find: Hospital, Supermarket within 1.5km
+        const q = `
+            [out:json][timeout:3];
+            (
+              node["amenity"="hospital"](around:1500,${lat},${lon});
+              node["amenity"="clinic"](around:800,${lat},${lon});
+              node["shop"="supermarket"](around:800,${lat},${lon});
+              node["shop"="convenience"](around:500,${lat},${lon});
+            );
+            out body;
+        `;
+        const url = "https://overpass-api.de/api/interpreter";
+        
+        // Timeout Promise Wrapper
+        const fetchWithTimeout = (ms, promise) => {
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => { resolve(null); }, ms); // Resolve null on timeout (don't break app)
+                promise.then(value => { clearTimeout(timer); resolve(value); })
+                       .catch(reason => { clearTimeout(timer); resolve(null); });
+            });
+        };
 
-    return { total, pmt, feeM, feeR, loan, price, deduction };
+        try {
+            const res = await fetchWithTimeout(3000, fetch(url, { method: 'POST', body: q })); // 3s Timeout
+            if (!res) return { status: 'TIMEOUT' }; // Silent fail
+            const data = await res.json();
+            return this.analyzeNodes(data.elements, lat, lon);
+        } catch (e) {
+            return { status: 'ERROR' };
+        }
+    }
+
+    analyzeNodes(nodes, centerLat, centerLon) {
+        if (!nodes) return { status: 'NO_DATA' };
+        let result = {
+            hospital: { dist: 9999, name: '' },
+            supermarket: { dist: 9999, name: '' },
+            convenience: { dist: 9999, name: '' }
+        };
+
+        nodes.forEach(node => {
+            const d = Utils.calcDist(centerLat, centerLon, node.lat, node.lon);
+            const distM = Math.round(d * 1000);
+            
+            if (node.tags.amenity === 'hospital' || node.tags.amenity === 'clinic') {
+                if (distM < result.hospital.dist) result.hospital = { dist: distM, name: node.tags.name };
+            } else if (node.tags.shop === 'supermarket') {
+                if (distM < result.supermarket.dist) result.supermarket = { dist: distM, name: node.tags.name };
+            } else if (node.tags.shop === 'convenience') {
+                if (distM < result.convenience.dist) result.convenience = { dist: distM, name: node.tags.name };
+            }
+        });
+        return { status: 'OK', data: result };
+    }
 }
 
-function showReport() {
-    const d = calc();
-    const name = document.getElementById('in-name').value || "未設定の物件";
-    const master = checkMaster(name);
-    
-    let score = 60;
-    let reasons = [];
+/* =========================================
+   CORE LOGIC: ESTATE SIMULATOR (100-Year Engine)
+   ========================================= */
+class EstateEngine {
+    constructor() {
+        this.today = new Date();
+    }
 
-    // 1. 資金面
-    const incH = parseFloat(document.getElementById('in-inc-h').value) || 0;
-    const incW = parseFloat(document.getElementById('in-inc-w').value) || 0;
-    const hhInc = loanMode === 'pair' ? (incH + incW) : incH;
-    const ratio = (d.pmt * 12) / (hhInc * 10000) * 100;
-    
-    if (ratio < 20) score += 15;
-    else if (ratio < 28) score += 5;
-    else score -= 20;
+    // メイン計算: 入力データから将来のキャッシュフローを生成
+    simulate(inputs) {
+        // Inputs: ageH, ageW, income, career, price, cost, eduType, etc.
+        const startYear = this.today.getFullYear();
+        const maxAge = 100;
+        let timeline = [];
+        let assets = 0; // Current savings assumed 0 for simplicity or add input
+        let isBankrupt = false;
+        let bankruptAge = null;
 
-    // 片翼耐性
-    const oneWingRatio = (d.pmt * 12) / (incH * 10000) * 100;
-    document.getElementById('res-one-wing').innerText = oneWingRatio < 35 ? "維持可能" : "危険(要保険)";
+        // Loan Calc (Flat 35, 1.8% assumed)
+        const loanAmount = inputs.price * 10000; // Man -> Yen
+        const interestRate = 0.018;
+        const loanTerm = 35;
+        const monthlyRate = interestRate / 12;
+        const monthlyPayment = (loanAmount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, - (loanTerm * 12)));
+        let loanBalance = loanAmount;
 
-    // 2. 面積・夫婦適正
-    const area = parseFloat(document.getElementById('in-area').value);
-    if (area >= 55 && area <= 70) { score += 10; document.getElementById('res-dinks').innerText = "黄金比(S)"; }
-    else if (area < 40) { score -= 30; document.getElementById('res-dinks').innerText = "狭小(DANGER)"; }
-    else { document.getElementById('res-dinks').innerText = "許容範囲"; }
+        // Career Curve Setup
+        const curve = CAREER_CURVES[inputs.career] || CAREER_CURVES.standard;
+        const getSalaryMult = (age) => {
+            // Simple Linear Interpolation
+            for (let i = 0; i < curve.length - 1; i++) {
+                if (age >= curve[i][0] && age <= curve[i+1][0]) {
+                    const t = (age - curve[i][0]) / (curve[i+1][0] - curve[i][0]);
+                    return curve[i][1] + t * (curve[i+1][1] - curve[i][1]);
+                }
+            }
+            return age > 60 ? 50 : 100; // Fallback
+        };
 
-    // 3. 空調
-    if (acStatus === 'ok') score += 5;
-    else if (acStatus === 'ng') score -= 15;
-    document.getElementById('res-ac').innerText = acStatus === 'ok' ? "全室完備" : "一部不可/制約有";
+        // 100 Year Loop
+        for (let i = 0; i <= (maxAge - inputs.ageH); i++) {
+            const year = startYear + i;
+            const currentAgeH = inputs.ageH + i;
+            const currentAgeW = inputs.ageW + i;
+            
+            // 1. Income (Household)
+            let baseIncome = inputs.income * 10000; // Yen
+            let multiplier = getSalaryMult(currentAgeH) / 100; // Based on Husband mainly
+            
+            // Retirement Check
+            let annualIncome = 0;
+            if (currentAgeH < 60) {
+                annualIncome = baseIncome * multiplier;
+            } else if (currentAgeH < 65) {
+                annualIncome = baseIncome * multiplier * 0.6; // Re-employment
+            } else {
+                annualIncome = 2500000; // Pension (Basic Pair)
+            }
 
-    // 4. 管理・建て替え
-    const units = parseInt(document.getElementById('in-units').value);
-    const land = parseFloat(document.getElementById('in-land').value);
-    const mochimochi = land / units;
-    document.getElementById('res-reb').innerText = mochimochi > 30 ? "高(土地持分多)" : "中(一般)";
-    if (mochimochi > 30) score += 10;
-    
-    if (master) score += 10;
+            // Tax & Social
+            const taxRate = this.getTaxRate(annualIncome / 10000);
+            const takeHome = annualIncome * (1 - taxRate);
 
-    // ハザード Kill Switch
-    if (hazStatus === 'danger') score = 0;
+            // 2. Expenses
+            // Housing
+            let annualHousing = (inputs.cost * 12);
+            if (i < loanTerm) {
+                annualHousing += (monthlyPayment * 12);
+                loanBalance -= (monthlyPayment * 12) * 0.6; // Principal roughly
+            }
+            
+            // Living (Basic) - 150k/m for couple + inflation 1%
+            let livingCost = 150000 * 12 * Math.pow(1.01, i);
+            
+            // Education
+            // Assuming child born at AgeH 35 (Model)
+            const childAge = currentAgeH - 35; 
+            if (childAge >= 0 && childAge <= 22) {
+                const eduPlan = EDU_COSTS[inputs.eduType] || EDU_COSTS.public;
+                let eduCost = 0;
+                // Add event cost if matches age
+                if (eduPlan[childAge]) eduCost = eduPlan[childAge] * 10000;
+                // Basic child living cost
+                livingCost += 600000; 
+                annualHousing += eduCost;
+            }
 
-    // 最終表示
-    const scoreFinal = Math.min(100, Math.max(0, score));
-    const rank = scoreFinal >= 90 ? 'S' : (scoreFinal >= 75 ? 'A' : (scoreFinal >= 60 ? 'B' : 'C'));
-    if (hazStatus === 'danger') { document.getElementById('res-rank').innerText = 'E'; document.getElementById('res-rank').className = 'text-red'; }
-    else { document.getElementById('res-rank').innerText = rank; document.getElementById('res-rank').className = 'text-gold'; }
-    
-    document.getElementById('res-score').innerText = scoreFinal;
-    document.getElementById('rep-name').innerText = name;
-    document.getElementById('res-loan-limit').innerText = ratio.toFixed(1) + "%";
-    document.getElementById('res-land-val').innerText = (mochimochi * 50).toFixed(0) + "万円(推定)";
+            // Total Balance
+            const annualBalance = takeHome - annualHousing - livingCost;
+            assets += annualBalance;
 
-    // オラクル
-    const oracle = `【2035年】自動運転普及により周辺の静寂性が価値に。光熱費上昇に伴い省エネ性能が差別化の鍵。
-【2045年】2026年改正法に基づき再生決議が現実化。土地持分${mochimochi.toFixed(1)}㎡が資産の盾となります。
-【2055年】気候変動が進む中、${hazStatus==='safe'?'本高台立地は希少な安全圏':'水防対策の徹底'}が求められる時代へ。`;
-    document.getElementById('res-oracle').innerText = oracle;
+            if (assets < 0 && !isBankrupt) {
+                isBankrupt = true;
+                bankruptAge = currentAgeH;
+            }
 
-    document.getElementById('report-area').style.display = 'block';
-    document.getElementById('report-area').scrollIntoView({behavior: 'smooth'});
+            timeline.push({ year, age: currentAgeH, assets, balance: annualBalance });
+        }
+
+        return { timeline, finalAssets: assets, bankruptAge, isBankrupt };
+    }
+
+    getTaxRate(incomeMan) {
+        // Find bracket
+        for (let b of TAX_MAP) {
+            if (incomeMan <= b[0]) return (b[1] / 100) + 0.1; // IncomeTax + Resident(10%)
+        }
+        return 0.55; // Max
+    }
 }
 
-function showToast(m) {
-    const t = document.getElementById('toast');
-    t.innerText = m; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+/* =========================================
+   CORE LOGIC: THE TRIAD SYSTEM (Magi)
+   ========================================= */
+class TriadMember {
+    constructor(name, role) {
+        this.name = name;
+        this.role = role;
+        this.vote = false; // Approval
+        this.log = "";
+    }
+    decide(data) { return false; } // Override me
 }
 
-function copyLine() {
-    const name = document.getElementById('in-name').value;
-    const rank = document.getElementById('res-rank').innerText;
-    const total = document.getElementById('hud-total').innerText;
-    const txt = `【検討物件】${name}\n---\n判定: ${rank}ランク\n月額実質: ${total}円\n将来土地値: ${document.getElementById('res-land-val').innerText}\n---\n#ESTATE_OS`;
-    navigator.clipboard.writeText(txt).then(() => showToast('コピーしました'));
+// 1. LOGOS (Financial)
+class Logos extends TriadMember {
+    decide(simResult, propertyData) {
+        // Logic: 100歳でプラスか？ リセールは？
+        const finalAssets = simResult.finalAssets;
+        const isBankrupt = simResult.isBankrupt;
+        
+        let score = 100;
+        let msg = [];
+
+        if (isBankrupt) {
+            score -= 50;
+            msg.push(`破綻警告: ${simResult.bankruptAge}歳で資金枯渇。`);
+        } else {
+            msg.push(`資産健全: 100歳残高 ${Utils.formatCurrency(finalAssets)}。`);
+        }
+
+        // Resale Value based on Station Rank
+        if (propertyData.stationRank >= 5) {
+            msg.push("資産性: S (Core駅)。");
+        } else if (propertyData.stationRank <= 2) {
+            score -= 30;
+            msg.push("資産性: 脆弱 (Local駅)。");
+        }
+
+        this.vote = score >= 60;
+        this.log = msg.join(" ");
+        return this.vote;
+    }
 }
+
+// 2. AEGIS (Safety)
+class Aegis extends TriadMember {
+    decide(sonarResult, userInputs) {
+        // Logic: 病院はあるか？ ハザードは？
+        let score = 100;
+        let msg = [];
+
+        // Sonar Data
+        if (sonarResult.status === 'OK') {
+            const hDist = sonarResult.data.hospital.dist;
+            if (hDist > 1200) {
+                score -= 40;
+                msg.push(`医療過疎: 最寄病院まで${hDist}m。`);
+            } else {
+                msg.push(`医療アクセス: 良好(${hDist}m)。`);
+            }
+        } else if (sonarResult.status === 'TIMEOUT') {
+             msg.push("周辺データ取得タイムアウト。現地確認推奨。");
+             score -= 10;
+        }
+
+        // Manual Hazard Input
+        // (Assuming we use the input fields for risk later, currently basic check)
+        
+        // Station Access (Safety for elderly)
+        if (userInputs.stationRank < 2) {
+            score -= 20;
+            msg.push("孤立リスク: 車必須エリア。");
+        }
+
+        this.vote = score >= 60;
+        this.log = msg.join(" ");
+        return this.vote;
+    }
+}
+
+// 3. HEDON (Life Quality)
+class Hedon extends TriadMember {
+    decide(sonarResult, userInputs) {
+        // Logic: コンビニ・スーパー・通勤
+        let score = 100;
+        let msg = [];
+
+        // Sonar
+        if (sonarResult.status === 'OK') {
+            const sDist = sonarResult.data.supermarket.dist;
+            const cDist = sonarResult.data.convenience.dist;
+            if (sDist < 400) {
+                msg.push(`買物至便: スーパー${sDist}m。`);
+            } else if (sDist > 1000) {
+                score -= 30;
+                msg.push(`生活不便: スーパー遠方(${sDist}m)。`);
+            }
+        }
+
+        // Commute Stress
+        if (userInputs.stress === 'hell') {
+            score -= 50;
+            msg.push("通勤地獄: QOL崩壊リスク。");
+        } else if (userInputs.stress === 'high') {
+            score -= 20;
+            msg.push("通勤負荷: 高。");
+        } else {
+            msg.push("通勤環境: 許容範囲。");
+        }
+        
+        // Station Power
+        if (userInputs.stationRank >= 4) {
+            score += 20;
+            msg.push("都市力: 高。週末も充実。");
+        }
+
+        this.vote = score >= 60;
+        this.log = msg.join(" ");
+        return this.vote;
+    }
+}
+
+// THE TRIAD SYSTEM CONTROLLER
+class TriadSystem {
+    constructor() {
+        this.logos = new Logos("LOGOS", "FINANCE");
+        this.aegis = new Aegis("AEGIS", "SAFETY");
+        this.hedon = new Hedon("HEDON", "LIFE");
+    }
+
+    execute(simResult, sonarResult, userInputs) {
+        // Parallel Thinking
+        const v1 = this.logos.decide(simResult, { stationRank: userInputs.stationRank });
+        const v2 = this.aegis.decide(sonarResult, userInputs);
+        const v3 = this.hedon.decide(sonarResult, userInputs);
+
+        return this.synthesize(v1, v2, v3);
+    }
+
+    synthesize(v1, v2, v3) {
+        // Aufheben Logic
+        let rank = "C";
+        let message = "";
+
+        if (v1 && v2 && v3) {
+            rank = "S";
+            message = "完全調和: 資産・安全・快適性の黄金比。理想郷です。";
+        } else if (v1 && v2 && !v3) {
+            rank = "B";
+            message = "禁欲的選択: 資産と安全は盤石。退屈さは我慢が必要です。";
+        } else if (!v1 && v2 && v3) {
+            rank = "C";
+            message = "甘い罠: 住み心地は最高ですが、将来の財務リスクがあります。";
+        } else if (v1 && !v2 && v3) {
+            rank = "D";
+            message = "砂上の楼閣: 資産価値は高いですが、災害・安全リスクが致命的です。";
+        } else if (!v1 && !v2 && !v3) {
+            rank = "E";
+            message = "論外: 検討に値しません。";
+        } else {
+            // Other mixes
+            rank = "C";
+            message = "要審議: メリットとリスクが拮抗しています。詳細を確認してください。";
+        }
+
+        return {
+            rank: rank,
+            msg: message,
+            details: {
+                logos: { vote: v1, log: this.logos.log },
+                aegis: { vote: v2, log: this.aegis.log },
+                hedon: { vote: v3, log: this.hedon.log }
+            }
+        };
+    }
+}
+</script>
+/* =========================================
+   APP CONTROLLER: THE BRAIN
+   ========================================= */
+class App {
+    constructor() {
+        this.engine = new EstateEngine();
+        this.sonar = new Sonar();
+        this.triad = new TriadSystem();
+        
+        // State
+        this.sonarData = { status: 'NO_DATA' }; // Cache
+        this.debounceTimer = null;
+        this.isProcessing = false;
+    }
+
+    init() {
+        // Event Listeners for all inputs
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(el => {
+            el.addEventListener('input', () => this.scheduleAnalysis());
+            el.addEventListener('change', () => this.scheduleAnalysis());
+        });
+
+        // Initial Run (Empty)
+        this.resetUI();
+    }
+
+    // デバウンス処理 (入力中はこの秒数待つ)
+    scheduleAnalysis() {
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        // UIを「思考中」モードへ
+        document.getElementById('system_status').innerText = "CALCULATING...";
+        document.getElementById('system_status').classList.add('blink');
+        
+        this.debounceTimer = setTimeout(() => {
+            this.runAnalysis();
+        }, 1000); // 1秒待って実行
+    }
+
+    // ■■■ MAIN EXECUTION FLOW ■■■
+    async runAnalysis() {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+
+        // 1. Gather Inputs (Sanitized)
+        const inputs = {
+            zip: document.getElementById('inp_zip').value,
+            address: document.getElementById('inp_address').value,
+            price: Utils.sanitizeNum(document.getElementById('inp_price').value),
+            cost: Utils.sanitizeNum(document.getElementById('inp_cost').value),
+            ageH: Utils.sanitizeNum(document.getElementById('inp_age_h').value) || 35,
+            ageW: Utils.sanitizeNum(document.getElementById('inp_age_w').value) || 32,
+            income: Utils.sanitizeNum(document.getElementById('inp_income').value),
+            career: document.getElementById('inp_career').value,
+            eduType: document.getElementById('inp_edu').value,
+            stationRank: parseInt(document.getElementById('inp_station_rank').value),
+            stress: document.getElementById('inp_commute_stress').value
+        };
+
+        // Validate essentials
+        if (!inputs.income || !inputs.price) {
+            this.isProcessing = false;
+            document.getElementById('system_status').innerText = "STANDBY: INPUT REQUIRED";
+            return;
+        }
+
+        // 2. Finance Simulation (Synchronous)
+        const simResult = this.engine.simulate(inputs);
+
+        // 3. Sonar Scan (Asynchronous / Cached)
+        // Only run if address changed or no data
+        // For this demo, we assume latitude lookup happened via fetchCoords
+        // If we have lat/lon in hidden fields (or memory), use them.
+        // *Here we rely on user clicking the Pin or entering Zip to set coords in memory*
+        if (this.currentCoords && this.currentCoords.lat) {
+            // If new coords, scan. If same, use cache.
+            if (!this.sonarData.timestamp || this.sonarData.coords !== this.currentCoords) {
+                this.sonarData = await this.sonar.scanArea(this.currentCoords.lat, this.currentCoords.lon);
+                this.sonarData.coords = this.currentCoords;
+                this.sonarData.timestamp = Date.now();
+            }
+        }
+
+        // 4. TRIAD JUDGMENT
+        const verdict = this.triad.execute(simResult, this.sonarData, inputs);
+
+        // 5. UPDATE UI (The Reveal)
+        this.renderVerdict(verdict);
+        
+        this.isProcessing = false;
+    }
+
+    // ■■■ UI RENDERING (MAGI STYLE) ■■■
+    renderVerdict(verdict) {
+        // Reset Visuals
+        const modules = ['logos', 'aegis', 'hedon'];
+        modules.forEach(m => {
+            const el = document.querySelector(`.status-${m}`);
+            const stamp = document.getElementById(`stamp_${m}`);
+            el.classList.remove('active');
+            stamp.classList.remove('show');
+            stamp.className = 'stamp'; // Reset colors
+        });
+
+        // Update Logs
+        document.getElementById('log_logos').innerText = verdict.details.logos.log;
+        document.getElementById('log_aegis').innerText = verdict.details.aegis.log;
+        document.getElementById('log_hedon').innerText = verdict.details.hedon.log;
+
+        // Animation Sequence
+        setTimeout(() => {
+            // 1. LOGOS Reveal
+            this.updateModule('logos', verdict.details.logos.vote, 'text-blue');
+        }, 100);
+
+        setTimeout(() => {
+            // 2. AEGIS Reveal
+            this.updateModule('aegis', verdict.details.aegis.vote, 'text-yellow');
+        }, 300);
+
+        setTimeout(() => {
+            // 3. HEDON Reveal
+            this.updateModule('hedon', verdict.details.hedon.vote, 'text-red');
+        }, 500);
+
+        setTimeout(() => {
+            // 4. Final Rank
+            const rankEl = document.getElementById('final_rank');
+            const statusEl = document.getElementById('system_status');
+            
+            rankEl.innerText = verdict.rank + " RANK";
+            statusEl.innerText = verdict.msg;
+            statusEl.classList.remove('blink');
+
+            // Color coding rank
+            rankEl.style.color = (verdict.rank === 'S' || verdict.rank === 'A') ? 'var(--accent-blue)' :
+                                 (verdict.rank === 'B') ? 'var(--accent-main)' : 'var(--accent-red)';
+        }, 700);
+    }
+
+    updateModule(id, isApproved, colorClass) {
+        const mod = document.querySelector(`.status-${id}`);
+        const stamp = document.getElementById(`stamp_${id}`);
+        
+        if (isApproved) {
+            mod.classList.add('active');
+            stamp.innerText = "承認";
+            stamp.classList.add(colorClass); // Blue/Yellow/Red text
+        } else {
+            stamp.innerText = "否定";
+            stamp.classList.add('text-red'); // Denied is always red border
+            stamp.style.borderColor = 'red';
+            stamp.style.color = 'red';
+        }
+        stamp.classList.add('show');
+    }
+
+    // ■■■ AUXILIARY ACTIONS ■■■
+    async fetchAddress() {
+        const zip = document.getElementById('inp_zip').value;
+        const addr = await this.sonar.searchZip(zip);
+        if (addr) {
+            document.getElementById('inp_address').value = addr;
+            this.fetchCoords(); // Chain reaction
+        }
+    }
+
+    async fetchCoords() {
+        const addr = document.getElementById('inp_address').value;
+        const res = await this.sonar.searchAddress(addr);
+        if (res) {
+            this.currentCoords = { lat: res.lat, lon: res.lon };
+            // Auto-fill Lat/Lon visual feedback? For now, just trigger analysis
+            document.getElementById('system_status').innerText = `LOCATED: ${res.title}`;
+            this.scheduleAnalysis();
+        } else {
+            document.getElementById('system_status').innerText = "LOCATION ERROR";
+        }
+    }
+
+    toggleDetail(id) {
+        const el = document.getElementById(`detail_${id}`);
+        el.classList.toggle('open');
+    }
+    
+    resetUI() {
+        document.getElementById('system_status').innerText = "SYSTEM READY";
+    }
+}
+
+// BOOTSTRAP
+const app = new App();
+window.addEventListener('DOMContentLoaded', () => {
+    app.init();
+    
+    // Auto-format on blur for sanitization visual
+    document.querySelectorAll('.sanitizer').forEach(el => {
+        el.addEventListener('blur', (e) => {
+            const val = Utils.sanitizeNum(e.target.value);
+            if(val > 0) e.target.value = val;
+        });
+    });
+});
+
 </script>
 </body>
 </html>
