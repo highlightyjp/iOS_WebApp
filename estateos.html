@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ESTATE OS | TRIAD</title>
+    <title>ESTATE OS | TRIAD SYSTEM</title>
     <style>
         /* =========================================
            CORE SYSTEM: NOIR THEME & RESET
@@ -21,7 +21,6 @@
             --accent-red: #FF0055; /* HEDON */
             --font-mincho: "Hiragino Mincho ProN", "Yu Mincho", serif;
             --font-mono: "Courier New", Consolas, monospace;
-            --glass: rgba(20, 20, 20, 0.9);
             --border-width: 2px;
         }
 
@@ -39,12 +38,9 @@
         /* Utility */
         .hidden { display: none !important; }
         .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .center { align-items: center; justify-content: center; }
         .w-full { width: 100%; }
         .mt-2 { margin-top: 0.5rem; }
         .mb-4 { margin-bottom: 1rem; }
-        .text-accent { color: var(--accent-main); }
         .text-blue { color: var(--accent-blue); }
         .text-yellow { color: var(--accent-yellow); }
         .text-red { color: var(--accent-red); }
@@ -52,7 +48,6 @@
         /* =========================================
            UI COMPONENT: NEO-MAGI INTERFACE
            ========================================= */
-        /* The Container */
         .triad-console {
             position: relative;
             width: 100%;
@@ -63,7 +58,7 @@
             overflow: hidden;
         }
 
-        /* Headers (提訴 / 決議) */
+        /* Headers */
         .magi-header {
             display: flex;
             justify-content: space-between;
@@ -97,7 +92,7 @@
             position: relative;
         }
 
-        /* Hexagon Modules (LOGOS, AEGIS, HEDON) */
+        /* Hexagon Modules */
         .magi-module {
             position: relative;
             height: 100px;
@@ -108,24 +103,17 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            cursor: pointer; /* Tap for details */
+            cursor: pointer;
         }
-        /* Top Center (AEGIS) */
         .module-top {
             grid-column: 1 /span 2;
             width: 60%;
             margin: 0 auto;
             clip-path: polygon(0 0, 100% 0, 100% 70%, 80% 100%, 20% 100%, 0 70%);
-            border-bottom: none; /* clip-path limitation fix by logic */
+            border-bottom: none; 
         }
-        /* Bottom Left (HEDON) */
-        .module-left {
-            clip-path: polygon(0 0, 80% 0, 100% 20%, 100% 100%, 0 100%);
-        }
-        /* Bottom Right (LOGOS) */
-        .module-right {
-            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%, 0 20%);
-        }
+        .module-left { clip-path: polygon(0 0, 80% 0, 100% 20%, 100% 100%, 0 100%); }
+        .module-right { clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%, 0 20%); }
 
         .module-label {
             font-family: var(--font-mono);
@@ -135,7 +123,7 @@
             z-index: 2;
         }
 
-        /* Status Stamps (承認/否定) */
+        /* Status Stamps */
         .stamp {
             position: absolute;
             top: 50%; left: 50%;
@@ -151,10 +139,7 @@
             pointer-events: none;
             white-space: nowrap;
         }
-        .stamp.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
+        .stamp.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
         /* Verdict Center */
         .verdict-display {
@@ -164,6 +149,7 @@
             text-align: center;
             z-index: 5;
             pointer-events: none;
+            width: 100%;
         }
         .verdict-rank {
             font-family: var(--font-mono);
@@ -177,22 +163,19 @@
             color: var(--accent-main);
             background: #000;
             padding: 2px 5px;
+            margin-top: -10px;
         }
 
-        /* "Thinking" Animation */
         .blink { animation: blinker 0.1s linear infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
 
-        /* Status Colors */
-        .status-logos.active { background: rgba(0, 255, 255, 0.2); box-shadow: inset 0 0 20px var(--accent-blue); border-color: var(--accent-blue); }
-        .status-aegis.active { background: rgba(255, 215, 0, 0.2); box-shadow: inset 0 0 20px var(--accent-yellow); border-color: var(--accent-yellow); }
-        .status-hedon.active { background: rgba(255, 0, 85, 0.2); box-shadow: inset 0 0 20px var(--accent-red); border-color: var(--accent-red); }
+        /* Active States */
+        .status-logos.active { background: rgba(0, 255, 255, 0.2); border-color: var(--accent-blue); }
+        .status-aegis.active { background: rgba(255, 215, 0, 0.2); border-color: var(--accent-yellow); }
+        .status-hedon.active { background: rgba(255, 0, 85, 0.2); border-color: var(--accent-red); }
 
-        /* =========================================
-           INPUT FORMS & LAYOUT
-           ========================================= */
+        /* Input Forms */
         .container { padding: 20px; max-width: 600px; margin: 0 auto; }
-        
         .section-title {
             border-left: 4px solid var(--accent-main);
             padding-left: 10px;
@@ -200,15 +183,11 @@
             font-weight: bold;
             margin: 30px 0 15px 0;
             color: var(--text-main);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-
         .input-group { margin-bottom: 15px; position: relative; }
         .input-label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
         
-        input[type="text"], input[type="number"], select {
+        input[type="text"], input[type="number"], input[type="tel"], select {
             width: 100%;
             background: #111;
             border: 1px solid #333;
@@ -219,48 +198,22 @@
             font-family: var(--font-mono);
             appearance: none;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-main);
-            box-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
-        }
-
-        .btn-action {
-            background: #222;
-            color: var(--accent-main);
-            border: 1px solid var(--accent-main);
-            padding: 8px 15px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        .btn-action:active { background: var(--accent-main); color: #000; }
-
-        /* Address Search Button inside input */
         .search-icon {
-            position: absolute;
-            right: 10px; top: 32px;
-            font-size: 1.2rem;
-            cursor: pointer;
+            position: absolute; right: 10px; top: 32px; font-size: 1.2rem; cursor: pointer;
         }
 
-        /* Detail Modal (Slide Down) */
+        /* Detail Modal */
         .detail-panel {
-            background: #111;
-            border: 1px solid #333;
-            padding: 15px;
-            margin-top: 5px;
-            display: none;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: #aaa;
+            background: #111; border: 1px solid #333; padding: 15px; margin-top: 5px;
+            display: none; font-family: var(--font-mono); font-size: 0.8rem; color: #aaa;
         }
         .detail-panel.open { display: block; animation: slideDown 0.2s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .score-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 5px 0; }
-        .score-val { color: #fff; font-weight: bold; }
-
+        .btn-action {
+            background: #222; color: var(--accent-main); border: 1px solid var(--accent-main);
+            padding: 8px 15px; width: 100%; margin-top: 10px; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -273,7 +226,7 @@
                 <div class="magi-title">物件審査</div>
             </div>
             <div style="text-align:right;">
-                <div class="magi-meta">MODE: SELF_GOVERNANCE<br>TARGET: LOCKED</div>
+                <div class="magi-meta">MODE: TRIAD_COUNCIL<br>TARGET: LOCKED</div>
                 <div class="magi-title">判決</div>
             </div>
         </div>
@@ -301,11 +254,12 @@
         <div id="detail_aegis" class="detail-panel">
             <div class="text-yellow mb-4">[AEGIS SYSTEM LOG]</div>
             <div id="log_aegis">NO DATA</div>
-            <button class="btn-action w-full mt-2" onclick="window.open('https://disaportal.gsi.go.jp/maps/', '_blank')">ハザードマップ起動</button>
+            <button class="btn-action" onclick="app.openHazardMap()">ハザードマップ確認</button>
         </div>
         <div id="detail_hedon" class="detail-panel">
             <div class="text-red mb-4">[HEDON SYSTEM LOG]</div>
             <div id="log_hedon">NO DATA</div>
+            <button class="btn-action" onclick="app.openRouteSearch()">通勤ルート検索</button>
         </div>
         <div id="detail_logos" class="detail-panel">
             <div class="text-blue mb-4">[LOGOS SYSTEM LOG]</div>
@@ -314,615 +268,295 @@
     </div>
 
     <div class="container">
-        <div class="section-title">
-            <span>I. 物件・立地</span>
-            <span class="text-dim" style="font-size:0.7rem">GEO-SPATIAL</span>
-        </div>
-        
+        <div class="section-title">I. 物件・立地 (GEO-SPATIAL)</div>
         <div class="input-group">
-            <label class="input-label">郵便番号 (7桁・自動補完)</label>
+            <label class="input-label">郵便番号 (自動補完)</label>
             <input type="tel" id="inp_zip" placeholder="123-4567" onblur="app.fetchAddress()">
         </div>
-        
         <div class="input-group">
             <label class="input-label">住所 (自動入力)</label>
-            <input type="text" id="inp_address" placeholder="東京都千代田区...">
+            <input type="text" id="inp_address" placeholder="東京都...">
             <span class="search-icon" onclick="app.fetchCoords()">📍</span>
         </div>
-
         <div class="flex" style="gap:10px;">
             <div class="input-group w-full">
                 <label class="input-label">物件価格 (万円)</label>
                 <input type="tel" id="inp_price" class="sanitizer" placeholder="5000">
             </div>
             <div class="input-group w-full">
-                <label class="input-label">管理費+修繕 (円/月)</label>
+                <label class="input-label">管理・修繕 (円/月)</label>
                 <input type="tel" id="inp_cost" class="sanitizer" placeholder="25000">
             </div>
         </div>
 
-        <div class="section-title">
-            <span>II. 世帯・職業</span>
-            <span class="text-dim" style="font-size:0.7rem">FINANCIAL-CORE</span>
-        </div>
-
+        <div class="section-title">II. 世帯・職業 (FINANCIAL)</div>
         <div class="input-group">
-            <label class="input-label">現在の年齢 (夫/妻)</label>
+            <label class="input-label">年齢 (夫 / 妻)</label>
             <div class="flex" style="gap:10px;">
                 <input type="number" id="inp_age_h" placeholder="35">
                 <input type="number" id="inp_age_w" placeholder="32">
             </div>
         </div>
-
         <div class="input-group">
             <label class="input-label">世帯年収 (万円)</label>
             <input type="tel" id="inp_income" class="sanitizer" placeholder="800">
         </div>
-
         <div class="input-group">
-            <label class="input-label">職業タイプ (昇給カーブ適用)</label>
+            <label class="input-label">職業タイプ</label>
             <select id="inp_career">
                 <option value="standard">一般企業 (標準)</option>
-                <option value="public">公務員 (安定/退職金)</option>
+                <option value="public">公務員 (安定)</option>
                 <option value="maker">大手メーカー (年功序列)</option>
                 <option value="it">IT・メガベンチャー (短期集中)</option>
-                <option value="finance">金融・商社 (高収入/激務)</option>
-                <option value="free">フリーランス/自営業 (保障なし)</option>
+                <option value="finance">金融・商社 (高リスク高リターン)</option>
+                <option value="free">フリーランス (不安定)</option>
             </select>
         </div>
-
         <div class="input-group">
             <label class="input-label">教育プラン</label>
             <select id="inp_edu">
-                <option value="public">All公立 (標準)</option>
+                <option value="public">All公立</option>
                 <option value="mix">大学のみ私立</option>
-                <option value="elite">中高大私立 (エリート)</option>
+                <option value="elite">私立一貫 (Elite)</option>
             </select>
         </div>
 
-        <div class="section-title">
-            <span>III. リスク補正</span>
-            <span class="text-dim" style="font-size:0.7rem">RISK-FACTOR</span>
-        </div>
-        
+        <div class="section-title">III. リスク補正 (FACTOR)</div>
         <div class="input-group">
-            <label class="input-label">最寄駅ランク (自己申告)</label>
+            <label class="input-label">駅ランク (自己申告)</label>
             <select id="inp_station_rank">
                 <option value="1">★1 (支線・バス便)</option>
                 <option value="3" selected>★3 (急行停車/Hub)</option>
                 <option value="5">★5 (Core/複数路線)</option>
             </select>
         </div>
-
         <div class="input-group">
-            <label class="input-label">通勤ストレス (夫婦合計)</label>
+            <label class="input-label">通勤ストレス</label>
             <select id="inp_commute_stress">
-                <option value="low">低 (快適/リモート)</option>
-                <option value="mid" selected>中 (標準的)</option>
-                <option value="high">高 (満員・乗換多)</option>
+                <option value="low">低 (快適)</option>
+                <option value="mid" selected>中 (標準)</option>
+                <option value="high">高 (疲弊)</option>
                 <option value="hell">地獄 (限界)</option>
             </select>
         </div>
-        
-        <div style="height: 100px;"></div> </div>
+        <div style="height: 50px;"></div>
+    </div>
 </div>
 
-/* =========================================
-   COMPRESSED MASTER DATA (The Knowledge)
-   ========================================= */
+<script>
+/* =================================================================
+   ESTATE OS COMPLETE LOGIC BUNDLE
+   Includes: Master Data, Utilities, Sonar(API), Engine, Triad, App
+   =================================================================
+*/
 
-// 1. 税務マスタ (2026 Basis) - Income Tax Brackets [UpperLimit(Man), Rate(%), Deduction(Man)]
-const TAX_MAP = [
-    [195, 5, 0], [330, 10, 9.75], [695, 20, 42.75], [900, 23, 63.6],
-    [1800, 33, 153.6], [4000, 40, 279.6], [Infinity, 45, 479.6]
-];
-const SOCIAL_RATES = { health: 0.05, pension: 0.0915, emp: 0.006, care: 0.009 }; // Half split assumed
-
-// 2. キャリアカーブ (Age vs Salary Multiplier %)
-// 22=100 as base. Interpolated at runtime.
+// --- 1. COMPRESSED MASTER DATA ---
+const TAX_MAP = [[195,5,0], [330,10,9.75], [695,20,42.75], [900,23,63.6], [1800,33,153.6], [4000,40,279.6], [Infinity,45,479.6]];
 const CAREER_CURVES = {
     standard: [[22,100], [30,130], [45,160], [55,170], [60,100]],
-    public:   [[22,100], [35,140], [50,180], [60,180], [65,120]], // Stable
-    maker:    [[22,100], [30,120], [40,160], [55,200], [60,120]], // Seniority
-    it:       [[22,110], [30,180], [40,200], [50,180], [60,80]],  // Early peak
-    finance:  [[22,120], [30,180], [45,250], [55,250], [60,50]],  // High risk
-    free:     [[22,100], [30,150], [40,150], [50,120], [60,80]]   // Unstable
+    public:   [[22,100], [35,140], [50,180], [60,180], [65,120]],
+    maker:    [[22,100], [30,120], [40,160], [55,200], [60,120]],
+    it:       [[22,110], [30,180], [40,200], [50,180], [60,80]],
+    finance:  [[22,120], [30,180], [45,250], [55,250], [60,50]],
+    free:     [[22,100], [30,150], [40,150], [50,120], [60,80]]
 };
-
-// 3. 教育費イベント (Age of Child: Cost in Man-Yen)
 const EDU_COSTS = {
-    public: { 6:30, 12:50, 15:50, 18:250 }, // 入学時など要所のみ
+    public: { 6:30, 12:50, 15:50, 18:250 },
     mix:    { 6:30, 12:50, 15:100, 18:500 },
     elite:  { 6:100, 12:400, 15:300, 18:600 }
 };
 
-// 4. 地理ハブ (For Distance Calculation)
-// [Name, Lat, Lon, EcoScore]
-const GEO_HUBS = [
-    ["Tokyo", 35.681, 139.767, 100], ["Shinjuku", 35.690, 139.700, 95],
-    ["Yokohama", 35.466, 139.622, 90], ["Omiya", 35.906, 139.624, 85],
-    ["Chiba", 35.613, 140.113, 80], ["Osaka", 34.702, 135.495, 95],
-    ["Nagoya", 35.170, 136.881, 90], ["Hakata", 33.590, 130.420, 90]
-];
-
-// 5. 圧縮駅マスタ (Major Stations only for brevity in this output, normally 2000+)
-// Format: Name|Rank|Lat|Lon (Shortened lat/lon)
-const STATION_DB_RAW = 
-"東京|5|35.68|139.76;新宿|5|35.69|139.70;横浜|5|35.46|139.62;渋谷|5|35.65|139.70;" +
-"池袋|5|35.72|139.71;品川|5|35.62|139.74;上野|4|35.71|139.77;立川|4|35.69|139.41;" +
-"大宮|4|35.90|139.62;浦和|3|35.85|139.65;川崎|4|35.53|139.69;武蔵小杉|4|35.57|139.65;" +
-"二子玉川|3|35.61|139.62;たまプラーザ|3|35.57|139.55;センター南|3|35.54|139.57;" +
-"町田|3|35.54|139.44;藤沢|3|35.33|139.48;船橋|3|35.70|139.98;柏|3|35.86|139.97";
-
-/* =========================================
-   UTILITIES (Sanitizers & Formatters)
-   ========================================= */
+// --- 2. UTILITIES ---
 const Utils = {
-    // 全角→半角, 不要文字削除, 数値化
     sanitizeNum: (val) => {
         if (!val) return 0;
         let s = val.toString().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
         s = s.replace(/[^0-9.-]/g, '');
         return parseFloat(s) || 0;
     },
-    // 郵便番号正規化 (123-4567 -> 1234567)
     sanitizeZip: (val) => {
         if (!val) return "";
         let s = val.toString().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
         return s.replace(/[^0-9]/g, '').substring(0, 7);
     },
-    formatCurrency: (num) => {
-        return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num);
-    },
-    // 直線距離 (Haversine simplified)
+    formatCurrency: (num) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num),
     calcDist: (lat1, lon1, lat2, lon2) => {
-        const R = 6371; // km
+        const R = 6371; 
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 };
-    
-/* =========================================
-   CORE LOGIC: THE SONAR (API Connection)
-   ========================================= */
-class Sonar {
-    constructor() {
-        this.cache = {}; // Simple memory cache
-    }
 
-    // GSI Address Search (住所 -> 緯度経度)
+// --- 3. SONAR (API) ---
+class Sonar {
+    constructor() { this.cache = {}; }
+    
     async searchAddress(query) {
         if (!query) return null;
-        const url = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`;
         try {
-            const res = await fetch(url);
+            const res = await fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`);
             const data = await res.json();
-            if (data && data.length > 0) {
-                const loc = data[0].geometry.coordinates; // [lon, lat]
-                return { lat: loc[1], lon: loc[0], title: data[0].properties.title };
-            }
-        } catch (e) { console.error("Sonar GSI Error:", e); }
-        return null;
+            return (data && data.length > 0) ? { lat: data[0].geometry.coordinates[1], lon: data[0].geometry.coordinates[0], title: data[0].properties.title } : null;
+        } catch (e) { return null; }
     }
 
-    // ZipCloud (郵便番号 -> 住所)
     async searchZip(zip) {
         const z = Utils.sanitizeZip(zip);
         if (z.length !== 7) return null;
-        const url = `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${z}`;
         try {
-            const res = await fetch(url);
+            const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${z}`);
             const data = await res.json();
-            if (data && data.results) {
-                const r = data.results[0];
-                return `${r.address1}${r.address2}${r.address3}`;
-            }
-        } catch (e) { console.error("Sonar Zip Error:", e); }
-        return null;
+            return (data && data.results) ? `${data.results[0].address1}${data.results[0].address2}${data.results[0].address3}` : null;
+        } catch (e) { return null; }
     }
 
-    // Overpass API (周辺施設探索) - with Timeout Safety
     async scanArea(lat, lon) {
-        // Find: Hospital, Supermarket within 1.5km
-        const q = `
-            [out:json][timeout:3];
-            (
-              node["amenity"="hospital"](around:1500,${lat},${lon});
-              node["amenity"="clinic"](around:800,${lat},${lon});
-              node["shop"="supermarket"](around:800,${lat},${lon});
-              node["shop"="convenience"](around:500,${lat},${lon});
-            );
-            out body;
-        `;
-        const url = "https://overpass-api.de/api/interpreter";
-        
-        // Timeout Promise Wrapper
+        // Overpass API Query (Hospital, Supermarket)
+        const q = `[out:json][timeout:3];(node["amenity"="hospital"](around:1500,${lat},${lon});node["shop"="supermarket"](around:800,${lat},${lon}););out body;`;
         const fetchWithTimeout = (ms, promise) => {
-            return new Promise((resolve, reject) => {
-                const timer = setTimeout(() => { resolve(null); }, ms); // Resolve null on timeout (don't break app)
-                promise.then(value => { clearTimeout(timer); resolve(value); })
-                       .catch(reason => { clearTimeout(timer); resolve(null); });
+            return new Promise((resolve) => {
+                const timer = setTimeout(() => resolve(null), ms);
+                promise.then(value => { clearTimeout(timer); resolve(value); }).catch(() => { clearTimeout(timer); resolve(null); });
             });
         };
-
         try {
-            const res = await fetchWithTimeout(3000, fetch(url, { method: 'POST', body: q })); // 3s Timeout
-            if (!res) return { status: 'TIMEOUT' }; // Silent fail
+            const res = await fetchWithTimeout(3000, fetch("https://overpass-api.de/api/interpreter", { method: 'POST', body: q }));
+            if (!res) return { status: 'TIMEOUT' };
             const data = await res.json();
-            return this.analyzeNodes(data.elements, lat, lon);
-        } catch (e) {
-            return { status: 'ERROR' };
-        }
+            return this.analyze(data.elements, lat, lon);
+        } catch (e) { return { status: 'ERROR' }; }
     }
 
-    analyzeNodes(nodes, centerLat, centerLon) {
+    analyze(nodes, clat, clon) {
         if (!nodes) return { status: 'NO_DATA' };
-        let result = {
-            hospital: { dist: 9999, name: '' },
-            supermarket: { dist: 9999, name: '' },
-            convenience: { dist: 9999, name: '' }
-        };
-
-        nodes.forEach(node => {
-            const d = Utils.calcDist(centerLat, centerLon, node.lat, node.lon);
-            const distM = Math.round(d * 1000);
-            
-            if (node.tags.amenity === 'hospital' || node.tags.amenity === 'clinic') {
-                if (distM < result.hospital.dist) result.hospital = { dist: distM, name: node.tags.name };
-            } else if (node.tags.shop === 'supermarket') {
-                if (distM < result.supermarket.dist) result.supermarket = { dist: distM, name: node.tags.name };
-            } else if (node.tags.shop === 'convenience') {
-                if (distM < result.convenience.dist) result.convenience = { dist: distM, name: node.tags.name };
-            }
+        let res = { hospital: 9999, supermarket: 9999 };
+        nodes.forEach(n => {
+            const d = Math.round(Utils.calcDist(clat, clon, n.lat, n.lon) * 1000);
+            if (n.tags.amenity === 'hospital' && d < res.hospital) res.hospital = d;
+            if (n.tags.shop === 'supermarket' && d < res.supermarket) res.supermarket = d;
         });
-        return { status: 'OK', data: result };
+        return { status: 'OK', data: res };
     }
 }
 
-/* =========================================
-   CORE LOGIC: ESTATE SIMULATOR (100-Year Engine)
-   ========================================= */
+// --- 4. ENGINE (Simulation) ---
 class EstateEngine {
-    constructor() {
-        this.today = new Date();
-    }
-
-    // メイン計算: 入力データから将来のキャッシュフローを生成
     simulate(inputs) {
-        // Inputs: ageH, ageW, income, career, price, cost, eduType, etc.
-        const startYear = this.today.getFullYear();
-        const maxAge = 100;
-        let timeline = [];
-        let assets = 0; // Current savings assumed 0 for simplicity or add input
-        let isBankrupt = false;
-        let bankruptAge = null;
-
-        // Loan Calc (Flat 35, 1.8% assumed)
-        const loanAmount = inputs.price * 10000; // Man -> Yen
-        const interestRate = 0.018;
-        const loanTerm = 35;
-        const monthlyRate = interestRate / 12;
-        const monthlyPayment = (loanAmount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, - (loanTerm * 12)));
-        let loanBalance = loanAmount;
-
-        // Career Curve Setup
+        let assets = 0, isBankrupt = false, bankruptAge = null;
+        const loanAmt = inputs.price * 10000;
+        const mRate = 0.018 / 12;
+        const mPay = (loanAmt * mRate) / (1 - Math.pow(1 + mRate, -420));
+        let loanBal = loanAmt;
+        
         const curve = CAREER_CURVES[inputs.career] || CAREER_CURVES.standard;
-        const getSalaryMult = (age) => {
-            // Simple Linear Interpolation
-            for (let i = 0; i < curve.length - 1; i++) {
-                if (age >= curve[i][0] && age <= curve[i+1][0]) {
+        const getMult = (age) => {
+            for(let i=0; i<curve.length-1; i++) {
+                if(age >= curve[i][0] && age <= curve[i+1][0]) {
                     const t = (age - curve[i][0]) / (curve[i+1][0] - curve[i][0]);
                     return curve[i][1] + t * (curve[i+1][1] - curve[i][1]);
                 }
             }
-            return age > 60 ? 50 : 100; // Fallback
+            return age > 60 ? 50 : 100;
         };
 
-        // 100 Year Loop
-        for (let i = 0; i <= (maxAge - inputs.ageH); i++) {
-            const year = startYear + i;
-            const currentAgeH = inputs.ageH + i;
-            const currentAgeW = inputs.ageW + i;
-            
-            // 1. Income (Household)
-            let baseIncome = inputs.income * 10000; // Yen
-            let multiplier = getSalaryMult(currentAgeH) / 100; // Based on Husband mainly
-            
-            // Retirement Check
-            let annualIncome = 0;
-            if (currentAgeH < 60) {
-                annualIncome = baseIncome * multiplier;
-            } else if (currentAgeH < 65) {
-                annualIncome = baseIncome * multiplier * 0.6; // Re-employment
-            } else {
-                annualIncome = 2500000; // Pension (Basic Pair)
-            }
+        for (let i = 0; i <= (100 - inputs.ageH); i++) {
+            const cAge = inputs.ageH + i;
+            // Income
+            let inc = inputs.income * 10000 * (getMult(cAge)/100);
+            if (cAge >= 60) inc *= 0.6; 
+            if (cAge >= 65) inc = 2500000; // Pension
+            const tax = (inc <= 3300000) ? 0.2 : 0.3; // Simple Tax
+            const takeHome = inc * (1 - tax);
 
-            // Tax & Social
-            const taxRate = this.getTaxRate(annualIncome / 10000);
-            const takeHome = annualIncome * (1 - taxRate);
-
-            // 2. Expenses
-            // Housing
-            let annualHousing = (inputs.cost * 12);
-            if (i < loanTerm) {
-                annualHousing += (monthlyPayment * 12);
-                loanBalance -= (monthlyPayment * 12) * 0.6; // Principal roughly
-            }
+            // Expense
+            let cost = (inputs.cost * 12) + (150000 * 12 * Math.pow(1.01, i)); // Living + inflation
+            if (i < 35) { cost += (mPay * 12); loanBal -= (mPay*12)*0.6; }
             
-            // Living (Basic) - 150k/m for couple + inflation 1%
-            let livingCost = 150000 * 12 * Math.pow(1.01, i);
-            
-            // Education
-            // Assuming child born at AgeH 35 (Model)
-            const childAge = currentAgeH - 35; 
+            // Edu
+            const childAge = cAge - 35;
             if (childAge >= 0 && childAge <= 22) {
-                const eduPlan = EDU_COSTS[inputs.eduType] || EDU_COSTS.public;
-                let eduCost = 0;
-                // Add event cost if matches age
-                if (eduPlan[childAge]) eduCost = eduPlan[childAge] * 10000;
-                // Basic child living cost
-                livingCost += 600000; 
-                annualHousing += eduCost;
+                const plan = EDU_COSTS[inputs.eduType];
+                if(plan[childAge]) cost += plan[childAge]*10000;
+                cost += 600000; // Child living
             }
 
-            // Total Balance
-            const annualBalance = takeHome - annualHousing - livingCost;
-            assets += annualBalance;
-
-            if (assets < 0 && !isBankrupt) {
-                isBankrupt = true;
-                bankruptAge = currentAgeH;
-            }
-
-            timeline.push({ year, age: currentAgeH, assets, balance: annualBalance });
+            assets += (takeHome - cost);
+            if (assets < 0 && !isBankrupt) { isBankrupt = true; bankruptAge = cAge; }
         }
-
-        return { timeline, finalAssets: assets, bankruptAge, isBankrupt };
-    }
-
-    getTaxRate(incomeMan) {
-        // Find bracket
-        for (let b of TAX_MAP) {
-            if (incomeMan <= b[0]) return (b[1] / 100) + 0.1; // IncomeTax + Resident(10%)
-        }
-        return 0.55; // Max
+        return { finalAssets: assets, isBankrupt, bankruptAge };
     }
 }
 
-/* =========================================
-   CORE LOGIC: THE TRIAD SYSTEM (Magi)
-   ========================================= */
-class TriadMember {
-    constructor(name, role) {
-        this.name = name;
-        this.role = role;
-        this.vote = false; // Approval
-        this.log = "";
-    }
-    decide(data) { return false; } // Override me
-}
-
-// 1. LOGOS (Financial)
-class Logos extends TriadMember {
-    decide(simResult, propertyData) {
-        // Logic: 100歳でプラスか？ リセールは？
-        const finalAssets = simResult.finalAssets;
-        const isBankrupt = simResult.isBankrupt;
-        
-        let score = 100;
-        let msg = [];
-
-        if (isBankrupt) {
-            score -= 50;
-            msg.push(`破綻警告: ${simResult.bankruptAge}歳で資金枯渇。`);
-        } else {
-            msg.push(`資産健全: 100歳残高 ${Utils.formatCurrency(finalAssets)}。`);
-        }
-
-        // Resale Value based on Station Rank
-        if (propertyData.stationRank >= 5) {
-            msg.push("資産性: S (Core駅)。");
-        } else if (propertyData.stationRank <= 2) {
-            score -= 30;
-            msg.push("資産性: 脆弱 (Local駅)。");
-        }
-
-        this.vote = score >= 60;
-        this.log = msg.join(" ");
-        return this.vote;
-    }
-}
-
-// 2. AEGIS (Safety)
-class Aegis extends TriadMember {
-    decide(sonarResult, userInputs) {
-        // Logic: 病院はあるか？ ハザードは？
-        let score = 100;
-        let msg = [];
-
-        // Sonar Data
-        if (sonarResult.status === 'OK') {
-            const hDist = sonarResult.data.hospital.dist;
-            if (hDist > 1200) {
-                score -= 40;
-                msg.push(`医療過疎: 最寄病院まで${hDist}m。`);
-            } else {
-                msg.push(`医療アクセス: 良好(${hDist}m)。`);
-            }
-        } else if (sonarResult.status === 'TIMEOUT') {
-             msg.push("周辺データ取得タイムアウト。現地確認推奨。");
-             score -= 10;
-        }
-
-        // Manual Hazard Input
-        // (Assuming we use the input fields for risk later, currently basic check)
-        
-        // Station Access (Safety for elderly)
-        if (userInputs.stationRank < 2) {
-            score -= 20;
-            msg.push("孤立リスク: 車必須エリア。");
-        }
-
-        this.vote = score >= 60;
-        this.log = msg.join(" ");
-        return this.vote;
-    }
-}
-
-// 3. HEDON (Life Quality)
-class Hedon extends TriadMember {
-    decide(sonarResult, userInputs) {
-        // Logic: コンビニ・スーパー・通勤
-        let score = 100;
-        let msg = [];
-
-        // Sonar
-        if (sonarResult.status === 'OK') {
-            const sDist = sonarResult.data.supermarket.dist;
-            const cDist = sonarResult.data.convenience.dist;
-            if (sDist < 400) {
-                msg.push(`買物至便: スーパー${sDist}m。`);
-            } else if (sDist > 1000) {
-                score -= 30;
-                msg.push(`生活不便: スーパー遠方(${sDist}m)。`);
-            }
-        }
-
-        // Commute Stress
-        if (userInputs.stress === 'hell') {
-            score -= 50;
-            msg.push("通勤地獄: QOL崩壊リスク。");
-        } else if (userInputs.stress === 'high') {
-            score -= 20;
-            msg.push("通勤負荷: 高。");
-        } else {
-            msg.push("通勤環境: 許容範囲。");
-        }
-        
-        // Station Power
-        if (userInputs.stationRank >= 4) {
-            score += 20;
-            msg.push("都市力: 高。週末も充実。");
-        }
-
-        this.vote = score >= 60;
-        this.log = msg.join(" ");
-        return this.vote;
-    }
-}
-
-// THE TRIAD SYSTEM CONTROLLER
+// --- 5. TRIAD SYSTEM (The Brains) ---
 class TriadSystem {
-    constructor() {
-        this.logos = new Logos("LOGOS", "FINANCE");
-        this.aegis = new Aegis("AEGIS", "SAFETY");
-        this.hedon = new Hedon("HEDON", "LIFE");
-    }
+    execute(sim, sonar, inputs) {
+        // LOGOS (Finance)
+        let v1 = true, log1 = `資産残高: ${Utils.formatCurrency(sim.finalAssets)}`;
+        if (sim.isBankrupt) { v1 = false; log1 = `破綻警告: ${sim.bankruptAge}歳で資金枯渇。`; }
+        else if (inputs.stationRank < 3) { log1 += " だがリセール弱。"; }
 
-    execute(simResult, sonarResult, userInputs) {
-        // Parallel Thinking
-        const v1 = this.logos.decide(simResult, { stationRank: userInputs.stationRank });
-        const v2 = this.aegis.decide(sonarResult, userInputs);
-        const v3 = this.hedon.decide(sonarResult, userInputs);
+        // AEGIS (Safety)
+        let v2 = true, log2 = "";
+        if (sonar.status === 'OK') {
+            if (sonar.data.hospital > 1500) { v2 = false; log2 = `医療過疎: 病院${sonar.data.hospital}m。`; }
+            else log2 = `医療アクセス良(${sonar.data.hospital}m)。`;
+        } else { log2 = "周辺データ取得不可。現地要確認。"; }
+        if (inputs.stationRank === 1) { v2 = false; log2 += " 孤立リスクあり。"; }
 
-        return this.synthesize(v1, v2, v3);
-    }
-
-    synthesize(v1, v2, v3) {
-        // Aufheben Logic
-        let rank = "C";
-        let message = "";
-
-        if (v1 && v2 && v3) {
-            rank = "S";
-            message = "完全調和: 資産・安全・快適性の黄金比。理想郷です。";
-        } else if (v1 && v2 && !v3) {
-            rank = "B";
-            message = "禁欲的選択: 資産と安全は盤石。退屈さは我慢が必要です。";
-        } else if (!v1 && v2 && v3) {
-            rank = "C";
-            message = "甘い罠: 住み心地は最高ですが、将来の財務リスクがあります。";
-        } else if (v1 && !v2 && v3) {
-            rank = "D";
-            message = "砂上の楼閣: 資産価値は高いですが、災害・安全リスクが致命的です。";
-        } else if (!v1 && !v2 && !v3) {
-            rank = "E";
-            message = "論外: 検討に値しません。";
-        } else {
-            // Other mixes
-            rank = "C";
-            message = "要審議: メリットとリスクが拮抗しています。詳細を確認してください。";
+        // HEDON (Life)
+        let v3 = true, log3 = "";
+        if (sonar.status === 'OK') {
+            if (sonar.data.supermarket > 800) { v3 = false; log3 = `不便: スーパー遠方(${sonar.data.supermarket}m)。`; }
+            else log3 = `買物至便(${sonar.data.supermarket}m)。`;
         }
+        if (inputs.stress === 'hell') { v3 = false; log3 += " 通勤地獄により拒否。"; }
 
-        return {
-            rank: rank,
-            msg: message,
-            details: {
-                logos: { vote: v1, log: this.logos.log },
-                aegis: { vote: v2, log: this.aegis.log },
-                hedon: { vote: v3, log: this.hedon.log }
-            }
-        };
+        // Synthesis
+        let rank = "C", msg = "要審議";
+        if (v1 && v2 && v3) { rank = "S"; msg = "完全調和: 理想郷です。"; }
+        else if (v1 && v2 && !v3) { rank = "B"; msg = "禁欲的選択: 資産と安全は盤石。"; }
+        else if (!v1 && v2 && v3) { rank = "C"; msg = "甘い罠: 将来破綻します。"; }
+        else if (v1 && !v2 && v3) { rank = "D"; msg = "砂上の楼閣: 災害リスク大。"; }
+        else { rank = "D"; msg = "却下: 問題が多すぎます。"; }
+
+        return { rank, msg, details: { logos: {vote:v1, log:log1}, aegis: {vote:v2, log:log2}, hedon: {vote:v3, log:log3} } };
     }
 }
 
-/* =========================================
-   APP CONTROLLER: THE BRAIN
-   ========================================= */
+// --- 6. APP CONTROLLER ---
 class App {
     constructor() {
         this.engine = new EstateEngine();
         this.sonar = new Sonar();
         this.triad = new TriadSystem();
-        
-        // State
-        this.sonarData = { status: 'NO_DATA' }; // Cache
-        this.debounceTimer = null;
-        this.isProcessing = false;
+        this.sonarData = { status: 'NO_DATA' };
+        this.coords = null;
     }
 
     init() {
-        // Event Listeners for all inputs
-        const inputs = document.querySelectorAll('input, select');
-        inputs.forEach(el => {
-            el.addEventListener('input', () => this.scheduleAnalysis());
-            el.addEventListener('change', () => this.scheduleAnalysis());
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', () => this.schedule());
         });
-
-        // Initial Run (Empty)
-        this.resetUI();
+        document.querySelectorAll('.sanitizer').forEach(el => {
+            el.addEventListener('blur', (e) => { e.target.value = Utils.sanitizeNum(e.target.value) || ""; });
+        });
     }
 
-    // デバウンス処理 (入力中はこの秒数待つ)
-    scheduleAnalysis() {
-        if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        // UIを「思考中」モードへ
+    schedule() {
+        clearTimeout(this.timer);
         document.getElementById('system_status').innerText = "CALCULATING...";
         document.getElementById('system_status').classList.add('blink');
-        
-        this.debounceTimer = setTimeout(() => {
-            this.runAnalysis();
-        }, 1000); // 1秒待って実行
+        this.timer = setTimeout(() => this.run(), 1000);
     }
 
-    // ■■■ MAIN EXECUTION FLOW ■■■
-    async runAnalysis() {
-        if (this.isProcessing) return;
-        this.isProcessing = true;
-
-        // 1. Gather Inputs (Sanitized)
+    async run() {
         const inputs = {
             zip: document.getElementById('inp_zip').value,
-            address: document.getElementById('inp_address').value,
             price: Utils.sanitizeNum(document.getElementById('inp_price').value),
             cost: Utils.sanitizeNum(document.getElementById('inp_cost').value),
             ageH: Utils.sanitizeNum(document.getElementById('inp_age_h').value) || 35,
-            ageW: Utils.sanitizeNum(document.getElementById('inp_age_w').value) || 32,
             income: Utils.sanitizeNum(document.getElementById('inp_income').value),
             career: document.getElementById('inp_career').value,
             eduType: document.getElementById('inp_edu').value,
@@ -930,111 +564,70 @@ class App {
             stress: document.getElementById('inp_commute_stress').value
         };
 
-        // Validate essentials
         if (!inputs.income || !inputs.price) {
-            this.isProcessing = false;
-            document.getElementById('system_status').innerText = "STANDBY: INPUT REQUIRED";
+            document.getElementById('system_status').innerText = "STANDBY";
             return;
         }
 
-        // 2. Finance Simulation (Synchronous)
-        const simResult = this.engine.simulate(inputs);
-
-        // 3. Sonar Scan (Asynchronous / Cached)
-        // Only run if address changed or no data
-        // For this demo, we assume latitude lookup happened via fetchCoords
-        // If we have lat/lon in hidden fields (or memory), use them.
-        // *Here we rely on user clicking the Pin or entering Zip to set coords in memory*
-        if (this.currentCoords && this.currentCoords.lat) {
-            // If new coords, scan. If same, use cache.
-            if (!this.sonarData.timestamp || this.sonarData.coords !== this.currentCoords) {
-                this.sonarData = await this.sonar.scanArea(this.currentCoords.lat, this.currentCoords.lon);
-                this.sonarData.coords = this.currentCoords;
-                this.sonarData.timestamp = Date.now();
-            }
+        const sim = this.engine.simulate(inputs);
+        
+        // Scan only if we have coords
+        if (this.coords) {
+             this.sonarData = await this.sonar.scanArea(this.coords.lat, this.coords.lon);
         }
 
-        // 4. TRIAD JUDGMENT
-        const verdict = this.triad.execute(simResult, this.sonarData, inputs);
-
-        // 5. UPDATE UI (The Reveal)
-        this.renderVerdict(verdict);
-        
-        this.isProcessing = false;
+        const verdict = this.triad.execute(sim, this.sonarData, inputs);
+        this.render(verdict);
     }
 
-    // ■■■ UI RENDERING (MAGI STYLE) ■■■
-    renderVerdict(verdict) {
-        // Reset Visuals
-        const modules = ['logos', 'aegis', 'hedon'];
-        modules.forEach(m => {
-            const el = document.querySelector(`.status-${m}`);
-            const stamp = document.getElementById(`stamp_${m}`);
-            el.classList.remove('active');
-            stamp.classList.remove('show');
-            stamp.className = 'stamp'; // Reset colors
+    render(v) {
+        // Reset
+        ['logos','aegis','hedon'].forEach(m => {
+            document.querySelector(`.status-${m}`).classList.remove('active');
+            document.getElementById(`stamp_${m}`).className = 'stamp'; 
         });
 
-        // Update Logs
-        document.getElementById('log_logos').innerText = verdict.details.logos.log;
-        document.getElementById('log_aegis').innerText = verdict.details.aegis.log;
-        document.getElementById('log_hedon').innerText = verdict.details.hedon.log;
+        // Logs
+        document.getElementById('log_logos').innerText = v.details.logos.log;
+        document.getElementById('log_aegis').innerText = v.details.aegis.log;
+        document.getElementById('log_hedon').innerText = v.details.hedon.log;
 
-        // Animation Sequence
+        // Reveal Sequence
+        const reveal = (id, vote, color) => {
+            const el = document.querySelector(`.status-${id}`);
+            const stamp = document.getElementById(`stamp_${id}`);
+            if(vote) {
+                el.classList.add('active');
+                stamp.innerText = "承認";
+                stamp.classList.add(color);
+            } else {
+                stamp.innerText = "否定";
+                stamp.classList.add('text-red');
+                stamp.style.borderColor = 'red';
+            }
+            stamp.classList.add('show');
+        };
+
+        setTimeout(() => reveal('logos', v.details.logos.vote, 'text-blue'), 100);
+        setTimeout(() => reveal('aegis', v.details.aegis.vote, 'text-yellow'), 300);
+        setTimeout(() => reveal('hedon', v.details.hedon.vote, 'text-red'), 500);
+
         setTimeout(() => {
-            // 1. LOGOS Reveal
-            this.updateModule('logos', verdict.details.logos.vote, 'text-blue');
-        }, 100);
-
-        setTimeout(() => {
-            // 2. AEGIS Reveal
-            this.updateModule('aegis', verdict.details.aegis.vote, 'text-yellow');
-        }, 300);
-
-        setTimeout(() => {
-            // 3. HEDON Reveal
-            this.updateModule('hedon', verdict.details.hedon.vote, 'text-red');
-        }, 500);
-
-        setTimeout(() => {
-            // 4. Final Rank
-            const rankEl = document.getElementById('final_rank');
-            const statusEl = document.getElementById('system_status');
-            
-            rankEl.innerText = verdict.rank + " RANK";
-            statusEl.innerText = verdict.msg;
-            statusEl.classList.remove('blink');
-
-            // Color coding rank
-            rankEl.style.color = (verdict.rank === 'S' || verdict.rank === 'A') ? 'var(--accent-blue)' :
-                                 (verdict.rank === 'B') ? 'var(--accent-main)' : 'var(--accent-red)';
+            const r = document.getElementById('final_rank');
+            r.innerText = v.rank + " RANK";
+            r.style.color = (v.rank==='S')?'var(--accent-blue)':(v.rank==='B')?'var(--accent-main)':'var(--accent-red)';
+            const s = document.getElementById('system_status');
+            s.innerText = v.msg;
+            s.classList.remove('blink');
         }, 700);
     }
 
-    updateModule(id, isApproved, colorClass) {
-        const mod = document.querySelector(`.status-${id}`);
-        const stamp = document.getElementById(`stamp_${id}`);
-        
-        if (isApproved) {
-            mod.classList.add('active');
-            stamp.innerText = "承認";
-            stamp.classList.add(colorClass); // Blue/Yellow/Red text
-        } else {
-            stamp.innerText = "否定";
-            stamp.classList.add('text-red'); // Denied is always red border
-            stamp.style.borderColor = 'red';
-            stamp.style.color = 'red';
-        }
-        stamp.classList.add('show');
-    }
-
-    // ■■■ AUXILIARY ACTIONS ■■■
     async fetchAddress() {
         const zip = document.getElementById('inp_zip').value;
         const addr = await this.sonar.searchZip(zip);
         if (addr) {
             document.getElementById('inp_address').value = addr;
-            this.fetchCoords(); // Chain reaction
+            this.fetchCoords();
         }
     }
 
@@ -1042,38 +635,24 @@ class App {
         const addr = document.getElementById('inp_address').value;
         const res = await this.sonar.searchAddress(addr);
         if (res) {
-            this.currentCoords = { lat: res.lat, lon: res.lon };
-            // Auto-fill Lat/Lon visual feedback? For now, just trigger analysis
+            this.coords = { lat: res.lat, lon: res.lon };
             document.getElementById('system_status').innerText = `LOCATED: ${res.title}`;
-            this.scheduleAnalysis();
-        } else {
-            document.getElementById('system_status').innerText = "LOCATION ERROR";
+            this.schedule();
         }
     }
 
-    toggleDetail(id) {
-        const el = document.getElementById(`detail_${id}`);
-        el.classList.toggle('open');
+    toggleDetail(id) { document.getElementById(`detail_${id}`).classList.toggle('open'); }
+    openHazardMap() {
+        if(this.coords) window.open(`https://disaportal.gsi.go.jp/maps/?ll=${this.coords.lat},${this.coords.lon}&z=16`, '_blank');
     }
-    
-    resetUI() {
-        document.getElementById('system_status').innerText = "SYSTEM READY";
+    openRouteSearch() {
+        window.open(`https://transit.yahoo.co.jp/search/result?to=${encodeURIComponent(document.getElementById('inp_address').value)}`, '_blank');
     }
 }
 
-// BOOTSTRAP
+// START
 const app = new App();
-window.addEventListener('DOMContentLoaded', () => {
-    app.init();
-    
-    // Auto-format on blur for sanitization visual
-    document.querySelectorAll('.sanitizer').forEach(el => {
-        el.addEventListener('blur', (e) => {
-            const val = Utils.sanitizeNum(e.target.value);
-            if(val > 0) e.target.value = val;
-        });
-    });
-});
+window.addEventListener('DOMContentLoaded', () => app.init());
 
 </script>
 </body>
