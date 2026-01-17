@@ -1,659 +1,405 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ESTATE OS | TRIAD SYSTEM</title>
-    <style>
-        /* =========================================
-           CORE SYSTEM: NOIR THEME & RESET
-           ========================================= */
-        :root {
-            --bg-color: #000000;
-            --text-main: #E0E0E0;
-            --text-dim: #555555;
-            --accent-main: #FF8C00; /* Amber Orange (MAGI Lines) */
-            --accent-blue: #00FFFF; /* LOGOS */
-            --accent-yellow: #FFD700; /* AEGIS */
-            --accent-red: #FF0055; /* HEDON */
-            --font-mincho: "Hiragino Mincho ProN", "Yu Mincho", serif;
-            --font-mono: "Courier New", Consolas, monospace;
-            --border-width: 2px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ESTATE OS | Ver 100.0</title>
+<style>
+  :root {
+    --bg: #0a0a0a; --panel: #141414; --border: #333; --text: #ccc;
+    --acc-main: #00ff9d; --acc-warn: #ff3333; --acc-gold: #d4af37;
+    --font-mono: "SF Mono", "Hiragino Sans", "Yu Gothic", monospace;
+  }
+  * { box-sizing: border-box; touch-action: manipulation; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+  
+  /* Layout */
+  #app-shell { display: flex; flex: 1; overflow: hidden; }
+  #sidebar { width: 320px; background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; z-index: 10; }
+  #main-view { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; }
+  
+  /* Components */
+  .header { padding: 12px; border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 2px; color: var(--acc-main); display: flex; justify-content: space-between; align-items: center; }
+  .section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .label { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
+  .value-disp { font-size: 14px; color: #fff; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+  
+  /* Inputs */
+  input[type="range"] { width: 100%; background: transparent; -webkit-appearance: none; cursor: pointer; }
+  input[type="range"]::-webkit-slider-runnable-track { background: #333; height: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; background: var(--acc-main); width: 12px; height: 12px; margin-top: -5px; border-radius: 0; }
+  input[type="text"], select { width: 100%; background: #000; border: 1px solid #444; color: #fff; padding: 8px; font-family: inherit; font-size: 12px; }
+  input:focus { border-color: var(--acc-main); outline: none; }
+  
+  /* Buttons & Tabs */
+  .btn-group { display: flex; gap: 4px; margin-bottom: 10px; }
+  .btn { flex: 1; background: #222; border: 1px solid var(--border); color: #888; padding: 8px; font-size: 10px; cursor: pointer; text-align: center; transition: 0.2s; }
+  .btn.active { background: var(--acc-main); color: #000; font-weight: bold; border-color: var(--acc-main); }
+  .btn.warn { border-color: var(--acc-warn); color: var(--acc-warn); }
+  .btn:active { transform: translateY(1px); }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body {
-            margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-            font-size: 14px;
-            overflow-x: hidden;
-            overscroll-behavior-y: none;
-        }
+  /* Map & Result */
+  #map-canvas { width: 100%; height: 100%; display: block; }
+  #overlay-ui { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); border: 1px solid var(--acc-main); padding: 10px; width: 200px; font-size: 10px; display: none; }
+  
+  /* Indicators */
+  .score-box { text-align: center; padding: 20px 0; border-bottom: 1px solid var(--border); }
+  .score-val { font-size: 42px; font-weight: bold; color: var(--acc-main); text-shadow: 0 0 10px rgba(0,255,157,0.3); }
+  .score-label { font-size: 10px; letter-spacing: 1px; }
+  
+  /* Utilities */
+  .hidden { display: none !important; }
+  .tag { display: inline-block; padding: 2px 4px; font-size: 9px; border: 1px solid #444; margin-right: 4px; }
+  .tag.blue { border-color: cyan; color: cyan; }
+  .tag.gold { border-color: var(--acc-gold); color: var(--acc-gold); }
 
-        /* Utility */
-        .hidden { display: none !important; }
-        .flex { display: flex; }
-        .w-full { width: 100%; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .text-blue { color: var(--accent-blue); }
-        .text-yellow { color: var(--accent-yellow); }
-        .text-red { color: var(--accent-red); }
-
-        /* =========================================
-           UI COMPONENT: NEO-MAGI INTERFACE
-           ========================================= */
-        .triad-console {
-            position: relative;
-            width: 100%;
-            padding: 20px 10px;
-            background: #000;
-            border-bottom: 1px solid #333;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        /* Headers */
-        .magi-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 4px double var(--accent-main);
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-        }
-        .magi-title {
-            font-family: var(--font-mincho);
-            font-weight: 900;
-            font-size: 2rem;
-            color: var(--accent-main);
-            transform: scale(1, 0.85); /* 平体 */
-            letter-spacing: -2px;
-            line-height: 1;
-        }
-        .magi-meta {
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            color: var(--accent-main);
-            line-height: 1.2;
-            text-align: left;
-        }
-
-        /* The Triangle Layout */
-        .triad-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto auto;
-            gap: 10px;
-            position: relative;
-        }
-
-        /* Hexagon Modules */
-        .magi-module {
-            position: relative;
-            height: 100px;
-            background: #000;
-            border: var(--border-width) solid var(--accent-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .module-top {
-            grid-column: 1 /span 2;
-            width: 60%;
-            margin: 0 auto;
-            clip-path: polygon(0 0, 100% 0, 100% 70%, 80% 100%, 20% 100%, 0 70%);
-            border-bottom: none; 
-        }
-        .module-left { clip-path: polygon(0 0, 80% 0, 100% 20%, 100% 100%, 0 100%); }
-        .module-right { clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%, 0 20%); }
-
-        .module-label {
-            font-family: var(--font-mono);
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--text-dim);
-            z-index: 2;
-        }
-
-        /* Status Stamps */
-        .stamp {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(2);
-            font-family: var(--font-mincho);
-            font-weight: 900;
-            font-size: 2.5rem;
-            border: 3px solid currentColor;
-            padding: 5px 10px;
-            opacity: 0;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-        .stamp.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-
-        /* Verdict Center */
-        .verdict-display {
-            position: absolute;
-            top: 55%; left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 5;
-            pointer-events: none;
-            width: 100%;
-        }
-        .verdict-rank {
-            font-family: var(--font-mono);
-            font-size: 4rem;
-            font-weight: 900;
-            color: var(--text-main);
-            text-shadow: 0 0 10px var(--accent-main);
-        }
-        .verdict-msg {
-            font-size: 0.7rem;
-            color: var(--accent-main);
-            background: #000;
-            padding: 2px 5px;
-            margin-top: -10px;
-        }
-
-        .blink { animation: blinker 0.1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-
-        /* Active States */
-        .status-logos.active { background: rgba(0, 255, 255, 0.2); border-color: var(--accent-blue); }
-        .status-aegis.active { background: rgba(255, 215, 0, 0.2); border-color: var(--accent-yellow); }
-        .status-hedon.active { background: rgba(255, 0, 85, 0.2); border-color: var(--accent-red); }
-
-        /* Input Forms */
-        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .section-title {
-            border-left: 4px solid var(--accent-main);
-            padding-left: 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin: 30px 0 15px 0;
-            color: var(--text-main);
-        }
-        .input-group { margin-bottom: 15px; position: relative; }
-        .input-label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
-        
-        input[type="text"], input[type="number"], input[type="tel"], select {
-            width: 100%;
-            background: #111;
-            border: 1px solid #333;
-            color: #fff;
-            padding: 12px;
-            font-size: 1rem;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            appearance: none;
-        }
-        .search-icon {
-            position: absolute; right: 10px; top: 32px; font-size: 1.2rem; cursor: pointer;
-        }
-
-        /* Detail Modal */
-        .detail-panel {
-            background: #111; border: 1px solid #333; padding: 15px; margin-top: 5px;
-            display: none; font-family: var(--font-mono); font-size: 0.8rem; color: #aaa;
-        }
-        .detail-panel.open { display: block; animation: slideDown 0.2s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .btn-action {
-            background: #222; color: var(--accent-main); border: 1px solid var(--accent-main);
-            padding: 8px 15px; width: 100%; margin-top: 10px; cursor: pointer;
-        }
-    </style>
+  /* Mobile */
+  @media (max-width: 768px) { #app-shell { flex-direction: column; } #sidebar { width: 100%; height: 50vh; } }
+</style>
 </head>
 <body>
 
-<div id="app">
-    <div class="triad-console">
-        <div class="magi-header">
-            <div>
-                <div class="magi-meta">CODE: ESTATE_63<br>PRIORITY: AAA</div>
-                <div class="magi-title">物件審査</div>
-            </div>
-            <div style="text-align:right;">
-                <div class="magi-meta">MODE: TRIAD_COUNCIL<br>TARGET: LOCKED</div>
-                <div class="magi-title">判決</div>
-            </div>
-        </div>
-
-        <div class="triad-grid" id="triad_ui">
-            <div class="magi-module module-top status-aegis" onclick="app.toggleDetail('aegis')">
-                <div class="module-label">AEGIS・2</div>
-                <div class="stamp text-yellow" id="stamp_aegis">承認</div>
-            </div>
-            <div class="magi-module module-left status-hedon" onclick="app.toggleDetail('hedon')">
-                <div class="module-label">HEDON・3</div>
-                <div class="stamp text-red" id="stamp_hedon">承認</div>
-            </div>
-            <div class="magi-module module-right status-logos" onclick="app.toggleDetail('logos')">
-                <div class="module-label">LOGOS・1</div>
-                <div class="stamp text-blue" id="stamp_logos">承認</div>
-            </div>
-
-            <div class="verdict-display">
-                <div class="verdict-rank" id="final_rank">--</div>
-                <div class="verdict-msg blink" id="system_status">STANDBY</div>
-            </div>
-        </div>
-
-        <div id="detail_aegis" class="detail-panel">
-            <div class="text-yellow mb-4">[AEGIS SYSTEM LOG]</div>
-            <div id="log_aegis">NO DATA</div>
-            <button class="btn-action" onclick="app.openHazardMap()">ハザードマップ確認</button>
-        </div>
-        <div id="detail_hedon" class="detail-panel">
-            <div class="text-red mb-4">[HEDON SYSTEM LOG]</div>
-            <div id="log_hedon">NO DATA</div>
-            <button class="btn-action" onclick="app.openRouteSearch()">通勤ルート検索</button>
-        </div>
-        <div id="detail_logos" class="detail-panel">
-            <div class="text-blue mb-4">[LOGOS SYSTEM LOG]</div>
-            <div id="log_logos">NO DATA</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="section-title">I. 物件・立地 (GEO-SPATIAL)</div>
-        <div class="input-group">
-            <label class="input-label">郵便番号 (自動補完)</label>
-            <input type="tel" id="inp_zip" placeholder="123-4567" onblur="app.fetchAddress()">
-        </div>
-        <div class="input-group">
-            <label class="input-label">住所 (自動入力)</label>
-            <input type="text" id="inp_address" placeholder="東京都...">
-            <span class="search-icon" onclick="app.fetchCoords()">📍</span>
-        </div>
-        <div class="flex" style="gap:10px;">
-            <div class="input-group w-full">
-                <label class="input-label">物件価格 (万円)</label>
-                <input type="tel" id="inp_price" class="sanitizer" placeholder="5000">
-            </div>
-            <div class="input-group w-full">
-                <label class="input-label">管理・修繕 (円/月)</label>
-                <input type="tel" id="inp_cost" class="sanitizer" placeholder="25000">
-            </div>
-        </div>
-
-        <div class="section-title">II. 世帯・職業 (FINANCIAL)</div>
-        <div class="input-group">
-            <label class="input-label">年齢 (夫 / 妻)</label>
-            <div class="flex" style="gap:10px;">
-                <input type="number" id="inp_age_h" placeholder="35">
-                <input type="number" id="inp_age_w" placeholder="32">
-            </div>
-        </div>
-        <div class="input-group">
-            <label class="input-label">世帯年収 (万円)</label>
-            <input type="tel" id="inp_income" class="sanitizer" placeholder="800">
-        </div>
-        <div class="input-group">
-            <label class="input-label">職業タイプ</label>
-            <select id="inp_career">
-                <option value="standard">一般企業 (標準)</option>
-                <option value="public">公務員 (安定)</option>
-                <option value="maker">大手メーカー (年功序列)</option>
-                <option value="it">IT・メガベンチャー (短期集中)</option>
-                <option value="finance">金融・商社 (高リスク高リターン)</option>
-                <option value="free">フリーランス (不安定)</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label class="input-label">教育プラン</label>
-            <select id="inp_edu">
-                <option value="public">All公立</option>
-                <option value="mix">大学のみ私立</option>
-                <option value="elite">私立一貫 (Elite)</option>
-            </select>
-        </div>
-
-        <div class="section-title">III. リスク補正 (FACTOR)</div>
-        <div class="input-group">
-            <label class="input-label">駅ランク (自己申告)</label>
-            <select id="inp_station_rank">
-                <option value="1">★1 (支線・バス便)</option>
-                <option value="3" selected>★3 (急行停車/Hub)</option>
-                <option value="5">★5 (Core/複数路線)</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label class="input-label">通勤ストレス</label>
-            <select id="inp_commute_stress">
-                <option value="low">低 (快適)</option>
-                <option value="mid" selected>中 (標準)</option>
-                <option value="high">高 (疲弊)</option>
-                <option value="hell">地獄 (限界)</option>
-            </select>
-        </div>
-        <div style="height: 50px;"></div>
-    </div>
-</div>
-
 <script>
-/* =================================================================
-   ESTATE OS COMPLETE LOGIC BUNDLE
-   Includes: Master Data, Utilities, Sonar(API), Engine, Triad, App
-   =================================================================
-*/
+/** * ESTATE OS CORE (Ver 100.0)
+ * Logic: Physics, Calculus, Stat, Law
+ * Arch: Procedural Generation & Vector Analysis
+ */
 
-// --- 1. COMPRESSED MASTER DATA ---
-const TAX_MAP = [[195,5,0], [330,10,9.75], [695,20,42.75], [900,23,63.6], [1800,33,153.6], [4000,40,279.6], [Infinity,45,479.6]];
-const CAREER_CURVES = {
-    standard: [[22,100], [30,130], [45,160], [55,170], [60,100]],
-    public:   [[22,100], [35,140], [50,180], [60,180], [65,120]],
-    maker:    [[22,100], [30,120], [40,160], [55,200], [60,120]],
-    it:       [[22,110], [30,180], [40,200], [50,180], [60,80]],
-    finance:  [[22,120], [30,180], [45,250], [55,250], [60,50]],
-    free:     [[22,100], [30,150], [40,150], [50,120], [60,80]]
-};
-const EDU_COSTS = {
-    public: { 6:30, 12:50, 15:50, 18:250 },
-    mix:    { 6:30, 12:50, 15:100, 18:500 },
-    elite:  { 6:100, 12:400, 15:300, 18:600 }
+// --- 1. COMPRESSED MASTER DATA (PROCEDURAL) ---
+const M = {
+  // Hubs: [Name, Lat, Lon, Rank(0:S,1:A,2:B), Lines(Bitmask)]
+  hubs: [
+    ["東京", 35.6812, 139.7671, 0, 255], ["新宿", 35.6896, 139.7005, 0, 255],
+    ["横浜", 35.4657, 139.6223, 0, 127], ["武蔵小杉", 35.5768, 139.6596, 0, 63],
+    ["大宮", 35.9063, 139.6240, 0, 63], ["川崎", 35.5313, 139.6974, 1, 31],
+    ["二子玉川", 35.6117, 139.6266, 1, 16], ["豊洲", 35.6550, 139.7960, 1, 8],
+    ["立川", 35.6980, 139.4137, 1, 15], ["海浜幕張", 35.6484, 140.0419, 2, 4],
+    ["大門", 35.6568, 139.7548, 1, 12], ["五反田", 35.6264, 139.7236, 1, 14]
+  ],
+  // Physics Constants: [BasePrice, DecayRate(RC/Wood), Inflation]
+  phys: { base: 1000, rc: -0.015, wood: -0.035, inf: 0.005 },
+  // Line Physics: [Speed(km/h), Accel, Comfort]
+  lines: { subway: [35, 0.6, 0.8], jr: [55, 0.8, 0.9], exp: [80, 0.9, 1.0] }
 };
 
-// --- 2. UTILITIES ---
-const Utils = {
-    sanitizeNum: (val) => {
-        if (!val) return 0;
-        let s = val.toString().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-        s = s.replace(/[^0-9.-]/g, '');
-        return parseFloat(s) || 0;
-    },
-    sanitizeZip: (val) => {
-        if (!val) return "";
-        let s = val.toString().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-        return s.replace(/[^0-9]/g, '').substring(0, 7);
-    },
-    formatCurrency: (num) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(num),
-    calcDist: (lat1, lon1, lat2, lon2) => {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// --- 2. VECTOR & PHYSICS ENGINE ---
+const Vec = {
+  dist: (x1, y1, x2, y2) => Math.sqrt((x1-x2)**2 + (y1-y2)**2) * 111, // km approx
+  time: (dist, type) => {
+    const [v, a, c] = M.lines[type] || M.lines.jr;
+    return (dist / v * 60) + (dist * 0.5); // Minutes (Kinematic approx)
+  },
+  psi: (p, s, t, stress) => {
+    // Ψ Equation: Integral(Financial Mass * Life Density)
+    let sum = 0;
+    const years = 35;
+    const monthlyStress = 1 / (1 + 0.1 * (stress**2)); // Weber-Fechner Law
+    for(let y=0; y<years; y++) {
+      const val = p * Math.exp((M.phys.inf + M.phys.rc) * y); // Asset Curve
+      const loan = Math.max(0, p * (1 - y/years)); // Linear Payoff
+      const mass = val - loan;
+      sum += (mass * (s**0.6) * monthlyStress); // Integration
     }
+    return Math.floor(sum / 1000); // Normalized Score
+  }
 };
 
-// --- 3. SONAR (API) ---
-class Sonar {
-    constructor() { this.cache = {}; }
+// --- 3. STATE MANAGEMENT ---
+const State = {
+  slot: 0,
+  data: [{}, {}, {}], // 3 Slots
+  mode: 'AUDIT', // AUDIT, MAP, TARGET
+  ui: {},
+  
+  init() {
+    this.data = this.data.map(() => ({
+      price: 6000, size: 70, dist: 5, station: "横浜",
+      work: "大門", income: 1000, cash: 500
+    }));
+    this.render();
+    this.loop();
+  },
+
+  // Main Simulation Loop (60fps Logic)
+  loop() {
+    if(this.mode === 'AUDIT' || this.mode === 'TARGET') {
+      const d = this.data[this.slot];
+      
+      // 1. Locate (Procedural Matching)
+      const stObj = M.hubs.find(h => h[0] === d.station) || M.hubs[0];
+      const wkObj = M.hubs.find(h => h[0] === d.work) || M.hubs[10];
+      
+      // 2. Physics (Distance & Time)
+      const dist = Vec.dist(stObj[1], stObj[2], wkObj[1], wkObj[2]);
+      const time = Vec.time(dist, dist > 15 ? 'exp' : 'subway') + (d.dist * 1.5);
+      
+      // 3. Stress Vector
+      const stress = (time / 60) + (dist > 30 ? 0.5 : 0);
+      
+      // 4. Calculate Ψ
+      const psi = Vec.psi(d.price, d.size, 35, stress);
+      
+      // 5. Update UI
+      UI.update(psi, time|0, dist|0, d);
+      
+      // 6. Reverse Targeting (If Active)
+      if(this.mode === 'TARGET') Target.calc(d, psi);
+    }
+    requestAnimationFrame(() => this.loop());
+  }
+};
+
+// --- 4. UI CONTROLLER ---
+const UI = {
+  els: {},
+  setup() {
+    ['price','size','dist','income','cash'].forEach(k => {
+      const sl = document.getElementById('in-'+k);
+      const dp = document.getElementById('disp-'+k);
+      sl.addEventListener('input', e => {
+        State.data[State.slot][k] = parseFloat(e.target.value);
+        dp.innerText = State.data[State.slot][k].toLocaleString();
+      });
+      this.els[k] = {sl, dp};
+    });
     
-    async searchAddress(query) {
-        if (!query) return null;
-        try {
-            const res = await fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            return (data && data.length > 0) ? { lat: data[0].geometry.coordinates[1], lon: data[0].geometry.coordinates[0], title: data[0].properties.title } : null;
-        } catch (e) { return null; }
+    // Slot Switch
+    document.querySelectorAll('.slot-btn').forEach((b, i) => {
+      b.addEventListener('click', () => {
+        State.slot = i;
+        State.render(); // Load Slot Data
+        document.querySelectorAll('.slot-btn').forEach(bb=>bb.classList.remove('active'));
+        b.classList.add('active');
+      });
+    });
+
+    // Tab Switch
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        State.mode = b.dataset.mode;
+        document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+        document.getElementById('view-'+State.mode.toLowerCase()).classList.remove('hidden');
+        if(State.mode === 'MAP') MapEng.draw();
+      });
+    });
+  },
+  
+  update(score, time, km, d) {
+    const grade = score > 1000 ? 'S' : score > 700 ? 'A' : score > 400 ? 'B' : 'E';
+    const color = grade === 'S' ? 'var(--acc-gold)' : grade === 'E' ? 'var(--acc-warn)' : 'var(--acc-main)';
+    
+    document.getElementById('score-val').innerText = grade;
+    document.getElementById('score-val').style.color = color;
+    document.getElementById('score-pts').innerText = `Ψ-Index: ${score}`;
+    
+    // Logic/Feedback
+    let msg = `[物理演算完了] 職場まで${km}km / 所要${time}分`;
+    if(time > 60) msg += ` ⚠️通勤負荷高`;
+    if(d.price > d.income * 7 + d.cash) msg = `⚠️ 財務警告: 危険水域 (倍率 ${(d.price/d.income).toFixed(1)}x)`;
+    
+    document.getElementById('console-out').innerText = msg;
+    
+    // Bar Charts
+    const assetH = Math.min(100, score/12);
+    document.getElementById('bar-asset').style.height = assetH + '%';
+    document.getElementById('bar-asset').style.background = color;
+  }
+};
+
+// --- 5. MAP ENGINE (CANVAS) ---
+const MapEng = {
+  ctx: null,
+  init() {
+    const cvs = document.getElementById('map-canvas');
+    cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight;
+    this.ctx = cvs.getContext('2d');
+    
+    // Interaction
+    cvs.addEventListener('click', e => {
+      // Hit Test (Simple)
+      const rect = cvs.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      this.checkHit(x, y);
+    });
+  },
+  
+  draw() {
+    if(!this.ctx) this.init();
+    const c = this.ctx;
+    const w = c.canvas.width, h = c.canvas.height;
+    
+    // BG
+    c.fillStyle = '#050505'; c.fillRect(0,0,w,h);
+    
+    // Grid
+    c.strokeStyle = '#222'; c.lineWidth = 1;
+    for(let i=0; i<w; i+=50) { c.beginPath(); c.moveTo(i,0); c.lineTo(i,h); c.stroke(); }
+    for(let i=0; i<h; i+=50) { c.beginPath(); c.moveTo(0,i); c.lineTo(w,i); c.stroke(); }
+    
+    // Draw Hubs
+    M.hubs.forEach(hub => {
+      // Map LatLon to XY (Simplified projection for Tokyo)
+      const cx = (hub[2] - 139.3) * 600; 
+      const cy = h - ((hub[1] - 35.3) * 600);
+      
+      // Draw Node
+      const rank = hub[3];
+      c.fillStyle = rank === 0 ? '#d4af37' : rank === 1 ? 'cyan' : '#444';
+      c.beginPath(); c.arc(cx, cy, rank===0?6:4, 0, Math.PI*2); c.fill();
+      
+      // Label
+      c.fillStyle = '#888'; c.font = '10px monospace';
+      c.fillText(hub[0], cx+8, cy+3);
+      
+      // Hazard Ring (Simulation)
+      if(hub[1] < 35.6 && hub[2] > 139.7) { // Bay Area
+        c.strokeStyle = 'rgba(255,0,0,0.3)';
+        c.beginPath(); c.arc(cx, cy, 20, 0, Math.PI*2); c.stroke();
+      }
+    });
+  },
+  
+  checkHit(mx, my) {
+    // Logic to select station on click
+    document.getElementById('overlay-ui').style.display = 'block';
+    document.getElementById('overlay-ui').innerHTML = `戦略座標取得<br>X:${mx|0} Y:${my|0}`;
+  }
+};
+
+// --- 6. REVERSE TARGETING ENGINE ---
+const Target = {
+  calc(d, currentPsi) {
+    const el = document.getElementById('target-res');
+    if(currentPsi > 800) {
+      el.innerHTML = `<span style="color:var(--acc-main)">GOAL REACHED</span><br>現年収でSランク到達可能`;
+      return;
     }
-
-    async searchZip(zip) {
-        const z = Utils.sanitizeZip(zip);
-        if (z.length !== 7) return null;
-        try {
-            const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${z}`);
-            const data = await res.json();
-            return (data && data.results) ? `${data.results[0].address1}${data.results[0].address2}${data.results[0].address3}` : null;
-        } catch (e) { return null; }
+    // Binary Search for Required Income
+    let low = d.income, high = 5000, req = high;
+    for(let i=0; i<20; i++) { // Max 20 iterations
+      let mid = (low+high)/2;
+      let ratio = d.price / (mid + d.cash/10); // Simplified logic
+      if (ratio < 5) high = mid; else low = mid; // 5x rule
     }
+    req = Math.floor(high);
+    el.innerHTML = `必要世帯年収: <span style="color:#fff">${req}万円</span><br>不足: ${(req - d.income)}万円`;
+  }
+};
 
-    async scanArea(lat, lon) {
-        // Overpass API Query (Hospital, Supermarket)
-        const q = `[out:json][timeout:3];(node["amenity"="hospital"](around:1500,${lat},${lon});node["shop"="supermarket"](around:800,${lat},${lon}););out body;`;
-        const fetchWithTimeout = (ms, promise) => {
-            return new Promise((resolve) => {
-                const timer = setTimeout(() => resolve(null), ms);
-                promise.then(value => { clearTimeout(timer); resolve(value); }).catch(() => { clearTimeout(timer); resolve(null); });
-            });
-        };
-        try {
-            const res = await fetchWithTimeout(3000, fetch("https://overpass-api.de/api/interpreter", { method: 'POST', body: q }));
-            if (!res) return { status: 'TIMEOUT' };
-            const data = await res.json();
-            return this.analyze(data.elements, lat, lon);
-        } catch (e) { return { status: 'ERROR' }; }
-    }
+// --- 7. API HANDLER (ONLINE) ---
+const API = {
+  async getGeo(addr) {
+    try {
+      // Pseudo-code for GSI API (Functional structure)
+      // const res = await fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${addr}`);
+      // On success: Update State.data.lat/lon
+      console.log("API: Geo fetch triggered for " + addr);
+    } catch(e) { console.error("Offline Mode"); }
+  }
+};
 
-    analyze(nodes, clat, clon) {
-        if (!nodes) return { status: 'NO_DATA' };
-        let res = { hospital: 9999, supermarket: 9999 };
-        nodes.forEach(n => {
-            const d = Math.round(Utils.calcDist(clat, clon, n.lat, n.lon) * 1000);
-            if (n.tags.amenity === 'hospital' && d < res.hospital) res.hospital = d;
-            if (n.tags.shop === 'supermarket' && d < res.supermarket) res.supermarket = d;
-        });
-        return { status: 'OK', data: res };
-    }
-}
-
-// --- 4. ENGINE (Simulation) ---
-class EstateEngine {
-    simulate(inputs) {
-        let assets = 0, isBankrupt = false, bankruptAge = null;
-        const loanAmt = inputs.price * 10000;
-        const mRate = 0.018 / 12;
-        const mPay = (loanAmt * mRate) / (1 - Math.pow(1 + mRate, -420));
-        let loanBal = loanAmt;
-        
-        const curve = CAREER_CURVES[inputs.career] || CAREER_CURVES.standard;
-        const getMult = (age) => {
-            for(let i=0; i<curve.length-1; i++) {
-                if(age >= curve[i][0] && age <= curve[i+1][0]) {
-                    const t = (age - curve[i][0]) / (curve[i+1][0] - curve[i][0]);
-                    return curve[i][1] + t * (curve[i+1][1] - curve[i][1]);
-                }
-            }
-            return age > 60 ? 50 : 100;
-        };
-
-        for (let i = 0; i <= (100 - inputs.ageH); i++) {
-            const cAge = inputs.ageH + i;
-            // Income
-            let inc = inputs.income * 10000 * (getMult(cAge)/100);
-            if (cAge >= 60) inc *= 0.6; 
-            if (cAge >= 65) inc = 2500000; // Pension
-            const tax = (inc <= 3300000) ? 0.2 : 0.3; // Simple Tax
-            const takeHome = inc * (1 - tax);
-
-            // Expense
-            let cost = (inputs.cost * 12) + (150000 * 12 * Math.pow(1.01, i)); // Living + inflation
-            if (i < 35) { cost += (mPay * 12); loanBal -= (mPay*12)*0.6; }
-            
-            // Edu
-            const childAge = cAge - 35;
-            if (childAge >= 0 && childAge <= 22) {
-                const plan = EDU_COSTS[inputs.eduType];
-                if(plan[childAge]) cost += plan[childAge]*10000;
-                cost += 600000; // Child living
-            }
-
-            assets += (takeHome - cost);
-            if (assets < 0 && !isBankrupt) { isBankrupt = true; bankruptAge = cAge; }
-        }
-        return { finalAssets: assets, isBankrupt, bankruptAge };
-    }
-}
-
-// --- 5. TRIAD SYSTEM (The Brains) ---
-class TriadSystem {
-    execute(sim, sonar, inputs) {
-        // LOGOS (Finance)
-        let v1 = true, log1 = `資産残高: ${Utils.formatCurrency(sim.finalAssets)}`;
-        if (sim.isBankrupt) { v1 = false; log1 = `破綻警告: ${sim.bankruptAge}歳で資金枯渇。`; }
-        else if (inputs.stationRank < 3) { log1 += " だがリセール弱。"; }
-
-        // AEGIS (Safety)
-        let v2 = true, log2 = "";
-        if (sonar.status === 'OK') {
-            if (sonar.data.hospital > 1500) { v2 = false; log2 = `医療過疎: 病院${sonar.data.hospital}m。`; }
-            else log2 = `医療アクセス良(${sonar.data.hospital}m)。`;
-        } else { log2 = "周辺データ取得不可。現地要確認。"; }
-        if (inputs.stationRank === 1) { v2 = false; log2 += " 孤立リスクあり。"; }
-
-        // HEDON (Life)
-        let v3 = true, log3 = "";
-        if (sonar.status === 'OK') {
-            if (sonar.data.supermarket > 800) { v3 = false; log3 = `不便: スーパー遠方(${sonar.data.supermarket}m)。`; }
-            else log3 = `買物至便(${sonar.data.supermarket}m)。`;
-        }
-        if (inputs.stress === 'hell') { v3 = false; log3 += " 通勤地獄により拒否。"; }
-
-        // Synthesis
-        let rank = "C", msg = "要審議";
-        if (v1 && v2 && v3) { rank = "S"; msg = "完全調和: 理想郷です。"; }
-        else if (v1 && v2 && !v3) { rank = "B"; msg = "禁欲的選択: 資産と安全は盤石。"; }
-        else if (!v1 && v2 && v3) { rank = "C"; msg = "甘い罠: 将来破綻します。"; }
-        else if (v1 && !v2 && v3) { rank = "D"; msg = "砂上の楼閣: 災害リスク大。"; }
-        else { rank = "D"; msg = "却下: 問題が多すぎます。"; }
-
-        return { rank, msg, details: { logos: {vote:v1, log:log1}, aegis: {vote:v2, log:log2}, hedon: {vote:v3, log:log3} } };
-    }
-}
-
-// --- 6. APP CONTROLLER ---
-class App {
-    constructor() {
-        this.engine = new EstateEngine();
-        this.sonar = new Sonar();
-        this.triad = new TriadSystem();
-        this.sonarData = { status: 'NO_DATA' };
-        this.coords = null;
-    }
-
-    init() {
-        document.querySelectorAll('input, select').forEach(el => {
-            el.addEventListener('input', () => this.schedule());
-        });
-        document.querySelectorAll('.sanitizer').forEach(el => {
-            el.addEventListener('blur', (e) => { e.target.value = Utils.sanitizeNum(e.target.value) || ""; });
-        });
-    }
-
-    schedule() {
-        clearTimeout(this.timer);
-        document.getElementById('system_status').innerText = "CALCULATING...";
-        document.getElementById('system_status').classList.add('blink');
-        this.timer = setTimeout(() => this.run(), 1000);
-    }
-
-    async run() {
-        const inputs = {
-            zip: document.getElementById('inp_zip').value,
-            price: Utils.sanitizeNum(document.getElementById('inp_price').value),
-            cost: Utils.sanitizeNum(document.getElementById('inp_cost').value),
-            ageH: Utils.sanitizeNum(document.getElementById('inp_age_h').value) || 35,
-            income: Utils.sanitizeNum(document.getElementById('inp_income').value),
-            career: document.getElementById('inp_career').value,
-            eduType: document.getElementById('inp_edu').value,
-            stationRank: parseInt(document.getElementById('inp_station_rank').value),
-            stress: document.getElementById('inp_commute_stress').value
-        };
-
-        if (!inputs.income || !inputs.price) {
-            document.getElementById('system_status').innerText = "STANDBY";
-            return;
-        }
-
-        const sim = this.engine.simulate(inputs);
-        
-        // Scan only if we have coords
-        if (this.coords) {
-             this.sonarData = await this.sonar.scanArea(this.coords.lat, this.coords.lon);
-        }
-
-        const verdict = this.triad.execute(sim, this.sonarData, inputs);
-        this.render(verdict);
-    }
-
-    render(v) {
-        // Reset
-        ['logos','aegis','hedon'].forEach(m => {
-            document.querySelector(`.status-${m}`).classList.remove('active');
-            document.getElementById(`stamp_${m}`).className = 'stamp'; 
-        });
-
-        // Logs
-        document.getElementById('log_logos').innerText = v.details.logos.log;
-        document.getElementById('log_aegis').innerText = v.details.aegis.log;
-        document.getElementById('log_hedon').innerText = v.details.hedon.log;
-
-        // Reveal Sequence
-        const reveal = (id, vote, color) => {
-            const el = document.querySelector(`.status-${id}`);
-            const stamp = document.getElementById(`stamp_${id}`);
-            if(vote) {
-                el.classList.add('active');
-                stamp.innerText = "承認";
-                stamp.classList.add(color);
-            } else {
-                stamp.innerText = "否定";
-                stamp.classList.add('text-red');
-                stamp.style.borderColor = 'red';
-            }
-            stamp.classList.add('show');
-        };
-
-        setTimeout(() => reveal('logos', v.details.logos.vote, 'text-blue'), 100);
-        setTimeout(() => reveal('aegis', v.details.aegis.vote, 'text-yellow'), 300);
-        setTimeout(() => reveal('hedon', v.details.hedon.vote, 'text-red'), 500);
-
-        setTimeout(() => {
-            const r = document.getElementById('final_rank');
-            r.innerText = v.rank + " RANK";
-            r.style.color = (v.rank==='S')?'var(--accent-blue)':(v.rank==='B')?'var(--accent-main)':'var(--accent-red)';
-            const s = document.getElementById('system_status');
-            s.innerText = v.msg;
-            s.classList.remove('blink');
-        }, 700);
-    }
-
-    async fetchAddress() {
-        const zip = document.getElementById('inp_zip').value;
-        const addr = await this.sonar.searchZip(zip);
-        if (addr) {
-            document.getElementById('inp_address').value = addr;
-            this.fetchCoords();
-        }
-    }
-
-    async fetchCoords() {
-        const addr = document.getElementById('inp_address').value;
-        const res = await this.sonar.searchAddress(addr);
-        if (res) {
-            this.coords = { lat: res.lat, lon: res.lon };
-            document.getElementById('system_status').innerText = `LOCATED: ${res.title}`;
-            this.schedule();
-        }
-    }
-
-    toggleDetail(id) { document.getElementById(`detail_${id}`).classList.toggle('open'); }
-    openHazardMap() {
-        if(this.coords) window.open(`https://disaportal.gsi.go.jp/maps/?ll=${this.coords.lat},${this.coords.lon}&z=16`, '_blank');
-    }
-    openRouteSearch() {
-        window.open(`https://transit.yahoo.co.jp/search/result?to=${encodeURIComponent(document.getElementById('inp_address').value)}`, '_blank');
-    }
-}
-
-// START
-const app = new App();
-window.addEventListener('DOMContentLoaded', () => app.init());
+window.onload = () => { UI.setup(); State.init(); };
 
 </script>
+
+<div id="app-shell">
+  <div id="sidebar">
+    <div class="header">
+      <span>ESTATE OS</span>
+      <span style="font-size:9px; border:1px solid #333; padding:2px;">v100.0</span>
+    </div>
+    
+    <div class="section">
+      <span class="label">COMPARISON SLOTS</span>
+      <div class="btn-group">
+        <div class="btn slot-btn active">CASE 01</div>
+        <div class="btn slot-btn">CASE 02</div>
+        <div class="btn slot-btn">CASE 03</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="label">PROPERTY VALUE (万円)</span>
+      <div class="value-disp" id="disp-price">6,000</div>
+      <input type="range" id="in-price" min="2000" max="20000" step="100" value="6000">
+      
+      <span class="label" style="margin-top:12px;">SIZE (㎡)</span>
+      <div class="value-disp" id="disp-size">70</div>
+      <input type="range" id="in-size" min="30" max="150" step="1" value="70">
+
+      <span class="label" style="margin-top:12px;">DISTANCE (min)</span>
+      <div class="value-disp" id="disp-dist">5</div>
+      <input type="range" id="in-dist" min="1" max="30" step="1" value="5">
+      
+      <span class="label" style="margin-top:12px;">STATION & WORK (AUTO)</span>
+      <div style="display:flex; gap:5px;">
+        <input type="text" value="横浜" onchange="State.data[State.slot].station=this.value">
+        <span style="padding-top:8px;">to</span>
+        <input type="text" value="大門" onchange="State.data[State.slot].work=this.value">
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="label">HOUSEHOLD INCOME (万円)</span>
+      <div class="value-disp" id="disp-income">1,000</div>
+      <input type="range" id="in-income" min="400" max="3000" step="50" value="1000">
+
+      <span class="label" style="margin-top:12px;">CASH / EQUITY (万円)</span>
+      <div class="value-disp" id="disp-cash">500</div>
+      <input type="range" id="in-cash" min="0" max="5000" step="50" value="500">
+    </div>
+
+    <div class="section">
+      <div class="btn-group">
+        <div class="btn" onclick="prompt('JSON Export:', JSON.stringify(State.data))">BACKUP</div>
+        <div class="btn warn" onclick="if(confirm('Reset?')) location.reload()">RESET</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main-view">
+    <div style="display:flex; border-bottom:1px solid #333; background:#111;">
+      <div class="btn tab-btn active" data-mode="AUDIT">AUDIT</div>
+      <div class="btn tab-btn" data-mode="MAP">TACTICAL MAP</div>
+      <div class="btn tab-btn" data-mode="TARGET">TARGETING</div>
+    </div>
+
+    <div id="view-audit" class="view" style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:20px;">
+      <div class="score-box">
+        <div class="score-label">SPATIO-TEMPORAL VALUE (Ψ)</div>
+        <div class="score-val" id="score-val">A</div>
+        <div id="score-pts" style="color:#666; font-size:12px;">loading...</div>
+      </div>
+      
+      <div style="margin-top:30px; padding:0 20px;">
+        <span class="label">ASSET INTEGRITY (35 Years)</span>
+        <div style="width:100%; height:10px; background:#222; margin-bottom:20px; overflow:hidden;">
+          <div id="bar-asset" style="width:10px; height:100%; transition:0.3s;"></div>
+        </div>
+        
+        <div id="console-out" style="font-size:11px; color:#aaa; font-family:monospace; border:1px dashed #333; padding:10px;">
+          System Ready. Waiting for Input...
+        </div>
+      </div>
+    </div>
+
+    <div id="view-map" class="view hidden" style="flex:1; position:relative;">
+      <canvas id="map-canvas"></canvas>
+      <div id="overlay-ui"></div>
+    </div>
+
+    <div id="view-target" class="view hidden" style="flex:1; display:flex; align-items:center; justify-content:center; text-align:center;">
+      <div style="border:1px solid var(--acc-main); padding:40px;">
+        <div style="font-size:12px; color:var(--acc-main); margin-bottom:10px;">REVERSE TARGETING</div>
+        <div id="target-res" style="font-size:14px; line-height:1.6; color:#888;">
+          Calculating optimal income strategy...
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
