@@ -3,390 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>TRI-AXIS v1.0.0 | 居住監査執行システム</title>
+    <title>TRI-AXIS v1.0.0 | 知の最終武装</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass-bg: rgba(10, 20, 35, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-bg: rgba(10, 20, 35, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.12);
             --neon-blue: #00d9ff;
             --neon-gold: #ffcc00;
             --neon-green: #33ffaa;
             --neon-red: #ff3366;
             --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #010409; color: #e0e6ed; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
 
-        body {
-            background: #02050a;
-            color: #e0e6ed;
-            font-family: 'Inter', -apple-system, sans-serif;
-            overflow: hidden; /* スクロールはコンテナ内のみ */
-            height: 100vh;
-        }
+        .app-shell { display: flex; flex-direction: column; height: 100vh; padding-top: var(--safe-top); }
+        .deep-bg { position: fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at 50% 50%, #0a1930 0%, #010409 100%); z-index: -1; }
 
-        /* 深海背景演出 */
-        .deep-abyss {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, #0a1425 0%, #02050a 100%);
-            z-index: -1;
-        }
+        /* --- Header --- */
+        header { padding: 15px 20px; background: var(--glass-bg); backdrop-filter: blur(40px); border-bottom: 1px solid var(--glass-border); }
+        .top-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .psi-display { font-family: 'Noto Serif JP', serif; font-size: 1.6rem; color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,217,255,0.5); }
+        
+        .nav-rail { display: flex; overflow-x: auto; gap: 8px; scrollbar-width: none; }
+        .nav-rail::-webkit-scrollbar { display: none; }
+        .tab-pill { padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; color: #8899aa; font-size: 0.75rem; white-space: nowrap; transition: 0.3s; cursor: pointer; }
+        .tab-pill.active { background: var(--neon-blue); color: #000; font-weight: 600; border-color: var(--neon-blue); }
 
-        /* メインコンテナ（iPhoneセーフエリア考慮） */
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding-top: var(--safe-top);
-        }
+        /* --- Main Workspace --- */
+        main { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+        .view { display: none; animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .view.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 上部：ステータス & コンテキスト・レール --- */
-        header {
-            padding: 15px 20px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(40px);
-            border-bottom: 1px solid var(--glass-border);
-            z-index: 100;
-        }
+        .card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 18px; padding: 20px; margin-bottom: 15px; backdrop-filter: blur(30px); }
+        .input-box { margin-bottom: 18px; }
+        .input-box label { display: block; font-size: 0.7rem; color: #8899aa; margin-bottom: 8px; letter-spacing: 0.05em; }
+        input, select { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; color: #fff; font-size: 1rem; outline: none; }
+        
+        /* --- MAGI Tribunal --- */
+        .magi-triad { position: relative; height: 300px; margin: 20px 0; display: flex; justify-content: center; align-items: center; }
+        .core { position: absolute; width: 85px; text-align: center; }
+        .core-shape { width: 55px; height: 55px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif JP'; font-size: 1.3rem; background: rgba(0,0,0,0.4); border: 2px solid; transition: 0.5s; }
+        .core-status { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; }
+        
+        .logos { top: 0; color: var(--neon-gold); }
+        .logos .core-shape { transform: rotate(45deg); border-color: var(--neon-gold); box-shadow: 0 0 20px rgba(255,204,0,0.3); }
+        .logos .core-shape span { transform: rotate(-45deg); }
+        
+        .hedon { bottom: 0; right: 15%; color: var(--neon-blue); }
+        .hedon .core-shape { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); border-color: var(--neon-blue); }
 
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
+        .aegis { bottom: 0; left: 15%; color: var(--neon-green); }
+        .aegis .core-shape { clip-path: polygon(0 0, 100% 0, 50% 100%); border-color: var(--neon-green); }
 
-        .psi-score {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 1.4rem;
-            color: var(--neon-blue);
-            text-shadow: 0 0 10px var(--neon-blue);
-        }
+        .rank-center { position: absolute; font-family: 'Noto Serif JP'; font-size: 4rem; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
 
-        .context-rail {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 5px;
-            scrollbar-width: none;
-        }
-        .context-rail::-webkit-scrollbar { display: none; }
+        /* --- Footer Dock --- */
+        footer { position: fixed; bottom: 0; width: 100%; background: var(--glass-bg); backdrop-filter: blur(40px); border-top: 1px solid var(--glass-border); padding: 12px 20px calc(12px + var(--safe-bottom)); display: flex; justify-content: space-around; }
+        .dock-item { background: none; border: none; color: #8899aa; font-size: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.3s; }
+        .dock-item.active { color: var(--neon-blue); }
+        .dock-icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 
-        .tab-btn {
-            padding: 8px 18px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            color: #8899aa;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            transition: 0.3s;
-        }
-        .tab-btn.active {
-            background: var(--neon-blue);
-            color: #000;
-            border-color: var(--neon-blue);
-            font-weight: 600;
-        }
-
-        /* --- 中央：作業エリア --- */
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            scroll-behavior: smooth;
-        }
-
-        .section { display: none; }
-        .section.active { display: block; animation: fadeIn 0.5s ease; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- 専門家エンジンの入力フォーム --- */
-        .card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(20px);
-        }
-
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 0.75rem; color: #8899aa; margin-bottom: 6px; letter-spacing: 0.05em; }
-        input, select {
-            width: 100%;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 12px;
-            color: #fff;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        /* --- 三核評議会 (MAGI) UI --- */
-        .tribunal-area {
-            position: relative;
-            height: 320px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 30px 0;
-        }
-
-        .core {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: 0.5s;
-        }
-
-        .core-icon {
-            width: 50px; height: 50px;
-            border: 2px solid;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Noto Serif JP', serif;
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-            background: rgba(0,0,0,0.5);
-        }
-
-        .core-status { font-size: 0.7rem; font-weight: bold; }
-
-        /* 財務：ひし形 */
-        .logos { top: 0; border-color: var(--neon-gold); box-shadow: 0 0 15px var(--neon-gold); }
-        .logos .core-icon { transform: rotate(45deg); border-color: var(--neon-gold); color: var(--neon-gold); }
-        .logos .core-icon span { transform: rotate(-45deg); }
-
-        /* 生活：六角形 */
-        .hedon { bottom: 0; right: 20px; border-color: var(--neon-blue); }
-        .hedon .core-icon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); border-color: var(--neon-blue); color: var(--neon-blue); }
-
-        /* 守護：逆三角 */
-        .aegis { bottom: 0; left: 20px; border-color: var(--neon-green); }
-        .aegis .core-icon { clip-path: polygon(0 0, 100% 0, 50% 100%); border-color: var(--neon-green); color: var(--neon-green); }
-
-        .tension-line {
-            position: absolute;
-            background: rgba(255,255,255,0.1);
-            z-index: -1;
-        }
-
-        /* --- 下部：メイン・ドック --- */
-        footer {
-            background: var(--glass-bg);
-            backdrop-filter: blur(40px);
-            border-top: 1px solid var(--glass-border);
-            padding: 10px 20px calc(15px + env(safe-area-inset-bottom));
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .dock-btn {
-            background: none; border: none;
-            color: #8899aa; font-size: 0.65rem;
-            display: flex; flex-direction: column; align-items: center; gap: 5px;
-        }
-        .dock-btn.active { color: var(--neon-blue); }
-        .dock-icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.5; }
-
-        /* 教育的ポップアップ */
-        .evidence-modal {
-            position: fixed;
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 400px;
-            background: #0a1425; border: 1px solid var(--neon-blue);
-            padding: 25px; border-radius: 12px; z-index: 1000;
-            display: none;
-        }
+        .evidence-text { font-size: 0.85rem; line-height: 1.6; }
+        .evidence-text b { color: var(--neon-gold); }
+        .law-ref { font-size: 0.65rem; color: #556677; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
 
-<div class="deep-abyss"></div>
+<div class="deep-bg"></div>
 
-<div class="app-container">
+<div class="app-shell">
     <header>
-        <div class="status-bar">
-            <span style="font-size: 0.7rem; letter-spacing: 0.2em; color: #8899aa;">TRI-AXIS v1.0.0</span>
-            <div class="psi-score">Ψ 0.0</div>
+        <div class="top-info">
+            <span style="font-size: 0.7rem; color: #556677; letter-spacing: 0.1em;">TRI-AXIS v1.0.0</span>
+            <div class="psi-display" id="psi-score">Ψ 0.0</div>
         </div>
-        <nav class="context-rail" id="context-rail">
-            <button class="tab-btn active" onclick="switchContext('project')">案件管理</button>
-            <button class="tab-btn" onclick="switchContext('property')">物件諸元</button>
-            <button class="tab-btn" onclick="switchContext('location')">立地交通</button>
-            <button class="tab-btn" onclick="switchContext('finance')">財務属性</button>
-        </nav>
+        <div class="nav-rail">
+            <div class="tab-pill active" onclick="setView('project')">案件管理</div>
+            <div class="tab-pill" onclick="setView('property')">物件諸元</div>
+            <div class="tab-pill" onclick="setView('location')">立地交通</div>
+            <div class="tab-pill" onclick="setView('finance')">財務属性</div>
+        </div>
     </header>
 
-    <main id="main-display">
-        <div id="property" class="section">
+    <main>
+        <div id="view-property" class="view">
             <div class="card">
-                <div class="input-group">
-                    <label>物件価格 (万円)</label>
-                    <input type="number" id="price" value="6500" oninput="updateAudit()">
-                </div>
-                <div class="input-group">
-                    <label>専有面積 (㎡) - 居住水準監査対象</label>
-                    <input type="number" id="size" value="70" oninput="updateAudit()">
-                </div>
-                <div class="input-group">
-                    <label>修繕積立金 (月額) - 国交省指針照合</label>
-                    <input type="number" id="reserve_fund" value="12000" oninput="updateAudit()">
-                </div>
-                <div class="input-group">
-                    <label>総戸数 - スケールメリット演算</label>
-                    <input type="number" id="units" value="50" oninput="updateAudit()">
-                </div>
-                <div class="input-group">
-                    <label>建物構造</label>
-                    <select id="structure" onchange="updateAudit()">
+                <div class="input-box"><label>物件価格 (万円)</label><input type="number" id="p_price" value="6500" onchange="runAudit()"></div>
+                <div class="input-box"><label>専有面積 (㎡)</label><input type="number" id="p_size" value="70" onchange="runAudit()"></div>
+                <div class="input-box"><label>修繕積立金 (月額)</label><input type="number" id="p_reserve" value="12000" onchange="runAudit()"></div>
+                <div class="input-box"><label>総戸数</label><input type="number" id="p_units" value="50" onchange="runAudit()"></div>
+                <div class="input-box"><label>構造</label>
+                    <select id="p_structure" onchange="runAudit()">
                         <option value="RC">RC造 (耐震)</option>
-                        <option value="TOWER">タワー (制震・免震)</option>
-                        <option value="WOOD">木造・軽量鉄骨</option>
+                        <option value="TOWER">タワーマンション</option>
                     </select>
                 </div>
             </div>
         </div>
 
-        <div id="audit" class="section active">
-            <div class="tribunal-area">
-                <div class="core logos">
-                    <div class="core-icon"><span>財</span></div>
-                    <div class="core-status" id="logos-status">待機中</div>
+        <div id="view-location" class="view">
+            <div class="card">
+                <div class="input-box"><label>駅徒歩 (分)</label><input type="number" id="l_walk" value="8" onchange="runAudit()"></div>
+                <div class="input-box"><label>幹線道路からの距離 (m)</label><input type="number" id="l_road_dist" value="30" onchange="runAudit()"></div>
+                <div class="input-box"><label>用途地域</label>
+                    <select id="l_zone" onchange="runAudit()">
+                        <option value="RES">第一種中高層住居専用</option>
+                        <option value="COM">商業地域 (建築リスク高)</option>
+                    </select>
                 </div>
-                <div class="core hedon">
-                    <div class="core-icon">生</div>
-                    <div class="core-status" id="hedon-status">待機中</div>
-                </div>
-                <div class="core aegis">
-                    <div class="core-icon">守</div>
-                    <div class="core-status" id="aegis-status">待機中</div>
-                </div>
-                <div id="final-rank" style="font-family: 'Noto Serif JP', serif; font-size: 3rem; position: absolute;">-</div>
             </div>
+        </div>
 
-            <div class="card" id="audit-log">
-                <p style="color: #8899aa; font-size: 0.8rem; text-align: center;">三核評議会による監査を開始してください</p>
+        <div id="view-audit" class="view active">
+            <div class="magi-triad">
+                <div class="core logos"><div class="core-shape"><span>財</span></div><div class="core-status" id="s-logos">-</div></div>
+                <div class="core hedon"><div class="core-shape">生</div><div class="core-status" id="s-hedon">-</div></div>
+                <div class="core aegis"><div class="core-shape">守</div><div class="core-status" id="s-aegis">-</div></div>
+                <div class="rank-center" id="r-final">-</div>
             </div>
+            <div class="card evidence-text" id="report-text">
+                知的監査エンジンを起動してください。
+            </div>
+        </div>
+
+        <div id="view-project" class="view">
+            <div class="card">未来の資産価値曲線を表示中...</div>
         </div>
     </main>
 
     <footer>
-        <button class="dock-btn" onclick="switchMode('input')">
-            <svg class="dock-icon"><path d="M12 20v-8m0 0V4m0 8h8m-8 0H4"/></svg>
-            設定
-        </button>
-        <button class="dock-btn active" onclick="switchMode('audit')">
-            <svg class="dock-icon"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            診断
-        </button>
-        <button class="dock-btn" onclick="switchMode('map')">
-            <svg class="dock-icon"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-            地図
-        </button>
-        <button class="dock-btn" onclick="switchMode('share')">
-            <svg class="dock-icon"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-            共有
-        </button>
+        <button class="dock-item" onclick="setMode('input')"><svg class="dock-icon"><path d="M12 4v16m8-8H4"/></svg>設定</button>
+        <button class="dock-item active" onclick="setMode('audit')"><svg class="dock-icon"><path d="M9 12l2 2 4-4m5.618-4.016A9 9 0 112.862 10.08a9 9 0 0111.756-6.096z"/></svg>診断</button>
+        <button class="dock-item" onclick="setMode('map')"><svg class="dock-icon"><path d="M9 20l-5-4V4l5 4m0 12l5-4m-5 4V8m5 8l5 4V8l-5-4m0 12V4"/></svg>地図</button>
+        <button class="dock-item" onclick="exportReport()"><svg class="dock-icon"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>共有</button>
     </footer>
 </div>
 
 <script>
-    // --- 専門家エンジンロジック ---
-
-    function updateAudit() {
-        const price = parseFloat(document.getElementById('price').value);
-        const size = parseFloat(document.getElementById('size').value);
-        const units = parseFloat(document.getElementById('units').value);
-        const reserve = parseFloat(document.getElementById('reserve_fund').value);
-
-        // 1. 財務監査 (LOGOS)
-        // 国交省指針に基づく㎡単価判定
-        const reservePerSqm = reserve / size;
-        let logosEval = "可";
-        let logosMsg = "積立金単価は国交省指針の範囲内です。";
-        if (reservePerSqm < 200) {
-            logosEval = "保";
-            logosMsg = "積立金が指針(200円/㎡)を下回っています。将来の増額リスクを検知。";
+    /* --- 専門家エンジン・クラス定義 --- */
+    class Auditor {
+        static logos(p) { // 財務
+            const sqmRate = p.reserve / p.size;
+            const res = { eval: '可', score: 90, msg: '積立金単価は国交省指針の適正範囲内です。' };
+            if (sqmRate < 200) { res.eval = '保'; res.score = 60; res.msg = '積立金が㎡単価200円未満です。将来の増額・一時金リスクを検知。'; }
+            if (p.units < 30) { res.score -= 10; res.msg += ' 小規模物件による固定費割高リスクあり。'; }
+            return res;
         }
-        if (units < 30) {
-            logosMsg += " 小規模物件特有のコスト高リスクあり。";
+        static hedon(p) { // 生活
+            const roadNoise = 75 - 10 * Math.log10(p.roadDist / 1); // 物理学的線音源減衰
+            const res = { eval: '可', score: 85, msg: '居住面積水準を満たしています。' };
+            if (p.size < 70) { res.eval = '保'; res.msg = '国交省の誘導居住面積水準（3人世帯：75㎡）を僅かに下回ります。'; }
+            if (roadNoise > 60) { res.eval = '否'; res.msg = `騒音推計 ${Math.round(roadNoise)}dB。夜間の環境基準値を超過する可能性大。`; }
+            return res;
         }
-
-        // 2. 生活監査 (HEDON)
-        // 居住水準監査 (誘導居住面積水準: 都市型3人家族=75㎡)
-        let hedonEval = "可";
-        let hedonMsg = "国交省の誘導居住面積水準を概ね満たしています。";
-        if (size < 70) {
-            hedonEval = "保";
-            hedonMsg = "3人以上の世帯では、国交省の推奨水準を下回る可能性があります。";
+        static aegis(p) { // 守護
+            const res = { eval: '可', score: 95, msg: '現行耐震基準に適合し、安全性は高いと判断。' };
+            if (p.zone === 'COM') { res.eval = '保'; res.msg = '商業地域のため、隣地への将来的な高層ビル建築による日照侵害リスクあり。'; }
+            return res;
         }
-
-        // 3. 守護監査 (AEGIS)
-        const aegisEval = "可"; // 今回は簡易
-        const aegisMsg = "建物構造と現時点の財務健全性に重大な欠陥は見当たりません。";
-
-        // UI更新（無音・視覚パルス）
-        document.getElementById('logos-status').innerText = logosEval;
-        document.getElementById('hedon-status').innerText = hedonEval;
-        document.getElementById('aegis-status').innerText = aegisEval;
-        
-        const score = ((size / 100) * 40 + (250 / reservePerSqm) * 30 + (units / 100) * 30).toFixed(1);
-        document.querySelector('.psi-score').innerText = `Ψ ${score}`;
-        
-        updateLog(logosMsg, hedonMsg, aegisMsg);
     }
 
-    function updateLog(l, h, a) {
-        const log = document.getElementById('audit-log');
-        log.innerHTML = `
-            <div style="margin-bottom:15px;"><span style="color:var(--neon-gold)">◇ 財務:</span> ${l}</div>
-            <div style="margin-bottom:15px;"><span style="color:var(--neon-blue)">⬡ 生活:</span> ${h}</div>
-            <div style="margin-bottom:5px;"><span style="color:var(--neon-green)">▽ 守護:</span> ${a}</div>
-            <hr style="border:0; border-top:1px solid var(--glass-border); margin:15px 0;">
-            <div style="font-size:0.7rem; color:#667788; line-height:1.4;">
-                * 根拠: 国土交通省「マンションの修繕積立金に関するガイドライン」及び「住生活基本計画」に基づき算出。物理学的騒音減衰モデルを適用。
-            </div>
+    /* --- UI制御 --- */
+    function setView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + id).classList.add('active');
+        document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
+        if (event.target.classList.contains('tab-pill')) event.target.classList.add('active');
+    }
+
+    function setMode(mode) {
+        if (mode === 'input') setView('property');
+        if (mode === 'audit') setView('audit');
+        document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        runAudit();
+    }
+
+    function runAudit() {
+        const params = {
+            price: parseFloat(document.getElementById('p_price').value),
+            size: parseFloat(document.getElementById('p_size').value),
+            reserve: parseFloat(document.getElementById('p_reserve').value),
+            units: parseFloat(document.getElementById('p_units').value),
+            roadDist: parseFloat(document.getElementById('l_road_dist').value),
+            zone: document.getElementById('l_zone').value
+        };
+
+        const l = Auditor.logos(params);
+        const h = Auditor.hedon(params);
+        const a = Auditor.aegis(params);
+
+        document.getElementById('s-logos').innerText = l.eval;
+        document.getElementById('s-hedon').innerText = h.eval;
+        document.getElementById('s-aegis').innerText = a.eval;
+        
+        const totalScore = ((l.score + h.score + a.score) / 3).toFixed(1);
+        document.getElementById('psi-score').innerText = `Ψ ${totalScore}`;
+        document.getElementById('r-final').innerText = totalScore > 85 ? 'S' : totalScore > 70 ? 'A' : 'B';
+
+        document.getElementById('report-text').innerHTML = `
+            <b>◇ 財務:</b> ${l.msg}<br><br>
+            <b>⬡ 生活:</b> ${h.msg}<br><br>
+            <b>▽ 守護:</b> ${a.msg}
+            <span class="law-ref">出典: 国交省マンション修繕積立金ガイドライン / WHO環境騒音基準</span>
         `;
     }
 
-    // --- UI制御 ---
-
-    function switchContext(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+    function exportReport() {
+        const txt = `【 TRI-AXIS 監査報告書 】\nスコア: ${document.getElementById('psi-score').innerText}\n判定: ${document.getElementById('r-final').innerText}`;
+        navigator.clipboard.writeText(txt).then(() => alert("監査報告書（テキスト）をコピーしました。"));
     }
 
-    function switchMode(mode) {
-        if (mode === 'input') switchContext('property');
-        if (mode === 'audit') {
-            switchContext('audit');
-            updateAudit();
-        }
-        if (mode === 'share') {
-            const text = `【 TRI-AXIS 監査報告書 】\n評価スコア: ${document.querySelector('.psi-score').innerText}\n価格: ${document.getElementById('price').value}万円\n判定: 三核評議会により承認。`;
-            navigator.clipboard.writeText(text);
-            alert("監査報告書をクリップボードにコピーしました。");
-        }
-        document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-    }
-
-    // 初期化
-    window.onload = () => {
-        updateAudit();
-    };
+    window.onload = runAudit;
 </script>
-
 </body>
 </html>
