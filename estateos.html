@@ -36,7 +36,7 @@
         input, select { width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; padding:12px; color:#fff; font-size:0.95rem; outline:none; transition:0.3s; }
         input:focus, select:focus { border-color:var(--cyan); box-shadow:0 0 10px rgba(0,242,255,0.2); }
         
-        /* HELP TEXT (初心者向け) */
+        /* HELP TEXT */
         .help { font-size:0.6rem; color:#567; margin-top:4px; line-height:1.4; }
 
         /* EXECUTE BUTTON */
@@ -44,7 +44,7 @@
         .exec-btn::after { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent); transform:rotate(45deg); animation:shine 3s infinite; }
         @keyframes shine { 0% { left:-100%; } 100% { left:100%; } }
 
-        /* RESULT VIEW (Initially Hidden) */
+        /* RESULT VIEW */
         #result-view { display:none; animation:fadeIn 0.5s ease; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
         
@@ -61,10 +61,10 @@
         .bar-label { font-size:0.7rem; display:flex; justify-content:space-between; margin-bottom:4px; }
         .bar-bg { width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
         .bar-fill { height:100%; background:var(--cyan); width:0%; transition:width 1s cubic-bezier(0.2,0.8,0.2,1); }
-
     </style>
 </head>
 <body>
+
     <header>
         <div class="brand">TRI-AXIS <span style="font-size:0.7em; opacity:0.7;">v1.0.3</span></div>
         <div class="psi-badge" id="header-psi">STANDBY</div>
@@ -77,7 +77,8 @@
                 <h2>I. 管理品質・ブランド監査 (MGMT)</h2>
                 <div class="group">
                     <label>管理会社名<span>(ティア自動判定)</span></label>
-                    <select id="i-mgmt"></select> <div class="help">※管理会社の質は「10年後の価格下落」と「建物の寿命」を直接左右します。</div>
+                    <select id="i-mgmt"></select> 
+                    <div class="help">※管理会社の質は「10年後の価格下落」と「建物の寿命」を直接左右します。</div>
                 </div>
                 <div class="group">
                     <label>物件価格 (万円)</label>
@@ -123,7 +124,8 @@
                 </div>
                 <div class="group">
                     <label>用途地域<span>(日照権リスク)</span></label>
-                    <select id="i-zone"></select> </div>
+                    <select id="i-zone"></select>
+                </div>
                 <div class="group">
                     <label style="color:var(--gold);">[Pro] 隣地API連携 (Simulation)</label>
                     <select id="i-neighbor">
@@ -202,11 +204,211 @@
             <button class="exec-btn" style="background:transparent; border:1px solid var(--border); color:var(--text); box-shadow:none;" onclick="UI.reset()">再監査 (RESET)</button>
         </section>
     </main>
-        // Module 1, 2のクラスは既に定義されている前提で、システムを起動します
-        
+
+    <script>
+        const T_MASTERS = {
+            MGMT: {
+                TIERS: {
+                    S: { p: 1.12, d: 0.85, n: "【S】財閥・超大手デベロッパー系", desc: "資産価値の絶対防衛線。劣化を15%遅延。" },
+                    A: { p: 1.05, d: 0.95, n: "【A】大手広域・電鉄系", desc: "信頼のベンチマーク。安定した修繕計画。" },
+                    B: { p: 1.00, d: 1.00, n: "【B】独立系大手・実力派", desc: "標準的な管理品質。組合の質に依存。" },
+                    C: { p: 0.92, d: 1.20, n: "【C】中小独立・地場系", desc: "コスト重視。将来の一時金リスクあり。" },
+                    D: { p: 0.75, d: 1.50, n: "【D】自主管理・管理不全", desc: "【致命的】ローン審査・リセールに重大な支障。" }
+                },
+                LIST: [
+                    { v: "S", l: "三井・三菱・住友・野村 (財閥系)" },
+                    { v: "A", l: "東急・大京・長谷工・東京建物 (大手系)" },
+                    { v: "B", l: "日本ハウズイング・合人社・日鉄 (独立大手)" },
+                    { v: "C", l: "その他の中小管理会社" },
+                    { v: "D", l: "自主管理 / 管理会社なし" }
+                ]
+            },
+            ZONES: {
+                L1: { n: "第一種低層住居専用", s: 0.95, r: 0.05, d: "【聖域】低層住環境の絶対保護。" },
+                L2: { n: "第二種低層住居専用", s: 0.90, r: 0.10, d: "低層環境＋小規模店舗。" },
+                M1: { n: "第一種中高層住居専用", s: 0.70, r: 0.35, d: "将来のマンション建設リスクあり。" },
+                M2: { n: "第二種中高層住居専用", s: 0.65, r: 0.40, d: "利便施設との混在エリア。" },
+                H1: { n: "第一種住居", s: 0.50, r: 0.60, d: "日照保護は限定的。大規模建物可。" },
+                H2: { n: "第二種住居", s: 0.45, r: 0.65, d: "パチンコ店等も可。環境変化リスク中。" },
+                JH: { n: "準住居", s: 0.40, r: 0.70, d: "幹線道路沿い。騒音・排ガス懸念。" },
+                NC: { n: "近隣商業", s: 0.30, r: 0.85, d: "日照権保護弱。商業施設隣接リスク。" },
+                C:  { n: "商業地域", s: 0.15, r: 0.95, d: "【警告】隣地超高層化は合法的権利。" },
+                JI: { n: "準工業", s: 0.30, r: 0.80, d: "工場跡地リスク。土壌汚染・騒音注意。" },
+                I:  { n: "工業", s: 0.10, r: 0.90, d: "住宅不適。環境悪化受忍義務あり。" },
+            },
+            MARKET: {
+                REGIONS: {
+                    KANTO: { c: 0.015, t: 70 }, KANSAI: { c: 0.012, t: 80 }, CHUBU: { c: 0.010, t: 85 },
+                    TOHOKU: { c: 0.002, t: 110 }, KYUSHU: { c: 0.008, t: 90 }, HOKKAIDO: { c: 0.005, t: 100 },
+                    CHUSHIKOKU: { c: 0.001, t: 120 }
+                },
+                CITIES: {
+                    "港区": {c:0.048, t:28}, "千代田区": {c:0.045, t:30}, "中央区": {c:0.042, t:32},
+                    "渋谷区": {c:0.038, t:35}, "新宿区": {c:0.035, t:38}, "文京区": {c:0.030, t:45},
+                    "武蔵野市": {c:0.028, t:40}, "横浜市西区": {c:0.025, t:45}, "川崎市中原区": {c:0.028, t:42},
+                    "大阪市北区": {c:0.032, t:40}, "大阪市中央区": {c:0.030, t:42}, "京都市中京区": {c:0.025, t:50},
+                    "名古屋市中区": {c:0.022, t:55}, "福岡市中央区": {c:0.038, t:30}, "札幌市中央区": {c:0.020, t:60}
+                }
+            },
+            RAIL: {
+                TIERS: {
+                    S: { p: 1.15, s: 1.5, n: "【S】超広域基幹軸 (山手・御堂筋等)" },
+                    A: { p: 1.08, s: 1.2, n: "【A】広域優等軸 (東横・日比谷等)" },
+                    B: { p: 1.02, s: 0.9, n: "【B】主要通勤軸 (JR幹線・私鉄本線)" },
+                    C: { p: 0.95, s: 0.7, n: "【C】地域連結軸 (郊外・支線)" },
+                    D: { p: 0.85, s: 0.4, n: "【D】ローカル・特定軸" }
+                },
+                PATTERNS: [
+                    { r: /山手|銀座|丸ノ内|千代田|御堂筋|東海道新幹線/, t: "S" },
+                    { r: /東横|田園都市|日比谷|半蔵門|南北|三田|大江戸|浅草|新宿|副都心|有楽町|京浜東北|総武線快速|東海道線|阪急神戸|阪急京都|京都線|烏丸|空港線|七隈/, t: "A" },
+                    { r: /中央|総武|埼京|高崎|宇都宮|常磐|京葉|小田急|京王|西武池袋|東武東上|京急本線|相鉄|つくば|名鉄名古屋|東山|名城|近鉄奈良|阪神|南海本線|京阪本線|神戸市営|大阪環状|東豊|南北線\(札\)|仙台市地/, t: "B" },
+                    { r: /西武新宿|野田|伊勢崎|京成|多摩|南武|武蔵野|横浜|相模|鶴舞|桜通|四つ橋|千日前|谷町|堺筋|長堀|今里|阪急宝塚|京阪宇治|西鉄/, t: "C" }
+                ]
+            }
+        };
+
+        const Resolver = {
+            getMarket(addr) {
+                for (const [city, data] of Object.entries(T_MASTERS.MARKET.CITIES)) {
+                    if (addr.includes(city)) return data;
+                }
+                if (addr.match(/東京|神奈川|千葉|埼玉|茨城|栃木|群馬/)) return T_MASTERS.MARKET.REGIONS.KANTO;
+                if (addr.match(/大阪|京都|兵庫|滋賀|奈良|和歌山/)) return T_MASTERS.MARKET.REGIONS.KANSAI;
+                if (addr.match(/愛知|岐阜|静岡|三重/)) return T_MASTERS.MARKET.REGIONS.CHUBU;
+                if (addr.match(/福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島/)) return T_MASTERS.MARKET.REGIONS.KYUSHU;
+                if (addr.match(/北海道/)) return T_MASTERS.MARKET.REGIONS.HOKKAIDO;
+                return T_MASTERS.MARKET.REGIONS.KANTO;
+            },
+            getRailTier(stationName, lineName) {
+                const target = (lineName + stationName);
+                const match = T_MASTERS.RAIL.PATTERNS.find(p => p.r.test(target));
+                return match ? T_MASTERS.RAIL.TIERS[match.t] : T_MASTERS.RAIL.TIERS.C;
+            }
+        };
+    </script>
+
+    <script>
+        class MgmtCore {
+            static resolveTier(name) {
+                const KW = {
+                    S: /三井|三菱|地所|住友|野村|東京建物/, 
+                    A: /東急|大京|長谷工|積水|大和|近鉄|京王|阪急/,
+                    B: /ハウズイング|合人社|日本総合|JS|穴吹|伊藤忠|日鉄|双日|商事/,
+                    D: /自主|なし|該当なし/
+                };
+                if (KW.S.test(name)) return { t:'S', p:1.12, d:0.85, v:0.70, n:"財閥・超大手" };
+                if (KW.A.test(name)) return { t:'A', p:1.05, d:0.95, v:0.85, n:"大手・電鉄系" };
+                if (KW.B.test(name)) return { t:'B', p:1.00, d:1.00, v:1.00, n:"独立・中堅" };
+                if (KW.D.test(name)) return { t:'D', p:0.75, d:1.50, v:1.40, n:"自主管理・不全" };
+                return { t:'C', p:0.92, d:1.20, v:1.15, n:"中小・その他" };
+            }
+        }
+
+        class HedonCore {
+            static audit(floor, roadW, rail, planScore) {
+                const baseNoise = 75; 
+                const distAtten = 10 * Math.log10(Math.max(floor*3, 10)); 
+                const diffraction = floor > 3 ? (floor - 3) * 0.7 : 0; 
+                const finalNoise = Math.round(baseNoise - distAtten + diffraction);
+                
+                const height = floor * 3;
+                const hwRatio = height / Math.max(roadW, 4);
+                let windRisk = { s:0, l:"低", msg:"平穏" };
+                if (hwRatio > 2.5) windRisk = { s:30, l:"極大", msg:"【警告】剥離流発生領域。バルコニー利用困難。" };
+                else if (hwRatio > 1.5) windRisk = { s:10, l:"中", msg:"乱流発生の可能性あり。" };
+
+                const entropy = rail.s * 10 + (windRisk.s / 2);
+
+                let score = 100 
+                    - (Math.max(0, finalNoise - 45) * 1.5) 
+                    - windRisk.s 
+                    - (entropy * 0.5)
+                    + ((planScore - 50) * 0.5);
+
+                return { score: Math.max(0, score.toFixed(1)), noise: finalNoise, wind: windRisk, entropy };
+            }
+        }
+
+        class LogosCore {
+            static audit(price, mgmt, market, rate, perf) {
+                const feeRate = 0.075; 
+                const totalCost = price * (1 + feeRate);
+                const limit = perf === 'ZEH' ? 4500 : (perf === 'BASE' ? 3000 : 0);
+                const taxCredit = Math.min(price, limit) * 0.007 * 13; 
+
+                const years = 10;
+                const mu = market.c; 
+                const sigmaBase = 0.15; 
+                const sigma = sigmaBase * mgmt.v; 
+                
+                const expPrice = price * Math.exp(mu * years);
+                
+                const drift = (mu - 0.5 * Math.pow(sigma, 2)) * years;
+                const shock = 1.96 * sigma * Math.sqrt(years);
+                const lowPrice = price * Math.exp(drift - shock) * mgmt.d; 
+
+                const ltvRaw = totalCost / price;
+                const safetyMargin = (lowPrice - (price * 0.7)) / 100; 
+                let score = (expPrice / price * 50) + (safetyMargin > 0 ? 30 : 0) + (mgmt.t === 'S' ? 20 : 0);
+
+                return { 
+                    score: Math.min(100, Math.max(0, score.toFixed(1))),
+                    expPrice: Math.round(expPrice), 
+                    lowPrice: Math.round(lowPrice), 
+                    taxCredit: Math.round(taxCredit)
+                };
+            }
+        }
+
+        class AegisCore {
+            static audit(zone, neighbor, geo) {
+                let shadowRisk = (1 - zone.s) * 100;
+                let neighborWarning = "";
+                if (neighbor.type === 'PARKING' && zone.r > 0.6) {
+                    shadowRisk = 95; 
+                    neighborWarning = "【警告】隣接地が開発容易な低利用地です。高層化リスク極大。";
+                }
+                const disasterScore = (1 - geo.risk) * 100;
+                let score = (zone.s * 40) + (disasterScore * 0.4) + (neighbor.safe ? 20 : 0);
+
+                return { 
+                    score: Math.min(100, Math.max(0, score.toFixed(1))), 
+                    shadowProb: Math.round(shadowRisk), 
+                    neighborMsg: neighborWarning 
+                };
+            }
+        }
+
+        class Interpreter {
+            static translate(h, l, a, mgmt) {
+                let advice = [];
+                let counter = [];
+
+                if (h.score < 60) {
+                    advice.push(`物理的に過酷です。${h.noise}dBの騒音は「窓を開けられない」レベル。ビル風も懸念されます。`);
+                    counter.push(`「騒音予測値が${h.noise}dBを超えていますが、サッシの遮音等級はT-3以上ですか？また、このH/W比での風環境評価書を見せてください」`);
+                }
+
+                if (l.lowPrice < l.expPrice * 0.7) {
+                    advice.push(`10年後の資産価値がローン残高を割り込む「オーバーローン」リスクが高いです。`);
+                    counter.push(`「管理会社が${mgmt.t}ランクであり、将来の資産維持ボラティリティが高いと算出されました。このリスク分、価格に織り込まれていますか？」`);
+                } else {
+                    advice.push(`資産性は堅牢です。${mgmt.n}系の管理により、資産価値の下落が強力に抑制されています。`);
+                }
+
+                if (a.shadowProb > 80) {
+                    advice.push(`今は日当たりが良いですが、それは「幻」です。隣地に建物が建つ法的確率が${a.shadowProb}%もあります。`);
+                    counter.push(`「隣地の利用状況と用途地域から見て、数年以内の眺望喪失は確実です。眺望プレミアムを排除した価格での交渉を希望します」`);
+                }
+
+                return { advice, counter };
+            }
+        }
+    </script>
+
+    <script>
         const UI = {
             init() {
-                // 用途地域プルダウン生成
                 const zSelect = document.getElementById('i-zone');
                 Object.keys(T_MASTERS.ZONES).forEach(key => {
                     const z = T_MASTERS.ZONES[key];
@@ -216,18 +418,16 @@
                     zSelect.add(opt);
                 });
 
-                // 管理会社プルダウン生成
                 const mSelect = document.getElementById('i-mgmt');
                 T_MASTERS.MGMT.LIST.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m.l; // 名前を渡して自動判定させる
+                    opt.value = m.l;
                     opt.text = m.l;
                     mSelect.add(opt);
                 });
             },
 
             execute() {
-                // 1. 入力収集
                 const inputs = {
                     mgmtName: document.getElementById('i-mgmt').value,
                     price: Number(document.getElementById('i-price').value),
@@ -243,47 +443,32 @@
                     planScore: Number(document.getElementById('i-plan').value)
                 };
 
-                // 2. 知能解決 (Resolver & Identification)
                 const market = Resolver.getMarket(inputs.addr);
                 const rail = Resolver.getRailTier(inputs.station, inputs.line);
                 const mgmt = MgmtCore.resolveTier(inputs.mgmtName);
                 const zone = T_MASTERS.ZONES[inputs.zoneKey];
 
-                // 3. 三核演算 (Core Processing)
-                // HEDON: 物理
                 const hRes = HedonCore.audit(inputs.floor, inputs.road, rail, inputs.planScore);
-                
-                // LOGOS: 金融 (管理ティアを渡す)
                 const lRes = LogosCore.audit(inputs.price, mgmt, market, inputs.rate, inputs.perf);
-                
-                // AEGIS: 守護 (隣地APIシミュレーションを渡す)
                 const neighborSim = { type: inputs.neighborType, safe: inputs.neighborType === 'SAFE' };
-                const aRes = AegisCore.audit(zone, neighborSim, { risk: 0.1 /* 地盤Sim */ });
+                const aRes = AegisCore.audit(zone, neighborSim, { risk: 0.1 });
 
-                // 4. 統合Ψスコア演算 (Weighted Sum)
-                // 初心者向けに、HEDON(生活)とLOGOS(金)を重視
                 const psi = (hRes.score * 0.35) + (lRes.score * 0.40) + (aRes.score * 0.25);
-                
-                // 5. 翻訳 (Interpreter)
                 const translation = Interpreter.translate(hRes, lRes, aRes, mgmt);
 
-                // 6. レンダリング
-                this.render(psi, hRes, lRes, aRes, translation, mgmt);
+                this.render(psi, hRes, lRes, aRes, translation, mgmt, zone, rail);
             },
 
-            render(psi, h, l, a, trans, mgmt) {
-                // ビュー切り替え
+            render(psi, h, l, a, trans, mgmt, zone, rail) {
                 document.getElementById('input-view').style.display = 'none';
                 document.getElementById('result-view').style.display = 'block';
                 window.scrollTo(0,0);
 
-                // スコア表示
                 const psiVal = psi.toFixed(1);
                 document.getElementById('r-psi').innerText = psiVal;
                 document.getElementById('header-psi').innerText = `Ψ ${psiVal}`;
                 document.getElementById('r-psi').style.color = psi > 80 ? 'var(--cyan)' : (psi > 60 ? 'var(--gold)' : 'var(--red)');
                 
-                // ランク判定
                 let rank = 'C';
                 if(psi >= 85) rank = 'S (MASTERPIECE)';
                 else if(psi >= 75) rank = 'A (EXCELLENT)';
@@ -292,7 +477,6 @@
                 else rank = 'D (CRITICAL)';
                 document.getElementById('r-rank').innerText = rank;
 
-                // 翻訳 & カウンター
                 document.getElementById('r-advice').innerHTML = trans.advice.length ? 
                     trans.advice.map(t => `・${t}`).join('<br>') : 
                     "・全てのパラメータが極めて高水準です。素晴らしい物件です。";
@@ -301,7 +485,6 @@
                     trans.counter.join('\n\n') : 
                     "「素晴らしい物件ですね。管理状態も立地も申し分ありません。前向きに検討します。」";
 
-                // バーチャート & ログ
                 const setBar = (id, val, msg) => {
                     document.getElementById(`s-${id}`).innerText = val;
                     document.getElementById(`b-${id}`).style.width = `${val}%`;
@@ -312,7 +495,6 @@
                 setBar('l', l.score, `管理:${mgmt.n} / 税控除:${l.taxCredit}万 / 破綻耐性:${l.score > 70 ? '高' : '低'}`);
                 setBar('a', a.score, `用途:${zone.n} / 日照喪失確率:${a.shadowProb}% / ${a.neighborMsg}`);
 
-                // 量子価格
                 document.getElementById('v-low').innerText = Math.round(l.lowPrice/10000).toLocaleString();
                 document.getElementById('v-exp').innerText = Math.round(l.expPrice/10000).toLocaleString();
             },
@@ -325,335 +507,7 @@
             }
         };
 
-        // 初期化
         window.onload = () => UI.init();
+    </script>
 </body>
-/**
- * TRI-AXIS v1.0.3 CORE INTELLIGENCE ENGINE
- * Copyright 2026 Y.T. & Gemini
- * * 3つの専門家核（HEDON, LOGOS, AEGIS）と
- * 翻訳・戦略核（INTERPRETER）を実装
- */
-
-// ==========================================
-// 1. 管理品質・階層同定核 (MGMT-ID Core)
-// ==========================================
-class MgmtCore {
-    static resolveTier(name) {
-        // キーワード・ハッシュマップ (2026年最新版)
-        const KW = {
-            S: /三井|三菱|地所|住友|野村|東京建物/, 
-            A: /東急|大京|長谷工|積水|大和|近鉄|京王|阪急/,
-            B: /ハウズイング|合人社|日本総合|JS|穴吹|伊藤忠|日鉄|双日|商事/,
-            D: /自主|なし|該当なし/
-        };
-        
-        // ティア判定 & 係数出力
-        // p: 資産維持プレミアム, d: 劣化抑制係数, v: ボラティリティ抑制
-        if (KW.S.test(name)) return { t:'S', p:1.12, d:0.85, v:0.70, n:"財閥・超大手" };
-        if (KW.A.test(name)) return { t:'A', p:1.05, d:0.95, v:0.85, n:"大手・電鉄系" };
-        if (KW.B.test(name)) return { t:'B', p:1.00, d:1.00, v:1.00, n:"独立・中堅" };
-        if (KW.D.test(name)) return { t:'D', p:0.75, d:1.50, v:1.40, n:"自主管理・不全" };
-        
-        // デフォルト: Cティア (中小・地場)
-        return { t:'C', p:0.92, d:1.20, v:1.15, n:"中小・その他" };
-    }
-}
-
-// ==========================================
-// 2. 物理・生活環境監査核 (HEDON Core)
-// ==========================================
-class HedonCore {
-    /**
-     * @param {number} floor - 所在階
-     * @param {number} roadW - 道路幅員(m)
-     * @param {object} rail - 鉄道ティア情報
-     * @param {object} plan - 間取り解析スコア (0-100)
-     */
-    static audit(floor, roadW, rail, planScore) {
-        // A. 音響回折・騒音監査
-        // L = L_ref - DistAtten + Diffraction(Floor)
-        const baseNoise = 75; // 幹線道路基準
-        const distAtten = 10 * Math.log10(Math.max(floor*3, 10)); // 距離減衰
-        const diffraction = floor > 3 ? (floor - 3) * 0.7 : 0; // 回折補正 (上層階ほど壁の効果が薄れる)
-        const finalNoise = Math.round(baseNoise - distAtten + diffraction);
-        
-        // B. 流体剥離・ビル風監査 (H/W比)
-        const height = floor * 3;
-        const hwRatio = height / Math.max(roadW, 4);
-        let windRisk = { s:0, l:"低", msg:"平穏" };
-        if (hwRatio > 2.5) windRisk = { s:30, l:"極大", msg:"【警告】剥離流発生領域。バルコニー利用困難。" };
-        else if (hwRatio > 1.5) windRisk = { s:10, l:"中", msg:"乱流発生の可能性あり。" };
-
-        // C. 移動・環境エントロピー (混雑 x 時間)
-        // rail.s (ストレス係数) * 待ち時間補正
-        const entropy = rail.s * 10 + (windRisk.s / 2);
-
-        // HEDONスコア統合 (100点満点)
-        // 間取りスコア、騒音、風、移動ストレスから減点方式
-        let score = 100 
-            - (Math.max(0, finalNoise - 45) * 1.5) // 騒音ペナルティ
-            - windRisk.s 
-            - (entropy * 0.5)
-            + ((planScore - 50) * 0.5); // 間取りボーナス/ペナルティ
-
-        return { score: Math.max(0, score.toFixed(1)), noise: finalNoise, wind: windRisk, entropy };
-    }
-}
-
-// ==========================================
-// 3. 金融・量子監査核 (LOGOS Core)
-// ==========================================
-class LogosCore {
-    /**
-     * @param {number} price - 価格(万円)
-     * @param {object} mgmt - 管理ティア情報
-     * @param {object} market - 市場DNA (CAGR, Turnover)
-     * @param {number} rate - 実行金利(%)
-     * @param {string} perf - 環境性能 (ZEH/BASE/LOW)
-     */
-    static audit(price, mgmt, market, rate, perf) {
-        // A. 2026年 財務諸元
-        const feeRate = 0.075; // 諸費用
-        const totalCost = price * (1 + feeRate);
-        const limit = perf === 'ZEH' ? 4500 : (perf === 'BASE' ? 3000 : 0);
-        const taxCredit = Math.min(price, limit) * 0.007 * 13; // 13年控除
-
-        // B. 量子資産価値予測 (Geometric Brownian Motion)
-        // 管理会社の質(v)がボラティリティ(sigma)を抑制または増幅する
-        const years = 10;
-        const mu = market.c; // CAGR
-        const sigmaBase = 0.15; 
-        const sigma = sigmaBase * mgmt.v; // 調整後ボラティリティ
-        
-        // 期待値 E[P]
-        const expPrice = price * Math.exp(mu * years);
-        
-        // 95%信頼区間 下限値 (Risk Floor)
-        // P_low = P0 * exp((μ - 0.5σ^2)t - 1.96σ√t)
-        const drift = (mu - 0.5 * Math.pow(sigma, 2)) * years;
-        const shock = 1.96 * sigma * Math.sqrt(years);
-        const lowPrice = price * Math.exp(drift - shock) * mgmt.d; // 物理劣化(d)も乗算
-
-        // C. 金利ストレステスト (+2%, +4% シナリオ)
-        const calcPay = (rAdd) => {
-            const r = (rate + rAdd) / 100 / 12;
-            const n = 420; // 35年
-            return Math.round(totalCost * 10000 * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1));
-        };
-
-        // LOGOSスコア統合 (資産維持率 + CF安全性)
-        const ltvRaw = totalCost / price;
-        const safetyMargin = (lowPrice - (price * 0.7)) / 100; // 10年後残債割れリスク
-        let score = (expPrice / price * 50) + (safetyMargin > 0 ? 30 : 0) + (mgmt.t === 'S' ? 20 : 0);
-
-        return { 
-            score: Math.min(100, Math.max(0, score.toFixed(1))),
-            expPrice: Math.round(expPrice), 
-            lowPrice: Math.round(lowPrice), 
-            taxCredit: Math.round(taxCredit),
-            stress: { now: calcPay(0), plus2: calcPay(2.0), plus4: calcPay(4.0) }
-        };
-    }
-}
-
-// ==========================================
-// 4. 守護・隣地監査核 (AEGIS Core)
-// ==========================================
-class AegisCore {
-    /**
-     * @param {object} zone - 用途地域マスタ
-     * @param {object} neighbor - 隣地APIシミュレーション結果
-     * @param {object} geo - 地盤リスク情報
-     */
-    static audit(zone, neighbor, geo) {
-        // A. 法的日照喪失リスク (s-Index)
-        let shadowRisk = (1 - zone.s) * 100;
-        
-        // B. 隣地API融合 (Data Fusion)
-        // 隣地が「駐車場(Parking)」かつ「商業地域(C)」ならリスク極大化
-        let neighborWarning = "";
-        if (neighbor.type === 'PARKING' && zone.r > 0.6) {
-            shadowRisk = 95; // 強制上書き
-            neighborWarning = "【警告】隣接地が開発容易な低利用地です。高層化リスク極大。";
-        }
-
-        // C. 地盤・災害リスク
-        const disasterScore = (1 - geo.risk) * 100;
-
-        // AEGISスコア統合
-        let score = (zone.s * 40) + (disasterScore * 0.4) + (neighbor.safe ? 20 : 0);
-
-        return { 
-            score: Math.min(100, Math.max(0, score.toFixed(1))), 
-            shadowProb: Math.round(shadowRisk), 
-            neighborMsg: neighborWarning 
-        };
-    }
-}
-
-// ==========================================
-// 5. 初心者翻訳・戦略核 (INTERPRETER Core)
-// ==========================================
-class Interpreter {
-    static translate(h, l, a, mgmt) {
-        let advice = [];
-        let counter = [];
-
-        // HEDON翻訳
-        if (h.score < 60) {
-            advice.push(`物理的に過酷です。${h.noise}dBの騒音は「窓を開けられない」レベル。ビル風も懸念されます。`);
-            counter.push(`「騒音予測値が${h.noise}dBを超えていますが、サッシの遮音等級はT-3以上ですか？また、このH/W比での風環境評価書を見せてください」`);
-        }
-
-        // LOGOS翻訳
-        if (l.lowPrice < l.expPrice * 0.7) {
-            advice.push(`10年後の資産価値が、ローン残高を割り込む「オーバーローン」のリスクが高いです。管理会社ティア(${mgmt.t})の影響が出ています。`);
-            counter.push(`「管理会社が${mgmt.t}ランクであり、将来の修繕リスクと資産ボラティリティが高いと算出されました。このリスク分、価格に織り込まれていますか？」`);
-        } else {
-            advice.push(`資産性は堅牢です。${mgmt.n}系の管理により、資産価値の下落が強力に抑制されています。`);
-        }
-
-        // AEGIS翻訳
-        if (a.shadowProb > 80) {
-            advice.push(`今は日当たりが良いですが、それは「幻」です。隣地に建物が建つ法的確率が${a.shadowProb}%もあります。`);
-            counter.push(`「隣地の利用状況と用途地域から見て、数年以内の眺望喪失は確実です。眺望プレミアムを排除した価格での交渉を希望します」`);
-        }
-
-        return { advice, counter };
-    }
-}
-/**
- * TRI-AXIS v1.0.3 MASTER DNA REPOSITORY
- * 全国対応・圧縮型辞書データ (2026 Edition)
- */
-const T_MASTERS = {
-    // ==========================================
-    // 1. 管理品質・ブランドマスタ (MGMT-DNA)
-    // p: 資産維持補正, d: 劣化抑制係数 (小さいほど優秀)
-    // ==========================================
-    MGMT: {
-        TIERS: {
-            S: { p: 1.12, d: 0.85, n: "【S】財閥・超大手デベロッパー系", desc: "資産価値の絶対防衛線。劣化を15%遅延。" },
-            A: { p: 1.05, d: 0.95, n: "【A】大手広域・電鉄系", desc: "信頼のベンチマーク。安定した修繕計画。" },
-            B: { p: 1.00, d: 1.00, n: "【B】独立系大手・実力派", desc: "標準的な管理品質。組合の質に依存。" },
-            C: { p: 0.92, d: 1.20, n: "【C】中小独立・地場系", desc: "コスト重視。将来の一時金リスクあり。" },
-            D: { p: 0.75, d: 1.50, n: "【D】自主管理・管理不全", desc: "【致命的】ローン審査・リセールに重大な支障。" }
-        },
-        // UIプルダウン生成用リスト
-        LIST: [
-            { v: "S", l: "三井・三菱・住友・野村 (財閥系)" },
-            { v: "A", l: "東急・大京・長谷工・東京建物 (大手系)" },
-            { v: "B", l: "日本ハウズイング・合人社・日鉄 (独立大手)" },
-            { v: "C", l: "その他の中小管理会社" },
-            { v: "D", l: "自主管理 / 管理会社なし" }
-        ]
-    },
-
-    // ==========================================
-    // 2. 用途地域・法的守護マスタ (ZONES)
-    // s: 日照保護指数 (高いほど守られる), r: 法的リスク
-    // ==========================================
-    ZONES: {
-        L1: { n: "第一種低層住居専用", s: 0.95, r: 0.05, d: "【聖域】低層住環境の絶対保護。" },
-        L2: { n: "第二種低層住居専用", s: 0.90, r: 0.10, d: "低層環境＋小規模店舗。" },
-        M1: { n: "第一種中高層住居専用", s: 0.70, r: 0.35, d: "将来のマンション建設リスクあり。" },
-        M2: { n: "第二種中高層住居専用", s: 0.65, r: 0.40, d: "利便施設との混在エリア。" },
-        H1: { n: "第一種住居", s: 0.50, r: 0.60, d: "日照保護は限定的。大規模建物可。" },
-        H2: { n: "第二種住居", s: 0.45, r: 0.65, d: "パチンコ店等も可。環境変化リスク中。" },
-        JH: { n: "準住居", s: 0.40, r: 0.70, d: "幹線道路沿い。騒音・排ガス懸念。" },
-        NC: { n: "近隣商業", s: 0.30, r: 0.85, d: "日照権保護弱。商業施設隣接リスク。" },
-        C:  { n: "商業地域", s: 0.15, r: 0.95, d: "【警告】隣地超高層化は合法的権利。" },
-        JI: { n: "準工業", s: 0.30, r: 0.80, d: "工場跡地リスク。土壌汚染・騒音注意。" },
-        I:  { n: "工業", s: 0.10, r: 0.90, d: "住宅不適。環境悪化受忍義務あり。" },
-        // 田園住居(DEN), 工業専用(IS)等は特殊ケースとして処理
-    },
-
-    // ==========================================
-    // 3. 全国市場・地価DNA (MARKET-DNA)
-    // c: CAGR(成長率), t: Turnover(流動性日数)
-    // ==========================================
-    MARKET: {
-        // 地域デフォルト
-        REGIONS: {
-            KANTO: { c: 0.015, t: 70 }, KANSAI: { c: 0.012, t: 80 }, CHUBU: { c: 0.010, t: 85 },
-            TOHOKU: { c: 0.002, t: 110 }, KYUSHU: { c: 0.008, t: 90 }, HOKKAIDO: { c: 0.005, t: 100 },
-            CHUSHIKOKU: { c: 0.001, t: 120 }
-        },
-        // 都市オーバーライド (2026年 成長極)
-        CITIES: {
-            "港区": {c:0.048, t:28}, "千代田区": {c:0.045, t:30}, "中央区": {c:0.042, t:32},
-            "渋谷区": {c:0.038, t:35}, "新宿区": {c:0.035, t:38}, "文京区": {c:0.030, t:45},
-            "武蔵野市": {c:0.028, t:40}, "横浜市西区": {c:0.025, t:45}, "川崎市中原区": {c:0.028, t:42},
-            "大阪市北区": {c:0.032, t:40}, "大阪市中央区": {c:0.030, t:42}, "京都市中京区": {c:0.025, t:50},
-            "名古屋市中区": {c:0.022, t:55}, "福岡市中央区": {c:0.038, t:30}, "札幌市中央区": {c:0.020, t:60}
-        }
-    },
-
-    // ==========================================
-    // 4. 全国鉄道・移動DNA (RAIL-AXIS)
-    // ティア定義と正規表現パターン
-    // ==========================================
-    RAIL: {
-        TIERS: {
-            S: { p: 1.15, s: 1.5, n: "【S】超広域基幹軸 (山手・御堂筋等)" },
-            A: { p: 1.08, s: 1.2, n: "【A】広域優等軸 (東横・日比谷等)" },
-            B: { p: 1.02, s: 0.9, n: "【B】主要通勤軸 (JR幹線・私鉄本線)" },
-            C: { p: 0.95, s: 0.7, n: "【C】地域連結軸 (郊外・支線)" },
-            D: { p: 0.85, s: 0.4, n: "【D】ローカル・特定軸" }
-        },
-        PATTERNS: [
-            // S-Tier
-            { r: /山手|銀座|丸ノ内|千代田|御堂筋|東海道新幹線/, t: "S" },
-            // A-Tier
-            { r: /東横|田園都市|日比谷|半蔵門|南北|三田|大江戸|浅草|新宿|副都心|有楽町|京浜東北|総武線快速|東海道線|阪急神戸|阪急京都|京都線|烏丸|空港線|七隈/, t: "A" },
-            // B-Tier
-            { r: /中央|総武|埼京|高崎|宇都宮|常磐|京葉|小田急|京王|西武池袋|東武東上|京急本線|相鉄|つくば|名鉄名古屋|東山|名城|近鉄奈良|阪神|南海本線|京阪本線|神戸市営|大阪環状|東豊|南北線\(札\)|仙台市地/, t: "B" },
-            // C-Tier (Default fallback logic applied for others)
-            { r: /西武新宿|野田|伊勢崎|京成|多摩|南武|武蔵野|横浜|相模|鶴舞|桜通|四つ橋|千日前|谷町|堺筋|長堀|今里|阪急宝塚|京阪宇治|西鉄/, t: "C" }
-        ]
-    },
-
-    // ==========================================
-    // 5. 2026年 財務・物理定数 (CORE-CONST)
-    // ==========================================
-    CONST: {
-        FINANCE: { 
-            ZEH_LIMIT: 4500, BASE_LIMIT: 3000, 
-            STRESS_RATE_LOW: 2.0, STRESS_RATE_HIGH: 4.0 
-        },
-        PHYSICS: { 
-            NOISE_REF: 75, // 幹線道路騒音dB
-            WIND_CRITICAL: 2.5 // H/W比限界値
-        }
-    }
-};
-
-/**
- * マスタ解決ヘルパー (Data Resolver)
- */
-const Resolver = {
-    // 住所から市場データを解決
-    getMarket(addr) {
-        // 都市オーバーライド確認
-        for (const [city, data] of Object.entries(T_MASTERS.MARKET.CITIES)) {
-            if (addr.includes(city)) return data;
-        }
-        // 地方判定
-        if (addr.match(/東京|神奈川|千葉|埼玉|茨城|栃木|群馬/)) return T_MASTERS.MARKET.REGIONS.KANTO;
-        if (addr.match(/大阪|京都|兵庫|滋賀|奈良|和歌山/)) return T_MASTERS.MARKET.REGIONS.KANSAI;
-        if (addr.match(/愛知|岐阜|静岡|三重/)) return T_MASTERS.MARKET.REGIONS.CHUBU;
-        if (addr.match(/福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島/)) return T_MASTERS.MARKET.REGIONS.KYUSHU;
-        if (addr.match(/北海道/)) return T_MASTERS.MARKET.REGIONS.HOKKAIDO;
-        // デフォルト
-        return T_MASTERS.MARKET.REGIONS.KANTO;
-    },
-    // 路線名からティアを解決
-    getRailTier(stationName, lineName) {
-        const target = (lineName + stationName); // 駅名も含めて検索
-        const match = T_MASTERS.RAIL.PATTERNS.find(p => p.r.test(target));
-        return match ? T_MASTERS.RAIL.TIERS[match.t] : T_MASTERS.RAIL.TIERS.C;
-    }
-};
-    <script>
 </html>
