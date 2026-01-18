@@ -4,223 +4,644 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>TRI-AXIS v1.0.0 | 知の最終武装</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass-bg: rgba(10, 20, 35, 0.45);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --neon-blue: #00d9ff;
+            --glass-deep: rgba(5, 15, 30, 0.7);
+            --glass-edge: rgba(255, 255, 255, 0.12);
+            --neon-cyan: #00d9ff;
             --neon-gold: #ffcc00;
-            --neon-green: #33ffaa;
-            --neon-red: #ff3366;
+            --neon-alert: #ff3366;
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #010409; color: #e0e6ed; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        body { background: #010408; color: #e0e6ed; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+
+        /* 深海背景 */
+        .abyss { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, #0a1b3a 0%, #010408 100%); z-index: -1; }
 
         .app-shell { display: flex; flex-direction: column; height: 100vh; padding-top: var(--safe-top); }
-        .deep-bg { position: fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at 50% 50%, #0a1930 0%, #010409 100%); z-index: -1; }
 
-        /* --- Header --- */
-        header { padding: 15px 20px; background: var(--glass-bg); backdrop-filter: blur(40px); border-bottom: 1px solid var(--glass-border); }
-        .top-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .psi-display { font-family: 'Noto Serif JP', serif; font-size: 1.6rem; color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,217,255,0.5); }
-        
-        .nav-rail { display: flex; overflow-x: auto; gap: 8px; scrollbar-width: none; }
-        .nav-rail::-webkit-scrollbar { display: none; }
-        .tab-pill { padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; color: #8899aa; font-size: 0.75rem; white-space: nowrap; transition: 0.3s; cursor: pointer; }
-        .tab-pill.active { background: var(--neon-blue); color: #000; font-weight: 600; border-color: var(--neon-blue); }
+        /* Header: T-Identity */
+        header { padding: 18px 22px; background: var(--glass-deep); backdrop-filter: blur(50px); border-bottom: 1px solid var(--glass-edge); z-index: 1000; }
+        .t-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .t-brand { display: flex; align-items: center; gap: 12px; }
+        .t-logo { width: 34px; height: 34px; background: var(--neon-cyan); color: #000; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif JP'; font-weight: 900; border-radius: 6px; box-shadow: 0 0 25px rgba(0,217,255,0.5); }
+        .psi-hero { font-family: 'Noto Serif JP', serif; font-size: 2rem; color: var(--neon-cyan); letter-spacing: -0.02em; text-shadow: 0 0 20px var(--neon-cyan); }
 
-        /* --- Main Workspace --- */
-        main { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
-        .view { display: none; animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .view.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* コンテキスト・レール */
+        .rail { display: flex; overflow-x: auto; gap: 10px; scrollbar-width: none; }
+        .rail::-webkit-scrollbar { display: none; }
+        .pill { padding: 10px 22px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-edge); border-radius: 30px; color: #8899aa; font-size: 0.75rem; white-space: nowrap; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .pill.active { background: var(--neon-cyan); color: #000; font-weight: 700; border-color: var(--neon-cyan); transform: scale(1.05); }
 
-        .card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 18px; padding: 20px; margin-bottom: 15px; backdrop-filter: blur(30px); }
-        .input-box { margin-bottom: 18px; }
-        .input-box label { display: block; font-size: 0.7rem; color: #8899aa; margin-bottom: 8px; letter-spacing: 0.05em; }
-        input, select { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; color: #fff; font-size: 1rem; outline: none; }
-        
-        /* --- MAGI Tribunal --- */
-        .magi-triad { position: relative; height: 300px; margin: 20px 0; display: flex; justify-content: center; align-items: center; }
-        .core { position: absolute; width: 85px; text-align: center; }
-        .core-shape { width: 55px; height: 55px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif JP'; font-size: 1.3rem; background: rgba(0,0,0,0.4); border: 2px solid; transition: 0.5s; }
-        .core-status { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; }
-        
-        .logos { top: 0; color: var(--neon-gold); }
-        .logos .core-shape { transform: rotate(45deg); border-color: var(--neon-gold); box-shadow: 0 0 20px rgba(255,204,0,0.3); }
-        .logos .core-shape span { transform: rotate(-45deg); }
-        
-        .hedon { bottom: 0; right: 15%; color: var(--neon-blue); }
-        .hedon .core-shape { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); border-color: var(--neon-blue); }
+        /* Workspace */
+        main { flex: 1; overflow-y: auto; padding: 22px; padding-bottom: 130px; }
+        .view { display: none; }
+        .view.active { display: block; animation: viewSlide 0.5s ease; }
+        @keyframes viewSlide { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .aegis { bottom: 0; left: 15%; color: var(--neon-green); }
-        .aegis .core-shape { clip-path: polygon(0 0, 100% 0, 50% 100%); border-color: var(--neon-green); }
+        .card { background: var(--glass-deep); border: 1px solid var(--glass-edge); border-radius: 22px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(40px); }
+        .f-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.65rem; color: #6a7c92; margin-bottom: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+        input, select { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; color: #fff; font-size: 1rem; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--neon-cyan); background: rgba(0,217,255,0.06); }
 
-        .rank-center { position: absolute; font-family: 'Noto Serif JP'; font-size: 4rem; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
-
-        /* --- Footer Dock --- */
-        footer { position: fixed; bottom: 0; width: 100%; background: var(--glass-bg); backdrop-filter: blur(40px); border-top: 1px solid var(--glass-border); padding: 12px 20px calc(12px + var(--safe-bottom)); display: flex; justify-content: space-around; }
-        .dock-item { background: none; border: none; color: #8899aa; font-size: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.3s; }
-        .dock-item.active { color: var(--neon-blue); }
-        .dock-icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-
-        .evidence-text { font-size: 0.85rem; line-height: 1.6; }
-        .evidence-text b { color: var(--neon-gold); }
-        .law-ref { font-size: 0.65rem; color: #556677; margin-top: 10px; display: block; }
+        /* Dock */
+        footer { position: fixed; bottom: 0; width: 100%; background: var(--glass-deep); backdrop-filter: blur(50px); border-top: 1px solid var(--glass-edge); padding: 14px 20px calc(18px + var(--safe-bottom)); display: flex; justify-content: space-around; z-index: 2000; }
+        .d-item { background: none; border: none; color: #6a7c92; font-size: 0.65rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .d-item.active { color: var(--neon-cyan); }
+        .d-icon { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.5; }
     </style>
 </head>
 <body>
-
-<div class="deep-bg"></div>
-
-<div class="app-shell">
-    <header>
-        <div class="top-info">
-            <span style="font-size: 0.7rem; color: #556677; letter-spacing: 0.1em;">TRI-AXIS v1.0.0</span>
-            <div class="psi-display" id="psi-score">Ψ 0.0</div>
-        </div>
-        <div class="nav-rail">
-            <div class="tab-pill active" onclick="setView('project')">案件管理</div>
-            <div class="tab-pill" onclick="setView('property')">物件諸元</div>
-            <div class="tab-pill" onclick="setView('location')">立地交通</div>
-            <div class="tab-pill" onclick="setView('finance')">財務属性</div>
-        </div>
-    </header>
-
-    <main>
-        <div id="view-property" class="view">
-            <div class="card">
-                <div class="input-box"><label>物件価格 (万円)</label><input type="number" id="p_price" value="6500" onchange="runAudit()"></div>
-                <div class="input-box"><label>専有面積 (㎡)</label><input type="number" id="p_size" value="70" onchange="runAudit()"></div>
-                <div class="input-box"><label>修繕積立金 (月額)</label><input type="number" id="p_reserve" value="12000" onchange="runAudit()"></div>
-                <div class="input-box"><label>総戸数</label><input type="number" id="p_units" value="50" onchange="runAudit()"></div>
-                <div class="input-box"><label>構造</label>
-                    <select id="p_structure" onchange="runAudit()">
-                        <option value="RC">RC造 (耐震)</option>
-                        <option value="TOWER">タワーマンション</option>
-                    </select>
+    <div class="abyss"></div>
+    <div class="app-shell">
+        <header>
+            <div class="t-row">
+                <div class="t-brand">
+                    <div class="t-logo">T</div>
+                    <div>
+                        <div id="ui-proj-name" style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em;">NO PROJECT</div>
+                        <div id="ui-slot-label" style="font-size: 0.6rem; color: var(--neon-gold);">AUDIT SLOT: 壱</div>
+                    </div>
                 </div>
+                <div class="psi-hero" id="ui-psi">Ψ 0.0</div>
             </div>
-        </div>
+            <nav class="rail" id="top-nav">
+                <button class="pill active" onclick="Router.go('project')">案件管理</button>
+                <button class="pill" onclick="Router.go('property')">物件諸元</button>
+                <button class="pill" onclick="Router.go('location')">立地交通</button>
+                <button class="pill" onclick="Router.go('finance')">財務属性</button>
+                <button class="pill" onclick="Router.go('settings')">システム設定</button>
+            </nav>
+        </header>
 
-        <div id="view-location" class="view">
-            <div class="card">
-                <div class="input-box"><label>駅徒歩 (分)</label><input type="number" id="l_walk" value="8" onchange="runAudit()"></div>
-                <div class="input-box"><label>幹線道路からの距離 (m)</label><input type="number" id="l_road_dist" value="30" onchange="runAudit()"></div>
-                <div class="input-box"><label>用途地域</label>
-                    <select id="l_zone" onchange="runAudit()">
-                        <option value="RES">第一種中高層住居専用</option>
-                        <option value="COM">商業地域 (建築リスク高)</option>
-                    </select>
+        <main id="view-port">
+            <section id="v-project" class="view active">
+                <div class="card">
+                    <div class="f-group">
+                        <label>物件名称 (REPORT IDENTITY)</label>
+                        <input type="text" id="in-name" placeholder="例: 湾岸クオンタムレジデンス" oninput="State.sync()">
+                    </div>
+                    <div class="f-group">
+                        <label>詳細住所 (LAT/LNG ORIGIN)</label>
+                        <input type="text" id="in-address" placeholder="東京都港区..." oninput="State.sync()">
+                    </div>
+                    <div class="f-group">
+                        <label>監査スロット</label>
+                        <select id="in-slot" onchange="State.load()">
+                            <option value="1">壱 - ALPHA</option>
+                            <option value="2">弐 - BETA</option>
+                            <option value="3">参 - GAMMA</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div id="view-audit" class="view active">
-            <div class="magi-triad">
-                <div class="core logos"><div class="core-shape"><span>財</span></div><div class="core-status" id="s-logos">-</div></div>
-                <div class="core hedon"><div class="core-shape">生</div><div class="core-status" id="s-hedon">-</div></div>
-                <div class="core aegis"><div class="core-shape">守</div><div class="core-status" id="s-aegis">-</div></div>
-                <div class="rank-center" id="r-final">-</div>
-            </div>
-            <div class="card evidence-text" id="report-text">
-                知的監査エンジンを起動してください。
-            </div>
-        </div>
+            <section id="v-property" class="view"></section>
+            <section id="v-location" class="view"></section>
+            <section id="v-finance" class="view"></section>
+            <section id="v-settings" class="view"></section>
+            <section id="v-audit" class="view"></section>
+        </main>
 
-        <div id="view-project" class="view">
-            <div class="card">未来の資産価値曲線を表示中...</div>
-        </div>
-    </main>
+        <footer>
+            <button class="d-item" onclick="Router.go('project')">
+                <svg class="d-icon"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                ホーム
+            </button>
+            <button class="d-item active" onclick="Router.go('audit')">
+                <svg class="d-icon"><path d="M9 12l2 2 4-4m5.618-4.016A9 9 0 112.862 10.08a9 9 0 0111.756-6.096z"/></svg>
+                診断
+            </button>
+            <button class="d-item" onclick="Router.go('location')">
+                <svg class="d-icon"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                地図
+            </button>
+        </footer>
+    </div>
 
-    <footer>
-        <button class="dock-item" onclick="setMode('input')"><svg class="dock-icon"><path d="M12 4v16m8-8H4"/></svg>設定</button>
-        <button class="dock-item active" onclick="setMode('audit')"><svg class="dock-icon"><path d="M9 12l2 2 4-4m5.618-4.016A9 9 0 112.862 10.08a9 9 0 0111.756-6.096z"/></svg>診断</button>
-        <button class="dock-item" onclick="setMode('map')"><svg class="dock-icon"><path d="M9 20l-5-4V4l5 4m0 12l5-4m-5 4V8m5 8l5 4V8l-5-4m0 12V4"/></svg>地図</button>
-        <button class="dock-item" onclick="exportReport()"><svg class="dock-icon"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>共有</button>
-    </footer>
-</div>
-
-<script>
-    /* --- 専門家エンジン・クラス定義 --- */
-    class Auditor {
-        static logos(p) { // 財務
-            const sqmRate = p.reserve / p.size;
-            const res = { eval: '可', score: 90, msg: '積立金単価は国交省指針の適正範囲内です。' };
-            if (sqmRate < 200) { res.eval = '保'; res.score = 60; res.msg = '積立金が㎡単価200円未満です。将来の増額・一時金リスクを検知。'; }
-            if (p.units < 30) { res.score -= 10; res.msg += ' 小規模物件による固定費割高リスクあり。'; }
-            return res;
-        }
-        static hedon(p) { // 生活
-            const roadNoise = 75 - 10 * Math.log10(p.roadDist / 1); // 物理学的線音源減衰
-            const res = { eval: '可', score: 85, msg: '居住面積水準を満たしています。' };
-            if (p.size < 70) { res.eval = '保'; res.msg = '国交省の誘導居住面積水準（3人世帯：75㎡）を僅かに下回ります。'; }
-            if (roadNoise > 60) { res.eval = '否'; res.msg = `騒音推計 ${Math.round(roadNoise)}dB。夜間の環境基準値を超過する可能性大。`; }
-            return res;
-        }
-        static aegis(p) { // 守護
-            const res = { eval: '可', score: 95, msg: '現行耐震基準に適合し、安全性は高いと判断。' };
-            if (p.zone === 'COM') { res.eval = '保'; res.msg = '商業地域のため、隣地への将来的な高層ビル建築による日照侵害リスクあり。'; }
-            return res;
-        }
-    }
-
-    /* --- UI制御 --- */
-    function setView(id) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('view-' + id).classList.add('active');
-        document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
-        if (event.target.classList.contains('tab-pill')) event.target.classList.add('active');
-    }
-
-    function setMode(mode) {
-        if (mode === 'input') setView('property');
-        if (mode === 'audit') setView('audit');
-        document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        runAudit();
-    }
-
-    function runAudit() {
-        const params = {
-            price: parseFloat(document.getElementById('p_price').value),
-            size: parseFloat(document.getElementById('p_size').value),
-            reserve: parseFloat(document.getElementById('p_reserve').value),
-            units: parseFloat(document.getElementById('p_units').value),
-            roadDist: parseFloat(document.getElementById('l_road_dist').value),
-            zone: document.getElementById('l_zone').value
+    <script>
+        /* --- TRI-AXIS MASTER CONSTANTS --- */
+        const T_MASTERS = {
+            ZONES: {
+                L1: { name: "第一種低層", risk: 0.05, cap: 100, sun: 0.95 },
+                L2: { name: "第二種低層", risk: 0.10, cap: 150, sun: 0.90 },
+                M1: { name: "第一種中高層", risk: 0.35, cap: 200, sun: 0.70 },
+                M2: { name: "第二種中高層", risk: 0.40, cap: 200, sun: 0.65 },
+                H1: { name: "第一種住居", risk: 0.60, cap: 300, sun: 0.50 },
+                H2: { name: "第二種住居", risk: 0.65, cap: 300, sun: 0.45 },
+                JH: { name: "準住居", risk: 0.70, cap: 300, sun: 0.40 },
+                DEN: { name: "田園住居", risk: 0.05, cap: 100, sun: 0.95 },
+                NC: { name: "近隣商業", risk: 0.85, cap: 400, sun: 0.30 },
+                C: { name: "商業地域", risk: 0.95, cap: 800, sun: 0.15 },
+                JI: { name: "準工業", risk: 0.80, cap: 300, sun: 0.30 },
+                I: { name: "工業地域", risk: 0.90, cap: 300, sun: 0.10 },
+                IS: { name: "工業専用", risk: 1.00, cap: 0, sun: 0.05 }
+            },
+            PHYSICS: { ROAD_REF: 75, RAIL_REF: 80, ALARM_REF: 85, AIR_ABS: 0.005 },
+            FINANCE: { OVERHEAD: 0.075, DEDUCTION: 0.007, RC_LAMBDA: 0.022 }
         };
 
-        const l = Auditor.logos(params);
-        const h = Auditor.hedon(params);
-        const a = Auditor.aegis(params);
+        /* --- System Engines --- */
+        const State = {
+            data: {},
+            sync() {
+                this.data.name = document.getElementById('in-name').value;
+                this.data.address = document.getElementById('in-address').value;
+                document.getElementById('ui-proj-name').innerText = this.data.name || "NEW PROJECT";
+                this.save();
+            },
+            save() {
+                const slot = document.getElementById('in-slot').value;
+                localStorage.setItem(`tri_axis_v1_slot_${slot}`, JSON.stringify(this.data));
+            },
+            load() {
+                const slot = document.getElementById('in-slot').value;
+                const raw = localStorage.getItem(`tri_axis_v1_slot_${slot}`);
+                this.data = raw ? JSON.parse(raw) : {};
+                document.getElementById('in-name').value = this.data.name || "";
+                document.getElementById('in-address').value = this.data.address || "";
+                document.getElementById('ui-slot-label').innerText = `AUDIT SLOT: ${['', '壱', '弐', '参'][slot]}`;
+                this.sync();
+            }
+        };
 
-        document.getElementById('s-logos').innerText = l.eval;
-        document.getElementById('s-hedon').innerText = h.eval;
-        document.getElementById('s-aegis').innerText = a.eval;
+        const Router = {
+            go(id) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(`v-${id}`).classList.add('active');
+                document.querySelectorAll('.pill, .d-item').forEach(el => el.classList.remove('active'));
+                // ナビゲーション連動はここに追加
+            }
+        };
+
+        window.onload = () => State.load();
+    </script>
+</body>
+</html>
+/* --- TRI-AXIS EXPERT ENGINES (PHASE 2) --- */
+
+/**
+ * 物理学・音響工学エンジン (HEDON)
+ * 騒音の伝搬と減衰を物理法則に基づいて演算
+ */
+class PhysicsCore {
+    // 線音源の距離減衰: L = Lref - 10 * log10(r) - αr
+    static predictNoise(dist, type = 'ROAD') {
+        const Lref = T_MASTERS.PHYSICS[`${type}_REF`];
+        const alpha = T_MASTERS.PHYSICS.AIR_ABS;
+        if (dist <= 1) return Lref;
         
-        const totalScore = ((l.score + h.score + a.score) / 3).toFixed(1);
-        document.getElementById('psi-score').innerText = `Ψ ${totalScore}`;
-        document.getElementById('r-final').innerText = totalScore > 85 ? 'S' : totalScore > 70 ? 'A' : 'B';
+        // 物理演算: 対数減衰 + 空気吸収
+        const noiseLevel = Lref - (10 * Math.log10(dist)) - (alpha * dist);
+        return Math.round(noiseLevel);
+    }
 
-        document.getElementById('report-text').innerHTML = `
-            <b>◇ 財務:</b> ${l.msg}<br><br>
-            <b>⬡ 生活:</b> ${h.msg}<br><br>
-            <b>▽ 守護:</b> ${a.msg}
-            <span class="law-ref">出典: 国交省マンション修繕積立金ガイドライン / WHO環境騒音基準</span>
+    // 建物階数による騒音回折補正（簡易マエカワ・モデル）
+    static floorCorrection(baseNoise, floor) {
+        // 高層階ほど防音壁の死角から外れ、騒音が回折して届く
+        const correction = floor > 5 ? (floor - 5) * 0.8 : 0;
+        return Math.round(baseNoise + correction);
+    }
+}
+
+/**
+ * 金融工学・資産監査エンジン (LOGOS)
+ * 30年間の全キャッシュフローを予測
+ */
+class FinanceCore {
+    // 実質LTVと諸費用を含めた自己資金監査
+    static auditInitial(price, cash, overheadRate = 0.075) {
+        const overhead = price * overheadRate;
+        const totalCost = price + overhead;
+        const ltv = ((totalCost - cash) / price) * 100;
+        return {
+            ltv: ltv.toFixed(1),
+            overhead: Math.round(overhead),
+            isRisk: ltv > 100 // オーバーローン判定
+        };
+    }
+
+    // 修繕積立金の30年累計予測（段階増額モデル）
+    static predictMaintenance(initialReserve, period = 30) {
+        let total = 0;
+        let currentMonthly = initialReserve;
+        for (let year = 1; year <= period; year++) {
+            // 5年ごとに30%増額の統計的シナリオ
+            if (year % 5 === 0) currentMonthly *= 1.3;
+            total += currentMonthly * 12;
+        }
+        return Math.round(total);
+    }
+}
+
+/**
+ * 法学・都市計画エンジン (AEGIS)
+ * 用途地域と法的権利に基づくリスク監査
+ */
+class LegalCore {
+    static getZoneRisk(zoneCode) {
+        const zone = T_MASTERS.ZONES[zoneCode];
+        if (!zone) return { risk: 0.5, label: "不明" };
+        
+        return {
+            riskScore: zone.risk * 100,
+            sunlightProb: zone.sun * 100,
+            label: zone.name,
+            comment: zone.risk > 0.7 ? "将来の遮蔽リスクが極めて高い地域です" : "比較的安定した住環境が法的に守られます"
+        };
+    }
+}
+
+/**
+ * 三核評議会（統合監査エンジン）
+ */
+class MagnumTribunal {
+    static execute(state) {
+        // 1. 各エンジンの実行
+        const pNoise = PhysicsCore.predictNoise(state.roadDist || 30, 'ROAD');
+        const fAudit = FinanceCore.auditInitial(state.price || 0, state.cash || 0);
+        const lRisk = LegalCore.getZoneRisk(state.zone || 'L1');
+        
+        // 2. スコア合議 (Ψ算出ロジック)
+        // 財務(35%) + 環境(35%) + 安全(30%)
+        let score = 100;
+        if (fAudit.isRisk) score -= 30; // オーバーローンは大幅減点
+        if (pNoise > 65) score -= (pNoise - 65) * 2; // 騒音ペナルティ
+        score -= lRisk.riskScore * 0.2; // 法的リスクペナルティ
+        
+        return {
+            psi: Math.max(0, score).toFixed(1),
+            finance: fAudit,
+            physics: { noise: pNoise },
+            legal: lRisk
+        };
+    }
+}
+/* --- TRI-AXIS UI & MAP SYNC ENGINE (PHASE 3) --- */
+
+const MapEngine = {
+    map: null,
+    marker: null,
+    init() {
+        // 深海UIに合わせたDarkモード地図のレンダリング
+        this.map = L.map('map-container', { zoomControl: false }).setView([35.6812, 139.7671], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(this.map);
+
+        // 地図クリックで物件位置を特定
+        this.map.on('click', (e) => this.setOrigin(e.latlng));
+    },
+    setOrigin(latlng) {
+        if (this.marker) this.map.removeLayer(this.marker);
+        this.marker = L.marker(latlng, { draggable: true }).addTo(this.map);
+        this.marker.on('dragend', () => UI.runAudit());
+        
+        // 座標から周辺環境を自動推計（将来的にAPI連携）
+        State.data.lat = latlng.lat;
+        State.data.lng = latlng.lng;
+        UI.runAudit();
+    }
+};
+
+const UI = {
+    // スライダーや入力値をStateに同期し、即座に監査を実行
+    syncAndAudit() {
+        State.data.price = Number(document.getElementById('range-price').value);
+        State.data.cash = Number(document.getElementById('range-cash').value);
+        State.data.floor = Number(document.getElementById('range-floor').value);
+        State.data.zone = document.getElementById('select-zone').value;
+        State.data.roadDist = Number(document.getElementById('range-road').value);
+        
+        // ラベル表示の更新
+        document.getElementById('val-price').innerText = `${State.data.price}万円`;
+        document.getElementById('val-road').innerText = `${State.data.roadDist}m`;
+        
+        this.runAudit();
+    },
+
+    runAudit() {
+        // 三核評議会エンジンの招集
+        const report = MagnumTribunal.execute(State.data);
+        
+        // Ψスコアの反映（パルスアニメーション）
+        const psiEl = document.getElementById('ui-psi');
+        psiEl.innerText = `Ψ ${report.psi}`;
+        this.updateGauge(report.psi);
+
+        // 詳細パネルの更新
+        document.getElementById('panel-noise').innerText = `${report.physics.noise} dB`;
+        document.getElementById('panel-ltv').innerText = `${report.finance.ltv} %`;
+        document.getElementById('panel-sun').innerText = `${report.legal.sunlightProb} %`;
+        
+        // 警告表示
+        const warningEl = document.getElementById('ui-warning');
+        warningEl.innerText = report.finance.isRisk ? "【警告】債務超過リスク検知" : report.legal.comment;
+        warningEl.style.color = report.finance.isRisk ? "var(--neon-alert)" : "var(--neon-cyan)";
+    },
+
+    updateGauge(score) {
+        // スコアに応じてネオンカラーを可変
+        const color = score > 80 ? 'var(--neon-cyan)' : (score > 50 ? 'var(--neon-gold)' : 'var(--neon-alert)');
+        document.getElementById('ui-psi').style.color = color;
+        document.getElementById('ui-psi').style.textShadow = `0 0 20px ${color}`;
+    }
+};
+
+/* HTML（mainタグ内）に追加される動的コントロール 
+   ※実際の実装では第1回のsectionタグ内に組み込みます
+*/
+const renderLocationUI = () => `
+    <div class="card">
+        <label>立地環境シミュレーター</label>
+        <div id="map-container" style="height: 250px; border-radius: 15px; margin-bottom: 15px;"></div>
+        <div class="f-group">
+            <label>主要幹線道路との距離: <span id="val-road">30m</span></label>
+            <input type="range" id="range-road" min="5" max="200" step="5" value="30" oninput="UI.syncAndAudit()">
+        </div>
+    </div>
+    <div class="card">
+        <label>財務属性シミュレーター</label>
+        <div class="f-group">
+            <label>物件価格: <span id="val-price">6000万円</span></label>
+            <input type="range" id="range-price" min="2000" max="20000" step="100" value="6000" oninput="UI.syncAndAudit()">
+        </div>
+        <div class="f-group">
+            <label>自己資金（諸費用込）</label>
+            <input type="range" id="range-cash" min="0" max="5000" step="100" value="500" oninput="UI.syncAndAudit()">
+        </div>
+    </div>
+    <div id="ui-warning" style="font-size: 0.7rem; text-align: center; font-weight: 600; letter-spacing: 0.05em;"></div>
+`;
+/* --- TRI-AXIS AUDIT LOG & EVIDENCE ENGINE (PHASE 4) --- */
+
+const InsightEngine = {
+    // 監査結果に基づき、業者への「カウンター」を生成
+    generateCounter(report) {
+        let counters = [];
+        
+        // 騒音に関するカウンター
+        if (report.physics.noise > 60) {
+            counters.push(`業者「窓を閉めれば静かです」→【反論】: 物理演算の結果、この地点の外部騒音は${report.physics.noise}dBと推計されます。サッシがT-2等級（-30dB）であっても、室内はWHOの夜間睡眠基準を上回ります。遮音等級T-4へのアップグレード費用を価格交渉の遡上に載せられませんか？`);
+        }
+        
+        // 用途地域に関するカウンター
+        if (report.legal.riskScore > 70) {
+            counters.push(`業者「眺望は最高です」→【反論】: 本物件は商業地域に位置し、隣地の容積率は${T_MASTERS.ZONES[State.data.zone].cap}%です。法的に隣地の日照・眺望を阻害する権利が他者にあり、将来の遮蔽リスクは${report.legal.riskScore}%と算出されています。このリスクは価格に織り込まれていますか？`);
+        }
+        
+        // 財務に関するカウンター
+        if (report.finance.isRisk) {
+            counters.push(`業者「資産価値は落ちません」→【反論】: 諸費用を含めた真の実質LTVは${report.finance.ltv}%であり、初期状態でオーバーローン状態です。近隣の在庫回転率から見ても、リセール時に残債割れを起こす確率が極めて高い。自己資金率の適正化か、価格の是正が必要です。`);
+        }
+        
+        return counters;
+    }
+};
+
+const AuditLogger = {
+    // 三核評議会のログをUIに出力
+    render(report) {
+        const logContainer = document.getElementById('audit-log-stream');
+        const counters = InsightEngine.generateCounter(report);
+        
+        let logHtml = `
+            <div class="log-entry logos">
+                <div class="log-label">LOGOS (財務)</div>
+                <div class="log-body">${report.finance.msg}</div>
+            </div>
+            <div class="log-entry hedon">
+                <div class="log-label">HEDON (生活)</div>
+                <div class="log-body">${report.physics.noise}dBの環境負荷を検知。${report.physics.noise > 65 ? '居住快適性に重大な支障あり。' : '許容範囲内ですが対策を推奨。'}</div>
+            </div>
+            <div class="log-entry aegis">
+                <div class="log-label">AEGIS (守護)</div>
+                <div class="log-body">${report.legal.comment} (日照喪失確率: ${report.legal.sunlightProb}%)</div>
+            </div>
         `;
-    }
 
-    function exportReport() {
-        const txt = `【 TRI-AXIS 監査報告書 】\nスコア: ${document.getElementById('psi-score').innerText}\n判定: ${document.getElementById('r-final').innerText}`;
-        navigator.clipboard.writeText(txt).then(() => alert("監査報告書（テキスト）をコピーしました。"));
-    }
+        if (counters.length > 0) {
+            logHtml += `<div class="counter-box">
+                <label>交渉用インサイト (対業者カウンター)</label>
+                ${counters.map(c => `<p class="counter-text">● ${c}</p>`).join('')}
+            </div>`;
+        }
 
-    window.onload = runAudit;
-</script>
+        logContainer.innerHTML = logHtml;
+    }
+};
+
+/* UIスタイルの追加（第4回用） */
+const auditStyles = `
+    .log-entry { margin-bottom: 15px; padding-left: 10px; border-left: 2px solid; animation: fadeIn 0.3s ease; }
+    .log-entry.logos { border-color: var(--neon-gold); }
+    .log-entry.hedon { border-color: var(--neon-blue); }
+    .log-entry.aegis { border-color: var(--neon-green); }
+    .log-label { font-size: 0.6rem; font-weight: 800; margin-bottom: 4px; }
+    .log-body { font-size: 0.85rem; line-height: 1.5; color: #ccd6f6; }
+    
+    .counter-box { margin-top: 20px; padding: 15px; background: rgba(255, 51, 102, 0.1); border: 1px solid var(--neon-alert); border-radius: 12px; }
+    .counter-text { font-size: 0.75rem; line-height: 1.6; margin-bottom: 10px; color: #ffebf0; }
+`;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>TRI-AXIS v1.0.0 | 居住監査執行システム</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* CSS 最終統合 & iOS 26 UI チューニング */
+        :root {
+            --glass-deep: rgba(5, 12, 24, 0.85);
+            --glass-edge: rgba(255, 255, 255, 0.15);
+            --neon-cyan: #00d9ff; --neon-gold: #ffcc00; --neon-green: #33ffaa; --neon-alert: #ff3366;
+            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #010408; color: #e0e6ed; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .abyss { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, #0a1b3a 0%, #010408 100%); z-index: -1; }
+        .app-shell { display: flex; flex-direction: column; height: 100vh; padding-top: var(--safe-top); }
+        header { padding: 18px 22px; background: var(--glass-deep); backdrop-filter: blur(50px); border-bottom: 1px solid var(--glass-edge); z-index: 1000; }
+        .t-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .t-brand { display: flex; align-items: center; gap: 12px; }
+        .t-logo { width: 34px; height: 34px; background: var(--neon-cyan); color: #000; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif JP'; font-weight: 900; border-radius: 6px; box-shadow: 0 0 25px rgba(0,217,255,0.5); }
+        .psi-hero { font-family: 'Noto Serif JP', serif; font-size: 2rem; transition: 0.5s; }
+        .rail { display: flex; overflow-x: auto; gap: 10px; scrollbar-width: none; }
+        .pill { padding: 10px 22px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-edge); border-radius: 30px; color: #8899aa; font-size: 0.75rem; white-space: nowrap; transition: 0.3s; }
+        .pill.active { background: var(--neon-cyan); color: #000; font-weight: 700; }
+        main { flex: 1; overflow-y: auto; padding: 22px; padding-bottom: 130px; }
+        .view { display: none; } .view.active { display: block; animation: viewSlide 0.4s ease-out; }
+        @keyframes viewSlide { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: var(--glass-deep); border: 1px solid var(--glass-edge); border-radius: 22px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(40px); }
+        label { display: block; font-size: 0.65rem; color: #6a7c92; margin-bottom: 8px; letter-spacing: 0.12em; text-transform: uppercase; }
+        input, select { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; color: #fff; font-size: 1rem; outline: none; }
+        .magi-area { position: relative; height: 260px; display: flex; justify-content: center; align-items: center; }
+        .core { position: absolute; width: 75px; text-align: center; }
+        .c-icon { width: 45px; height: 45px; margin: 0 auto 5px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif JP'; font-size: 1.2rem; }
+        .logos { top: 0; color: var(--neon-gold); } .logos .c-icon { transform: rotate(45deg); border-color: var(--neon-gold); }
+        .hedon { bottom: 0; right: 15%; color: var(--neon-cyan); } .hedon .c-icon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); border-color: var(--neon-cyan); }
+        .aegis { bottom: 0; left: 15%; color: var(--neon-green); } .aegis .c-icon { clip-path: polygon(0 0, 100% 0, 50% 100%); border-color: var(--neon-green); }
+        footer { position: fixed; bottom: 0; width: 100%; background: var(--glass-deep); border-top: 1px solid var(--glass-edge); padding: 12px 20px calc(15px + var(--safe-bottom)); display: flex; justify-content: space-around; backdrop-filter: blur(50px); }
+        .d-item { background: none; border: none; color: #6a7c92; font-size: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .d-item.active { color: var(--neon-cyan); } .d-icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        #map-box { height: 220px; border-radius: 18px; margin-bottom: 15px; border: 1px solid var(--glass-edge); }
+        .log-entry { margin-bottom: 12px; padding-left: 10px; border-left: 2px solid; font-size: 0.8rem; }
+        .counter-box { margin-top: 15px; padding: 12px; background: rgba(255,51,102,0.1); border: 1px solid var(--neon-alert); border-radius: 12px; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="abyss"></div>
+    <div class="app-shell">
+        <header>
+            <div class="t-row">
+                <div class="t-brand"><div class="t-logo">T</div><div><div id="ui-name" style="font-size:0.85rem;font-weight:600;">NEW PROJECT</div><div id="ui-slot-label" style="font-size:0.6rem;color:var(--neon-gold);">SLOT: 壱</div></div></div>
+                <div class="psi-hero" id="ui-psi">Ψ 0.0</div>
+            </div>
+            <nav class="rail">
+                <button class="pill active" onclick="Router.sw('project')">案件</button>
+                <button class="pill" onclick="Router.sw('property')">諸元</button>
+                <button class="pill" onclick="Router.sw('location')">立地</button>
+                <button class="pill" onclick="Router.sw('finance')">財務</button>
+                <button class="pill" onclick="Router.sw('settings')">設定</button>
+            </nav>
+        </header>
+
+        <main id="viewport">
+            <section id="v-project" class="view active">
+                <div class="card"><label>物件名称</label><input type="text" id="in-name" oninput="Core.sync()"></div>
+                <div class="card"><label>データスロット</label><select id="in-slot" onchange="Core.load()"><option value="1">壱</option><option value="2">弐</option><option value="3">参</option></select></div>
+            </section>
+            <section id="v-property" class="view">
+                <div class="card">
+                    <label>物件価格: <span id="v-price">6000万</span></label><input type="range" id="in-price" min="2000" max="25000" step="100" value="6000" oninput="Core.sync()">
+                    <label>専有面積 (㎡)</label><input type="number" id="in-size" value="70" oninput="Core.sync()">
+                    <label>修繕積立金</label><input type="number" id="in-reserve" value="12000" oninput="Core.sync()">
+                </div>
+            </section>
+            <section id="v-location" class="view">
+                <div id="map-box"></div>
+                <div class="card">
+                    <label>用途地域 (13種)</label><select id="in-zone" onchange="Core.sync()"></select>
+                    <label>道路距離: <span id="v-road">30m</span></label><input type="range" id="in-road" min="5" max="200" step="5" value="30" oninput="Core.sync()">
+                </div>
+            </section>
+            <section id="v-finance" class="view">
+                <div class="card">
+                    <label>自己資金</label><input type="number" id="in-cash" value="1000" oninput="Core.sync()">
+                    <label>審査金利 (%)</label><input type="number" id="in-rate" value="3.5" oninput="Core.sync()">
+                </div>
+            </section>
+            <section id="v-audit" class="view">
+                <div class="magi-area">
+                    <div class="core logos"><div class="c-icon"><span>財</span></div><div id="r-logos">-</div></div>
+                    <div class="core hedon"><div class="c-icon">生</div><div id="r-hedon">-</div></div>
+                    <div class="core aegis"><div class="c-icon">守</div><div id="r-aegis">-</div></div>
+                    <div id="r-rank" style="position:absolute;font-family:'Noto Serif JP';font-size:3.5rem;">-</div>
+                </div>
+                <div id="audit-log-stream"></div>
+            </section>
+            <section id="v-settings" class="view"><div class="card"><button onclick="Core.clear()" style="width:100%;padding:15px;background:var(--neon-alert);border:none;border-radius:12px;color:#fff;">データ全消去</button></div></section>
+        </main>
+
+        <footer>
+            <button class="d-item" onclick="Router.sw('project')"><svg class="d-icon"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>管理</button>
+            <button class="d-item active" onclick="Router.sw('audit')"><svg class="d-icon"><path d="M9 12l2 2 4-4m5.618-4.016A9 9 0 112.862 10.08a9 9 0 0111.756-6.096z"/></svg>診断</button>
+            <button class="d-item" onclick="Core.export()"><svg class="d-icon"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>報告</button>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        /* TRI-AXIS v1.0.0 TOTAL SYSTEM INTEGRATION */
+        const MASTERS = {
+            ZONES: { L1:{n:"第1低層",r:0.05,s:0.95}, M1:{n:"第1中高層",r:0.35,s:0.7}, C:{n:"商業地域",r:0.95,s:0.15}, H1:{n:"第1住居",r:0.5,s:0.5} }, // 簡略
+            PHYSICS: { ROAD:75, AIR:0.005 }, FINANCE: { OH:0.075 }
+        };
+
+        const Core = {
+            state: {}, map: null,
+            init() {
+                this.map = L.map('map-box', {zoomControl:false}).setView([35.68, 139.76], 14);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.map);
+                const sel = document.getElementById('in-zone');
+                Object.keys(MASTERS.ZONES).forEach(k => sel.add(new Option(MASTERS.ZONES[k].n, k)));
+                this.load();
+            },
+            sync() {
+                const s = this.state;
+                s.name = document.getElementById('in-name').value;
+                s.price = Number(document.getElementById('in-price').value);
+                s.size = Number(document.getElementById('in-size').value);
+                s.reserve = Number(document.getElementById('in-reserve').value);
+                s.zone = document.getElementById('in-zone').value;
+                s.road = Number(document.getElementById('in-road').value);
+                s.cash = Number(document.getElementById('in-cash').value);
+                
+                document.getElementById('ui-name').innerText = s.name || "NEW PROJECT";
+                document.getElementById('v-price').innerText = s.price + "万";
+                document.getElementById('v-road').innerText = s.road + "m";
+                this.audit();
+                localStorage.setItem(`tri_v1_${document.getElementById('in-slot').value}`, JSON.stringify(s));
+            },
+            audit() {
+                const s = this.state;
+                const noise = Math.round(MASTERS.PHYSICS.ROAD - 10 * Math.log10(s.road || 1) - (MASTERS.PHYSICS.AIR * s.road));
+                const overhead = s.price * MASTERS.FINANCE.OH;
+                const ltv = (((s.price + overhead - s.cash) / s.price) * 100).toFixed(1);
+                const zone = MASTERS.ZONES[s.zone] || MASTERS.ZONES.L1;
+
+                let score = 100 - (noise > 60 ? (noise-60)*3 : 0) - (ltv > 100 ? 30 : 0) - (zone.r * 20);
+                score = Math.max(0, score).toFixed(1);
+
+                document.getElementById('ui-psi').innerText = `Ψ ${score}`;
+                document.getElementById('ui-psi').style.color = score > 80 ? 'var(--neon-cyan)' : 'var(--neon-gold)';
+                document.getElementById('r-logos').innerText = ltv > 100 ? '保' : '可';
+                document.getElementById('r-hedon').innerText = noise > 65 ? '否' : '可';
+                document.getElementById('r-aegis').innerText = zone.r > 0.7 ? '保' : '可';
+                document.getElementById('r-rank').innerText = score > 85 ? 'S' : (score > 65 ? 'A' : 'B');
+
+                document.getElementById('audit-log-stream').innerHTML = `
+                    <div class="log-entry" style="border-color:var(--neon-gold)">財務: 実質LTV ${ltv}% / 諸費用予測 ${Math.round(overhead)}万</div>
+                    <div class="log-entry" style="border-color:var(--neon-cyan)">生活: 騒音推計 ${noise}dB (${noise > 60 ? '要対策':'良好'})</div>
+                    <div class="log-entry" style="border-color:var(--neon-green)">守護: 日照喪失確率 ${zone.s*100}% (${zone.n})</div>
+                `;
+            },
+            load() {
+                const slot = document.getElementById('in-slot').value;
+                const saved = localStorage.getItem(`tri_v1_${slot}`);
+                this.state = saved ? JSON.parse(saved) : {name:"",price:6000,size:70,reserve:12000,zone:"L1",road:30,cash:1000};
+                document.getElementById('in-name').value = this.state.name;
+                document.getElementById('in-price').value = this.state.price;
+                document.getElementById('in-size').value = this.state.size;
+                document.getElementById('in-reserve').value = this.state.reserve;
+                document.getElementById('in-zone').value = this.state.zone;
+                document.getElementById('in-road').value = this.state.road;
+                document.getElementById('in-cash').value = this.state.cash;
+                document.getElementById('ui-slot-label').innerText = `SLOT: ${['','壱','弐','参'][slot]}`;
+                this.sync();
+            },
+            export() {
+                const t = `【TRI-AXIS 監査報告】\n物件: ${this.state.name}\nΨスコア: ${document.getElementById('ui-psi').innerText}\n判定: ${document.getElementById('r-rank').innerText}`;
+                navigator.clipboard.writeText(t); alert("報告書をコピーしました。");
+            },
+            clear() { if(confirm("全消去？")) {localStorage.clear(); location.reload();} }
+        };
+
+        const Router = { sw(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`v-${id}`).classList.add('active');
+            document.querySelectorAll('.pill, .d-item').forEach(e => e.classList.remove('active'));
+        }};
+
+        window.onload = () => Core.init();
+    </script>
 </body>
 </html>
