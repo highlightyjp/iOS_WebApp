@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>NEXA</title>
+
+<style>
+/* ===== NEXA Design System (iOS26-like / Dark) ===== */
+:root{
+  --bg:#050A14; --panel:#0B1324; --panel2:#111A33;
+  --fg:#E6F1FF; --sub:#8FA3BF; --accent:#00F0FF;
+  --warn:#FFD700; --danger:#FF6A6A;
+}
+*{box-sizing:border-box;}
+html,body{margin:0; padding:0; background:var(--bg); color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  overscroll-behavior:none;}
+header,footer{position:fixed; left:0; right:0; z-index:10;
+  backdrop-filter:blur(14px); background:rgba(5,10,20,.88);}
+header{top:0; padding:14px; text-align:center;}
+footer{bottom:0; padding:10px; font-size:11px; color:var(--sub); text-align:center;}
+main{padding:88px 14px 160px; min-height:100dvh;}
+h1,h2,h3{margin:.4em 0;}
+.card{background:var(--panel); border-radius:14px; padding:14px; margin-bottom:14px;}
+label{display:block; font-size:12px; color:var(--sub); margin-top:10px;}
+input,select,button,textarea{
+  width:100%; padding:11px; border-radius:10px; border:none;
+  font-size:15px; background:var(--panel2); color:var(--fg);}
+button{background:var(--accent); color:#000; font-weight:800; margin-top:14px;}
+.secondary{background:#1B264A; color:var(--fg);}
+.hidden{display:none;}
+.rank{font-size:36px; font-weight:900; color:var(--accent);}
+.note{font-size:13px; color:var(--sub); line-height:1.6;}
+.warn{color:var(--warn);}
+.badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px;
+  background:#1B264A; color:var(--sub);}
+.row{display:flex; gap:10px;}
+.row>div{flex:1;}
+ul{padding-left:18px;}
+li{margin-bottom:6px;}
+.divider{height:1px; background:#1B264A; margin:10px 0;}
+small{color:var(--sub);}
+canvas{width:100%; background:#060c1b; border-radius:10px;}
+</style>
+</head>
+
+<body>
+<header>
+  <strong>NEXA</strong><br>
+  <span class="note">住居用不動産・判断ログ生成</span>
+</header>
+
+<main>
+
+<!-- ================= INPUT VIEW ================= -->
+<section id="inputView">
+
+  <div class="card">
+    <h2>物件情報</h2>
+    <label>物件価格（万円）</label><input type="number" id="price">
+    <div class="row">
+      <div>
+        <label>専有面積（㎡）</label><input type="number" id="area">
+      </div>
+      <div>
+        <label>築年（西暦）</label><input type="number" id="built">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>管理費（月・円）</label><input type="number" id="manage">
+      </div>
+      <div>
+        <label>修繕積立金（月・円）</label><input type="number" id="repair">
+      </div>
+    </div>
+    <label>その他毎月費用（インターネット/共聴 等・円）</label>
+    <input type="number" id="otherFee">
+    <label>用途地域（正式名称）</label>
+    <select id="zone">
+      <option value="">未指定</option>
+      <option>第一種低層住居専用地域</option><option>第二種低層住居専用地域</option>
+      <option>第一種中高層住居専用地域</option><option>第二種中高層住居専用地域</option>
+      <option>第一種住居地域</option><option>第二種住居地域</option>
+      <option>準住居地域</option><option>近隣商業地域</option>
+      <option>商業地域</option><option>準工業地域</option>
+      <option>工業地域</option><option>工業専用地域</option>
+    </select>
+    <label>管理会社（名称）</label><input id="mgmtCompany" placeholder="例：○○コミュニティ">
+    <label>物件住所（郵便番号 or 住所）</label><input id="address" placeholder="例：123-4567 / 東京都…">
+  </div>
+
+  <div class="card">
+    <h2>世帯・資金</h2>
+    <div class="row">
+      <div>
+        <label>世帯年収合計（万円）</label><input type="number" id="income">
+      </div>
+      <div>
+        <label>購入時年齢（代表者）</label><input type="number" id="age">
+      </div>
+    </div>
+    <label>ローン方式</label>
+    <select id="loanType">
+      <option>単独</option><option>ペア</option><option>収入合算</option>
+    </select>
+    <label>ローン期間（年）</label>
+    <select id="loanYears">
+      <option>25</option><option>30</option><option>35</option><option>40</option><option>45</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <h2>通勤・通学（複数対応）</h2>
+    <label>最寄り駅（カンマ区切り）</label>
+    <input id="stations" placeholder="例：渋谷, 表参道">
+    <label>目的地（職場/学校・カンマ区切り）</label>
+    <input id="destinations" placeholder="例：二子玉川, 新宿">
+    <small>※ オフライン時は路線速度の近似で計算します</small>
+    <canvas id="isochrone" height="220"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>間取り図（任意）</h2>
+    <input type="file" id="planImg" accept="image/*">
+    <small>※ 端末内画像処理（疑似AI）で記号抽出。断定は行いません。</small>
+  </div>
+
+  <button id="evaluate">評価する</button>
+</section>
+
+<!-- ================= RESULT VIEW ================= -->
+<section id="resultView" class="hidden">
+
+  <div class="card">
+    <div class="row">
+      <div class="rank" id="rank">–</div>
+      <div class="note">
+        <span class="badge" id="ver">v1.0.0</span><br>
+        <span id="summary"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>想定される世界線（並列）</h2>
+    <ul class="note">
+      <li id="w1"></li><li id="w2"></li><li id="w3"></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>注意点・前提（理由付き）</h2>
+    <div id="notes" class="note"></div>
+  </div>
+
+  <div class="card">
+    <h2>逆算（足りないもの）</h2>
+    <div id="reverse" class="note"></div>
+  </div>
+
+  <div class="card">
+    <h2>資料出力</h2>
+    <button class="secondary" id="printPdf">PDFとして保存（端末印刷）</button>
+    <small>※ 端末標準の印刷→PDF保存を使用（オフライン可）</small>
+  </div>
+
+  <button class="secondary" id="back">入力に戻る</button>
+</section>
+
+</main>
+
+<footer>
+© 2026 Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とし、結果を保証しません
+</footer>
+
+<script>
+/* ================== NAV GUARD ================== */
+history.pushState(null,null,location.href);
+window.onpopstate=()=>history.go(1);
+document.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
+
+/* ================== STORAGE ================== */
+const KEY="nexa_state_v1_full";
+const $=id=>document.getElementById(id);
+const nowJST=()=>new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'});
+
+function save(state){ localStorage.setItem(KEY,JSON.stringify(state)); }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)); }catch{ localStorage.removeItem(KEY); return null; } }
+
+/* ================== UTIL ================== */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const yen=v=>v.toLocaleString();
+
+/* ====== Offline-friendly station/line heuristics ====== */
+const LINE_SPEED_KMPH = 38; // 近似（都市平均）
+function travelMinutesApprox(km){ return Math.round((km/LINE_SPEED_KMPH)*60); }
+
+/* ====== Isochrone (同心円) ====== */
+function drawIso(){
+  const c=$("isochrone"), ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  const cx=c.width/2, cy=c.height/2;
+  [10,20,30].forEach((m,i)=>{
+    ctx.beginPath(); ctx.arc(cx,cy, (i+1)*55, 0, Math.PI*2);
+    ctx.strokeStyle=['#00F0FF','#8FA3BF','#1B264A'][i];
+    ctx.stroke();
+    ctx.fillStyle='#8FA3BF'; ctx.fillText(m+'分', cx+ (i+1)*55+4, cy);
+  });
+}
+drawIso();
+
+/* ================== RESTORE ================== */
+const saved=load();
+if(saved){
+  Object.keys(saved.form||{}).forEach(k=>{ if($(k)) $(k).value=saved.form[k]; });
+  if(saved.view==="result") renderResult(saved.result);
+}
+
+/* ================== CORE ================== */
+$("evaluate").onclick=()=>{
+  const f={
+    price:+$("price").value||null,
+    area:+$("area").value||null,
+    built:+$("built").value||null,
+    manage:+$("manage").value||0,
+    repair:+$("repair").value||0,
+    otherFee:+$("otherFee").value||0,
+    zone:$("zone").value||null,
+    mgmtCompany:$("mgmtCompany").value||null,
+    address:$("address").value||null,
+    income:+$("income").value||null,
+    age:+$("age").value||null,
+    loanType:$("loanType").value,
+    loanYears:+$("loanYears").value,
+    stations:($("stations").value||"").split(',').map(s=>s.trim()).filter(Boolean),
+    destinations:($("destinations").value||"").split(',').map(s=>s.trim()).filter(Boolean)
+  };
+
+  const worlds=[], notes=[], reverse=[];
+  const monthlyCommon = f.manage+f.repair+f.otherFee;
+
+  if(f.price && f.income){
+    const loan=f.price*0.9*10000;
+    const base=Math.round(loan/(f.loanYears*12));
+    worlds.push(`前提継続：返済 ${yen(base)} 円＋共益費 ${yen(monthlyCommon)} 円で推移する可能性`);
+    worlds.push(`条件悪化：金利上昇・修繕費増で負担が拡大する可能性`);
+    worlds.push(`条件改善：頭金増・収入増により余裕が生まれる可能性`);
+    if(f.price>f.income*7) reverse.push("頭金の積み増し、購入時期の調整を検討する余地");
+    else reverse.push("現在の収入水準で成立する可能性");
+  }else{
+    worlds.push("前提情報不足のため保守的に評価");
+    worlds.push("条件悪化時の影響は不明確");
+    worlds.push("条件改善余地あり");
+    notes.push("価格または年収の入力が不足");
+  }
+
+  if(f.built && f.built<1981) notes.push("旧耐震基準の可能性（将来コスト増の可能性）");
+  if(monthlyCommon>30000) notes.push("管理・修繕等の月額負担が相対的に大きい傾向");
+  if(f.zone && /商業|近隣商業/.test(f.zone)) notes.push("用途地域特性上、将来環境変化の可能性");
+  if(f.mgmtCompany) notes.push("管理会社の体制・実績が資産維持に影響する可能性");
+
+  // 通勤近似（オフライン）
+  if(f.stations.length && f.destinations.length){
+    const km=clamp(f.stations.length*3,3,15);
+    const min=travelMinutesApprox(km);
+    notes.push(`通勤は片道 約${min}分前後となる可能性（近似）`);
+  }
+
+  const result={
+    at: nowJST(),
+    rank: notes.length>=3?"B":"A",
+    summary:"現条件では生活維持は可能と考えられますが、将来条件の変化には注意が必要です。",
+    worlds, notes, reverse
+  };
+
+  save({view:"result", form:f, result});
+  renderResult(result);
+};
+
+function renderResult(r){
+  $("inputView").classList.add("hidden");
+  $("resultView").classList.remove("hidden");
+  $("rank").textContent=r.rank;
+  $("summary").textContent=`${r.summary}（評価日時：${r.at}）`;
+  $("w1").textContent=r.worlds[0]||"";
+  $("w2").textContent=r.worlds[1]||"";
+  $("w3").textContent=r.worlds[2]||"";
+  $("notes").innerHTML=(r.notes.length?r.notes:["特筆すべき注意点は現時点では限定的"])
+    .map(v=>"・"+v).join("<br>");
+  $("reverse").innerHTML=(r.reverse.length?r.reverse:["追加条件は限定的"])
+    .map(v=>"・"+v).join("<br>");
+}
+
+$("back").onclick=()=>{
+  const s=load(); save({...s, view:"input"});
+  $("resultView").classList.add("hidden");
+  $("inputView").classList.remove("hidden");
+};
+
+$("printPdf").onclick=()=>window.print();
+</script>
+</body>
+</html>
