@@ -552,13 +552,39 @@ const workerUrl = URL.createObjectURL(blob);
 const appWorker = new Worker(workerUrl);
 
 // Worker Event Listeners
+// Worker Event Listeners
 appWorker.onmessage = function(e) {
     const { type, data, source } = e.data;
     
     if (type === 'INIT_COMPLETE') {
-        console.log(`[Core] System Ready. Master Records: ${e.data.count}`);
-        document.getElementById('boot-log').innerText = "CORE LOGIC: ONLINE";
-        // Trigger App Reveal (handled in Part 1 logic)
+        console.log(`[Core] System Ready.`);
+        const log = document.getElementById('boot-log');
+        if(log) log.innerText = "CORE LOGIC: ONLINE";
+        
+        // ★★★ ここが修正箇所です：ロード画面を消してアプリを表示する処理 ★★★
+        setTimeout(() => {
+            const bootLayer = document.getElementById('boot-layer');
+            const appRoot = document.getElementById('app-root');
+            
+            if (bootLayer && appRoot) {
+                // フェードアウト演出
+                bootLayer.style.transition = 'opacity 0.6s ease';
+                bootLayer.style.opacity = '0';
+                
+                // アプリ本体を表示
+                appRoot.classList.remove('hidden');
+                // ブラウザに描画更新を強制
+                void appRoot.offsetWidth; 
+                appRoot.style.opacity = '1';
+                
+                // 完全に消去
+                setTimeout(() => {
+                    bootLayer.style.display = 'none';
+                }, 600);
+            }
+        }, 500); // "ONLINE" を見てから0.5秒後に起動
+        // ★★★ 修正ここまで ★★★
+
     } else if (type === 'SEARCH_RESULT') {
         // Dispatch event for UI to catch
         const event = new CustomEvent('WorkerData', { detail: { type, data, source } });
