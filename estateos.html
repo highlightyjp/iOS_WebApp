@@ -5,1039 +5,939 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="TRI-AXIS">
-<meta name="theme-color" content="#000000">
-<title>TRI-AXIS v19: Sovereign Nexus</title>
+<meta name="theme-color" content="#2b2f38">
+<title>TRI-AXIS: Personal Universe</title>
 <style>
-/* --- 1. CORE VARIABLES (iOS 26 "Silent Glass" System) --- */
+/* --- 1. DESIGN SYSTEM: BLUE BASE SUMMER (Cool & Intellectual) --- */
 :root {
-    /* Colors & Materials */
-    --ios-bg: #000000;
-    --glass-base: rgba(28, 28, 30, 0.65);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-highlight: rgba(255, 255, 255, 0.08);
-    --ios-text: #ffffff;
-    --ios-text-secondary: rgba(235, 235, 245, 0.6);
-    --ios-text-tertiary: rgba(235, 235, 245, 0.3);
-    
-    /* Semantics */
-    --accent: #0a84ff;
-    --danger: #ff453a;
-    --success: #32d74b;
-    --warning: #ffd60a;
-    --system-gray: #8e8e93;
-    
-    /* Effects */
-    --blur-strength: blur(35px) saturate(180%);
-    --depth-shadow: 0 12px 40px rgba(0,0,0,0.4);
-    --inner-glow: inset 0 1px 0 0 rgba(255,255,255,0.1);
-    
-    /* Layout */
-    --safe-top: env(safe-area-inset-top, 20px);
-    --safe-bottom: env(safe-area-inset-bottom, 20px);
-    --header-height: 60px;
-    --ease-physics: cubic-bezier(0.2, 0.8, 0.2, 1.0); /* Apple-like Physics */
+    /* Palette: Cool Summer (Low Contrast, Blue-Grey Undertones) */
+    --bg-base: #2b2f38; /* Deep Blue Grey (Not Black) */
+    --glass-panel: rgba(45, 50, 60, 0.75);
+    --glass-border: rgba(137, 196, 244, 0.15); /* Powder Blue Tint */
+    --glass-highlight: rgba(255, 255, 255, 0.05);
     
     /* Typography */
-    --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+    --text-main: #e6ecf0; /* Off-white with blue tint */
+    --text-muted: #8b9bb4; /* Greyish Blue */
+    --text-dim: #546e7a;
+    
+    /* Accents (No Neon) */
+    --accent-primary: #89c4f4; /* Powder Blue */
+    --accent-secondary: #a29bfe; /* Soft Lavender */
+    --signal-safe: #81ecec; /* Muted Cyan */
+    --signal-warn: #ffeaa7; /* Pale Yellow */
+    --signal-danger: #ff7675; /* Soft Red */
+    
+    /* Physics & Layout */
+    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+    --blur-amt: blur(30px) saturate(140%);
+    --ease-ios: cubic-bezier(0.25, 1, 0.5, 1);
+    
+    /* Font Stack */
+    --font-stack: "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* --- 2. RESET & BASE LAYOUT --- */
+/* --- 2. RESET & NATIVE BEHAVIOR --- */
 *, *::before, *::after {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation; /* Prevent zoom delay */
-}
-
-html, body {
-    margin: 0; padding: 0;
-    width: 100%; height: 100%;
-    background-color: var(--ios-bg);
-    color: var(--ios-text);
-    font-family: var(--font-stack);
-    overflow: hidden; /* App-like behavior */
-    user-select: none; -webkit-user-select: none;
-    cursor: default;
-}
-
-/* --- 3. BENTO GRID ARCHITECTURE --- */
-#app-root {
-    display: flex; flex-direction: column;
-    height: 100%; width: 100%;
-    padding: calc(var(--safe-top) + 10px) 16px var(--safe-bottom) 16px;
-    gap: 20px;
-    opacity: 0; transition: opacity 0.8s var(--ease-physics);
-    max-width: 1400px; margin: 0 auto;
-}
-
-/* Tablet/Desktop: Dashboard Layout */
-@media (min-width: 820px) {
-    #app-root {
-        display: grid;
-        grid-template-columns: 380px 1fr;
-        grid-template-rows: 100%;
-        padding: 40px;
-        gap: 30px;
-    }
-}
-
-/* --- 4. GLASSMORPHISM COMPONENTS --- */
-.glass-panel {
-    background: var(--glass-base);
-    backdrop-filter: var(--blur-strength);
-    -webkit-backdrop-filter: var(--blur-strength);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--depth-shadow), var(--inner-glow);
-    border-radius: 24px;
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s var(--ease-physics);
-    /* Neo-Skeuomorphism subtle depth */
-    background-image: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.05) 100%);
-}
-
-.scroll-y {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding-bottom: 40px; /* Spacer */
-}
-.scroll-y::-webkit-scrollbar { width: 4px; }
-.scroll-y::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-
-/* --- 5. TYPOGRAPHY & ICONS --- */
-h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
-.text-hero {
-    font-size: 48px; font-weight: 700;
-    background: linear-gradient(180deg, #fff 0%, #a0a0a0 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    letter-spacing: -0.03em;
-}
-.label-xs {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-    color: var(--ios-text-secondary); text-transform: uppercase;
-    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
-}
-.val-xl { font-size: 20px; font-weight: 500; font-feature-settings: "tnum"; }
-
-.icon {
-    width: 20px; height: 20px; fill: currentColor;
-    flex-shrink: 0; display: inline-block; vertical-align: middle;
-}
-
-/* --- 6. PHYSICS UI ELEMENTS (Neo-Skeuomorphism) --- */
-.control-group { margin-bottom: 24px; }
-
-.slider-wrap {
-    position: relative; height: 44px; display: flex; align-items: center;
-    margin-top: 8px;
-    /* Touch target expansion */
-}
-input[type=range] {
-    -webkit-appearance: none; width: 100%; background: transparent; z-index: 10;
-    cursor: grab;
-}
-input[type=range]:active { cursor: grabbing; }
-
-/* Custom Track */
-.slider-track-bg {
-    position: absolute; left: 0; right: 0; height: 6px;
-    background: rgba(255,255,255,0.1); border-radius: 3px;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); /* Inner depth */
-}
-.slider-track-fill {
-    position: absolute; left: 0; height: 6px;
-    background: var(--accent); border-radius: 3px;
-    width: 0%; /* JS controlled */
-    box-shadow: 0 0 10px rgba(10, 132, 255, 0.4);
-}
-
-/* Custom Thumb (Tactile Feel) */
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; 
-    height: 32px; width: 32px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(0,0,0,0.1);
-    margin-top: -13px; /* Center alignment correction */
-    transition: transform 0.1s cubic-bezier(0.3, 1.5, 0.7, 1); /* Bounce effect */
-}
-input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); }
-
-/* Buttons with tactile feedback */
-.btn-glass {
-    width: 100%;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #fff;
-    padding: 14px;
-    border-radius: 14px;
-    font-size: 15px; font-weight: 600;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: all 0.1s;
     touch-action: manipulation;
 }
-.btn-glass:active {
-    transform: scale(0.98);
-    background: rgba(255,255,255,0.12);
-}
-.btn-primary {
-    background: rgba(10, 132, 255, 0.2);
-    border-color: rgba(10, 132, 255, 0.4);
-    color: var(--accent);
-    box-shadow: 0 0 20px rgba(10, 132, 255, 0.15);
+
+html {
+    background-color: var(--bg-base);
+    height: 100%;
 }
 
-/* --- 7. STATES & FEEDBACK --- */
-.connectivity-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--system-gray);
-    box-shadow: 0 0 5px rgba(255,255,255,0.2);
-    transition: background 0.3s, box-shadow 0.3s;
-}
-.connectivity-dot[data-status="online"] { background: var(--success); box-shadow: 0 0 8px var(--success); }
-.connectivity-dot[data-status="slow"] { background: var(--warning); }
-
-.skeleton {
-    background: rgba(255,255,255,0.1);
-    border-radius: 4px;
-    animation: pulse 1.5s infinite ease-in-out;
-}
-@keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 0.7; } 100% { opacity: 0.3; } }
-
-/* Print Styles (The Paper Artifact) */
-@media print {
-    body { background: #fff; color: #000; height: auto; overflow: visible; }
-    #app-root { display: block; padding: 0; opacity: 1; }
-    .glass-panel {
-        background: none; border: 1px solid #ccc;
-        box-shadow: none; border-radius: 0;
-        margin-bottom: 20px; page-break-inside: avoid;
-        color: #000;
-        backdrop-filter: none;
-    }
-    .no-print { display: none !important; }
-    h1, h2, .text-hero { color: #000; background: none; -webkit-text-fill-color: initial; }
-    /* Force High-Res Print Typography */
-    body { font-family: "Times New Roman", serif; }
+body {
+    margin: 0; padding: 0;
+    width: 100%;
+    /* Allow Vertical Scroll (Fix for v19.0 bug) */
+    min-height: 100dvh;
+    color: var(--text-main);
+    font-family: var(--font-stack);
+    background: radial-gradient(circle at 50% -20%, #3a4050 0%, var(--bg-base) 80%);
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch;
 }
 
-/* Glitch Animation for Errors */
-.glitch-active { animation: glitch-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-@keyframes glitch-shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
+/* --- 3. COMPONENT ARCHITECTURE --- */
+
+/* The Shell */
+#app-shell {
+    display: flex; flex-direction: column;
+    padding: calc(var(--safe-top) + 16px) 20px calc(var(--safe-bottom) + 100px) 20px;
+    gap: 24px;
+    opacity: 0; /* Hidden until quarantine pass */
+    transition: opacity 0.8s ease-out;
+    max-width: 600px; margin: 0 auto; /* Tablet constraint */
 }
+
+/* Glass Panels */
+.panel {
+    background: var(--glass-panel);
+    backdrop-filter: var(--blur-amt);
+    -webkit-backdrop-filter: var(--blur-amt);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Typography */
+h2 {
+    font-size: 13px; letter-spacing: 0.1em;
+    color: var(--text-muted); text-transform: uppercase;
+    margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;
+}
+.val-xl { font-size: 24px; font-weight: 500; font-feature-settings: "tnum"; letter-spacing: -0.02em; }
+.unit { font-size: 12px; color: var(--text-muted); margin-left: 2px; }
+
+/* Inputs (Physics Feel) */
+.input-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+}
+.input-group {
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    padding: 4px;
+    display: flex; gap: 2px;
+}
+.radio-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 10px;
+    color: var(--text-muted);
+    transition: all 0.2s var(--ease-ios);
+}
+.radio-btn.active {
+    background: var(--accent-primary);
+    color: #1a1d24; /* Dark text on light button */
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(137, 196, 244, 0.3);
+}
+
+/* Slider Customization (Cool Summer) */
+input[type=range] {
+    -webkit-appearance: none; width: 100%; background: transparent;
+    height: 40px; margin: 0; cursor: grab;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 28px; width: 28px;
+    border-radius: 50%;
+    background: #f0f4f8;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    margin-top: -12px;
+    transition: transform 0.1s;
+}
+input[type=range]:active::-webkit-slider-thumb { transform: scale(1.1); }
+.slider-track-wrap {
+    position: relative; height: 4px; background: rgba(255,255,255,0.1);
+    border-radius: 2px; margin: 10px 0 20px 0;
+}
+.slider-fill {
+    position: absolute; height: 100%; left: 0; background: var(--accent-primary);
+    border-radius: 2px;
+}
+
+/* Toggles & Selectors */
+.toggle-switch {
+    width: 44px; height: 24px; background: rgba(255,255,255,0.1);
+    border-radius: 12px; position: relative; transition: 0.3s;
+}
+.toggle-switch[data-state="on"] { background: var(--accent-secondary); }
+.toggle-knob {
+    width: 20px; height: 20px; background: #fff; border-radius: 50%;
+    position: absolute; top: 2px; left: 2px; transition: 0.3s var(--ease-ios);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch[data-state="on"] .toggle-knob { transform: translateX(20px); }
+
+/* Status Indicators */
+.status-pill {
+    font-size: 10px; padding: 4px 8px; border-radius: 12px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted); display: flex; align-items: center; gap: 6px;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); }
+.dot.online { background: var(--signal-safe); box-shadow: 0 0 8px var(--signal-safe); }
+.dot.internal { background: var(--accent-primary); }
+
+/* --- 4. BOOT QUARANTINE SCREEN --- */
+#quarantine-layer {
+    position: fixed; inset: 0; background: #1a1d24; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.bio-ring {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 2px solid rgba(137, 196, 244, 0.1);
+    border-top-color: var(--accent-primary);
+    animation: spin 1s infinite linear;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- 5. PRINT & UTILS --- */
+.hidden { display: none !important; }
+svg.icon { width: 16px; height: 16px; fill: currentColor; }
 </style>
 </head>
 <body>
 
-<svg style="display: none;">
-    <symbol id="icon-home" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
-    <symbol id="icon-yen" viewBox="0 0 24 24"><path d="M12.5 21v-4.5H16v-2h-3.5V12h3v-2h-3V7l4-5h-2.5L12 5 9.5 2h-2.5l4 5v3h-3v2h3v2.5H7.5v2h3.5V21h1.5z"/></symbol>
-    <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2v-3h2v3zm4 0h-2v-5h2v5z"/></symbol>
-    <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></symbol>
-    <symbol id="icon-ruler" viewBox="0 0 24 24"><path d="M22 6H2v12h20V6zm-2 10H4V8h16v8z M7 14h2v-4H7v4zm4 0h2v-4h-2v4zm4 0h2v-4h-2v4z"/></symbol>
-    <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></symbol>
-    <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
-    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+<svg style="display:none;">
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
+    <symbol id="ic-home" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
+    <symbol id="ic-job" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></symbol>
+    <symbol id="ic-silence" viewBox="0 0 24 24"><path d="M7 9v6h4l5 5V4l-5 5H7z"/></symbol>
+    <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></symbol>
 </svg>
 
-<div id="boot-layer" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-    <div class="skeleton" style="width:60px; height:60px; border-radius:50%; margin-bottom:20px;"></div>
-    <div style="font-family:monospace; color:var(--system-gray); font-size:12px; letter-spacing:0.1em;">INITIALIZING SOVEREIGN CORE...</div>
-    <div id="boot-log" style="font-family:monospace; color:#444; font-size:10px; margin-top:10px; height:20px;"></div>
+<div id="quarantine-layer">
+    <div class="bio-ring"></div>
+    <div style="margin-top: 20px; font-family: monospace; font-size: 10px; color: var(--accent-primary); letter-spacing: 0.1em;">
+        SYSTEM INTEGRITY CHECK...
+    </div>
+    <div id="boot-msg" style="margin-top: 8px; font-family: monospace; font-size: 10px; color: var(--text-muted);">
+        Scanning LocalStorage...
+    </div>
 </div>
 
-<div id="app-root" class="hidden">
-
-    <div class="glass-panel scroll-y">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <h1 style="font-size:22px;">TRI-AXIS</h1>
-                <span style="font-size:10px; padding:2px 6px; border:1px solid var(--glass-border); border-radius:4px; opacity:0.6;">v19.0</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <span id="conn-text" style="font-size:10px; color:var(--ios-text-secondary);">OFFLINE</span>
-                <div id="conn-dot" class="connectivity-dot" data-status="offline"></div>
-            </div>
+<div id="app-shell">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font-size: 20px; font-weight: 600; margin: 0; color: var(--accent-primary);">TRI-AXIS</h1>
+            <div style="font-size: 10px; color: var(--text-muted); letter-spacing: 0.05em;">PERSONAL UNIVERSE v21.0</div>
         </div>
-
-        <div class="control-group">
-            <div class="label-xs"><svg class="icon"><use href="#icon-home"/></svg> 物件価格</div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <span id="disp-price" class="val-xl">6,500</span>
-                <span style="font-size:14px; opacity:0.6;">万円</span>
-            </div>
-            <div class="slider-wrap">
-                <div class="slider-track-bg"></div>
-                <div id="track-price" class="slider-track-fill" style="width:50%;"></div>
-                <input type="range" id="in-price" min="1000" max="20000" step="10" value="6500">
-            </div>
-        </div>
-
-        <div class="control-group">
-            <div class="label-xs"><svg class="icon"><use href="#icon-yen"/></svg> 世帯年収 (手取り)</div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <span id="disp-income" class="val-xl">800</span>
-                <span style="font-size:14px; opacity:0.6;">万円</span>
-            </div>
-            <div class="slider-wrap">
-                <div class="slider-track-bg"></div>
-                <div id="track-income" class="slider-track-fill" style="width:40%;"></div>
-                <input type="range" id="in-income" min="300" max="3000" step="10" value="800">
-            </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:30px;">
-            <button id="btn-station" class="btn-glass">
-                <svg class="icon"><use href="#icon-home"/></svg> 駅・地価取得
-            </button>
-            <button id="btn-oracle" class="btn-glass btn-primary">
-                <svg class="icon"><use href="#icon-chart"/></svg> 必要年収逆算
-            </button>
-        </div>
-
-        <div style="margin-top:auto; padding-top:40px; text-align:center;">
-            <div style="font-size:9px; color:var(--ios-text-tertiary); font-family:monospace;">
-                MEMORY SAFE / WASM ACTIVE<br>
-                NO TRACKING / NO TOKENS
-            </div>
+        <div class="status-pill">
+            <div id="status-dot" class="dot"></div>
+            <span id="status-text">INIT</span>
         </div>
     </div>
 
-    <div class="scroll-y" style="display:flex; flex-direction:column; gap:20px;">
+    <div class="panel">
+        <h2><svg class="icon"><use href="#ic-job"/></svg> 属性・キャリア (2025年3月入社)</h2>
         
-        <div class="glass-panel" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div class="label-xs">AUDIT RESULT</div>
-                <div id="out-rank" class="text-hero">A</div>
-                <div id="out-desc" style="color:var(--success); font-weight:600; margin-top:4px;">資産防衛推奨</div>
-            </div>
-            <div style="width:100px; height:100px; border-radius:50%; background:conic-gradient(var(--success) 85%, rgba(255,255,255,0.1) 0); display:flex; align-items:center; justify-content:center; box-shadow:0 0 20px rgba(50,215,75,0.2);">
-                <div style="width:88px; height:88px; background:var(--glass-base); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-                    <span id="out-score" style="font-size:28px; font-weight:700;">85</span>
-                    <span style="font-size:9px; opacity:0.6;">PTS</span>
-                </div>
-            </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:16px;">
-            <div class="glass-panel">
-                <div class="label-xs">MONTHLY PAY</div>
-                <div id="out-monthly" class="val-xl">18.2 <span style="font-size:12px;">万円</span></div>
-                <div id="out-ratio" style="font-size:11px; color:var(--success); margin-top:8px;">返済比率 27% (適正)</div>
-            </div>
-            <div class="glass-panel">
-                <div class="label-xs">ASSET 10Y</div>
-                <div id="out-asset" class="val-xl">5,980 <span style="font-size:12px;">万円</span></div>
-                <div style="font-size:11px; color:var(--ios-text-secondary); margin-top:8px;">残債割れリスク: 極低</div>
-            </div>
-            <div class="glass-panel">
-                <div class="label-xs">DATA SOURCE</div>
-                <div id="source-badge" style="display:flex; gap:5px; flex-wrap:wrap;">
-                    <span style="font-size:10px; padding:2px 6px; background:rgba(255,255,255,0.1); border-radius:4px;">💾 内蔵</span>
-                </div>
+        <div class="input-row">
+            <span style="font-size:13px;">入社年月</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <select id="in-join-year" style="background:rgba(0,0,0,0.3); color:#fff; border:none; padding:4px 8px; border-radius:6px;">
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+                <span style="font-size:12px;">年</span>
+                <select id="in-join-month" style="background:rgba(0,0,0,0.3); color:#fff; border:none; padding:4px 8px; border-radius:6px;">
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                </select>
+                <span style="font-size:12px;">月</span>
             </div>
         </div>
-
-        <div class="glass-panel no-print" style="margin-top:auto; flex-direction:row; align-items:center; gap:16px;">
-            <div style="background:#fff; padding:4px; border-radius:4px;">
-                <canvas id="qr-canvas" width="40" height="40"></canvas>
-            </div>
-            <div style="font-size:10px; color:var(--ios-text-secondary); line-height:1.4;">
-                <div>DIGITAL SIGNATURE: VALID</div>
-                <div style="font-family:monospace; opacity:0.5;">HASH: <span id="sign-hash">initializing...</span></div>
-            </div>
+        <div style="font-size:10px; color:var(--accent-secondary); margin-top:-10px; margin-bottom:16px;">
+            ※ 初年度補正ロジック適用中 (1,2月無給考慮)
         </div>
 
+        <div class="input-row">
+            <span style="font-size:13px;">基本月給 (額面)</span>
+            <div><span id="disp-salary" class="val-xl">45</span><span class="unit">万円</span></div>
+        </div>
+        <div class="slider-track-wrap">
+            <div id="fill-salary" class="slider-fill" style="width: 30%;"></div>
+            <input type="range" id="in-salary" min="20" max="100" step="1" value="45">
+        </div>
+
+        <div class="input-row">
+            <span style="font-size:13px;">年間賞与 (夏+冬)</span>
+            <div><span id="disp-bonus" class="val-xl">140</span><span class="unit">万円</span></div>
+        </div>
+        <div class="slider-track-wrap">
+            <div id="fill-bonus" class="slider-fill" style="width: 20%;"></div>
+            <input type="range" id="in-bonus" min="0" max="400" step="10" value="140">
+        </div>
+
+        <div class="input-row" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
+            <span style="font-size:13px;">妻の住居費補助</span>
+            <div><span id="disp-wife" class="val-xl">0</span><span class="unit">万円/月</span></div>
+        </div>
+        <div class="slider-track-wrap">
+            <div id="fill-wife" class="slider-fill" style="width: 0%;"></div>
+            <input type="range" id="in-wife" min="0" max="20" step="1" value="0">
+        </div>
     </div>
+
+    <div class="panel">
+        <h2><svg class="icon"><use href="#ic-home"/></svg> 物件・物理監査</h2>
+        
+        <div class="input-row">
+            <span style="font-size:13px;">物件価格</span>
+            <div><span id="disp-price" class="val-xl">6,500</span><span class="unit">万円</span></div>
+        </div>
+        <div class="slider-track-wrap">
+            <div id="fill-price" class="slider-fill" style="width: 50%;"></div>
+            <input type="range" id="in-price" min="2000" max="15000" step="10" value="6500">
+        </div>
+
+        <div style="background: rgba(137, 196, 244, 0.05); border-radius: 12px; padding: 12px; margin-top: 16px;">
+            <div class="input-row">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <svg class="icon" style="color:var(--accent-secondary);"><use href="#ic-silence"/></svg>
+                    <span style="font-size:13px; font-weight:600;">生活時間差リスク</span>
+                </div>
+                <div id="tog-silence" class="toggle-switch" data-state="on"><div class="toggle-knob"></div></div>
+            </div>
+            
+            <div id="silence-options" style="margin-top:12px;">
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">書斎の位置関係</div>
+                <div class="input-group">
+                    <div class="radio-btn" data-val="bad">寝室横</div>
+                    <div class="radio-btn active" data-val="good">廊下対面</div>
+                    <div class="radio-btn" data-val="best">独立</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2><svg class="icon"><use href="#ic-shield"/></svg> 資金計画 (単独債務)</h2>
+        <div class="input-row">
+            <span style="font-size:13px;">頭金 (Cash)</span>
+            <div><span id="disp-down" class="val-xl">0</span><span class="unit">万円</span></div>
+        </div>
+        <div class="slider-track-wrap">
+            <div id="fill-down" class="slider-fill" style="width: 0%;"></div>
+            <input type="range" id="in-down" min="0" max="3000" step="10" value="0">
+        </div>
+
+        <div class="input-row">
+            <span style="font-size:13px;">変動金利 (Stress +2% test)</span>
+            <div><span id="disp-rate" class="val-xl">0.475</span><span class="unit">%</span></div>
+        </div>
+        <div class="slider-track-wrap">
+            <div id="fill-rate" class="slider-fill" style="width: 10%;"></div>
+            <input type="range" id="in-rate" min="0.2" max="3.0" step="0.001" value="0.475">
+        </div>
+    </div>
+
+    <div id="dashboard-area" style="padding-bottom: 40px;">
+        </div>
+
 </div>
 <script>
 /**
- * PART 2: THE LOGIC CORE (WEB WORKER BLOB)
+ * PART 2: THE CORE WORKER & DATA
  * ---------------------------------------------------
  * Contains:
- * 1. Compressed Master Data (Base64)
- * 2. API Drivers (HeartRails, zipcloud) with Throttling
- * 3. Circuit Breaker & Fallback Logic
- * 4. High-Performance Math Core (Simulation)
+ * 1. Boot Quarantine (Sanitizer)
+ * 2. Web Worker Blob (Background Threads)
+ * 3. Token Bucket API Limiter (Anti-DDoS)
+ * 4. Circuit Breaker (Fail-Safe)
  */
 
+// --- 1. BOOT QUARANTINE (Main Thread) ---
+(function runQuarantine() {
+    const log = document.getElementById('boot-msg');
+    const shell = document.getElementById('app-shell');
+    const layer = document.getElementById('quarantine-layer');
+
+    function failBoot(reason) {
+        if(log) log.innerText = `BOOT FAILED: ${reason}`;
+        console.error(reason);
+        // Force Factory Reset
+        localStorage.removeItem('aegis_state_v21');
+        setTimeout(() => location.reload(), 2000);
+    }
+
+    try {
+        // Schema Validation (Simple Zod-like check)
+        const raw = localStorage.getItem('aegis_state_v21');
+        if (raw) {
+            const data = JSON.parse(raw);
+            // Type Guard
+            if (typeof data.price !== 'number' || isNaN(data.price)) throw new Error("Memory Corruption: Price");
+            if (typeof data.salary !== 'number') throw new Error("Memory Corruption: Salary");
+            // Logic Guard
+            if (data.price < 0 || data.price > 1000000) throw new Error("Logic Violation: Price Overflow");
+        }
+        
+        if(log) log.innerText = "Memory Integrity: OK";
+    } catch (e) {
+        console.warn("Quarantine intercepted invalid state. Purging.", e);
+        localStorage.removeItem('aegis_state_v21');
+        if(log) log.innerText = "Corrupted Memory Purged.";
+    }
+})();
+
+// --- 2. WORKER SOURCE (The Engine Room) ---
 const WORKER_SOURCE = `
 (function() {
-    // --- 1. CONSTANTS & CONFIG ---
+    // --- CONFIG ---
     const CONFIG = {
-        API_THROTTLE_MS: 2000, // Min interval between API calls
-        API_MAX_BURST: 5,      // Token bucket size
-        TIMEOUT_MS: 3000,      // API Timeout (Circuit Breaker)
-        GEO_FENCE: { lat: 35.68, lon: 139.76, radius_km: 100 } // Default: Tokyo
+        API_THROTTLE_MS: 1500, // Polite interval
+        API_MAX_BURST: 3,      // Max concurrent requests
+        TIMEOUT_MS: 5000,
+        GEO_FENCE: { lat: 35.68, lon: 139.76 } // Default Tokyo
     };
 
-    // --- 2. COMPRESSED MASTER DATA (Simulated for Demo) ---
-    // In production, this would be a large LZ-compressed Base64 string containing thousands of stations.
-    // Structure: ID | Name | PriceIndex | Lat | Lon
-    const MASTER_DATA_B64 = "W3siaWQiOjEwMSwibmFtZSI6IuWkp+aJi+eTlCIsInByaWNlIjoyODAsImxhdCI6MzUuNjg0LCJsb24iOjEzOS43Njd9LHsiaWQiOjEwMiwibmFtZSI6IuS6jOWtkOeOieW3nCIsInByaWNlIjoxNDUsImxhdCI6MzUuNjExLCJsb24iOjEzOS42MjZ9LHsiaWQiOjEwMywibmFtZSI6IuaoqumHjCIsInByaWNlIjoxMjAsImxhdCI6MzUuNTQzLCJsb24iOjEzOS41Njd9XQ==";
-    
+    // --- INTERNAL STATE ---
     let db = {
-        stations: [],
+        stations: [], // Will be decompressed
         tokenBucket: CONFIG.API_MAX_BURST,
-        lastApiCall: 0
+        lastApiCall: 0,
+        isOfflineMode: false
     };
 
-    // --- 3. INITIALIZATION & DECOMPRESSION ---
+    // --- COMPRESSED MASTER DATA (Simulated LUT) ---
+    // In production, this allows instant offline lookup without server
+    // ID | Name | PriceIndex | Lat | Lon | SoilType (1=Good, 2=Weak/Swamp)
+    const MASTER_B64 = "W3siaWQiOjEwMSwibmFtZSI6IuS6jOWtkOeOieW3nCIsInByaWNlIjoxNjAsImxhdCI6MzUuNjExLCJsb24iOjEzOS42MjYsInNvaWwiOjF9LHsiaWQiOjEwMiwibmFtZSI6IuS4iuacqCIsInByaWNlIjoxMjAsImxhdCI6MzUuNTc1LCJsb24iOjEzOS42NDMsInNvaWwiOjJ9XQ==";
+
+    // --- METHODS ---
+
     function init() {
         try {
-            // Decoding Base64 (Unicode safe)
-            const jsonStr = self.atob(MASTER_DATA_B64);
+            // Decode Base64 LUT
+            const str = self.atob(MASTER_B64);
+            const bytes = new Uint8Array(str.length);
+            for (let i=0; i<str.length; i++) bytes[i] = str.charCodeAt(i);
             const decoder = new TextDecoder("utf-8");
-            const bytes = new Uint8Array(jsonStr.length);
-            for (let i = 0; i < jsonStr.length; i++) {
-                bytes[i] = jsonStr.charCodeAt(i);
-            }
-            // In a real app, we would use UTF-8 decoding properly here, 
-            // but for this ASCII/Base64 demo, direct parse is fine.
-            db.stations = JSON.parse(jsonStr); 
-            
-            self.postMessage({ type: 'INIT_COMPLETE', status: 'success', count: db.stations.length });
-        } catch (e) {
-            self.postMessage({ type: 'ERROR', msg: 'Master Data Corrupted', fallback: true });
+            db.stations = JSON.parse(decoder.decode(bytes)); // Real UTF-8 parse
+
+            self.postMessage({ type: 'INIT_COMPLETE', status: 'success' });
+        } catch(e) {
+            self.postMessage({ type: 'ERROR', msg: 'DB Corrupted' });
         }
 
-        // Token Refill Loop
+        // Token Refill (1 token every 5s)
         setInterval(() => {
             if (db.tokenBucket < CONFIG.API_MAX_BURST) db.tokenBucket++;
         }, 5000);
     }
 
-    // --- 4. API DRIVERS (TOKEN BUCKET PROTECTED) ---
-    
-    async function fetchWithThrottle(url, sourceName) {
+    async function fetchWithBreaker(url, source) {
+        if (db.isOfflineMode) throw new Error("CIRCUIT_OPEN");
+        
+        // Token Check
+        if (db.tokenBucket <= 0) throw new Error("RATE_LIMIT");
+        
         const now = Date.now();
-        
-        // Check Tokens
-        if (db.tokenBucket <= 0) {
-            throw new Error('RATE_LIMIT_EXCEEDED');
-        }
-        
-        // Check Interval
-        if (now - db.lastApiCall < CONFIG.API_THROTTLE_MS) {
-            // Wait logic could go here, but we fail fast for resilience
-            throw new Error('THROTTLED');
-        }
+        if (now - db.lastApiCall < CONFIG.API_THROTTLE_MS) throw new Error("THROTTLED");
 
         db.tokenBucket--;
         db.lastApiCall = now;
 
-        // Fetch with Timeout (Circuit Breaker)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT_MS);
+        const timeout = setTimeout(() => controller.abort(), CONFIG.TIMEOUT_MS);
 
         try {
             const res = await fetch(url, { signal: controller.signal });
             if (!res.ok) throw new Error(\`HTTP_\${res.status}\`);
             return await res.json();
         } catch (e) {
-            throw e; // Propagate to fallback
+            // If many failures, open circuit? (Simplified here)
+            throw e;
         } finally {
-            clearTimeout(timeoutId);
+            clearTimeout(timeout);
         }
     }
 
-    // API: HeartRails Express (Stations)
-    async function searchStationAPI(query) {
-        // Use HTTPS to prevent Mixed Content
-        const url = \`https://express.heartrails.com/api/json?method=getStations&name=\${encodeURIComponent(query)}\`;
-        try {
-            const data = await fetchWithThrottle(url, 'HeartRails');
-            if (!data.response || !data.response.station) return [];
-            
-            // Normalize & Geo-Fence
-            let results = Array.isArray(data.response.station) ? data.response.station : [data.response.station];
-            return results.map(s => ({
-                name: s.name,
-                line: s.line,
-                lat: parseFloat(s.y),
-                lon: parseFloat(s.x),
-                source: 'API'
-            })).filter(s => {
-                // Simple Geo-Fence (Rough Dist Check)
-                return Math.abs(s.lat - CONFIG.GEO_FENCE.lat) < 1.0 && 
-                       Math.abs(s.lon - CONFIG.GEO_FENCE.lon) < 1.0;
-            });
-        } catch (e) {
-            console.warn('[Worker] API Fail:', e.message);
-            return null; // Signal to use fallback
-        }
-    }
-
-    // API: zipcloud (Address)
-    async function searchAddressAPI(zip) {
-        const url = \`https://zipcloud.ibsnet.co.jp/api/search?zipcode=\${zip}\`;
-        try {
-            const data = await fetchWithThrottle(url, 'zipcloud');
-            if (data.results) return data.results[0];
-            return null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    // --- 5. LOGIC CORE: HYBRID SEARCH ---
-    
-    async function handleStationSearch(query) {
-        // 1. Search Internal Master First (Zero Latency)
-        const internalHits = db.stations.filter(s => s.name.includes(query)).map(s => ({...s, source: 'INTERNAL'}));
+    // API: HeartRails (Station)
+    async function searchStation(query) {
+        // Fallback to Internal first
+        const internalHits = db.stations.filter(s => s.name.includes(query));
         
-        // 2. Try API (Async)
-        // Only trigger API if query is specific enough to avoid spam
-        let apiHits = null;
-        if (query.length >= 2) {
-            apiHits = await searchStationAPI(query);
+        try {
+            // Try External
+            const url = \`https://express.heartrails.com/api/json?method=getStations&name=\${encodeURIComponent(query)}\`;
+            const data = await fetchWithBreaker(url, 'HeartRails');
+            
+            if (data.response && data.response.station) {
+                let stations = Array.isArray(data.response.station) 
+                    ? data.response.station 
+                    : [data.response.station];
+                
+                // Map & Merge
+                return stations.map(s => {
+                    const lat = parseFloat(s.y);
+                    const lon = parseFloat(s.x);
+                    // Match with internal soil data if exists
+                    const known = db.stations.find(k => k.name === s.name);
+                    return {
+                        name: s.name,
+                        line: s.line,
+                        lat: lat,
+                        lon: lon,
+                        price: known ? known.price : 100, // Default index
+                        soil: known ? known.soil : 0,     // 0=Unknown
+                        source: 'API'
+                    };
+                });
+            }
+        } catch (e) {
+            // Fallback return
+            console.warn("API Fail, using internal", e);
         }
-
-        // 3. Merge Strategy (Prefer API if available and valid, else Internal)
-        let finalResults = [];
-        if (apiHits && apiHits.length > 0) {
-            finalResults = apiHits;
-            // Add price index from internal if matches
-            finalResults.forEach(r => {
-                const match = db.stations.find(i => i.name === r.name);
-                if (match) r.price = match.price;
-                else r.price = 100; // Default index
-            });
-        } else {
-            finalResults = internalHits;
-        }
-
-        self.postMessage({ 
-            type: 'SEARCH_RESULT', 
-            data: finalResults, 
-            source: apiHits ? 'API_MIXED' : 'INTERNAL_ONLY' 
-        });
+        
+        // Return internal if API failed
+        return internalHits.map(s => ({...s, source: 'INTERNAL'}));
     }
 
-    // --- 6. MESSAGE HANDLER ---
+    // --- MESSAGE LOOP ---
     self.onmessage = async function(e) {
         const { type, payload } = e.data;
-        
-        switch (type) {
-            case 'BOOT':
-                init();
-                break;
-                
-            case 'SEARCH_STATION':
-                await handleStationSearch(payload);
-                break;
-                
-            case 'CALC_SIMULATION':
-                // Move heavy financial calc here if needed
-                // For now, we keep light physics in main thread for Haptics sync
-                break;
-                
-            default:
-                break;
+        if (type === 'BOOT') init();
+        if (type === 'SEARCH_STATION') {
+            const results = await searchStation(payload);
+            self.postMessage({ type: 'SEARCH_RESULT', data: results });
         }
     };
 })();
 `;
 
-// --- MAIN THREAD GLUE CODE ---
-// Create the Worker from the string blob
+// --- 3. MAIN THREAD BRIDGE ---
 const blob = new Blob([WORKER_SOURCE], { type: 'application/javascript' });
-const workerUrl = URL.createObjectURL(blob);
-const appWorker = new Worker(workerUrl);
+const worker = new Worker(URL.createObjectURL(blob));
 
-// Worker Event Listeners
-// Worker Event Listeners
-appWorker.onmessage = function(e) {
-    const { type, data, source } = e.data;
+// Global API
+window.AegisCore = {
+    searchStation: (q) => worker.postMessage({ type: 'SEARCH_STATION', payload: q })
+};
+
+// Event Handler
+worker.onmessage = function(e) {
+    const { type, data } = e.data;
     
     if (type === 'INIT_COMPLETE') {
-        console.log(`[Core] System Ready.`);
-        const log = document.getElementById('boot-log');
-        if(log) log.innerText = "CORE LOGIC: ONLINE";
-        
-        // ★★★ ここが修正箇所です：ロード画面を消してアプリを表示する処理 ★★★
+        console.log("[Core] Worker Ready.");
+        // UI Reveal Logic (Fixing v19.0 bug)
         setTimeout(() => {
-            const bootLayer = document.getElementById('boot-layer');
-            const appRoot = document.getElementById('app-root');
-            
-            if (bootLayer && appRoot) {
-                // フェードアウト演出
-                bootLayer.style.transition = 'opacity 0.6s ease';
-                bootLayer.style.opacity = '0';
-                
-                // アプリ本体を表示
-                appRoot.classList.remove('hidden');
-                // ブラウザに描画更新を強制
-                void appRoot.offsetWidth; 
-                appRoot.style.opacity = '1';
-                
-                // 完全に消去
-                setTimeout(() => {
-                    bootLayer.style.display = 'none';
-                }, 600);
+            const layer = document.getElementById('quarantine-layer');
+            const shell = document.getElementById('app-shell');
+            if(layer && shell) {
+                layer.style.transition = 'opacity 0.6s ease';
+                layer.style.opacity = '0';
+                shell.classList.remove('hidden');
+                shell.style.opacity = '1';
+                setTimeout(() => layer.style.display = 'none', 600);
             }
-        }, 500); // "ONLINE" を見てから0.5秒後に起動
-        // ★★★ 修正ここまで ★★★
-
-    } else if (type === 'SEARCH_RESULT') {
-        // Dispatch event for UI to catch
-        const event = new CustomEvent('WorkerData', { detail: { type, data, source } });
-        window.dispatchEvent(event);
+        }, 800); // Wait for aesthetics
+    }
+    
+    if (type === 'SEARCH_RESULT') {
+        window.dispatchEvent(new CustomEvent('WorkerData', { detail: { type, data } }));
     }
 };
 
-// Start the Engine
-appWorker.postMessage({ type: 'BOOT' });
-
-// Global Accessor for UI
-window.AegisCore = {
-    searchStation: (query) => appWorker.postMessage({ type: 'SEARCH_STATION', payload: query }),
-    // expose other methods
-};
+// Boot the Worker
+worker.postMessage({ type: 'BOOT' });
 
 </script>
 <script>
 /**
- * PART 3: THE LOGIC CORE (SIMULATION & PHYSICS ENGINE)
+ * PART 3: THE LOGIC CORE (PERSONAL UNIVERSE ENGINE)
  * ---------------------------------------------------
- * Architecture:
- * - Pure Functional Logic (Stateless)
- * - Float64Array for Precision & Overflow Protection
- * - Inverse Solver with Circuit Breaker
- * - Self-Verification (Stress Testing)
+ * The brain of TRI-AXIS.
+ * * Capabilities:
+ * 1. Job Change Logic: Calculates "Deemed Income" vs "Actual Cash Flow".
+ * 2. Joint Budgeting: Models "Husband as Debtor" + "Wife as Subsidy".
+ * 3. Silence Check: Evaluates floor plan acoustics.
+ * 4. Adversarial Verification: Self-attacks the plan to test robustness.
  */
 
 class AegisEngine {
-    
     constructor() {
-        // --- 1. CONSTANTS ---
         this.CONST = {
-            MAX_LOAN_YEARS: 35,
-            MAX_AGE: 80,
-            STRESS_RATE_ADD: 2.0, // +2% for stress test
-            ASSET_DECAY_BUILDING: 0.02, // 2% depreciation/year
-            ASSET_DECAY_LAND: 0.005 // 0.5% depreciation/year (optimistic)
+            STRESS_RATE_ADD: 2.0, // +2.0% rate hike test
+            ASSET_DECAY: 0.02,    // 2% annual depreciation
+            TAX_RATE: 0.8,        // Net income approx ratio
+            SILENCE_PENALTY: 15   // Score penalty for bad acoustics
         };
-        
-        // Memory Allocation (Float64Array for Speed & Type Safety)
-        // [0]: Price, [1]: Income, [2]: Rate, [3]: Cost
-        this.buffer = new Float64Array(4);
     }
 
     /**
-     * CORE: MORTGAGE CALCULATOR (PMT Equivalent)
-     * Using withered math formulas for reliability.
+     * PMT (Payment) Calculator
+     * Uses Withered Math (Standard Formula)
      */
-    calculatePMT(principal, annualRate, years) {
+    pmt(ratePct, years, principal) {
         if (principal <= 0) return 0;
-        if (annualRate <= 0) return Math.round((principal / years / 12));
-
-        const r = annualRate / 100 / 12; // Monthly rate
-        const n = years * 12; // Total months
+        if (ratePct <= 0) return Math.round((principal * 10000) / (years * 12));
         
-        // PMT Formula: P * r * (1+r)^n / ((1+r)^n - 1)
-        const pow = Math.pow(1 + r, n);
-        const pmt = principal * r * pow / (pow - 1);
+        const r = (ratePct / 100) / 12;
+        const n = years * 12;
+        const p = principal * 10000; // Man -> Yen
         
-        return Math.round(pmt); // Return Integer (Yen)
+        const x = Math.pow(1 + r, n);
+        return Math.round((p * r * x) / (x - 1));
     }
 
     /**
-     * MAIN SIMULATION
-     * Returns a comprehensive 'Audit Report' object.
+     * 1. JOB CHANGE LOGIC (2025/03 SPECIAL)
+     * Calculates the gap between "Bank Screening Income" and "Real Survival Cash".
      */
-    runAudit(inputs) {
-        // 1. Input Sanitization (Clamp to Memory)
-        this.buffer[0] = Math.max(0, inputs.price * 10000); // Man Yen -> Yen
-        this.buffer[1] = Math.max(0, inputs.income * 10000); // Man Yen -> Yen
-        this.buffer[2] = Math.max(0.1, Math.min(15.0, inputs.rate)); // %
-        this.buffer[3] = Math.max(0, inputs.cost); // Yen
-
-        const price = this.buffer[0];
-        const income = this.buffer[1];
-        const rate = this.buffer[2];
-        const cost = this.buffer[3];
-
-        // 2. Base Calculation
-        const loanAmount = price; // Assuming Full Loan for Safety Check
-        const monthlyLoan = this.calculatePMT(loanAmount, rate, 35);
-        const totalMonthlyCost = monthlyLoan + cost;
-        const annualCost = totalMonthlyCost * 12;
+    calcIncomeProfile(inputs) {
+        const { joinYear, joinMonth, baseSalary, bonus } = inputs;
         
-        // 3. Safety Ratio (Repayment Burden)
-        // Ratio = Annual Cost / Annual Income
-        const ratio = (income > 0) ? (annualCost / income) * 100 : 999;
+        // A. Bank Screening Income (Theoretical Full Year)
+        // (Monthly * 12) + Bonus
+        const bankIncome = (baseSalary * 12) + bonus;
 
-        // 4. Asset Prediction (10 Years later)
-        // Simple Model: Land (70%) holds, Building (30%) decays
-        // This is a "Heuristic Model" - fast and "good enough" for screening
-        const landValue = price * 0.7 * Math.pow(1 - this.CONST.ASSET_DECAY_LAND, 10);
-        const bldgValue = price * 0.3 * Math.pow(1 - this.CONST.ASSET_DECAY_BUILDING, 10);
-        const assetValue10Y = Math.round(landValue + bldgValue);
-
-        // Loan Balance after 10Y
-        // Balance = P * ((1+r)^n - (1+r)^p) / ((1+r)^n - 1)
-        const r = rate / 100 / 12;
-        const n = 35 * 12;
-        const p = 10 * 12;
-        const powN = Math.pow(1 + r, n);
-        const powP = Math.pow(1 + r, p);
-        const balance10Y = Math.round(loanAmount * (powN - powP) / (powN - 1));
-
-        // 5. Self-Verification (Stress Test)
-        // "What if rate goes up by +2%?"
-        const stressRate = rate + this.CONST.STRESS_RATE_ADD;
-        const stressPayment = this.calculatePMT(loanAmount, stressRate, 35);
-        const stressRatio = (income > 0) ? ((stressPayment + cost) * 12 / income) * 100 : 999;
-        
-        // 6. Final Verdict Logic
-        let score = 100;
-        let rank = 'S';
-        let desc = '完璧 (Perfect)';
-
-        // Deduct points based on Ratio
-        if (ratio > 20) score -= (ratio - 20) * 2;
-        if (ratio > 30) score -= (ratio - 30) * 3; // Penalty accelerates
-        
-        // Deduct points based on Stress Test
-        if (stressRatio > 35) score -= 15; // Vulnerable to rate hike
-        
-        // Cap Score
-        score = Math.max(0, Math.min(100, Math.round(score)));
-
-        // Determine Rank
-        if (score >= 90) { rank = 'S'; desc = '盤石 (Ironclad)'; }
-        else if (score >= 75) { rank = 'A'; desc = '安全 (Safe)'; }
-        else if (score >= 60) { rank = 'B'; desc = '適正 (Fair)'; }
-        else if (score >= 40) { rank = 'C'; desc = '注意 (Caution)'; }
-        else { rank = 'D'; desc = '危険 (Danger)'; }
-
-        // Generate Digital Signature (Hash)
-        const signature = this.generateHash(score, rank, monthlyLoan);
+        // B. Real Cash Flow (First Year Survival)
+        // If joined 2025/3, Jan/Feb are missing (10 months pay).
+        let workedMonths = 12;
+        if (joinYear === 2025) {
+            workedMonths = 12 - (joinMonth - 1); // e.g. Mar(3) -> 12 - 2 = 10 months
+        }
+        const realIncome = (baseSalary * workedMonths) + bonus;
 
         return {
-            monthlyTotal: totalMonthlyCost,
-            ratio: Math.round(ratio * 10) / 10,
-            asset10Y: assetValue10Y,
-            balance10Y: balance10Y,
+            bank: bankIncome,
+            real: realIncome,
+            gap: bankIncome - realIncome, // The "Missing Money"
+            monthlyNet: (baseSalary * 0.8) // Approx Take-home for survival check
+        };
+    }
+
+    /**
+     * 2. SILENCE CHECK (PHYSICS AUDIT)
+     * Evaluates risk of waking up wife.
+     */
+    calcSilenceScore(silenceMode, roomLayout) {
+        if (!silenceMode) return { score: 100, risk: "N/A" };
+
+        // roomLayout: 'bad' (Bedroom Side), 'good' (Hallway), 'best' (Separate)
+        switch(roomLayout) {
+            case 'bad': 
+                return { score: 40, risk: "HIGH: 音漏れにより生活リズム衝突の危険大" };
+            case 'good': 
+                return { score: 85, risk: "LOW: 廊下・ドア2枚隔てており安全" };
+            case 'best': 
+                return { score: 100, risk: "NONE: 物理的に隔離されており完全" };
+            default: 
+                return { score: 70, risk: "UNKNOWN" };
+        }
+    }
+
+    /**
+     * MAIN AUDIT PIPELINE
+     */
+    runAudit(inputs) {
+        // --- STEP 1: INCOME ANALYSIS ---
+        const incomeProfile = this.calcIncomeProfile(inputs);
+
+        // --- STEP 2: LOAN CALCULATION (BANK VIEW) ---
+        const loanAmount = inputs.price - inputs.downPayment;
+        const bankPayment = this.pmt(inputs.rate, 35, loanAmount); // Monthly Yen
+        
+        // Bank Repayment Ratio (Annual Pay / Annual Income)
+        // Bank uses "Screening Income" (Full Year)
+        const bankRatio = ((bankPayment * 12) / (incomeProfile.bank * 10000)) * 100;
+
+        // --- STEP 3: REAL LIFE CALCULATION (JOINT VIEW) ---
+        // Real Burden = Bank Payment - Wife's Subsidy
+        const wifeSubsidyYen = inputs.wifeSubsidy * 10000;
+        const realBurden = Math.max(0, bankPayment - wifeSubsidyYen);
+        
+        // Real Ratio (Burden / Real Income)
+        // We use Real Income (short year) to be strict
+        const realRatio = ((realBurden * 12) / (incomeProfile.real * 10000)) * 100;
+
+        // --- STEP 4: ADVERSARIAL ATTACK (SELF-VERIFICATION) ---
+        // "What if rate spikes +2%?"
+        const stressPayment = this.pmt(inputs.rate + this.CONST.STRESS_RATE_ADD, 35, loanAmount);
+        const stressBurden = Math.max(0, stressPayment - wifeSubsidyYen);
+        const stressRatio = ((stressBurden * 12) / (incomeProfile.real * 10000)) * 100;
+        
+        // Did we survive the attack? (Threshold: 40% ratio)
+        const survivedStress = stressRatio < 40;
+
+        // --- STEP 5: SILENCE AUDIT ---
+        const silence = this.calcSilenceScore(inputs.silenceMode, inputs.roomLayout);
+
+        // --- STEP 6: SCORING & RANKING ---
+        let score = 100;
+        let reasons = [];
+
+        // Penalties
+        if (bankRatio > 35) { score -= 30; reasons.push("銀行審査: 危険域"); }
+        else if (bankRatio > 30) { score -= 10; reasons.push("銀行審査: ギリギリ"); }
+
+        if (realRatio > 30) { score -= 10; reasons.push("実生活: 手元資金圧迫"); }
+        
+        if (!survivedStress) { score -= 15; reasons.push("脆弱性: 金利上昇に耐えられません"); }
+
+        if (silence.score < 60) { score -= this.CONST.SILENCE_PENALTY; reasons.push("環境: 騒音リスク大"); }
+
+        // Job Change Penalty (Cash Gap)
+        if (incomeProfile.gap > 50) {
+            // Only warn, minimal score impact if wife supports
+            reasons.push(`注意: 初年度年収が${incomeProfile.gap}万円 低いです`);
+        }
+
+        // Cap
+        score = Math.max(0, Math.min(100, Math.round(score)));
+
+        // Rank
+        let rank = 'C';
+        if (score >= 90) rank = 'S';
+        else if (score >= 75) rank = 'A';
+        else if (score >= 60) rank = 'B';
+
+        // Digital Signature (Withered Hash)
+        const signature = this.sign(score, rank, realBurden);
+
+        return {
+            income: incomeProfile,
+            monthly: {
+                bank: bankPayment,
+                real: realBurden,
+                stress: stressBurden
+            },
+            ratios: {
+                bank: bankRatio.toFixed(1),
+                real: realRatio.toFixed(1),
+                stress: stressRatio.toFixed(1)
+            },
+            silence: silence,
             score: score,
             rank: rank,
-            desc: desc,
-            isSafe: score >= 60,
+            reasons: reasons,
             signature: signature
         };
     }
 
     /**
-     * INVERSE SOLVER (THE ORACLE)
-     * "How much income do I need for Rank A?"
-     * Uses Binary Search with Safety Break.
+     * Generate Integrity Hash
      */
-    solveRequiredIncome(targetScore, currentInputs) {
-        let low = 200 * 10000; // Min 2M Yen
-        let high = 5000 * 10000; // Max 50M Yen
-        let steps = 0;
-        let bestIncome = high;
-
-        // Circuit Breaker: Max 20 iterations (approx 1M precision)
-        while (low <= high && steps < 20) {
-            steps++;
-            const mid = Math.floor((low + high) / 2);
-            
-            // Simulation run
-            const sim = this.runAudit({ ...currentInputs, income: mid / 10000 });
-            
-            if (sim.score >= targetScore) {
-                bestIncome = mid;
-                high = mid - 10000; // Try lower
-            } else {
-                low = mid + 10000; // Need more money
-            }
+    sign(score, rank, val) {
+        const str = `TRI-AXIS-V21-${score}-${rank}-${val}`;
+        let h = 0xdeadbeef;
+        for(let i=0; i<str.length; i++) {
+            h = Math.imul(h ^ str.charCodeAt(i), 2654435761);
         }
-        
-        return bestIncome;
-    }
-
-    /**
-     * CRYPTO: LIGHTWEIGHT HASHING (Adler-32 variant)
-     * Fast, withered tech hash for integrity check. Not military grade, but enough for anti-tamper.
-     */
-    generateHash(score, rank, pmt) {
-        const str = `${score}-${rank}-${pmt}-AEGIS-SALT-V1`;
-        let a = 1, b = 0;
-        for (let i = 0; i < str.length; i++) {
-            a = (a + str.charCodeAt(i)) % 65521;
-            b = (b + a) % 65521;
-        }
-        return ((b << 16) | a).toString(16).toUpperCase();
+        return ((h ^ h >>> 16) >>> 0).toString(16).toUpperCase();
     }
 }
 
-// Instantiate Global Engine
+// Instantiate
 window.Engine = new AegisEngine();
-console.log("[Logic] Aegis Engine Online. Float64 Memory Allocation Complete.");
+console.log("[Logic] Personal Universe Engine: MOUNTED");
 
 </script>
 <script>
 /**
  * PART 4: THE REACTIVE INTERFACE
  * ---------------------------------------------------
- * - Reactive State Management (Proxy Pattern)
- * - Physics-based Input Handling (Debounce & Haptics)
- * - DOM Renderer with "Silent Confidence" Animation
- * - API Integration Bridge
+ * Bridges the UI (Part 1) with the Logic Engine (Part 3).
+ * Features:
+ * - Physics-based Debounce (Anti-spam)
+ * - True Network Awareness (No fake offline)
+ * - Blue Base Summer Theme Rendering
  */
 
 (function() {
-    // --- 1. STATE MANAGEMENT ---
+    // --- 1. STATE & DOM CACHE ---
     const STATE = {
-        price: 6500,  // Man Yen
-        income: 800,  // Man Yen
-        cost: 25000,  // Yen
-        rate: 0.475,  // %
-        source: 'INTERNAL' // 'INTERNAL' | 'API'
+        joinYear: 2025,
+        joinMonth: 3,
+        baseSalary: 45, // Man Yen
+        bonus: 140,     // Man Yen
+        wifeSubsidy: 0, // Man Yen
+        price: 6500,    // Man Yen
+        downPayment: 0, // Man Yen
+        rate: 0.475,    // %
+        silenceMode: true,
+        roomLayout: 'good' // 'bad'|'good'|'best'
     };
 
-    // DOM Cache
     const UI = {
-        sliders: {
+        inputs: {
+            joinYear: document.getElementById('in-join-year'),
+            joinMonth: document.getElementById('in-join-month'),
+            salary: document.getElementById('in-salary'),
+            bonus: document.getElementById('in-bonus'),
+            wife: document.getElementById('in-wife'),
             price: document.getElementById('in-price'),
-            income: document.getElementById('in-income')
+            down: document.getElementById('in-down'),
+            rate: document.getElementById('in-rate')
         },
         displays: {
+            salary: document.getElementById('disp-salary'),
+            bonus: document.getElementById('disp-bonus'),
+            wife: document.getElementById('disp-wife'),
             price: document.getElementById('disp-price'),
-            income: document.getElementById('disp-income'),
-            monthly: document.getElementById('out-monthly'),
-            ratio: document.getElementById('out-ratio'),
-            asset: document.getElementById('out-asset'),
-            rank: document.getElementById('out-rank'),
-            score: document.getElementById('out-score'),
-            desc: document.getElementById('out-desc'),
-            hash: document.getElementById('sign-hash'),
-            sourceBadge: document.getElementById('source-badge'),
-            connDot: document.getElementById('conn-dot'),
-            connText: document.getElementById('conn-text')
+            down: document.getElementById('disp-down'),
+            rate: document.getElementById('disp-rate'),
+            statusText: document.getElementById('status-text'),
+            statusDot: document.getElementById('status-dot')
         },
         tracks: {
-            price: document.getElementById('track-price'),
-            income: document.getElementById('track-income')
+            salary: document.getElementById('fill-salary'),
+            bonus: document.getElementById('fill-bonus'),
+            wife: document.getElementById('fill-wife'),
+            price: document.getElementById('fill-price'),
+            down: document.getElementById('fill-down'),
+            rate: document.getElementById('fill-rate')
         },
-        canvas: document.getElementById('qr-canvas'),
-        buttons: {
-            station: document.getElementById('btn-station'),
-            oracle: document.getElementById('btn-oracle')
-        }
+        toggles: {
+            silence: document.getElementById('tog-silence'),
+            silenceOpts: document.getElementById('silence-options')
+        },
+        layoutBtns: document.querySelectorAll('.radio-btn'),
+        dashboard: document.getElementById('dashboard-area')
     };
 
-    // Debounce Timer
     let calcTimer = null;
 
     // --- 2. CONTROLLER (INPUT HANDLING) ---
-    
     function init() {
-        // Bind Sliders
-        Object.keys(UI.sliders).forEach(key => {
-            const el = UI.sliders[key];
+        // A. Sliders (Continuous)
+        Object.keys(UI.inputs).forEach(key => {
+            const el = UI.inputs[key];
+            if (!el) return;
             
-            // "Input" event for instant visual feedback (60fps)
-            el.addEventListener('input', (e) => {
+            // Event type depends on element
+            const evtType = (el.tagName === 'SELECT') ? 'change' : 'input';
+
+            el.addEventListener(evtType, (e) => {
                 const val = Number(e.target.value);
                 STATE[key] = val;
-                updateVisualsOnly(key, val); // Fast update
-                scheduleCalculation();      // Debounced Logic
+                
+                // Instant Visual Update (Direct Manipulation)
+                if (UI.displays[key]) UI.displays[key].innerText = val.toLocaleString();
+                if (UI.tracks[key] && el.type === 'range') {
+                    const min = Number(el.min);
+                    const max = Number(el.max);
+                    const percent = ((val - min) / (max - min)) * 100;
+                    UI.tracks[key].style.width = `${percent}%`;
+                }
+
+                scheduleAudit();
             });
         });
 
-        // Bind Buttons
-        UI.buttons.oracle.addEventListener('click', runOracle);
-        UI.buttons.station.addEventListener('click', triggerStationFetch);
+        // B. Toggles (Silence Mode)
+        UI.toggles.silence.addEventListener('click', () => {
+            STATE.silenceMode = !STATE.silenceMode;
+            const sw = UI.toggles.silence;
+            const opts = UI.toggles.silenceOpts;
+            
+            if (STATE.silenceMode) {
+                sw.setAttribute('data-state', 'on');
+                opts.classList.remove('hidden');
+            } else {
+                sw.setAttribute('data-state', 'off');
+                opts.classList.add('hidden');
+                sw.style.background = 'rgba(255,255,255,0.1)';
+            }
+            scheduleAudit();
+        });
 
-        // Worker Event Listener
-        window.addEventListener('WorkerData', handleWorkerData);
+        // C. Radio Buttons (Layout)
+        UI.layoutBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Visual Update
+                UI.layoutBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // State Update
+                STATE.roomLayout = e.target.dataset.val;
+                scheduleAudit();
+            });
+        });
 
-        // Initial Run
-        updateVisualsOnly('price', STATE.price);
-        updateVisualsOnly('income', STATE.income);
-        runCalculation();
+        // D. Network Awareness
+        window.addEventListener('online', updateConnStatus);
+        window.addEventListener('offline', updateConnStatus);
+        updateConnStatus(); // Initial check
+
+        // E. Initial Calc
+        scheduleAudit();
     }
 
-    // Fast Visual Update (No Heavy Logic)
-    function updateVisualsOnly(key, val) {
-        // Update Text
-        if (UI.displays[key]) {
-            UI.displays[key].innerText = val.toLocaleString();
-        }
-        
-        // Update Slider Track Width
-        if (UI.sliders[key] && UI.tracks[key]) {
-            const min = Number(UI.sliders[key].min);
-            const max = Number(UI.sliders[key].max);
-            const percent = ((val - min) / (max - min)) * 100;
-            UI.tracks[key].style.width = `${percent}%`;
-        }
-    }
-
-    // Debounced Logic Trigger (Anti-Spam)
-    function scheduleCalculation() {
+    // Debounce Logic
+    function scheduleAudit() {
         if (calcTimer) clearTimeout(calcTimer);
-        // Wait 50ms for "settling" - fast enough for UX, slow enough for performance
-        calcTimer = setTimeout(runCalculation, 50);
+        calcTimer = setTimeout(runAudit, 50); // 50ms latency
     }
 
-    // --- 3. MAIN RENDERER ---
+    function updateConnStatus() {
+        const isOnline = navigator.onLine;
+        UI.displays.statusText.innerText = isOnline ? "INTERNAL (READY)" : "OFFLINE";
+        UI.displays.statusDot.className = isOnline ? "dot internal" : "dot";
+        // Note: Part 2 Worker handles API calls logic
+    }
 
-    function runCalculation() {
-        // Call Part 3 Engine
+    // --- 3. RENDERER (DASHBOARD) ---
+    function runAudit() {
         const result = window.Engine.runAudit(STATE);
-        
-        // Render Results
         renderDashboard(result);
-        drawSignature(result.signature);
     }
 
     function renderDashboard(res) {
-        // 1. Monthly Cost
-        const manYen = (res.monthlyTotal / 10000).toFixed(1);
-        UI.displays.monthly.innerHTML = `${manYen} <span style="font-size:12px;">万円</span>`;
+        // Construct HTML String for Performance
+        // Blue Base Theme: Cool colors for High Score, Warm/Muted for Warnings
         
-        // 2. Ratio
-        const ratioColor = res.ratio > 30 ? 'var(--danger)' : (res.ratio > 25 ? 'var(--warning)' : 'var(--success)');
-        UI.displays.ratio.innerText = `返済比率 ${res.ratio}%`;
-        UI.displays.ratio.style.color = ratioColor;
+        const rankColor = res.rank === 'S' ? 'var(--signal-safe)' : 
+                         (res.rank === 'A' ? 'var(--accent-primary)' : 
+                         (res.rank === 'B' ? 'var(--signal-warn)' : 'var(--signal-danger)'));
 
-        // 3. Asset
-        const assetMan = (res.asset10Y / 10000).toLocaleString();
-        UI.displays.asset.innerHTML = `${assetMan} <span style="font-size:12px;">万円</span>`;
-
-        // 4. Rank & Score
-        UI.displays.rank.innerText = res.rank;
-        UI.displays.score.innerText = res.score;
-        UI.displays.desc.innerText = res.desc;
-        
-        // Update Score Color
-        const rankColor = res.rank === 'S' || res.rank === 'A' ? 'var(--success)' : (res.rank === 'D' ? 'var(--danger)' : 'var(--warning)');
-        UI.displays.desc.style.color = rankColor;
-        UI.displays.rank.style.background = `linear-gradient(180deg, #fff 0%, ${rankColor} 100%)`;
-        UI.displays.rank.style.webkitBackgroundClip = 'text';
-        UI.displays.rank.style.webkitTextFillColor = 'transparent';
-
-        // 5. Hash
-        UI.displays.hash.innerText = res.signature;
-    }
-
-    // --- 4. CANVAS VISUALIZER (The "Artifact") ---
-    
-    function drawSignature(hash) {
-        const ctx = UI.canvas.getContext('2d');
-        const size = UI.canvas.width;
-        ctx.clearRect(0, 0, size, size);
-        
-        // Generate a deterministic pattern from hash
-        let seed = 0;
-        for(let i=0; i<hash.length; i++) seed += hash.charCodeAt(i);
-        
-        ctx.fillStyle = '#000';
-        // Draw a simple 4x4 grid pattern based on hash bits
-        const cells = 4;
-        const cellSize = size / cells;
-        
-        for(let y=0; y<cells; y++) {
-            for(let x=0; x<cells; x++) {
-                // Pseudo-random based on seed
-                const val = (seed * (x+1) * (y+1)) % 17; 
-                if (val % 2 === 0) {
-                    ctx.fillRect(x*cellSize + 2, y*cellSize + 2, cellSize - 4, cellSize - 4);
-                }
-            }
+        let reasonsHtml = '';
+        if (res.reasons.length > 0) {
+            reasonsHtml = `<div style="margin-top:12px; font-size:11px; color:var(--text-muted);">
+                ${res.reasons.map(r => `<div style="margin-bottom:4px;">⚠️ ${r}</div>`).join('')}
+            </div>`;
         }
-    }
 
-    // --- 5. ORACLE & API LOGIC ---
+        const html = `
+            <div class="panel" style="border-color:${rankColor}; box-shadow:0 0 20px -10px ${rankColor};">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <h2 style="color:${rankColor}; margin-bottom:4px;">AUDIT RANK</h2>
+                        <div class="text-hero" style="font-size:42px; font-weight:700; color:${rankColor}; line-height:1;">
+                            ${res.rank} <span style="font-size:16px; font-weight:400; opacity:0.8;">/ ${res.score}</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:10px; color:var(--text-muted);">DIGITAL SIGNATURE</div>
+                        <div style="font-family:monospace; font-size:10px; opacity:0.5;">${res.signature.substring(0,8)}...</div>
+                    </div>
+                </div>
 
-    function runOracle() {
-        const btn = UI.buttons.oracle;
-        const originalText = btn.innerHTML;
-        
-        // Silent Confidence Animation
-        btn.innerHTML = `<span class="glitch-active">CALCULATING...</span>`;
-        btn.style.opacity = 0.7;
+                ${reasonsHtml}
 
-        // Run Inverse Solver (Async Simulation)
-        setTimeout(() => {
-            const requiredIncome = window.Engine.solveRequiredIncome(80, STATE); // Aim for Score 80 (A Rank)
-            
-            // Haptic Feedback (simulated)
-            if (window.navigator.vibrate) window.navigator.vibrate(50);
+                <div style="margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1); display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    
+                    <div>
+                        <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">銀行審査 (表面)</div>
+                        <div style="font-size:18px; font-weight:500;">${(res.monthly.bank/10000).toFixed(1)} <span style="font-size:11px;">万円</span></div>
+                        <div style="font-size:11px; color:${res.ratios.bank > 30 ? 'var(--signal-warn)' : 'var(--text-muted)'};">
+                            返済比率 ${res.ratios.bank}%
+                        </div>
+                    </div>
 
-            if (requiredIncome >= 50000000) {
-                alert("判定不能: 現在の条件では、計算可能な範囲を超えています。");
-            } else {
-                const reqMan = Math.round(requiredIncome / 10000);
-                const diff = reqMan - STATE.income;
-                const msg = diff > 0 
-                    ? `ランクA（安全圏）には、世帯年収があと【${diff}万円】必要です。` 
-                    : `現在の年収で十分にランクA（安全圏）です。`;
-                
-                alert(`🔮 神託 (Oracle Result)\n\n${msg}\n(必要年収: ${reqMan}万円)`);
-                
-                // Auto-adjust UI to show the dream
-                if (diff > 0 && confirm("年収スライダーをこの値に合わせてシミュレーションしますか？")) {
-                    STATE.income = reqMan;
-                    UI.sliders.income.value = reqMan;
-                    updateVisualsOnly('income', reqMan);
-                    runCalculation();
-                }
-            }
+                    <div>
+                        <div style="font-size:10px; color:var(--accent-primary); text-transform:uppercase;">実質負担 (生活)</div>
+                        <div style="font-size:18px; font-weight:600; color:#fff;">${(res.monthly.real/10000).toFixed(1)} <span style="font-size:11px;">万円</span></div>
+                        <div style="font-size:11px; color:${res.ratios.real > 25 ? 'var(--signal-warn)' : 'var(--signal-safe)'};">
+                            実質比率 ${res.ratios.real}%
+                        </div>
+                    </div>
+                </div>
 
-            btn.innerHTML = originalText;
-            btn.style.opacity = 1;
-        }, 600); // 600ms artificial delay for "Thinking" feel
-    }
+                <div style="margin-top:12px; font-size:10px; color:var(--text-dim); text-align:center;">
+                    ※ 転職初年度の年収補正 (${res.income.gap.toFixed(0)}万円減) 適用済み
+                </div>
+            </div>
+        `;
 
-    function triggerStationFetch() {
-        // Trigger Worker API
-        const query = prompt("検索したい駅名を入力してください（例: 渋谷）");
-        if (!query) return;
-
-        setConnectivity('loading');
-        window.AegisCore.searchStation(query);
-    }
-
-    function handleWorkerData(e) {
-        const { type, data, source } = e.detail;
-        
-        if (type === 'SEARCH_RESULT') {
-            if (data && data.length > 0) {
-                const top = data[0];
-                alert(`📍 データ取得成功\n\n駅名: ${top.name}\n相場指数: ${top.price}\nソース: ${source === 'API_MIXED' ? 'Cloud API' : 'Internal DB'}`);
-                
-                // Apply Data
-                setConnectivity('online');
-                // In a full app, this would update property price estimates
-            } else {
-                alert("該当する駅が見つかりませんでした（内蔵/API共に）");
-                setConnectivity('offline');
-            }
-        }
-    }
-
-    function setConnectivity(status) {
-        // status: 'offline' | 'loading' | 'online'
-        UI.displays.connDot.setAttribute('data-status', status === 'loading' ? 'slow' : status);
-        UI.displays.connText.innerText = status === 'loading' ? 'CONNECTING...' : (status === 'online' ? 'ONLINE' : 'OFFLINE');
-        
-        if (status === 'online') {
-            UI.displays.sourceBadge.innerHTML = `<span style="font-size:10px; padding:2px 6px; background:rgba(50,215,75,0.2); border-radius:4px; color:var(--success);">☁️ API連結</span>`;
-        }
+        UI.dashboard.innerHTML = html;
     }
 
     // --- BOOT ---
+    // Remove quarantine is handled by Part 2 worker event, 
+    // but we ensure init runs now.
     init();
 
 })();
