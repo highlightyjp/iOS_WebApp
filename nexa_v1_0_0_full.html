@@ -18,16 +18,17 @@
 }
 *{box-sizing:border-box;}
 html,body{
-  margin:0;
-  background:var(--bg);
-  color:var(--fg);
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  margin:0;height:100%;
+  background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,
+               "Hiragino Sans","Noto Sans JP",sans-serif;
 }
 body{overflow:hidden;}
+
 header{
   position:fixed;top:0;left:0;right:0;
   padding:calc(env(safe-area-inset-top)+10px) 16px 10px;
-  backdrop-filter:blur(26px) saturate(140%);
+  backdrop-filter:blur(28px) saturate(140%);
   background:var(--glass);
   border-bottom:1px solid var(--border);
   z-index:10;
@@ -45,13 +46,16 @@ header button{
 
 main{
   padding:
-    calc(env(safe-area-inset-top)+88px)
+    calc(env(safe-area-inset-top)+80px)
     16px
     calc(env(safe-area-inset-bottom)+120px);
-  min-height:100dvh;
+  height:100%;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
 }
+
+.view{display:none;}
+.view.active{display:block;}
 
 .section{
   background:var(--glass);
@@ -61,7 +65,6 @@ main{
   padding:16px;
   margin-bottom:16px;
 }
-
 .section h2{
   margin:0 0 12px;
   font-size:17px;
@@ -73,8 +76,7 @@ label{
   color:var(--sub);
   margin-top:12px;
 }
-
-input,select{
+input{
   width:100%;
   margin-top:4px;
   padding:12px;
@@ -100,12 +102,12 @@ button.primary{
 footer{
   position:fixed;bottom:0;left:0;right:0;
   padding:8px 16px calc(env(safe-area-inset-bottom)+8px);
+  backdrop-filter:blur(28px);
+  background:var(--glass);
+  border-top:1px solid var(--border);
   font-size:11px;
   color:var(--sub);
   text-align:center;
-  backdrop-filter:blur(26px);
-  background:var(--glass);
-  border-top:1px solid var(--border);
 }
 </style>
 </head>
@@ -114,608 +116,638 @@ footer{
 
 <header>
   <div class="row">
-    <div class="title">NEXA</div>
-    <button aria-label="設定">⋯</button>
+    <div class="title" id="header-title">NEXA</div>
+    <button id="btn-settings">⋯</button>
   </div>
 </header>
 
 <main>
 
-  <!-- 物件 -->
+<!-- INPUT -->
+<section id="view-input" class="view">
   <div class="section">
     <h2>物件</h2>
     <label>価格（万円）</label>
-    <input type="number">
-
-    <label>専有面積（㎡）</label>
-    <input type="number">
-
-    <label>築年（西暦）</label>
-    <input type="number">
-
-    <label>用途地域</label>
-    <select>
-      <option>第一種低層住居専用地域</option>
-      <option>第二種低層住居専用地域</option>
-      <option>第一種住居地域</option>
-      <option>近隣商業地域</option>
-      <option>商業地域</option>
-    </select>
+    <input id="price" type="number">
+    <label>管理費等（月額合計）</label>
+    <input id="fees" type="number">
   </div>
 
-  <!-- 管理・費用 -->
   <div class="section">
-    <h2>管理・費用</h2>
-    <label>管理費（月額）</label>
-    <input type="number">
-
-    <label>修繕積立金（月額）</label>
-    <input type="number">
-
-    <label>その他月額費用（ネット・共聴など）</label>
-    <input type="number">
-
-    <label>管理会社名</label>
-    <input type="text">
-  </div>
-
-  <!-- 世帯・ローン -->
-  <div class="section">
-    <h2>世帯・ローン</h2>
+    <h2>世帯</h2>
     <label>世帯年収（万円）</label>
-    <input type="number">
-
-    <label>購入時年齢（または生年月日）</label>
-    <input type="text">
-
-    <label>ローン形態</label>
-    <select>
-      <option>単独ローン</option>
-      <option>ペアローン</option>
-      <option>収入合算</option>
-    </select>
-
-    <label>ローン期間（年）</label>
-    <select>
-      <option>25</option><option>30</option><option>35</option>
-      <option>40</option><option>45</option>
-    </select>
+    <input id="income" type="number">
   </div>
 
-  <!-- 立地・通勤 -->
+  <button class="primary" id="btn-eval">評価する</button>
+</section>
+
+<!-- RESULT -->
+<section id="view-result" class="view">
   <div class="section">
-    <h2>立地・通勤</h2>
-    <label>物件住所</label>
-    <input type="text">
-
-    <label>最寄り駅（複数可）</label>
-    <input type="text">
-
-    <label>通勤・通学先（複数可）</label>
-    <input type="text">
+    <h2>評価結果</h2>
+    <p id="result-rank"></p>
+    <p id="result-summary"></p>
   </div>
+  <button class="primary" id="btn-back">戻る</button>
+</section>
 
-  <button class="primary">評価する</button>
+<!-- SETTINGS -->
+<section id="view-settings" class="view">
+  <div class="section">
+    <h2>設定</h2>
+    <p>（PART3で拡張）</p>
+  </div>
+  <button class="primary" id="btn-settings-back">戻る</button>
+</section>
 
 </main>
+
+<footer>
+© Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とします
+</footer>
+
 <script>
-/* =========================================================
-   NEXA CORE ENGINE v1.X
-   Worldline / MonteCarlo / Sensitivity
-   ========================================================= */
+/* =====================
+   GLOBAL NAMESPACE
+===================== */
+window.NEXA = {};
 
-/* ---------- Utility ---------- */
-function nowJST() {
-  const d = new Date();
-  return new Date(d.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }));
+/* =====================
+   ROUTER
+===================== */
+const views = {
+  input: document.getElementById("view-input"),
+  result: document.getElementById("view-result"),
+  settings: document.getElementById("view-settings")
+};
+const headerTitle = document.getElementById("header-title");
+
+function render(){
+  const h = location.hash || "#/input";
+  Object.values(views).forEach(v=>v.classList.remove("active"));
+
+  if(h==="#/result"){
+    views.result.classList.add("active");
+    headerTitle.textContent="評価結果";
+  }else if(h==="#/settings"){
+    views.settings.classList.add("active");
+    headerTitle.textContent="設定";
+  }else{
+    views.input.classList.add("active");
+    headerTitle.textContent="NEXA";
+  }
 }
+addEventListener("hashchange",render);
+addEventListener("DOMContentLoaded",render);
 
-function uid() {
-  return crypto.randomUUID();
-}
+/* =====================
+   CORE EVALUATION
+===================== */
+function evaluate(){
+  const price = +price.value || 0;
+  const fees  = +fees.value  || 0;
+  const income= +income.value|| 0;
 
-/* ---------- Input Collector ---------- */
-function collectInput() {
-  const inputs = document.querySelectorAll("input, select");
-  const data = {};
-  inputs.forEach(el => {
-    const key =
-      el.previousElementSibling?.innerText ||
-      el.getAttribute("aria-label") ||
-      "unknown";
-    data[key] = el.value;
-  });
-  return data;
-}
+  const monthlyLoan = price * 10000 * 0.003;
+  const safe = income * 10000 / 12 * 0.25;
+  const danger = income * 10000 / 12 * 0.4;
 
-/* ---------- Monte Carlo Simulation ---------- */
-function monteCarloSimulation(base, trials) {
-  let stable = 0;
-  let stress = 0;
-
-  for (let i = 0; i < trials; i++) {
-    const interestShock = 1 + (Math.random() - 0.5) * 0.4; // ±20%
-    const costShock = 1 + Math.random() * 0.3;           // +0〜30%
-
-    const burden =
-      base.monthlyLoan * interestShock +
-      base.monthlyFees * costShock;
-
-    if (burden < base.safeThreshold) stable++;
-    if (burden > base.dangerThreshold) stress++;
+  let rank="B",summary="慎重な検討が必要です。";
+  if(monthlyLoan + fees < safe){
+    rank="A";
+    summary="家計に対して比較的安定した負担水準です。";
+  }
+  if(monthlyLoan + fees > danger){
+    rank="C";
+    summary="将来の負担増に対する耐性が低い可能性があります。";
   }
 
-  return {
-    stableRatio: stable / trials,
-    stressRatio: stress / trials
-  };
+  return {rank,summary};
 }
 
-/* ---------- Sensitivity Analysis ---------- */
-function sensitivityAnalysis(base) {
-  const factors = [
-    { name: "金利前提", weight: base.monthlyLoan },
-    { name: "管理・修繕費", weight: base.monthlyFees },
-    { name: "物件価格", weight: base.price }
-  ];
-
-  return factors
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 3)
-    .map(f => f.name);
-}
-
-/* ---------- Worldline Generator ---------- */
-function generateWorldlines(result) {
-  return [
-    {
-      name: "前提継続",
-      text:
-        result.stableRatio > 0.7
-          ? "現在の条件が継続した場合、生活は比較的安定して維持できる可能性があります。"
-          : "条件が変わらない場合でも、将来の負担増には注意が必要です。"
-    },
-    {
-      name: "条件悪化",
-      text:
-        result.stressRatio > 0.3
-          ? "金利や費用が上昇した場合、家計に強い圧迫が生じる可能性があります。"
-          : "一定の悪化があっても、即座に破綻する可能性は高くありません。"
-    },
-    {
-      name: "条件改善",
-      text:
-        "収入増加や頭金の積み増しがあれば、判断の余地はさらに広がります。"
-    }
-  ];
-}
-
-/* ---------- Core Evaluation ---------- */
-function runEvaluation() {
-  const input = collectInput();
-
-  const price = Number(input["価格（万円）"] || 0);
-  const income = Number(input["世帯年収（万円）"] || 0);
-  const fees =
-    Number(input["管理費（月額）"] || 0) +
-    Number(input["修繕積立金（月額）"] || 0) +
-    Number(input["その他月額費用（ネット・共聴など）"] || 0);
-
-  const monthlyLoan = price * 10000 * 0.003; // 近似（月返済）
-  const safeThreshold = income * 10000 / 12 * 0.25;
-  const dangerThreshold = income * 10000 / 12 * 0.4;
-
-  const trials =
-    Math.min(
-      20000,
-      Math.max(5000, Math.floor(performance.now() * 3))
-    );
-
-  const base = {
-    price,
-    monthlyLoan,
-    monthlyFees: fees,
-    safeThreshold,
-    dangerThreshold
-  };
-
-  const mc = monteCarloSimulation(base, trials);
-  const sensitivity = sensitivityAnalysis(base);
-  const worldlines = generateWorldlines(mc);
-
-  return {
-    id: uid(),
-    time: nowJST(),
-    trials,
-    mc,
-    sensitivity,
-    worldlines,
-    input
-  };
-}
-
-/* ---------- UI Bridge ---------- */
-document.querySelector("button.primary").addEventListener("click", () => {
-  const result = runEvaluation();
-
-  /* 結果ランク（数値は出さない） */
-  let rank = "B";
-  let summary =
-    "将来条件を考慮すると、慎重な検討が必要です。";
-
-  if (result.mc.stableRatio > 0.75) {
-    rank = "A";
-    summary =
-      "複数の前提変化を考慮しても、大きく崩れにくい傾向が見られました。";
-  }
-  if (result.mc.stressRatio > 0.4) {
-    rank = "C";
-    summary =
-      "条件が悪化した場合の影響が比較的大きい可能性があります。";
-  }
-
-  /* 結果表示（Part3で正式接続） */
-  console.log("Worldline Result:", result);
-  console.log("Rank:", rank);
-  console.log("Sensitivity:", result.sensitivity);
-  console.log("Trials:", result.trials);
-
-  alert(
-    "評価が完了しました。\n\n" +
-    "ランク：" + rank + "\n\n" +
-    "詳細は次の画面で確認できます。"
-  );
-
-  window.__NEXA_LAST_RESULT__ = result;
-});
+/* =====================
+   UI BINDING
+===================== */
+btn-eval.onclick=()=>{
+  const r = evaluate();
+  result-rank.textContent = "ランク：" + r.rank;
+  result-summary.textContent = r.summary;
+  location.hash="#/result";
+};
+btn-back.onclick=()=>history.back();
+btn-settings.onclick=()=>location.hash="#/settings";
+btn-settings-back.onclick=()=>history.back();
 </script>
 <script>
 /* =========================================================
-   NEXA DATA LAYER v1.X
-   IndexedDB + LocalStorage + History + Compare
+   NEXA CORE ENGINE EXTENSION - PART 1
+   Monte Carlo / Worldlines / Trials
    ========================================================= */
 
-/* ---------- IndexedDB Setup ---------- */
-const NEXA_DB_NAME = "nexa_worldlines";
-const NEXA_DB_VERSION = 1;
-let nexaDB = null;
+/* ---- 評価ロジックを安全に上書き ---- */
+(function(){
+  const BASE_EVALUATE = window.evaluate;
 
-function openNexaDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(NEXA_DB_NAME, NEXA_DB_VERSION);
+  function monteCarlo(base, trials){
+    let stable = 0;
+    let stress = 0;
 
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains("worldlines")) {
-        const store = db.createObjectStore("worldlines", {
-          keyPath: "id"
-        });
-        store.createIndex("time", "time", { unique: false });
+    for(let i=0;i<trials;i++){
+      const interestShock = 1 + (Math.random() - 0.5) * 0.4; // ±20%
+      const feeShock = 1 + Math.random() * 0.3;             // +0〜30%
+
+      const burden =
+        base.monthlyLoan * interestShock +
+        base.monthlyFees * feeShock;
+
+      if(burden < base.safe) stable++;
+      if(burden > base.danger) stress++;
+    }
+
+    return {
+      stableRatio: stable / trials,
+      stressRatio: stress / trials
+    };
+  }
+
+  function generateWorldlines(mc){
+    return [
+      {
+        name: "前提継続",
+        text:
+          mc.stableRatio > 0.7
+          ? "現在の前提条件が続く場合、生活は比較的安定して維持できる可能性があります。"
+          : "前提条件が変わらなくても、将来の負担増には注意が必要です。"
+      },
+      {
+        name: "条件悪化",
+        text:
+          mc.stressRatio > 0.3
+          ? "金利や維持費が上昇した場合、家計に強い圧迫が生じる可能性があります。"
+          : "一定の条件悪化があっても、即座に破綻する可能性は高くありません。"
+      },
+      {
+        name: "条件改善",
+        text:
+          "収入増加や頭金の積み増しがあれば、判断の余地はさらに広がります。"
       }
+    ];
+  }
+
+  /* ---- evaluate() を拡張版に差し替え ---- */
+  window.evaluate = function(){
+    const price = +price.value || 0;
+    const fees  = +fees.value  || 0;
+    const income= +income.value|| 0;
+
+    const monthlyLoan = price * 10000 * 0.003;
+    const safe = income * 10000 / 12 * 0.25;
+    const danger = income * 10000 / 12 * 0.4;
+
+    const trials = 10000;
+
+    const mc = monteCarlo({
+      monthlyLoan,
+      monthlyFees: fees,
+      safe,
+      danger
+    }, trials);
+
+    let rank = "B";
+    let summary = "将来条件を考慮すると、慎重な検討が必要です。";
+
+    if(mc.stableRatio > 0.75){
+      rank = "A";
+      summary = "複数の将来条件を考慮しても、大きく崩れにくい傾向が見られました。";
+    }
+    if(mc.stressRatio > 0.4){
+      rank = "C";
+      summary = "条件が悪化した場合の影響が比較的大きい可能性があります。";
+    }
+
+    return {
+      rank,
+      summary,
+      trials,
+      mc,
+      worldlines: generateWorldlines(mc)
     };
-
-    req.onsuccess = e => {
-      nexaDB = e.target.result;
-      resolve(nexaDB);
-    };
-
-    req.onerror = e => reject(e);
-  });
-}
-
-/* ---------- Save Worldline ---------- */
-async function saveWorldline(result) {
-  if (!nexaDB) await openNexaDB();
-
-  const tx = nexaDB.transaction("worldlines", "readwrite");
-  tx.objectStore("worldlines").put(result);
-
-  /* LocalStorage Backup (Lightweight) */
-  const backup = {
-    id: result.id,
-    time: result.time,
-    rank: result.rank,
-    trials: result.trials
   };
-  localStorage.setItem("nexa_last", JSON.stringify(backup));
-}
 
-/* ---------- Load All Worldlines ---------- */
-async function loadAllWorldlines() {
-  if (!nexaDB) await openNexaDB();
+  /* ---- UIを安全に拡張 ---- */
+  const resultSection = document.getElementById("view-result");
 
-  return new Promise(resolve => {
-    const tx = nexaDB.transaction("worldlines", "readonly");
-    const req = tx.objectStore("worldlines").getAll();
-    req.onsuccess = e => resolve(e.target.result || []);
-  });
-}
+  const extra = document.createElement("div");
+  extra.className = "section";
+  extra.innerHTML = `
+    <h2>想定される世界線</h2>
+    <ul id="result-worldlines" style="padding-left:16px"></ul>
+    <p id="result-trials" style="font-size:12px;color:var(--sub)"></p>
+  `;
+  resultSection.insertBefore(extra, resultSection.lastElementChild);
 
-/* ---------- Compare Two Worldlines ---------- */
-function compareWorldlines(a, b) {
-  if (!a || !b) return null;
+  /* ---- 既存ボタン挙動を拡張 ---- */
+  const oldEvalHandler = btn-eval.onclick;
+  btn-eval.onclick = ()=>{
+    const r = evaluate();
 
-  const diffs = [];
+    result-rank.textContent =
+      "ランク：" + r.rank;
+    result-summary.textContent =
+      r.summary;
 
-  if (a.mc.stableRatio !== b.mc.stableRatio) {
-    diffs.push("将来安定性の前提が変化しています");
+    const ul = document.getElementById("result-worldlines");
+    ul.innerHTML =
+      r.worldlines
+        .map(w=>`<li><strong>${w.name}</strong>：${w.text}</li>`)
+        .join("");
+
+    document.getElementById("result-trials").textContent =
+      "内部試行数：約" + r.trials.toLocaleString() + " 通り";
+
+    location.hash="#/result";
+  };
+})();
+</script>
+<script>
+/* =========================================================
+   NEXA DATA LAYER - PART 2
+   IndexedDB / History / Auto Save
+   ========================================================= */
+
+(function(){
+  const DB_NAME = "nexa_history_db";
+  const STORE_NAME = "results";
+  let db = null;
+
+  /* ---------- DB OPEN ---------- */
+  function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req = indexedDB.open(DB_NAME,1);
+      req.onupgradeneeded = e=>{
+        const d = e.target.result;
+        if(!d.objectStoreNames.contains(STORE_NAME)){
+          d.createObjectStore(STORE_NAME,{keyPath:"id"});
+        }
+      };
+      req.onsuccess = e=>{
+        db = e.target.result;
+        resolve();
+      };
+      req.onerror = e=>reject(e);
+    });
   }
-  if (a.mc.stressRatio !== b.mc.stressRatio) {
-    diffs.push("条件悪化時の影響度が変化しています");
-  }
-  if (a.trials !== b.trials) {
-    diffs.push("評価条件の試行数が異なります");
+
+  /* ---------- SAVE RESULT ---------- */
+  async function saveResult(result){
+    if(!db) await openDB();
+    const tx = db.transaction(STORE_NAME,"readwrite");
+    tx.objectStore(STORE_NAME).put(result);
   }
 
-  return diffs.length
-    ? diffs.join("。") + "。"
-    : "大きな前提差分は見られません。";
-}
+  /* ---------- LOAD ALL ---------- */
+  async function loadAll(){
+    if(!db) await openDB();
+    return new Promise(resolve=>{
+      const tx = db.transaction(STORE_NAME,"readonly");
+      const req = tx.objectStore(STORE_NAME).getAll();
+      req.onsuccess = e=>resolve(e.target.result||[]);
+    });
+  }
 
-/* ---------- History View Generator ---------- */
-function renderHistoryList(container) {
-  loadAllWorldlines().then(list => {
-    if (!list.length) {
-      container.innerText = "過去の評価はまだありません。";
+  /* ---------- UI: 履歴表示セクション追加 ---------- */
+  const resultView = document.getElementById("view-result");
+
+  const historySection = document.createElement("div");
+  historySection.className = "section";
+  historySection.innerHTML = `
+    <h2>過去の評価</h2>
+    <div id="history-list"
+         style="font-size:12px;color:var(--sub)">
+      読み込み中…
+    </div>
+  `;
+  resultView.insertBefore(
+    historySection,
+    resultView.lastElementChild
+  );
+
+  /* ---------- 履歴描画 ---------- */
+  async function renderHistory(){
+    const list = await loadAll();
+    const box = document.getElementById("history-list");
+
+    if(!list.length){
+      box.textContent = "過去の評価はまだありません。";
       return;
     }
 
-    list.sort((a, b) => new Date(b.time) - new Date(a.time));
+    list.sort((a,b)=>new Date(b.time)-new Date(a.time));
 
-    container.innerHTML = list.map(w => `
-      <div style="
-        padding:10px;
-        margin-bottom:8px;
-        border-radius:12px;
-        background:rgba(255,255,255,.05)
-      ">
-        <div style="font-size:13px;">
-          ${new Date(w.time).toLocaleString("ja-JP")}
-        </div>
-        <div style="font-weight:700;margin-top:4px;">
-          ランク：${w.rank || "—"}
-        </div>
-        <div style="font-size:11px;color:#8FA3BF;">
-          試行数：約${w.trials.toLocaleString()}通り
-        </div>
-      </div>
-    `).join("");
-  });
-}
+    box.innerHTML = list
+      .slice(0,5)
+      .map(r=>{
+        return `
+          <div style="margin-bottom:6px">
+            ${new Date(r.time).toLocaleString("ja-JP")}
+            ｜ ランク ${r.rank}
+          </div>
+        `;
+      })
+      .join("");
+  }
 
-/* ---------- Auto Save Hook ---------- */
-/* Part 2 の評価結果を自動保存 */
-(function hookResultSave(){
-  const orig = window.__NEXA_LAST_RESULT__;
-  Object.defineProperty(window, "__NEXA_LAST_RESULT__", {
-    set(val) {
-      if (val && val.id) {
-        saveWorldline(val);
-      }
-      this._value = val;
-    },
-    get() {
-      return this._value;
+  /* ---------- evaluate() 実行時フック ---------- */
+  const oldEval = window.evaluate;
+  window.evaluate = function(){
+    const result = oldEval();
+    result.id = crypto.randomUUID();
+    result.time = new Date().toISOString();
+
+    saveResult(result).then(renderHistory);
+    return result;
+  };
+
+  /* ---------- 画面遷移時に履歴更新 ---------- */
+  addEventListener("hashchange",()=>{
+    if(location.hash==="#/result"){
+      renderHistory();
     }
   });
+
+})();
+</script>
+<script>
+/* =========================================================
+   NEXA SETTINGS & MASTER - PART 3
+   iOS-style Settings / Master Edit / Watch & Warn
+   ========================================================= */
+(function(){
+  /* ---------- KEYS ---------- */
+  const SETTINGS_KEY = "nexa_settings_v1";
+  const MASTER_KEY   = "nexa_master_v1";
+
+  /* ---------- DEFAULTS ---------- */
+  const DEFAULT_SETTINGS = {
+    showProcess: true,   // 判断経緯を表示
+    showTrials:  true,   // 試行回数を表示
+    allowMasterEdit: true,
+    lastUpdated: null
+  };
+
+  const DEFAULT_MASTER = {
+    managementFee: { min: 150, max: 300 }, // 円/㎡
+    repairFee:     { min: 200, max: 400 }, // 円/㎡
+    warnings: {
+      excessiveRatio: 0.4
+    }
+  };
+
+  /* ---------- LOAD / SAVE ---------- */
+  function loadJSON(key, def){
+    try{
+      return JSON.parse(localStorage.getItem(key)) || def;
+    }catch{
+      return def;
+    }
+  }
+  function saveJSON(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  const settings = loadJSON(SETTINGS_KEY, DEFAULT_SETTINGS);
+  const master   = loadJSON(MASTER_KEY,   DEFAULT_MASTER);
+
+  /* ---------- SETTINGS VIEW UI ---------- */
+  const settingsView = document.getElementById("view-settings");
+
+  settingsView.innerHTML = `
+    <div class="section">
+      <h2>一般</h2>
+      <div class="item">
+        <span>判断経緯を表示</span>
+        <input type="checkbox" id="set-showProcess">
+      </div>
+      <div class="item">
+        <span>試行回数を表示</span>
+        <input type="checkbox" id="set-showTrials">
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>マスタ（編集可）</h2>
+
+      <label>管理費ガイドライン（円/㎡）</label>
+      <input type="number" id="mg-min">
+      <input type="number" id="mg-max">
+      <div id="mg-warn" style="font-size:11px;color:#FFD700"></div>
+
+      <label>修繕積立金ガイドライン（円/㎡）</label>
+      <input type="number" id="rp-min">
+      <input type="number" id="rp-max">
+      <div id="rp-warn" style="font-size:11px;color:#FFD700"></div>
+
+      <p style="font-size:11px;color:var(--sub)">
+        ※ マスタ変更は警告を表示しますが、最終判断は利用者に委ねられます。
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>情報</h2>
+      <p style="font-size:12px;color:var(--sub)">
+        NEXA v1.x<br>
+        © Yoshinobu Takamitsu<br><br>
+        本アプリおよび生成物の著作権はすべて作者に帰属します。
+      </p>
+    </div>
+
+    <button class="primary" id="btn-settings-back">戻る</button>
+  `;
+
+  /* ---------- INIT VALUES ---------- */
+  const $ = id => document.getElementById(id);
+
+  $("set-showProcess").checked = settings.showProcess;
+  $("set-showTrials").checked  = settings.showTrials;
+
+  $("mg-min").value = master.managementFee.min;
+  $("mg-max").value = master.managementFee.max;
+  $("rp-min").value = master.repairFee.min;
+  $("rp-max").value = master.repairFee.max;
+
+  /* ---------- SAVE SETTINGS ---------- */
+  $("set-showProcess").onchange = ()=>{
+    settings.showProcess = $("set-showProcess").checked;
+    settings.lastUpdated = new Date().toISOString();
+    saveJSON(SETTINGS_KEY, settings);
+  };
+  $("set-showTrials").onchange = ()=>{
+    settings.showTrials = $("set-showTrials").checked;
+    settings.lastUpdated = new Date().toISOString();
+    saveJSON(SETTINGS_KEY, settings);
+  };
+
+  /* ---------- MASTER VALIDATION ---------- */
+  function validateMaster(){
+    $("mg-warn").textContent =
+      (+$("mg-min").value > +$("mg-max").value)
+        ? "下限が上限を超えています"
+        : "";
+
+    $("rp-warn").textContent =
+      (+$("rp-max").value > 1000)
+        ? "一般的な範囲を超えています"
+        : "";
+  }
+
+  ["mg-min","mg-max","rp-min","rp-max"].forEach(id=>{
+    $(id).oninput = ()=>{
+      master.managementFee.min = +$("mg-min").value;
+      master.managementFee.max = +$("mg-max").value;
+      master.repairFee.min     = +$("rp-min").value;
+      master.repairFee.max     = +$("rp-max").value;
+      saveJSON(MASTER_KEY, master);
+      validateMaster();
+    };
+  });
+
+  validateMaster();
+
+  /* ---------- RESULT VIEW 表示制御フック ---------- */
+  const oldEval = window.evaluate;
+  window.evaluate = function(){
+    const r = oldEval();
+
+    if(!settings.showTrials){
+      const t = document.getElementById("result-trials");
+      if(t) t.style.display = "none";
+    }
+    if(!settings.showProcess){
+      const w = document.getElementById("result-worldlines");
+      if(w) w.style.display = "none";
+    }
+    return r;
+  };
+
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
         integrity="sha512-VTUFb4h4yE6nZ8k6vE9v1gKzQ3g6YJ2qX8e0KJ2rQ4Kz4R4yR8z5H0q5g0r8gF2cY3c8s0w5Qx3E2YJr3q0Jw=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
 <script>
 /* =========================================================
-   NEXA PDF ENGINE v1.X
-   jsPDF / Offline / Evidence Included
+   NEXA PDF EXPORT - PART 4
+   Evaluation Report / Disclaimer / Copyright
    ========================================================= */
+(function(){
 
-function exportNexaPDF() {
-  const result = window.__NEXA_LAST_RESULT__;
-  if (!result) {
-    alert("先に評価を実行してください。");
-    return;
-  }
+  /* ---------- PDF ボタンを結果画面に追加 ---------- */
+  const resultView = document.getElementById("view-result");
 
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4"
-  });
+  const pdfBtn = document.createElement("button");
+  pdfBtn.className = "primary";
+  pdfBtn.textContent = "PDFで保存";
+  pdfBtn.style.marginTop = "12px";
 
-  let y = 15;
+  resultView.insertBefore(pdfBtn, resultView.lastElementChild);
 
-  /* ---------- Header ---------- */
-  pdf.setFontSize(18);
-  pdf.text("NEXA 評価レポート", 14, y);
-  y += 10;
+  /* ---------- PDF 生成 ---------- */
+  pdfBtn.onclick = ()=>{
+    if(!window.jspdf){
+      alert("PDFエンジンの読み込みに失敗しました。");
+      return;
+    }
 
-  pdf.setFontSize(10);
-  pdf.text(`評価日時（JST）：${new Date(result.time).toLocaleString("ja-JP")}`, 14, y);
-  y += 6;
-  pdf.text(`Worldline ID：${result.id}`, 14, y);
-  y += 10;
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
 
-  /* ---------- Summary ---------- */
-  pdf.setFontSize(14);
-  pdf.text("評価要約", 14, y);
-  y += 8;
+    let y = 15;
 
-  pdf.setFontSize(11);
-  pdf.text(
-    "本評価は、複数の将来条件を考慮し、数値的な断定を行わず、\n" +
-    "判断に必要な材料を整理することを目的としています。",
-    14, y
-  );
-  y += 12;
+    /* ---------- Header ---------- */
+    pdf.setFontSize(18);
+    pdf.text("NEXA 評価レポート", 14, y);
+    y += 10;
 
-  /* ---------- Worldlines ---------- */
-  pdf.setFontSize(14);
-  pdf.text("想定される世界線", 14, y);
-  y += 8;
-
-  pdf.setFontSize(11);
-  result.worldlines.forEach(w => {
-    pdf.text(`・${w.name}：${w.text}`, 16, y);
-    y += 7;
-  });
-  y += 4;
-
-  /* ---------- Evidence ---------- */
-  pdf.setFontSize(14);
-  pdf.text("評価の根拠", 14, y);
-  y += 8;
-
-  pdf.setFontSize(11);
-  pdf.text(
-    `本評価は、金利・維持費・将来条件を変化させた\n` +
-    `約${result.trials.toLocaleString()}通りの内部試行に基づく近似結果です。`,
-    14, y
-  );
-  y += 12;
-
-  pdf.text(
-    "以下の要因が、本評価に比較的大きな影響を与えています：",
-    14, y
-  );
-  y += 7;
-
-  result.sensitivity.forEach(f => {
-    pdf.text(`・${f}`, 16, y);
+    pdf.setFontSize(10);
+    pdf.text(
+      "評価日時（JST）："
+      + new Date().toLocaleString("ja-JP"),
+      14, y
+    );
     y += 6;
-  });
-  y += 6;
 
-  /* ---------- Disclaimer ---------- */
-  pdf.setFontSize(14);
-  pdf.text("免責・注意事項", 14, y);
-  y += 8;
+    /* ---------- Summary ---------- */
+    const rank = document.getElementById("result-rank")?.textContent || "";
+    const summary = document.getElementById("result-summary")?.textContent || "";
 
-  pdf.setFontSize(10);
-  pdf.text(
-    "・本資料は、住居用不動産購入における判断材料の整理を目的とするものであり、\n" +
-    "  将来の結果や収益性を保証するものではありません。\n" +
-    "・数値は近似モデルおよび統計的試行に基づくものであり、\n" +
-    "  実際の契約条件・市場状況・個別事情により結果は異なります。\n" +
-    "・最終的な判断および契約行為は、利用者ご自身の責任において行ってください。",
-    14, y
-  );
-  y += 20;
+    pdf.setFontSize(14);
+    y += 6;
+    pdf.text("評価要約", 14, y);
+    y += 8;
 
-  /* ---------- Footer ---------- */
-  pdf.setFontSize(9);
-  pdf.text(
-    "NEXA v1.X ｜ © Yoshinobu Takamitsu\n" +
-    "本アプリおよび生成物の著作権はすべて上記に帰属します。",
-    14,
-    285
-  );
+    pdf.setFontSize(11);
+    pdf.text(rank, 14, y);
+    y += 6;
+    pdf.text(summary, 14, y, { maxWidth: 180 });
+    y += 10;
 
-  pdf.save("nexa_report.pdf");
-}
+    /* ---------- Worldlines ---------- */
+    const worldlines = document.querySelectorAll("#result-worldlines li");
+    if(worldlines.length){
+      pdf.setFontSize(14);
+      pdf.text("想定される世界線", 14, y);
+      y += 8;
 
-/* ---------- UI Hook ---------- */
-/* 「評価する」後に呼べるように公開 */
-window.exportNexaPDF = exportNexaPDF;
+      pdf.setFontSize(11);
+      worldlines.forEach(li=>{
+        pdf.text("・" + li.textContent, 16, y, { maxWidth: 175 });
+        y += 7;
+      });
+      y += 4;
+    }
+
+    /* ---------- Trials ---------- */
+    const trials = document.getElementById("result-trials")?.textContent;
+    if(trials){
+      pdf.setFontSize(11);
+      pdf.text(trials, 14, y);
+      y += 8;
+    }
+
+    /* ---------- Disclaimer ---------- */
+    pdf.setFontSize(14);
+    pdf.text("免責・注意事項", 14, y);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.text(
+      "・本資料は、住居用不動産購入における判断材料の整理を目的とするものであり、\n" +
+      "  将来の結果や収益性を保証するものではありません。\n" +
+      "・数値および文章は、内部モデルおよび統計的試行に基づく近似結果です。\n" +
+      "・最終的な判断および契約行為は、利用者ご自身の責任において行ってください。",
+      14, y
+    );
+    y += 20;
+
+    /* ---------- Footer ---------- */
+    pdf.setFontSize(9);
+    pdf.text(
+      "NEXA v1.0\n" +
+      "© Yoshinobu Takamitsu\n" +
+      "本アプリおよび生成物の著作権はすべて作者に帰属します。",
+      14,
+      285
+    );
+
+    pdf.save("nexa_report.pdf");
+  };
+
+})();
 </script>
-<script>
-/* =========================================================
-   NEXA SETTINGS & MASTER v1.X
-   iOS-style / Editable / Watched
-   ========================================================= */
-
-/* ---------- Settings State ---------- */
-const NEXA_SETTINGS_KEY = "nexa_settings";
-
-const defaultSettings = {
-  darkMode: true,
-  showProcess: true,
-  allowMasterEdit: true,
-  lastUpdated: null
-};
-
-function loadSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(NEXA_SETTINGS_KEY)) || defaultSettings;
-  } catch {
-    return defaultSettings;
-  }
-}
-
-function saveSettings(s) {
-  s.lastUpdated = new Date().toISOString();
-  localStorage.setItem(NEXA_SETTINGS_KEY, JSON.stringify(s));
-}
-
-let settings = loadSettings();
-
-/* ---------- Master Data ---------- */
-const NEXA_MASTER_KEY = "nexa_master";
-
-const defaultMaster = {
-  managementFeeGuideline: { min: 150, max: 300 }, // 円/㎡
-  repairFeeGuideline: { min: 200, max: 400 },
-  warningThresholds: {
-    excessiveFeeRatio: 0.4
-  }
-};
-
-function loadMaster() {
-  try {
-    return JSON.parse(localStorage.getItem(NEXA_MASTER_KEY)) || defaultMaster;
-  } catch {
-    return defaultMaster;
-  }
-}
-
-function saveMaster(m) {
-  localStorage.setItem(NEXA_MASTER_KEY, JSON.stringify(m));
-}
-
-let master = loadMaster();
-
-/* ---------- Master Validation (Non-blocking) ---------- */
-function validateMaster(m) {
-  const warnings = [];
-
-  if (m.managementFeeGuideline.min > m.managementFeeGuideline.max) {
-    warnings.push("管理費ガイドラインの下限と上限が逆転しています。");
-  }
-
-  if (m.repairFeeGuideline.max > 1000) {
-    warnings.push("修繕積立金の上限が一般的な範囲を超えています。");
-  }
-
-  return warnings;
-}
-
-/* ---------- Settings UI ---------- */
-function openSettingsPanel() {
-  const warnings = validateMaster(master);
-
-  let text =
-    "【設定】\n\n" +
-    "・ダークモード：" + (settings.darkMode ? "有効" : "無効") + "\n" +
-    "・判断経緯の表示：" + (settings.showProcess ? "有効" : "無効") + "\n\n";
-
-  if (warnings.length) {
-    text += "⚠ マスタ警告\n" + warnings.join("\n") + "\n\n";
-  }
-
-  text +=
-    "マスタ編集は許可されていますが、\n" +
-    "評価結果は別の世界線として保存されます。";
-
-  alert(text);
-}
-
-/* ---------- Hook UI Button ---------- */
-document.querySelector("header button").addEventListener("click", openSettingsPanel);
-</script>
-<footer>
-© Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とし、結果を保証しません
-</footer>
-
 </body>
 </html>
