@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>NEXA</title>
 
 <style>
@@ -13,35 +11,56 @@
   --fg:#E6F1FF;
   --sub:#8FA3BF;
   --accent:#00F0FF;
-  --glass:rgba(18,28,54,.65);
+  --glass:rgba(18,28,54,.6);
   --border:rgba(255,255,255,.08);
 }
+
 *{box-sizing:border-box;}
 html,body{
-  margin:0;height:100%;
-  background:var(--bg);color:var(--fg);
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  margin:0;
+  height:100%;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,
+    "Hiragino Sans","Noto Sans JP",sans-serif;
 }
+
 body{overflow:hidden;}
 
 header{
-  position:fixed;top:0;left:0;right:0;
+  position:fixed;
+  top:0;left:0;right:0;
   padding:calc(env(safe-area-inset-top)+12px) 16px 12px;
-  backdrop-filter:blur(28px) saturate(140%);
   background:var(--glass);
+  backdrop-filter:blur(24px);
   border-bottom:1px solid var(--border);
-  z-index:100;
+  z-index:10;
 }
-header .row{display:flex;justify-content:space-between;align-items:center;}
-header .title{font-weight:700;letter-spacing:.04em;}
-header button{background:none;border:none;color:var(--fg);font-size:22px;}
+
+header .row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+header .title{
+  font-weight:700;
+  letter-spacing:.06em;
+}
+
+header button{
+  background:none;
+  border:none;
+  color:var(--fg);
+  font-size:20px;
+}
 
 main{
-  height:100%;
   padding:
-    calc(env(safe-area-inset-top)+88px)
+    calc(env(safe-area-inset-top)+90px)
     16px
-    calc(env(safe-area-inset-bottom)+120px);
+    calc(env(safe-area-inset-bottom)+40px);
+  height:100%;
   overflow-y:auto;
 }
 
@@ -50,37 +69,58 @@ main{
 
 .section{
   background:var(--glass);
+  backdrop-filter:blur(20px);
   border:1px solid var(--border);
-  border-radius:18px;
+  border-radius:16px;
   padding:16px;
   margin-bottom:16px;
 }
-.section h2{margin:0 0 12px;font-size:16px;}
 
-label{display:block;font-size:12px;color:var(--sub);margin-top:12px;}
+.section h2{
+  margin:0 0 12px;
+  font-size:16px;
+}
+
+label{
+  display:block;
+  font-size:12px;
+  color:var(--sub);
+  margin-top:12px;
+}
+
 input{
-  width:100%;margin-top:4px;padding:12px;
-  border-radius:14px;border:none;
-  background:rgba(255,255,255,.06);
-  color:var(--fg);font-size:15px;
+  width:100%;
+  margin-top:4px;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  background:rgba(255,255,255,.08);
+  color:var(--fg);
+  font-size:15px;
 }
 
 button.primary{
-  width:100%;margin-top:20px;padding:14px;
-  border-radius:18px;border:none;
-  font-size:17px;font-weight:700;
-  background:var(--accent);color:#000;
+  width:100%;
+  margin-top:20px;
+  padding:14px;
+  border-radius:16px;
+  border:none;
+  background:var(--accent);
+  color:#000;
+  font-size:16px;
+  font-weight:700;
 }
 
-.small{font-size:12px;color:var(--sub);}
-
 footer{
-  position:fixed;bottom:0;left:0;right:0;
-  padding:8px 16px calc(env(safe-area-inset-bottom)+8px);
-  backdrop-filter:blur(28px);
+  position:fixed;
+  bottom:0;left:0;right:0;
+  padding:8px;
+  text-align:center;
+  font-size:11px;
+  color:var(--sub);
   background:var(--glass);
+  backdrop-filter:blur(24px);
   border-top:1px solid var(--border);
-  font-size:11px;color:var(--sub);text-align:center;
 }
 </style>
 </head>
@@ -96,52 +136,44 @@ footer{
 
 <main>
 
-<section id="view-input" class="view active">
+<!-- INPUT -->
+<section id="viewInput" class="view active">
   <div class="section">
-    <h2>物件</h2>
-    <label>価格（万円）</label>
-    <input id="price" type="number">
-    <label>管理費・修繕費等（月額）</label>
-    <input id="fees" type="number">
-  </div>
+    <h2>入力</h2>
 
-  <div class="section">
-    <h2>世帯</h2>
+    <label>物件価格（万円）</label>
+    <input id="price" type="number">
+
+    <label>月額固定費（管理費・修繕費など合計）</label>
+    <input id="fees" type="number">
+
     <label>世帯年収（万円）</label>
     <input id="income" type="number">
   </div>
 
-  <button class="primary" id="btnEval">評価する</button>
+  <button class="primary" id="btnEvaluate">評価する</button>
 </section>
 
-<section id="view-result" class="view">
+<!-- RESULT -->
+<section id="viewResult" class="view">
   <div class="section">
     <h2>評価結果</h2>
     <p id="resultRank"></p>
     <p id="resultSummary"></p>
-    <p id="resultTrials" class="small"></p>
   </div>
 
-  <div class="section">
-    <h2>想定される世界線</h2>
-    <ul id="worldlines"></ul>
-  </div>
-
-  <div class="section">
-    <h2>過去の評価</h2>
-    <div id="history" class="small"></div>
-  </div>
-
-  <button class="primary" id="btnPDF">PDFで保存</button>
   <button class="primary" id="btnBack">戻る</button>
 </section>
 
-<section id="view-settings" class="view">
+<!-- SETTINGS -->
+<section id="viewSettings" class="view">
   <div class="section">
     <h2>設定</h2>
-    <label><input type="checkbox" id="setTrials" checked> 試行回数を表示</label>
-    <label><input type="checkbox" id="setWorld" checked> 世界線を表示</label>
+    <p style="font-size:12px;color:var(--sub)">
+      この画面は将来拡張用です。
+    </p>
   </div>
+
   <button class="primary" id="btnSettingsBack">戻る</button>
 </section>
 
@@ -151,100 +183,75 @@ footer{
 © Yoshinobu Takamitsu ｜ 判断材料の整理を目的とします
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <script>
-/* ===== View Control ===== */
-const views={
-  input:view-input,
-  result:view-result,
-  settings:view-settings
+/* =====================
+   STATE
+===================== */
+window.NEXA_STATE = {
+  input:null,
+  result:null
 };
-function show(v){
-  Object.values(views).forEach(x=>x.classList.remove("active"));
-  views[v].classList.add("active");
+
+/* =====================
+   ROUTER
+===================== */
+const views = {
+  input: document.getElementById("viewInput"),
+  result: document.getElementById("viewResult"),
+  settings: document.getElementById("viewSettings")
+};
+const headerTitle = document.getElementById("headerTitle");
+
+function showView(name){
+  Object.values(views).forEach(v=>v.classList.remove("active"));
+  views[name].classList.add("active");
   headerTitle.textContent =
-    v==="input"?"NEXA":v==="result"?"評価結果":"設定";
+    name==="input" ? "NEXA" :
+    name==="result" ? "評価結果" : "設定";
 }
 
-/* ===== Evaluation ===== */
+/* =====================
+   CORE LOGIC
+===================== */
 function evaluate(){
-  const price=+price.value||0;
-  const fees=+fees.value||0;
-  const income=+income.value||0;
+  const price = +price.value || 0;
+  const fees  = +fees.value  || 0;
+  const income= +income.value|| 0;
 
-  const loan=price*10000*0.003;
-  const safe=income*10000/12*0.25;
-  const danger=income*10000/12*0.4;
+  const monthlyLoan = price * 10000 * 0.003;
+  const safe = income * 10000 / 12 * 0.25;
+  const danger = income * 10000 / 12 * 0.4;
 
-  let stable=0,stress=0;
-  const trials=10000;
-  for(let i=0;i<trials;i++){
-    const shock=1+(Math.random()-0.5)*0.4;
-    const burden=loan*shock+fees;
-    if(burden<safe) stable++;
-    if(burden>danger) stress++;
+  let rank="B";
+  let summary="慎重な検討が必要です。";
+
+  if(monthlyLoan + fees < safe){
+    rank="A";
+    summary="家計に対して比較的安定した負担水準です。";
+  }else if(monthlyLoan + fees > danger){
+    rank="C";
+    summary="将来の負担増に対する耐性が低い可能性があります。";
   }
 
-  const s=stable/trials, d=stress/trials;
-  let rank="B", summary="慎重な検討が必要です。";
-  if(s>0.75){rank="A";summary="将来変動にも比較的耐性があります。";}
-  if(d>0.4){rank="C";summary="条件悪化時の影響が大きい可能性があります。";}
-
-  return {
-    id:crypto.randomUUID(),
-    time:new Date().toISOString(),
-    rank,summary,trials,
-    world:[
-      s>0.7?"前提継続：安定":"前提継続：注意",
-      d>0.3?"条件悪化：高負荷":"条件悪化：限定的",
-      "条件改善：余地あり"
-    ]
-  };
+  return {rank,summary};
 }
 
-/* ===== Storage ===== */
-const KEY="nexa_history";
-function loadHistory(){
-  return JSON.parse(localStorage.getItem(KEY)||"[]");
-}
-function saveHistory(r){
-  const h=loadHistory();
-  h.unshift(r);
-  localStorage.setItem(KEY,JSON.stringify(h.slice(0,5)));
-}
+/* =====================
+   UI BINDING
+===================== */
+btnEvaluate.onclick = ()=>{
+  const result = evaluate();
+  NEXA_STATE.result = result;
 
-/* ===== UI Binding ===== */
-btnEval.onclick=()=>{
-  const r=evaluate();
-  resultRank.textContent="ランク："+r.rank;
-  resultSummary.textContent=r.summary;
-  resultTrials.textContent="試行数："+r.trials.toLocaleString();
+  resultRank.textContent = "ランク：" + result.rank;
+  resultSummary.textContent = result.summary;
 
-  worldlines.innerHTML=r.world.map(w=>`<li>${w}</li>`).join("");
-
-  saveHistory(r);
-  history.innerHTML=loadHistory()
-    .map(x=>`${new Date(x.time).toLocaleString()}｜${x.rank}`)
-    .join("<br>");
-
-  show("result");
+  showView("result");
 };
 
-btnBack.onclick=()=>show("input");
-btnSettings.onclick=()=>show("settings");
-btnSettingsBack.onclick=()=>show("input");
-
-/* ===== PDF ===== */
-btnPDF.onclick=()=>{
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  pdf.text("NEXA 評価レポート",20,20);
-  pdf.text(resultRank.textContent,20,35);
-  pdf.text(resultSummary.textContent,20,45);
-  pdf.text("© Yoshinobu Takamitsu",20,280);
-  pdf.save("nexa_report.pdf");
-};
+btnBack.onclick = ()=>showView("input");
+btnSettings.onclick = ()=>showView("settings");
+btnSettingsBack.onclick = ()=>showView("input");
 </script>
 
 </body>
