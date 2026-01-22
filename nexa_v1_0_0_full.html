@@ -5,27 +5,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>NEXA — 判定ツール（最終版）</title>
+<title>NEXA — 修正版（iOS safe-area 対応）</title>
 <style>
 :root{
   --bg:#050A14; --fg:#E6F1FF; --sub:#8FA3BF; --accent:#00F0FF;
   --glass:rgba(18,28,54,.56); --border:rgba(255,255,255,.06);
-  --radius:16px; --btn-height:64px;
+  --radius:14px; --btn-height:64px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px}
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
 body{ -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%; }
 
 /* Header */
 header#site-header{
   position:fixed;top:0;left:0;right:0;
-  padding:calc(env(safe-area-inset-top)+10px) 14px 10px;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
   background:var(--glass);backdrop-filter:blur(28px) saturate(140%);
   border-bottom:1px solid var(--border);z-index:1200;
   display:flex;align-items:center;justify-content:space-between;
 }
-.header-left{display:flex;align-items:center;gap:10px}
 #app-logo{font-weight:800;letter-spacing:.06em;font-size:18px}
 .header-right{display:flex;align-items:center;gap:8px}
 .icon-button{
@@ -35,16 +34,14 @@ header#site-header{
   -webkit-tap-highlight-color:transparent;cursor:pointer;
 }
 
-/* Main content: give big bottom padding to avoid footer / fixed button overlap */
+/* Main — padding will be set dynamically by JS */
 main{
   position:relative;
-  padding: calc(env(safe-area-inset-top)+88px) 16px calc(env(safe-area-inset-bottom) + var(--btn-height) + 40px);
   min-height:100dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  z-index:1;
-  -webkit-user-select:none;
+  z-index:1; padding-left:16px;padding-right:16px;
 }
 
-/* card */
+/* Card */
 .card{
   background:var(--glass);border:1px solid var(--border);
   border-radius:var(--radius);padding:14px;margin-bottom:16px;
@@ -66,8 +63,8 @@ main{
 
 /* fixed primary button above footer */
 .fixed-action{
-  position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom)+12px);
-  z-index:1300;display:flex;justify-content:center;
+  position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);
+  z-index:1400;display:flex;justify-content:center;pointer-events:auto;
 }
 .btn-primary{
   width:100%;max-width:920px;height:var(--btn-height);border-radius:28px;border:none;
@@ -75,26 +72,23 @@ main{
   box-shadow:0 8px 26px rgba(0,240,255,.08);
 }
 
-/* footer: visible but non-intercepting by default */
+/* footer: we still show it but it must not intercept taps where fixed button sits */
 footer#site-footer{
   position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(env(safe-area-inset-bottom)+10px);
   text-align:center;font-size:12px;color:var(--sub);
   background:linear-gradient(rgba(255,255,255,0.01), rgba(255,255,255,0.02));
   border-top:1px solid rgba(255,255,255,0.02);
-  z-index:1100;
-  pointer-events:none; /* prevent capturing taps */
+  z-index:1200;
+  pointer-events:none; /* avoid intercepting fixed button */
 }
-footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if needed */
 
-/* result / hidden */
-#card-result, #card-history, #card-settings { display:none; }
-
+/* small styling */
 .small{font-size:13px;color:var(--sub)}
 .warning{color:#FFD36A;font-size:12px;margin-top:6px}
 
-/* modal settings (hidden until toggled) */
+/* modal */
 .modal-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1400;display:flex;align-items:center;justify-content:center;
+  position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1500;display:flex;align-items:center;justify-content:center;
 }
 .modal{
   width:calc(100% - 48px);max-width:720px;background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);
@@ -103,7 +97,7 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
 /* accessibility focus */
 .icon-button:focus, .btn-primary:focus, .input:focus { outline:2px solid rgba(0,240,255,.12); outline-offset:2px; }
 
-/* small screens tweak */
+/* desktop tweak */
 @media (min-width:760px){
   main{max-width:760px;margin:0 auto;padding-left:24px;padding-right:24px}
   .fixed-action{left:calc(50% - 380px);right:auto; width:760px; transform:translateX(-50%);}
@@ -112,9 +106,9 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
 </head>
 <body>
 <header id="site-header" role="banner">
-  <div class="header-left">
+  <div style="display:flex;align-items:center;gap:10px">
     <div id="app-logo">NEXA</div>
-    <div class="small" style="opacity:.95">住居用不動産・判定ログ生成</div>
+    <div class="small" style="opacity:.95">住居用不動産・判定ログ</div>
   </div>
   <div class="header-right">
     <button id="btn-history" class="icon-button" title="履歴" aria-label="履歴">🕘</button>
@@ -123,7 +117,6 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
 </header>
 
 <main id="main">
-  <!-- Input -->
   <section class="card" id="card-input">
     <h3>入力</h3>
 
@@ -146,7 +139,6 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
     <input id="other" class="input" type="number" placeholder="例：0">
   </section>
 
-  <!-- Household / Loan -->
   <section class="card" id="card-household">
     <h3>世帯・ローン</h3>
 
@@ -165,14 +157,14 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
 
     <label class="field-label" for="loanYears">ローン期間（年） — 選択してください</label>
     <div style="display:flex;gap:10px;align-items:center">
-      <div class="select-wrap" style="flex:1">
-        <select id="loanYears" class="input">
+      <div style="flex:1;position:relative">
+        <select id="loanYears" class="input" aria-label="ローン期間">
           <option value="5">5</option><option value="10">10</option><option value="15">15</option>
           <option value="20">20</option><option value="25" selected>25</option><option value="30">30</option>
           <option value="35">35</option><option value="40">40</option><option value="45">45</option>
         </select>
+        <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--sub);pointer-events:none">年 ▾</div>
       </div>
-      <div class="small">年</div>
       <div style="width:120px">
         <label class="field-label" for="down">頭金（万円）</label>
         <input id="down" class="input" type="number" placeholder="例：400">
@@ -180,24 +172,21 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
     </div>
   </section>
 
-  <!-- Location optional -->
   <section class="card" id="card-location">
     <h3>立地・通勤（任意）</h3>
     <label class="field-label" for="address">物件住所（郵便番号 or 住所）</label>
     <input id="address" class="input" type="text" placeholder="例：東京都港区芝大門1-1-30">
 
-    <label class="field-label" for="stations">最寄り駅（複数可・カンマで区切る）</label>
+    <label class="field-label" for="stations">最寄り駅（複数可・カンマ区切り）</label>
     <input id="stations" class="input" type="text" placeholder="例：大門, 浜松町">
 
     <label class="field-label" for="commutes">通勤先（複数可）</label>
     <input id="commutes" class="input" type="text" placeholder="例：職場A, 職場B">
   </section>
 
-  <!-- Result card (hidden until evaluated) -->
-  <section class="card" id="card-result" aria-live="polite" style="display:none">
+  <section class="card" id="card-result" style="display:none">
     <h3>評価結果</h3>
     <div id="result-summary" style="font-weight:700;margin-bottom:8px"></div>
-
     <div style="display:flex;gap:14px;margin-bottom:12px">
       <div style="flex:1">
         <div class="small">推定ランク</div>
@@ -208,122 +197,105 @@ footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if n
         <div id="result-trials" style="font-size:16px">—</div>
       </div>
     </div>
-
     <div class="small">想定される世界線</div>
     <ul id="result-worldlines" style="margin:8px 0 12px;color:var(--fg)"></ul>
-
     <div class="small">影響が大きい要因</div>
     <ul id="result-factors" style="margin:8px 0 6px;color:var(--fg)"></ul>
   </section>
 
-  <!-- History -->
   <section class="card" id="card-history" style="display:none">
     <h3>評価履歴</h3>
-    <div id="history-list" class="small">読み込み中…</div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button id="exportHistory" class="icon-button" style="pointer-events:auto">⤓</button>
-      <button id="clearHistory" class="icon-button" style="pointer-events:auto">🗑</button>
-    </div>
+    <div id="history-list" class="small">履歴はありません</div>
   </section>
 </main>
 
-<!-- fixed primary action (above footer) -->
-<div class="fixed-action">
-  <button id="btn-evaluate" class="btn-primary">評価する</button>
+<div class="fixed-action" id="fixed-action">
+  <button id="btn-evaluate" class="btn-primary" aria-label="評価する">評価する</button>
 </div>
 
 <footer id="site-footer">
   <span>© Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とし、結果を保証しません</span>
 </footer>
 
-<!-- modal placeholder -->
+<!-- modal root -->
 <div id="modal-root" aria-hidden="true"></div>
 
 <script>
-/* ========= Utilities ========= */
+/* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
-const q = sel => document.querySelector(sel);
-const jparse = (s,d=null)=>{ try{return JSON.parse(s)}catch(e){return d} };
+const parseJSON = s=>{ try{return JSON.parse(s)}catch(e){return null} };
 
-/* ===== storage keys ===== */
-const FORM_KEY = 'nexa_form_final_v1';
-const DB_NAME = 'nexa_db_final_v1';
+/* ---------- Storage / DB ---------- */
+const FORM_KEY = 'nexa_form_v2';
+const DB_NAME = 'nexa_db_v2';
 const STORE = 'results';
-
-/* ===== IndexedDB helpers ===== */
 let _db = null;
 function openDB(){ return new Promise((res,rej)=>{
   if(_db) return res(_db);
-  const req = indexedDB.open(DB_NAME,1);
-  req.onupgradeneeded = e => {
-    const db = e.target.result;
-    if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath:'id' });
-  };
-  req.onsuccess = e => { _db = e.target.result; res(_db); };
-  req.onerror = e => rej(e);
-});}
-async function saveResult(obj){ await openDB(); return new Promise((res,rej)=>{
-  const tx = _db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(obj);
-  tx.oncomplete = ()=>res(); tx.onerror = e => rej(e);
-})}
-async function loadAll(){ await openDB(); return new Promise(res=>{
-  const tx = _db.transaction(STORE,'readonly'); const req = tx.objectStore(STORE).getAll();
-  req.onsuccess = e => res(e.target.result || []);
-});}
-async function clearAll(){ await openDB(); return new Promise(res=>{
-  const tx = _db.transaction(STORE,'readwrite'); tx.objectStore(STORE).clear();
-  tx.oncomplete = ()=>res();
-});}
+  const r = indexedDB.open(DB_NAME,1);
+  r.onupgradeneeded = e=>{ const db = e.target.result; if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:'id'}); };
+  r.onsuccess = e=>{ _db = e.target.result; res(_db); };
+  r.onerror = e=>rej(e);
+}); }
+async function saveResult(obj){ await openDB(); return new Promise((res,rej)=>{ const tx = _db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(obj); tx.oncomplete = ()=>res(); tx.onerror = e=>rej(e); }); }
+async function loadAll(){ await openDB(); return new Promise(res=>{ const tx = _db.transaction(STORE,'readonly'); const req = tx.objectStore(STORE).getAll(); req.onsuccess = e=>res(e.target.result||[]); }); }
 
-/* ===== autosave/restore form ===== */
+/* ---------- autosave / restore ---------- */
 function saveForm(){
-  const state = {
+  const s = {
     price: $('price').value, area:$('area').value, built:$('built').value,
     fees:$('fees').value, repair:$('repair').value, other:$('other').value,
     income:$('income').value, ageOrDob:$('ageOrDob').value, loanType:$('loanType').value,
     loanYears:$('loanYears').value, down:$('down').value,
     address:$('address').value, stations:$('stations').value, commutes:$('commutes').value
   };
-  localStorage.setItem(FORM_KEY, JSON.stringify(state));
+  localStorage.setItem(FORM_KEY, JSON.stringify(s));
 }
 function restoreForm(){
-  const s = jparse(localStorage.getItem(FORM_KEY), {});
-  if(!s) return;
+  const s = parseJSON(localStorage.getItem(FORM_KEY))||{};
   Object.keys(s).forEach(k=>{ const el = $(k); if(el) el.value = s[k]||''; });
 }
+function bindAutosave(){ document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', saveForm, {passive:true})); }
 
-/* attach autosave */
-function attachAutosave(){
-  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', saveForm, {passive:true}));
+/* ---------- layout adjust ---------- */
+function adjustLayout(){
+  const headerH = $('site-header').offsetHeight || 88;
+  const fixedH = $('fixed-action').offsetHeight || 80;
+  // set main padding
+  const main = document.querySelector('main');
+  main.style.paddingTop = (headerH + 12) + 'px';
+  main.style.paddingBottom = (fixedH + 24) + 'px';
+  // ensure fixed-action bottom respects safe area (handled by CSS calc with env)
 }
+window.addEventListener('resize', adjustLayout);
+window.addEventListener('orientationchange', ()=>setTimeout(adjustLayout,300));
 
-/* ===== core calc / montecarlo ===== */
+/* ---------- core calc ---------- */
 function uid(){ return crypto.randomUUID(); }
-function calcMonthlyPayment(principalYen, years, annualRate){
+function calcMonthly(principalYen, years, annualRate){
   const n = years * 12;
   const r = annualRate / 12;
   if(r === 0) return principalYen / n;
   return principalYen * (r / (1 - Math.pow(1+r, -n)));
 }
-function monteCarlo(base, trials){
+function monteCarlo(base,trials){
   let stable=0, stress=0;
   for(let i=0;i<trials;i++){
-    const ishock = 1 + (Math.random()-0.5)*0.4; // ±20%
-    const fshock = 1 + Math.random()*0.25; // +0~25%
+    const ishock = 1 + (Math.random()-0.5)*0.4;
+    const fshock = 1 + Math.random()*0.25;
     const monthly = base.monthlyLoan * ishock + base.monthlyFees * fshock;
-    if(monthly < base.safeThreshold) stable++;
-    if(monthly > base.dangerThreshold) stress++;
+    if(monthly < base.safe) stable++;
+    if(monthly > base.danger) stress++;
   }
   return { stableRatio: stable/trials, stressRatio: stress/trials };
 }
 function sensitivity(input){
-  const arr = [{name:'物件価格',w:input.priceWan},{name:'固定費',w:input.monthlyFees},{name:'世帯年収',w:input.incomeWan}];
+  const arr = [{name:'物件価格', w: input.priceWan},{name:'固定費', w: input.monthlyFees},{name:'世帯年収', w: input.incomeWan}];
   return arr.sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.name);
 }
 
-/* ===== run evaluation ===== */
+/* ---------- run evaluation and UI render ---------- */
 async function runEvaluation(){
-  // gather
   const priceWan = Number($('price').value || 0);
   const priceYen = priceWan * 10000;
   const area = Number($('area').value || 0);
@@ -337,17 +309,16 @@ async function runEvaluation(){
   const downWan = Number($('down').value || 0);
   const downYen = downWan * 10000;
   const principal = Math.max(0, priceYen - downYen);
-  const annualRate = 0.005; // 0.5% baseline
-  const monthlyLoan = calcMonthlyPayment(principal, loanYears, annualRate);
-  const safeThreshold = incomeYen / 12 * 0.25;
-  const dangerThreshold = incomeYen / 12 * 0.4;
+  const annualRate = 0.005; // baseline 0.5%
+  const monthlyLoan = calcMonthly(principal, loanYears, annualRate);
+  const safe = incomeYen / 12 * 0.25;
+  const danger = incomeYen / 12 * 0.4;
 
-  // trials adapt to device
+  // trials adapt
   let trials = 3000;
-  try{ if(navigator.deviceMemory && navigator.deviceMemory < 2) trials = 1000; }catch(e){}
+  try{ if(navigator.deviceMemory && navigator.deviceMemory < 2) trials = 1500; }catch(e){}
 
-  const mc = monteCarlo({ monthlyLoan, monthlyFees, safeThreshold, dangerThreshold }, trials);
-
+  const mc = monteCarlo({ monthlyLoan, monthlyFees, safe, danger }, trials);
   let rank='B', summary='慎重な検討が必要です。';
   if(mc.stableRatio > 0.75){ rank='A'; summary='前提変化に対して比較的安定しています。'; }
   if(mc.stressRatio > 0.4){ rank='C'; summary='条件悪化時の影響が大きい可能性があります。'; }
@@ -359,102 +330,70 @@ async function runEvaluation(){
     {name:'条件改善', text: '収入増や頭金で選択肢が広がる'}
   ];
 
-  const result = { id: uid(), time: new Date().toISOString(),
-    input:{priceWan,area,monthlyFees,incomeWan,loanYears,downWan}, rank, summary, trials, mc, factors, worldlines };
+  const result = { id: uid(), time: new Date().toISOString(), input:{priceWan,area,monthlyFees,incomeWan,loanYears,downWan}, rank, summary, trials, mc, factors, worldlines };
 
-  // render into UI
+  // render
   $('card-result').style.display = 'block';
-  $('result-rank').textContent = result.rank;
   $('result-summary').textContent = result.summary;
+  $('result-rank').textContent = result.rank;
   $('result-trials').textContent = '約 ' + result.trials.toLocaleString() + ' 通り';
   $('result-worldlines').innerHTML = result.worldlines.map(w=>`<li><strong>${w.name}</strong>： ${w.text}</li>`).join('');
   $('result-factors').innerHTML = result.factors.map(f=>`<li>${f}</li>`).join('');
 
   // save
-  try{ await saveResult(result); }catch(e){ console.warn('save fail', e); }
+  try{ await saveResult(result); }catch(e){ console.warn(e); }
 
-  // scroll result into view (center)
-  $('card-result').scrollIntoView({behavior:'smooth', block:'center'});
+  // scroll result into view
+  document.querySelector('#card-result').scrollIntoView({ behavior:'smooth', block:'center' });
 
   return result;
 }
 
-/* ===== UI wiring (DOMContentLoaded safe) ===== */
+/* ---------- UI wiring ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
+  // layout adjust
+  adjustLayout();
+  setTimeout(adjustLayout, 120); // small delay for safe-area to settle
 
-  // restore previous form, attach autosave
+  // restore and autosave
   restoreForm();
-  attachAutosave();
+  bindAutosave();
 
-  // evaluate button
-  const evalBtn = $('btn-evaluate');
-  evalBtn.addEventListener('click', async (ev)=>{
-    if(evalBtn.disabled) return;
+  // eval button
+  const btn = $('btn-evaluate');
+  btn.addEventListener('click', async ()=>{
+    if(btn.disabled) return;
     try{
-      evalBtn.disabled = true;
-      evalBtn.textContent = '評価中…';
+      btn.disabled = true; btn.textContent = '評価中…';
       await runEvaluation();
     }catch(e){ console.error(e); alert('評価中にエラーが発生しました'); }
-    evalBtn.disabled = false;
-    evalBtn.textContent = '評価する';
+    btn.disabled = false; btn.textContent = '評価する';
   }, {passive:false});
 
-  // history button toggles card-history
+  // history button
   $('btn-history').addEventListener('click', async ()=>{
-    const ch = $('card-history');
-    if(ch.style.display === 'block'){ ch.style.display = 'none'; return; }
-    ch.style.display = 'block';
-    const hs = await loadAll();
+    const h = $('card-history');
+    if(h.style.display === 'block'){ h.style.display = 'none'; return; }
+    const list = await loadAll();
     const box = $('history-list');
-    if(!hs.length) box.textContent = '履歴はありません';
-    else box.innerHTML = hs.slice(-12).reverse().map(h=>`
-      <div style="padding:8px;margin-bottom:8px;background:rgba(255,255,255,.02);border-radius:8px">
-        <div style="font-weight:700">${h.rank} ／ ${h.summary}</div>
-        <div class="small">${new Date(h.time).toLocaleString()}</div>
-      </div>
-    `).join('');
+    if(!list.length) box.textContent = '履歴はありません';
+    else box.innerHTML = list.slice(-12).reverse().map(r=>`<div style="padding:8px;background:rgba(255,255,255,.02);border-radius:8px;margin-bottom:8px"><div style="font-weight:700">${r.rank} ／ ${r.summary}</div><div class="small">${new Date(r.time).toLocaleString()}</div></div>`).join('');
+    h.style.display = 'block';
+    h.scrollIntoView({behavior:'smooth', block:'center'});
   }, {passive:true});
 
-  // export/clear history
-  $('exportHistory').addEventListener('click', async ()=>{
-    const all = await loadAll();
-    const blob = new Blob([JSON.stringify(all,null,2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'nexa_history.json'; a.click(); URL.revokeObjectURL(url);
-  }, {passive:true});
-  $('clearHistory').addEventListener('click', async ()=>{
-    if(confirm('履歴を全部消しますか？')){ await clearAll(); $('history-list').textContent='履歴はありません'; alert('削除しました'); }
-  }, {passive:true});
-
-  // settings opens lightweight modal
-  $('btn-settings').addEventListener('click', ()=>{
-    openSettingsModal();
-  }, {passive:true});
+  // settings
+  $('btn-settings').addEventListener('click', ()=>{ openSettings(); }, {passive:true});
 });
 
-/* ===== settings modal implementation ===== */
-function openSettingsModal(){
+/* ---------- settings modal (light) ---------- */
+function openSettings(){
   const root = $('modal-root');
-  root.innerHTML = `
-    <div class="modal-backdrop" id="settings-backdrop" role="dialog" aria-modal="true">
-      <div class="modal">
-        <h3 style="margin-top:0">設定</h3>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <label><input type="checkbox" id="opt-showTrials" checked> 内部試行数を表示</label>
-          <label><input type="checkbox" id="opt-showWorldlines" checked> 想定世界線を表示</label>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="settings-close" class="icon-button" style="pointer-events:auto">閉じる</button>
-        </div>
-      </div>
-    </div>`;
-  // attach close
-  $('settings-backdrop').addEventListener('click', (e)=>{ if(e.target.id === 'settings-backdrop') closeSettingsModal(); });
-  $('settings-close').addEventListener('click', closeSettingsModal);
+  root.innerHTML = `<div class="modal-backdrop"><div class="modal"><h3 style="margin-top:0">設定</h3>
+    <label><input id="opt-trials" type="checkbox" checked> 内部試行数を表示</label>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="close-set" class="icon-button">閉じる</button></div></div></div>`;
+  $('close-set').addEventListener('click', ()=>{ root.innerHTML=''; }, {passive:true});
 }
-function closeSettingsModal(){ const root = $('modal-root'); root.innerHTML = ''; }
-
-/* ===== end of script ===== */
 </script>
 </body>
 </html>
