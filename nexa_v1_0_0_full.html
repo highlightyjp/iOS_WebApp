@@ -2,7 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>NEXA</title>
 
 <style>
@@ -11,74 +13,74 @@
   --fg:#E6F1FF;
   --sub:#8FA3BF;
   --accent:#00F0FF;
-  --glass:rgba(18,28,54,.6);
+  --glass:rgba(18,28,54,.55);
   --border:rgba(255,255,255,.08);
 }
 
 *{box-sizing:border-box;}
+
 html,body{
   margin:0;
-  height:100%;
   background:var(--bg);
   color:var(--fg);
   font-family:-apple-system,BlinkMacSystemFont,
     "Hiragino Sans","Noto Sans JP",sans-serif;
 }
 
-body{overflow:hidden;}
-
-header{
-  position:fixed;
-  top:0;left:0;right:0;
-  padding:calc(env(safe-area-inset-top)+12px) 16px 12px;
-  background:var(--glass);
-  backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--border);
-  z-index:10;
+/* ★ 重要：bodyはスクロールさせる */
+body{
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
 }
 
+/* ===== Header ===== */
+header{
+  position:sticky;
+  top:0;
+  z-index:100;
+  padding:
+    calc(env(safe-area-inset-top) + 12px)
+    16px
+    12px;
+  backdrop-filter:blur(28px) saturate(140%);
+  background:var(--glass);
+  border-bottom:1px solid var(--border);
+}
 header .row{
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-
 header .title{
   font-weight:700;
-  letter-spacing:.06em;
+  letter-spacing:.05em;
 }
-
 header button{
   background:none;
   border:none;
   color:var(--fg);
-  font-size:20px;
+  font-size:22px;
 }
 
+/* ===== Main ===== */
 main{
-  padding:
-    calc(env(safe-area-inset-top)+90px)
-    16px
-    calc(env(safe-area-inset-bottom)+40px);
-  height:100%;
-  overflow-y:auto;
+  padding:24px 16px
+    calc(env(safe-area-inset-bottom) + 32px);
 }
 
-.view{display:none;}
-.view.active{display:block;}
-
+/* ===== Section ===== */
 .section{
   background:var(--glass);
-  backdrop-filter:blur(20px);
+  backdrop-filter:blur(24px) saturate(140%);
   border:1px solid var(--border);
-  border-radius:16px;
+  border-radius:18px;
   padding:16px;
   margin-bottom:16px;
 }
 
 .section h2{
   margin:0 0 12px;
-  font-size:16px;
+  font-size:17px;
 }
 
 label{
@@ -91,36 +93,44 @@ label{
 input{
   width:100%;
   margin-top:4px;
-  padding:12px;
-  border-radius:12px;
+  padding:14px;
+  border-radius:14px;
   border:none;
-  background:rgba(255,255,255,.08);
+  background:rgba(255,255,255,.06);
   color:var(--fg);
-  font-size:15px;
+  font-size:16px;
 }
 
+/* ===== Button ===== */
 button.primary{
   width:100%;
-  margin-top:20px;
-  padding:14px;
-  border-radius:16px;
+  margin:24px 0;
+  padding:16px;
+  border-radius:18px;
   border:none;
+  font-size:17px;
+  font-weight:700;
   background:var(--accent);
   color:#000;
-  font-size:16px;
-  font-weight:700;
 }
 
+/* ===== Result ===== */
+.result{
+  margin-top:24px;
+  padding:16px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+}
+
+/* ===== Footer ===== */
 footer{
-  position:fixed;
-  bottom:0;left:0;right:0;
-  padding:8px;
   text-align:center;
   font-size:11px;
   color:var(--sub);
-  background:var(--glass);
-  backdrop-filter:blur(24px);
-  border-top:1px solid var(--border);
+  padding:
+    12px
+    16px
+    calc(env(safe-area-inset-bottom) + 12px);
 }
 </style>
 </head>
@@ -129,53 +139,31 @@ footer{
 
 <header>
   <div class="row">
-    <div class="title" id="headerTitle">NEXA</div>
-    <button id="btnSettings">⋯</button>
+    <div class="title">NEXA</div>
+    <button aria-label="設定">⋯</button>
   </div>
 </header>
 
 <main>
 
-<!-- INPUT -->
-<section id="viewInput" class="view active">
   <div class="section">
-    <h2>入力</h2>
-
+    <h2>物件</h2>
     <label>物件価格（万円）</label>
-    <input id="price" type="number">
+    <input id="price" type="number" value="3080">
 
     <label>月額固定費（管理費・修繕費など合計）</label>
-    <input id="fees" type="number">
+    <input id="fees" type="number" value="30000">
+  </div>
 
+  <div class="section">
+    <h2>世帯</h2>
     <label>世帯年収（万円）</label>
-    <input id="income" type="number">
+    <input id="income" type="number" value="850">
   </div>
 
-  <button class="primary" id="btnEvaluate">評価する</button>
-</section>
+  <button class="primary" onclick="evaluate()">評価する</button>
 
-<!-- RESULT -->
-<section id="viewResult" class="view">
-  <div class="section">
-    <h2>評価結果</h2>
-    <p id="resultRank"></p>
-    <p id="resultSummary"></p>
-  </div>
-
-  <button class="primary" id="btnBack">戻る</button>
-</section>
-
-<!-- SETTINGS -->
-<section id="viewSettings" class="view">
-  <div class="section">
-    <h2>設定</h2>
-    <p style="font-size:12px;color:var(--sub)">
-      この画面は将来拡張用です。
-    </p>
-  </div>
-
-  <button class="primary" id="btnSettingsBack">戻る</button>
-</section>
+  <div id="result" class="result" style="display:none"></div>
 
 </main>
 
@@ -183,75 +171,66 @@ footer{
 © Yoshinobu Takamitsu ｜ 判断材料の整理を目的とします
 </footer>
 
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
-/* =====================
-   STATE
-===================== */
-window.NEXA_STATE = {
-  input:null,
-  result:null
-};
+let LAST_RESULT=null;
 
-/* =====================
-   ROUTER
-===================== */
-const views = {
-  input: document.getElementById("viewInput"),
-  result: document.getElementById("viewResult"),
-  settings: document.getElementById("viewSettings")
-};
-const headerTitle = document.getElementById("headerTitle");
-
-function showView(name){
-  Object.values(views).forEach(v=>v.classList.remove("active"));
-  views[name].classList.add("active");
-  headerTitle.textContent =
-    name==="input" ? "NEXA" :
-    name==="result" ? "評価結果" : "設定";
-}
-
-/* =====================
-   CORE LOGIC
-===================== */
 function evaluate(){
-  const price = +price.value || 0;
-  const fees  = +fees.value  || 0;
-  const income= +income.value|| 0;
+  const price=+price.value||0;
+  const fees=+fees.value||0;
+  const income=+income.value||0;
 
-  const monthlyLoan = price * 10000 * 0.003;
-  const safe = income * 10000 / 12 * 0.25;
-  const danger = income * 10000 / 12 * 0.4;
+  const loan=price*10000*0.003;
+  const safe=income*10000/12*0.25;
+  const danger=income*10000/12*0.4;
 
   let rank="B";
   let summary="慎重な検討が必要です。";
 
-  if(monthlyLoan + fees < safe){
+  if(loan+fees<safe){
     rank="A";
     summary="家計に対して比較的安定した負担水準です。";
-  }else if(monthlyLoan + fees > danger){
+  }
+  if(loan+fees>danger){
     rank="C";
     summary="将来の負担増に対する耐性が低い可能性があります。";
   }
 
-  return {rank,summary};
+  LAST_RESULT={rank,summary};
+
+  const box=document.getElementById("result");
+  box.style.display="block";
+  box.innerHTML=`
+    <h3>評価結果</h3>
+    <p><strong>ランク：</strong>${rank}</p>
+    <p>${summary}</p>
+    <button class="primary" onclick="exportPDF()">PDFで保存</button>
+  `;
 }
 
-/* =====================
-   UI BINDING
-===================== */
-btnEvaluate.onclick = ()=>{
-  const result = evaluate();
-  NEXA_STATE.result = result;
+/* ===== PDF（日本語非文字化け版）===== */
+function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
 
-  resultRank.textContent = "ランク：" + result.rank;
-  resultSummary.textContent = result.summary;
+  pdf.setFont("Helvetica");
+  pdf.setFontSize(16);
+  pdf.text("NEXA 評価レポート",20,20);
 
-  showView("result");
-};
+  pdf.setFontSize(12);
+  pdf.text("ランク："+LAST_RESULT.rank,20,40);
+  pdf.text(LAST_RESULT.summary,20,52,{maxWidth:170});
 
-btnBack.onclick = ()=>showView("input");
-btnSettings.onclick = ()=>showView("settings");
-btnSettingsBack.onclick = ()=>showView("input");
+  pdf.setFontSize(9);
+  pdf.text(
+    "※本資料は判断材料の整理を目的とし、結果を保証するものではありません。\n© Yoshinobu Takamitsu",
+    20,270
+  );
+
+  pdf.save("nexa_report.pdf");
+}
 </script>
 
 </body>
