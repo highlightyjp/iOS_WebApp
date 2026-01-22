@@ -1,326 +1,251 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>NEXA</title>
+
 <style>
 :root{
-  --bg:#050A14;--fg:#E6F1FF;--sub:#8FA3BF;--accent:#00F0FF;
-  --glass:rgba(18,28,54,.55);--border:rgba(255,255,255,.08);
+  --bg:#050A14;
+  --fg:#E6F1FF;
+  --sub:#8FA3BF;
+  --accent:#00F0FF;
+  --glass:rgba(18,28,54,.65);
+  --border:rgba(255,255,255,.08);
 }
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
-body{overflow:hidden}
-header{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top)+10px) 16px 10px;
-  backdrop-filter:blur(28px) saturate(140%);background:var(--glass);border-bottom:1px solid var(--border);z-index:10}
-header .row{display:flex;justify-content:space-between;align-items:center}
-header .title{font-weight:700;letter-spacing:.05em}
-header button{background:none;border:none;color:var(--fg);font-size:22px;padding:6px 10px}
-main{padding:calc(env(safe-area-inset-top)+80px) 16px calc(env(safe-area-inset-bottom)+120px);height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.view{display:none}
-.view.active{display:block}
-.section{background:var(--glass);backdrop-filter:blur(24px) saturate(140%);
-  border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:16px}
-.section h2{margin:0 0 12px;font-size:17px}
-label{display:block;font-size:12px;color:var(--sub);margin-top:12px}
-input,select{width:100%;margin-top:4px;padding:12px;border-radius:14px;border:none;background:rgba(255,255,255,.06);color:var(--fg);font-size:15px}
-button.primary{width:100%;margin-top:20px;padding:14px;border-radius:18px;border:none;font-size:17px;font-weight:700;background:var(--accent);color:#000}
-.small{font-size:12px;color:var(--sub)}
-footer{position:fixed;bottom:0;left:0;right:0;padding:8px 16px calc(env(safe-area-inset-bottom)+8px);backdrop-filter:blur(28px);background:var(--glass);border-top:1px solid var(--border);font-size:11px;color:var(--sub);text-align:center}
-.settings-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
-.toggle{width:44px;height:26px;border-radius:13px;background:#2c3e55;position:relative;flex:0 0 44px}
-.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .12s}
-.toggle.on{background:var(--accent)}
-.toggle.on::after{left:21px}
-.warning{font-size:11px;color:#FFD700;margin-top:4px}
+*{box-sizing:border-box;}
+html,body{
+  margin:0;height:100%;
+  background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+}
+body{overflow:hidden;}
+
+header{
+  position:fixed;top:0;left:0;right:0;
+  padding:calc(env(safe-area-inset-top)+12px) 16px 12px;
+  backdrop-filter:blur(28px) saturate(140%);
+  background:var(--glass);
+  border-bottom:1px solid var(--border);
+  z-index:100;
+}
+header .row{display:flex;justify-content:space-between;align-items:center;}
+header .title{font-weight:700;letter-spacing:.04em;}
+header button{background:none;border:none;color:var(--fg);font-size:22px;}
+
+main{
+  height:100%;
+  padding:
+    calc(env(safe-area-inset-top)+88px)
+    16px
+    calc(env(safe-area-inset-bottom)+120px);
+  overflow-y:auto;
+}
+
+.view{display:none;}
+.view.active{display:block;}
+
+.section{
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:16px;
+}
+.section h2{margin:0 0 12px;font-size:16px;}
+
+label{display:block;font-size:12px;color:var(--sub);margin-top:12px;}
+input{
+  width:100%;margin-top:4px;padding:12px;
+  border-radius:14px;border:none;
+  background:rgba(255,255,255,.06);
+  color:var(--fg);font-size:15px;
+}
+
+button.primary{
+  width:100%;margin-top:20px;padding:14px;
+  border-radius:18px;border:none;
+  font-size:17px;font-weight:700;
+  background:var(--accent);color:#000;
+}
+
+.small{font-size:12px;color:var(--sub);}
+
+footer{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:8px 16px calc(env(safe-area-inset-bottom)+8px);
+  backdrop-filter:blur(28px);
+  background:var(--glass);
+  border-top:1px solid var(--border);
+  font-size:11px;color:var(--sub);text-align:center;
+}
 </style>
 </head>
+
 <body>
+
 <header>
   <div class="row">
-    <div class="title" id="header-title">NEXA</div>
-    <button id="btn-settings" aria-label="設定">⋯</button>
+    <div class="title" id="headerTitle">NEXA</div>
+    <button id="btnSettings">⋯</button>
   </div>
 </header>
 
 <main>
-  <!-- INPUT VIEW -->
-  <section id="view-input" class="view">
-    <div class="section">
-      <h2>物件</h2>
-      <label for="price">価格（万円）</label>
-      <input id="price" type="number" inputmode="numeric" />
-      <label for="fees">管理費等（月額合計）</label>
-      <input id="fees" type="number" inputmode="numeric" />
-    </div>
 
-    <div class="section">
-      <h2>世帯</h2>
-      <label for="income">世帯年収（万円）</label>
-      <input id="income" type="number" inputmode="numeric" />
-    </div>
+<section id="view-input" class="view active">
+  <div class="section">
+    <h2>物件</h2>
+    <label>価格（万円）</label>
+    <input id="price" type="number">
+    <label>管理費・修繕費等（月額）</label>
+    <input id="fees" type="number">
+  </div>
 
-    <button class="primary" id="btn-eval">評価する</button>
-  </section>
+  <div class="section">
+    <h2>世帯</h2>
+    <label>世帯年収（万円）</label>
+    <input id="income" type="number">
+  </div>
 
-  <!-- RESULT VIEW -->
-  <section id="view-result" class="view">
-    <div class="section">
-      <h2>評価結果</h2>
-      <p id="result-rank" class="small"></p>
-      <p id="result-summary"></p>
-    </div>
+  <button class="primary" id="btnEval">評価する</button>
+</section>
 
-    <div class="section">
-      <h2>想定される世界線</h2>
-      <ul id="result-worldlines" style="padding-left:18px"></ul>
-      <p id="result-trials" class="small"></p>
-    </div>
+<section id="view-result" class="view">
+  <div class="section">
+    <h2>評価結果</h2>
+    <p id="resultRank"></p>
+    <p id="resultSummary"></p>
+    <p id="resultTrials" class="small"></p>
+  </div>
 
-    <div class="section">
-      <h2>過去の評価</h2>
-      <div id="history-list" class="small">読み込み中…</div>
-    </div>
+  <div class="section">
+    <h2>想定される世界線</h2>
+    <ul id="worldlines"></ul>
+  </div>
 
-    <button class="primary" id="btn-pdf">PDFで保存</button>
-    <button class="primary" id="btn-back">戻る</button>
-  </section>
+  <div class="section">
+    <h2>過去の評価</h2>
+    <div id="history" class="small"></div>
+  </div>
 
-  <!-- SETTINGS VIEW -->
-  <section id="view-settings" class="view">
-    <div class="section">
-      <h2>一般</h2>
-      <div class="settings-item">
-        <div>判断経緯を表示</div><div id="toggle-showProcess" class="toggle"></div>
-      </div>
-      <div class="settings-item">
-        <div>試行回数を表示</div><div id="toggle-showTrials" class="toggle"></div>
-      </div>
-    </div>
+  <button class="primary" id="btnPDF">PDFで保存</button>
+  <button class="primary" id="btnBack">戻る</button>
+</section>
 
-    <div class="section">
-      <h2>マスタ（編集可）</h2>
-      <label>管理費ガイドライン（円/㎡）</label>
-      <input id="mg-min" type="number"/><input id="mg-max" type="number" style="margin-top:8px"/>
-      <div id="mg-warn" class="warning"></div>
+<section id="view-settings" class="view">
+  <div class="section">
+    <h2>設定</h2>
+    <label><input type="checkbox" id="setTrials" checked> 試行回数を表示</label>
+    <label><input type="checkbox" id="setWorld" checked> 世界線を表示</label>
+  </div>
+  <button class="primary" id="btnSettingsBack">戻る</button>
+</section>
 
-      <label style="margin-top:12px">修繕積立金ガイドライン（円/㎡）</label>
-      <input id="rp-min" type="number"/><input id="rp-max" type="number" style="margin-top:8px"/>
-      <div id="rp-warn" class="warning"></div>
-      <p class="small" style="margin-top:8px">※ マスタ変更は警告表示しますが、最終判断は利用者に委ねられます。</p>
-    </div>
-
-    <div class="section">
-      <h2>情報</h2>
-      <p class="small">NEXA v1.x<br>© Yoshinobu Takamitsu<br>本アプリおよび生成物の著作権はすべて作者に帰属します。</p>
-    </div>
-
-    <button class="primary" id="btn-settings-back">戻る</button>
-  </section>
 </main>
 
-<footer>© Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とします</footer>
+<footer>
+© Yoshinobu Takamitsu ｜ 判断材料の整理を目的とします
+</footer>
 
-<!-- jsPDF CDN (PDF出力用) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-/* ========= ユーティリティ ========= */
-const $ = id => document.getElementById(id);
-function elCreate(tag, props){ const e = document.createElement(tag); Object.assign(e, props||{}); return e; }
-function uid(){ return crypto?.randomUUID?.() ?? Date.now().toString(36) }
-
-/* ========= DOMキャッシュ ========= */
-const priceInput = $('price');
-const feesInput  = $('fees');
-const incomeInput= $('income');
-
-const btnEval = $('btn-eval');
-const btnBack = $('btn-back');
-const btnSettings = $('btn-settings');
-const btnSettingsBack = $('btn-settings-back');
-const btnPdf = $('btn-pdf');
-
-const resultRank = $('result-rank');
-const resultSummary = $('result-summary');
-const resultWorldlines = $('result-worldlines');
-const resultTrials = $('result-trials');
-const historyList = $('history-list');
-
-const toggleShowProcess = $('toggle-showProcess');
-const toggleShowTrials = $('toggle-showTrials');
-
-const mgMin = $('mg-min'), mgMax = $('mg-max'), rpMin = $('rp-min'), rpMax = $('rp-max');
-const mgWarn = $('mg-warn'), rpWarn = $('rp-warn');
-
-/* ========= ルーター ========= */
-const views = { input: $('view-input'), result: $('view-result'), settings: $('view-settings') };
-const headerTitle = $('header-title');
-function render(){
-  const h = location.hash || '#/input';
-  Object.values(views).forEach(v=>v.classList.remove('active'));
-  if(h === '#/result'){ views.result.classList.add('active'); headerTitle.textContent = '評価結果'; renderHistory(); }
-  else if(h === '#/settings'){ views.settings.classList.add('active'); headerTitle.textContent = '設定'; }
-  else { views.input.classList.add('active'); headerTitle.textContent = 'NEXA'; }
+/* ===== View Control ===== */
+const views={
+  input:view-input,
+  result:view-result,
+  settings:view-settings
+};
+function show(v){
+  Object.values(views).forEach(x=>x.classList.remove("active"));
+  views[v].classList.add("active");
+  headerTitle.textContent =
+    v==="input"?"NEXA":v==="result"?"評価結果":"設定";
 }
-window.addEventListener('hashchange', render);
-window.addEventListener('DOMContentLoaded', render);
 
-/* ========= Monte Carlo / Worldlines ========= */
-function monteCarlo(base, trials){
-  let stable = 0, stress = 0;
+/* ===== Evaluation ===== */
+function evaluate(){
+  const price=+price.value||0;
+  const fees=+fees.value||0;
+  const income=+income.value||0;
+
+  const loan=price*10000*0.003;
+  const safe=income*10000/12*0.25;
+  const danger=income*10000/12*0.4;
+
+  let stable=0,stress=0;
+  const trials=10000;
   for(let i=0;i<trials;i++){
-    const interestShock = 1 + (Math.random() - 0.5) * 0.4; // ±20%
-    const feeShock = 1 + Math.random() * 0.3; // +0〜30%
-    const burden = base.monthlyLoan * interestShock + base.monthlyFees * feeShock;
-    if(burden < base.safe) stable++;
-    if(burden > base.danger) stress++;
+    const shock=1+(Math.random()-0.5)*0.4;
+    const burden=loan*shock+fees;
+    if(burden<safe) stable++;
+    if(burden>danger) stress++;
   }
-  return { stableRatio: stable / trials, stressRatio: stress / trials };
-}
-function generateWorldlines(mc){
-  return [
-    { name:'前提継続', text: mc.stableRatio > 0.7 ? '現在の前提条件が続く場合、生活は比較的安定して維持できる可能性があります。' : '前提条件が変わらなくても、将来の負担増には注意が必要です。' },
-    { name:'条件悪化', text: mc.stressRatio > 0.3 ? '金利や維持費が上昇した場合、家計に強い圧迫が生じる可能性があります。' : '一定の条件悪化があっても、即座に破綻する可能性は高くありません。' },
-    { name:'条件改善', text: '収入増加や頭金の積み増しがあれば、判断の余地はさらに広がります。' }
-  ];
-}
 
-/* ========= 評価コア ========= */
-function evaluateCore(){
-  const price = Number(priceInput.value)||0;
-  const fees  = Number(feesInput.value)||0;
-  const income= Number(incomeInput.value)||0;
+  const s=stable/trials, d=stress/trials;
+  let rank="B", summary="慎重な検討が必要です。";
+  if(s>0.75){rank="A";summary="将来変動にも比較的耐性があります。";}
+  if(d>0.4){rank="C";summary="条件悪化時の影響が大きい可能性があります。";}
 
-  const monthlyLoan = price * 10000 * 0.003; // rough monthly approximation
-  const safe = income * 10000 / 12 * 0.25;
-  const danger = income * 10000 / 12 * 0.4;
-
-  const trials = 10000;
-  const mc = monteCarlo({monthlyLoan, monthlyFees: fees, safe, danger}, trials);
-
-  let rank = 'B', summary = '将来条件を考慮すると、慎重な検討が必要です。';
-  if(mc.stableRatio > 0.75){ rank='A'; summary='複数の将来条件を考慮しても、大きく崩れにくい傾向が見られました。' }
-  if(mc.stressRatio > 0.4){ rank='C'; summary='条件が悪化した場合の影響が比較的大きい可能性があります。' }
-
-  return { id: uid(), time: new Date().toISOString(), rank, summary, trials, mc, worldlines: generateWorldlines(mc),
-    input:{price,fees,income} };
+  return {
+    id:crypto.randomUUID(),
+    time:new Date().toISOString(),
+    rank,summary,trials,
+    world:[
+      s>0.7?"前提継続：安定":"前提継続：注意",
+      d>0.3?"条件悪化：高負荷":"条件悪化：限定的",
+      "条件改善：余地あり"
+    ]
+  };
 }
 
-/* ========= IndexedDB 履歴 ========= */
-const DB_NAME = 'nexa_history_db_v1', STORE_NAME = 'results_v1'; let db = null;
-function openDB(){ return new Promise((resolve,reject)=>{ const req = indexedDB.open(DB_NAME,1);
-  req.onupgradeneeded = e=>{ const d = e.target.result; if(!d.objectStoreNames.contains(STORE_NAME)) d.createObjectStore(STORE_NAME,{keyPath:'id'}); };
-  req.onsuccess = e=>{ db = e.target.result; resolve(); }; req.onerror = e=>reject(e);
-});}
-async function saveResult(result){ if(!db) await openDB(); return new Promise((res,rej)=>{ const tx = db.transaction(STORE_NAME,'readwrite'); const s = tx.objectStore(STORE_NAME); const r = s.put(result);
-  r.onsuccess = ()=>res(); r.onerror = e=>rej(e);
-});}
-async function loadAll(){ if(!db) await openDB(); return new Promise(res=>{ const tx = db.transaction(STORE_NAME,'readonly'); const req = tx.objectStore(STORE_NAME).getAll(); req.onsuccess = e=>res(e.target.result||[]); req.onerror = ()=>res([]); });}
-
-/* ========= 履歴表示 ========= */
-async function renderHistory(){
-  const list = await loadAll();
-  if(!list || !list.length){ historyList.textContent = '過去の評価はまだありません。'; return; }
-  list.sort((a,b)=> new Date(b.time) - new Date(a.time));
-  historyList.innerHTML = list.slice(0,8).map(r=> `<div style="margin-bottom:6px">${new Date(r.time).toLocaleString()} ｜ ランク ${r.rank}</div>`).join('');
+/* ===== Storage ===== */
+const KEY="nexa_history";
+function loadHistory(){
+  return JSON.parse(localStorage.getItem(KEY)||"[]");
+}
+function saveHistory(r){
+  const h=loadHistory();
+  h.unshift(r);
+  localStorage.setItem(KEY,JSON.stringify(h.slice(0,5)));
 }
 
-/* ========= UI更新 ========= */
-function showResultUI(r){
-  resultRank.textContent = 'ランク：' + r.rank;
-  resultSummary.textContent = r.summary;
-  resultWorldlines.innerHTML = r.worldlines.map(w=>`<li><strong>${w.name}</strong>：${w.text}</li>`).join('');
-  resultTrials.textContent = '内部試行数：約' + r.trials.toLocaleString() + ' 通り';
-}
+/* ===== UI Binding ===== */
+btnEval.onclick=()=>{
+  const r=evaluate();
+  resultRank.textContent="ランク："+r.rank;
+  resultSummary.textContent=r.summary;
+  resultTrials.textContent="試行数："+r.trials.toLocaleString();
 
-/* ========= イベントバインド ========= */
-btnEval.addEventListener('click', async ()=>{
-  try{
-    const res = evaluateCore();
-    await saveResult(res);
-    showResultUI(res);
-    location.hash = '#/result';
-  }catch(err){
-    console.error(err);
-    alert('評価中にエラーが発生しました。コンソールを確認してください。');
-  }
-});
-btnBack.addEventListener('click', ()=> history.back());
-btnSettings.addEventListener('click', ()=> location.hash = '#/settings');
-btnSettingsBack.addEventListener('click', ()=> history.back());
+  worldlines.innerHTML=r.world.map(w=>`<li>${w}</li>`).join("");
 
-/* ========= 設定・マスタ ========= */
-const SETTINGS_KEY = 'nexa_settings_v1', MASTER_KEY = 'nexa_master_v1';
-const DEFAULT_SETTINGS = { showProcess:true, showTrials:true };
-const DEFAULT_MASTER = { managementFee:{min:150,max:300}, repairFee:{min:200,max:400} };
-function loadJSON(k,def){try{ return JSON.parse(localStorage.getItem(k))||def }catch{return def}}
-function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
-let settings = loadJSON(SETTINGS_KEY, DEFAULT_SETTINGS), master = loadJSON(MASTER_KEY, DEFAULT_MASTER);
+  saveHistory(r);
+  history.innerHTML=loadHistory()
+    .map(x=>`${new Date(x.time).toLocaleString()}｜${x.rank}`)
+    .join("<br>");
 
-function setToggleEl(toggleEl, state){
-  if(state) toggleEl.classList.add('on'); else toggleEl.classList.remove('on');
-}
-setToggleEl(toggleShowProcess, settings.showProcess);
-setToggleEl(toggleShowTrials, settings.showTrials);
-toggleShowProcess.addEventListener('click', ()=>{
-  settings.showProcess = !settings.showProcess; saveJSON(SETTINGS_KEY, settings); setToggleEl(toggleShowProcess, settings.showProcess);
-  // reflect immediately in result view
-  resultWorldlines.style.display = settings.showProcess ? '' : 'none';
-});
-toggleShowTrials.addEventListener('click', ()=>{
-  settings.showTrials = !settings.showTrials; saveJSON(SETTINGS_KEY, settings); setToggleEl(toggleShowTrials, settings.showTrials);
-  resultTrials.style.display = settings.showTrials ? '' : 'none';
-});
+  show("result");
+};
 
-/* マスタ初期値セット */
-mgMin.value = master.managementFee.min; mgMax.value = master.managementFee.max;
-rpMin.value = master.repairFee.min; rpMax.value = master.repairFee.max;
+btnBack.onclick=()=>show("input");
+btnSettings.onclick=()=>show("settings");
+btnSettingsBack.onclick=()=>show("input");
 
-function validateMaster(){
-  mgWarn.textContent = (Number(mgMin.value) > Number(mgMax.value)) ? '下限が上限を超えています' : '';
-  rpWarn.textContent = (Number(rpMax.value) > 1000) ? '一般的な範囲を超えています' : '';
-  master.managementFee.min = Number(mgMin.value); master.managementFee.max = Number(mgMax.value);
-  master.repairFee.min = Number(rpMin.value); master.repairFee.max = Number(rpMax.value);
-  saveJSON(MASTER_KEY, master);
-}
-[mgMin,mgMax,rpMin,rpMax].forEach(i => i.addEventListener('input', validateMaster));
-validateMaster();
-
-/* ========= PDF出力 ========= */
-btnPdf.addEventListener('click', ()=>{
-  try{
-    if(!window.jspdf){ alert('PDFライブラリが未読込です'); return; }
-    const resRank = resultRank.textContent || '';
-    const resSummary = resultSummary.textContent || '';
-    const worldlines = Array.from(resultWorldlines.querySelectorAll('li')).map(li=>li.textContent);
-    const trialsText = resultTrials.textContent || '';
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    let y = 14;
-    pdf.setFontSize(18); pdf.text('NEXA 評価レポート',14,y); y+=8;
-    pdf.setFontSize(10); pdf.text('評価日時（JST）：' + new Date().toLocaleString('ja-JP'),14,y); y+=8;
-    pdf.setFontSize(14); pdf.text('評価要約',14,y); y+=8;
-    pdf.setFontSize(11); pdf.text(resRank,14,y); y+=6; pdf.text(resSummary,14,y,{maxWidth:180}); y+=12;
-    if(worldlines.length){ pdf.setFontSize(14); pdf.text('想定される世界線',14,y); y+=8; pdf.setFontSize(11);
-      worldlines.forEach(w=>{ pdf.text('・' + w,16,y,{maxWidth:175}); y+=7; }); y+=6; }
-    if(trialsText){ pdf.setFontSize(11); pdf.text(trialsText,14,y); y+=10; }
-    pdf.setFontSize(14); pdf.text('免責・注意事項',14,y); y+=8;
-    pdf.setFontSize(10);
-    pdf.text('・本資料は、住居用不動産購入における判断材料の整理を目的とするものであり、将来の結果や収益性を保証するものではありません。',14,y,{maxWidth:180}); y+=10;
-    pdf.setFontSize(9); pdf.text('NEXA v1.0 ｜ © Yoshinobu Takamitsu',14,285);
-    pdf.save('nexa_report.pdf');
-  }catch(e){ console.error(e); alert('PDF生成エラー'); }
-});
-
-/* ========= 初期レンダリング補助 ========= */
-render(); // ensure correct view on load
+/* ===== PDF ===== */
+btnPDF.onclick=()=>{
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  pdf.text("NEXA 評価レポート",20,20);
+  pdf.text(resultRank.textContent,20,35);
+  pdf.text(resultSummary.textContent,20,45);
+  pdf.text("© Yoshinobu Takamitsu",20,280);
+  pdf.save("nexa_report.pdf");
+};
 </script>
+
 </body>
 </html>
