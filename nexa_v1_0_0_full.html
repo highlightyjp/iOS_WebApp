@@ -5,39 +5,43 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>NEXA — 住居用不動産 判定ツール</title>
+<title>NEXA — 判定ツール（最終版）</title>
 <style>
 :root{
   --bg:#050A14; --fg:#E6F1FF; --sub:#8FA3BF; --accent:#00F0FF;
   --glass:rgba(18,28,54,.56); --border:rgba(255,255,255,.06);
-  --radius:16px;
+  --radius:16px; --btn-height:64px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px}
 body{ -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%; }
+
+/* Header */
 header#site-header{
-  position:fixed;inset:0 0 auto 0;top:0;left:0;right:0;
+  position:fixed;top:0;left:0;right:0;
   padding:calc(env(safe-area-inset-top)+10px) 14px 10px;
-  background:var(--glass);backdrop-filter:blur(26px) saturate(140%);
-  border-bottom:1px solid var(--border);z-index:99999;
+  background:var(--glass);backdrop-filter:blur(28px) saturate(140%);
+  border-bottom:1px solid var(--border);z-index:1200;
   display:flex;align-items:center;justify-content:space-between;
-  -webkit-tap-highlight-color:transparent;
 }
-.header-left{display:flex;align-items:center;gap:12px}
+.header-left{display:flex;align-items:center;gap:10px}
 #app-logo{font-weight:800;letter-spacing:.06em;font-size:18px}
 .header-right{display:flex;align-items:center;gap:8px}
 .icon-button{
-  width:48px;height:44px;border-radius:10px;border:none;
+  width:44px;height:40px;border-radius:10px;border:none;
   background:transparent;color:var(--fg);font-size:18px;
   display:inline-flex;align-items:center;justify-content:center;
-  -webkit-tap-highlight-color:rgba(255,255,255,0.06);
+  -webkit-tap-highlight-color:transparent;cursor:pointer;
 }
+
+/* Main content: give big bottom padding to avoid footer / fixed button overlap */
 main{
   position:relative;
-  padding: calc(env(safe-area-inset-top)+84px) 16px calc(env(safe-area-inset-bottom)+110px);
+  padding: calc(env(safe-area-inset-top)+88px) 16px calc(env(safe-area-inset-bottom) + var(--btn-height) + 40px);
   min-height:100dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
   z-index:1;
+  -webkit-user-select:none;
 }
 
 /* card */
@@ -47,43 +51,62 @@ main{
 }
 .card h3{margin:0 0 10px;font-size:17px}
 
-/* label + input */
+/* labels and inputs */
 .field-label{display:block;color:var(--sub);font-size:12px;margin-top:10px}
 .input,select,textarea{
   width:100%;padding:12px;border-radius:12px;border:none;margin-top:6px;
   background:rgba(255,255,255,.03);color:var(--fg);font-size:15px;
-  outline:none;
+  outline:none;-webkit-appearance:none;appearance:none;
 }
-.input[type=number]{-moz-appearance:textfield}
-.row{display:flex;gap:12px;align-items:center}
-.col{flex:1}
+.select-wrap{position:relative}
+.select-wrap::after{
+  content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--sub);
+  pointer-events:none;font-size:14px;
+}
 
-/* primary button */
+/* fixed primary button above footer */
+.fixed-action{
+  position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom)+12px);
+  z-index:1300;display:flex;justify-content:center;
+}
 .btn-primary{
-  width:100%;padding:14px;border-radius:28px;border:none;background:var(--accent);
-  color:#000;font-weight:800;font-size:17px;margin-top:18px;cursor:pointer;
-  box-shadow:0 6px 18px rgba(0,240,255,.08);
+  width:100%;max-width:920px;height:var(--btn-height);border-radius:28px;border:none;
+  background:var(--accent);color:#000;font-weight:800;font-size:17px;cursor:pointer;
+  box-shadow:0 8px 26px rgba(0,240,255,.08);
 }
-.btn-ghost{background:transparent;border:1px solid var(--border);padding:10px;border-radius:12px}
 
-/* footer */
+/* footer: visible but non-intercepting by default */
 footer#site-footer{
   position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(env(safe-area-inset-bottom)+10px);
-  text-align:center;font-size:12px;color:var(--sub);background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.02));
-  z-index:2;
+  text-align:center;font-size:12px;color:var(--sub);
+  background:linear-gradient(rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+  border-top:1px solid rgba(255,255,255,0.02);
+  z-index:1100;
+  pointer-events:none; /* prevent capturing taps */
 }
+footer#site-footer > * { pointer-events:auto; } /* allow interactive inside if needed */
 
-/* result sections */
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* result / hidden */
+#card-result, #card-history, #card-settings { display:none; }
+
 .small{font-size:13px;color:var(--sub)}
-
-/* settings */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
 .warning{color:#FFD36A;font-size:12px;margin-top:6px}
 
-/* responsive */
+/* modal settings (hidden until toggled) */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1400;display:flex;align-items:center;justify-content:center;
+}
+.modal{
+  width:calc(100% - 48px);max-width:720px;background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);
+}
+
+/* accessibility focus */
+.icon-button:focus, .btn-primary:focus, .input:focus { outline:2px solid rgba(0,240,255,.12); outline-offset:2px; }
+
+/* small screens tweak */
 @media (min-width:760px){
   main{max-width:760px;margin:0 auto;padding-left:24px;padding-right:24px}
+  .fixed-action{left:calc(50% - 380px);right:auto; width:760px; transform:translateX(-50%);}
 }
 </style>
 </head>
@@ -91,83 +114,96 @@ footer#site-footer{
 <header id="site-header" role="banner">
   <div class="header-left">
     <div id="app-logo">NEXA</div>
-    <div class="small" style="opacity:.9">住居用不動産・判定ログ生成</div>
+    <div class="small" style="opacity:.95">住居用不動産・判定ログ生成</div>
   </div>
   <div class="header-right">
-    <button id="btn-history" class="icon-button" title="履歴">🕘</button>
+    <button id="btn-history" class="icon-button" title="履歴" aria-label="履歴">🕘</button>
     <button id="btn-settings" class="icon-button" title="設定" aria-label="設定">⋯</button>
   </div>
 </header>
 
 <main id="main">
-  <!-- INPUT -->
+  <!-- Input -->
   <section class="card" id="card-input">
     <h3>入力</h3>
 
-    <label class="field-label">物件価格（万円）</label>
-    <input id="f_price" class="input" type="number" inputmode="numeric" placeholder="例：3480">
+    <label class="field-label" for="price">物件価格（万円）</label>
+    <input id="price" class="input" type="number" inputmode="numeric" placeholder="例：3080">
 
-    <label class="field-label">専有面積（㎡）</label>
-    <input id="f_area" class="input" type="number" placeholder="例：58">
+    <label class="field-label" for="area">専有面積（㎡）</label>
+    <input id="area" class="input" type="number" placeholder="例：58">
 
-    <label class="field-label">築年（西暦）</label>
-    <input id="f_built" class="input" type="number" placeholder="例：1998">
+    <label class="field-label" for="built">築年（西暦）</label>
+    <input id="built" class="input" type="number" placeholder="例：1998">
 
-    <label class="field-label">月額固定費（管理費・修繕等の合計・円）</label>
-    <input id="f_fees" class="input" type="number" placeholder="例：30000">
+    <label class="field-label" for="fees">管理費（月額・円）</label>
+    <input id="fees" class="input" type="number" placeholder="例：15000">
 
-    <label class="field-label">その他月額費用（インターネット・共聴等・円）</label>
-    <input id="f_other" class="input" type="number" placeholder="0">
+    <label class="field-label" for="repair">修繕積立金（月額・円）</label>
+    <input id="repair" class="input" type="number" placeholder="例：15000">
+
+    <label class="field-label" for="other">その他月額費用（ネット・共聴等・円）</label>
+    <input id="other" class="input" type="number" placeholder="例：0">
   </section>
 
+  <!-- Household / Loan -->
   <section class="card" id="card-household">
     <h3>世帯・ローン</h3>
 
-    <label class="field-label">世帯年収（万円）</label>
-    <input id="f_income" class="input" type="number" placeholder="例：850">
+    <label class="field-label" for="income">世帯年収（万円）</label>
+    <input id="income" class="input" type="number" placeholder="例：850">
 
-    <label class="field-label">購入時年齢（代表者） または 生年月日（YYYY-MM-DD）</label>
-    <input id="f_age" class="input" type="text" placeholder="例：35 または 1992-04-20">
+    <label class="field-label" for="ageOrDob">購入時年齢（代表者） または 生年月日（YYYY-MM-DD）</label>
+    <input id="ageOrDob" class="input" type="text" placeholder="例：35 または 1990-04-12">
 
-    <label class="field-label">ローン形態</label>
-    <select id="f_loanType" class="input">
+    <label class="field-label" for="loanType">ローン形態</label>
+    <select id="loanType" class="input">
       <option value="solo">単独ローン</option>
       <option value="pair">ペアローン</option>
       <option value="combined">収入合算</option>
     </select>
 
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <select id="f_loanYears" class="input" style="flex:1">
-        <option>25</option><option>30</option><option>35</option><option>40</option>
-      </select>
-      <input id="f_down" class="input" type="number" placeholder="頭金（万円）" style="width:130px">
+    <label class="field-label" for="loanYears">ローン期間（年） — 選択してください</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="select-wrap" style="flex:1">
+        <select id="loanYears" class="input">
+          <option value="5">5</option><option value="10">10</option><option value="15">15</option>
+          <option value="20">20</option><option value="25" selected>25</option><option value="30">30</option>
+          <option value="35">35</option><option value="40">40</option><option value="45">45</option>
+        </select>
+      </div>
+      <div class="small">年</div>
+      <div style="width:120px">
+        <label class="field-label" for="down">頭金（万円）</label>
+        <input id="down" class="input" type="number" placeholder="例：400">
+      </div>
     </div>
   </section>
 
+  <!-- Location optional -->
   <section class="card" id="card-location">
     <h3>立地・通勤（任意）</h3>
-    <label class="field-label">物件住所（郵便番号 or 住所）</label>
-    <input id="f_address" class="input" type="text" placeholder="例：123-4567 / 東京都...">
+    <label class="field-label" for="address">物件住所（郵便番号 or 住所）</label>
+    <input id="address" class="input" type="text" placeholder="例：東京都港区芝大門1-1-30">
 
-    <label class="field-label">最寄り駅（複数可・カンマ区切り）</label>
-    <input id="f_stations" class="input" type="text" placeholder="例：○○駅, △△駅">
+    <label class="field-label" for="stations">最寄り駅（複数可・カンマで区切る）</label>
+    <input id="stations" class="input" type="text" placeholder="例：大門, 浜松町">
 
-    <label class="field-label">通勤先（複数可）</label>
-    <input id="f_commutes" class="input" type="text" placeholder="例：職場1, 職場2">
+    <label class="field-label" for="commutes">通勤先（複数可）</label>
+    <input id="commutes" class="input" type="text" placeholder="例：職場A, 職場B">
   </section>
 
-  <button id="btn-evaluate" class="btn-primary">評価する</button>
-
-  <!-- RESULT -->
-  <section class="card" id="card-result" style="display:none">
+  <!-- Result card (hidden until evaluated) -->
+  <section class="card" id="card-result" aria-live="polite" style="display:none">
     <h3>評価結果</h3>
     <div id="result-summary" style="font-weight:700;margin-bottom:8px"></div>
-    <div class="result-grid" style="margin-bottom:12px">
-      <div>
+
+    <div style="display:flex;gap:14px;margin-bottom:12px">
+      <div style="flex:1">
         <div class="small">推定ランク</div>
         <div id="result-rank" style="font-size:22px;font-weight:800">—</div>
       </div>
-      <div>
+      <div style="width:150px">
         <div class="small">内部試行数</div>
         <div id="result-trials" style="font-size:16px">—</div>
       </div>
@@ -176,566 +212,249 @@ footer#site-footer{
     <div class="small">想定される世界線</div>
     <ul id="result-worldlines" style="margin:8px 0 12px;color:var(--fg)"></ul>
 
-    <div class="small">感度（影響が大きい要因）</div>
+    <div class="small">影響が大きい要因</div>
     <ul id="result-factors" style="margin:8px 0 6px;color:var(--fg)"></ul>
-
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button id="btn-pdf" class="btn-ghost">PDF出力</button>
-      <button id="btn-saveSnapshot" class="btn-ghost">この評価を保存</button>
-      <button id="btn-compare" class="btn-ghost">過去と比較</button>
-    </div>
   </section>
 
-  <!-- HISTORY PANEL (軽量) -->
+  <!-- History -->
   <section class="card" id="card-history" style="display:none">
     <h3>評価履歴</h3>
     <div id="history-list" class="small">読み込み中…</div>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button id="btn-exportHistory" class="btn-ghost">履歴をエクスポート (JSON)</button>
-      <button id="btn-clearHistory" class="btn-ghost">履歴を全消去</button>
+      <button id="exportHistory" class="icon-button" style="pointer-events:auto">⤓</button>
+      <button id="clearHistory" class="icon-button" style="pointer-events:auto">🗑</button>
     </div>
   </section>
 </main>
 
-<!-- SETTINGS PANEL -->
-<div id="dialog-settings" style="display:none;position:fixed;inset:80px 16px 110px;background:transparent;z-index:99990">
-  <div style="height:100%;display:flex;align-items:flex-start;justify-content:center">
-    <div style="width:100%;max-width:720px">
-      <div class="card">
-        <h3>設定 / マスタ編集</h3>
-
-        <div class="settings-grid">
-          <label class="small">判断経緯を表示</label>
-          <input type="checkbox" id="s_showProcess">
-
-          <label class="small">試行数を明示</label>
-          <input type="checkbox" id="s_showTrials">
-        </div>
-
-        <hr style="border:none;height:12px">
-
-        <label class="field-label">管理費ガイドライン（円/㎡）</label>
-        <div style="display:flex;gap:8px">
-          <input id="m_mg_min" class="input" type="number" placeholder="下限">
-          <input id="m_mg_max" class="input" type="number" placeholder="上限">
-        </div>
-        <div id="m_mg_warn" class="warning"></div>
-
-        <label class="field-label">修繕積立金ガイドライン（円/㎡）</label>
-        <div style="display:flex;gap:8px">
-          <input id="m_rp_min" class="input" type="number" placeholder="下限">
-          <input id="m_rp_max" class="input" type="number" placeholder="上限">
-        </div>
-        <div id="m_rp_warn" class="warning"></div>
-
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="btn-masterExport" class="btn-ghost">マスタをエクスポート</button>
-          <input id="masterImportFile" type="file" accept="application/json" style="display:none">
-          <button id="btn-masterImport" class="btn-ghost">マスタをインポート</button>
-        </div>
-
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="btn-closeSettings" class="btn-primary">閉じる</button>
-        </div>
-
-      </div>
-    </div>
-  </div>
+<!-- fixed primary action (above footer) -->
+<div class="fixed-action">
+  <button id="btn-evaluate" class="btn-primary">評価する</button>
 </div>
 
-<footer id="site-footer">© Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とし、結果を保証しません</footer>
+<footer id="site-footer">
+  <span>© Yoshinobu Takamitsu ｜ 本アプリは判断材料の整理を目的とし、結果を保証しません</span>
+</footer>
+
+<!-- modal placeholder -->
+<div id="modal-root" aria-hidden="true"></div>
 
 <script>
-/* ========================
-   Utilities
-   ======================== */
+/* ========= Utilities ========= */
 const $ = id => document.getElementById(id);
-const store = {};
+const q = sel => document.querySelector(sel);
+const jparse = (s,d=null)=>{ try{return JSON.parse(s)}catch(e){return d} };
 
-/* safe parse */
-function jparse(s, d=null){try{return JSON.parse(s)}catch(e){return d}}
-
-/* ----- LocalStorage keys ----- */
-const LS_FORM = 'nexa_form_v1';
-const LS_SETTINGS = 'nexa_settings_v1';
-const LS_MASTER = 'nexa_master_v1';
-
-/* ========================
-   Restore form from localStorage
-   ======================== */
-function saveFormAutosave(){
-  const f = {
-    price: $('f_price').value,
-    area: $('f_area').value,
-    built: $('f_built').value,
-    fees: $('f_fees').value,
-    other: $('f_other').value,
-    income: $('f_income').value,
-    age: $('f_age').value,
-    loanType: $('f_loanType').value,
-    loanYears: $('f_loanYears').value,
-    down: $('f_down').value,
-    address: $('f_address').value,
-    stations: $('f_stations').value,
-    commutes: $('f_commutes').value
-  };
-  localStorage.setItem(LS_FORM, JSON.stringify(f));
-}
-
-function restoreForm(){
-  const f = jparse(localStorage.getItem(LS_FORM), {});
-  if(!f) return;
-  $('f_price').value = f.price || '';
-  $('f_area').value = f.area || '';
-  $('f_built').value = f.built || '';
-  $('f_fees').value = f.fees || '';
-  $('f_other').value = f.other || '';
-  $('f_income').value = f.income || '';
-  $('f_age').value = f.age || '';
-  $('f_loanType').value = f.loanType || 'solo';
-  $('f_loanYears').value = f.loanYears || '25';
-  $('f_down').value = f.down || '';
-  $('f_address').value = f.address || '';
-  $('f_stations').value = f.stations || '';
-  $('f_commutes').value = f.commutes || '';
-}
-
-/* attach autosave on inputs */
-function attachAutosave(){
-  const els = document.querySelectorAll('#card-input input,#card-input select,#card-location input,#card-household input,#card-household select');
-  els.forEach(el=>{
-    el.addEventListener('input', saveFormAutosave, {passive:true});
-  });
-}
-
-/* ========================
-   Settings / Master
-   ======================== */
-const DEFAULT_SETTINGS = { showProcess:true, showTrials:true };
-const DEFAULT_MASTER = { mg:{min:150,max:300}, rp:{min:200,max:400}, warnings:{excessiveFeeRatio:0.4} };
-
-function loadSettings(){
-  return jparse(localStorage.getItem(LS_SETTINGS), DEFAULT_SETTINGS);
-}
-function saveSettings(s){
-  localStorage.setItem(LS_SETTINGS, JSON.stringify(s));
-}
-function loadMaster(){ return jparse(localStorage.getItem(LS_MASTER), DEFAULT_MASTER); }
-function saveMaster(m){ localStorage.setItem(LS_MASTER, JSON.stringify(m)); }
-
-/* populate settings UI */
-function initSettingsUI(){
-  const s = loadSettings();
-  $('s_showProcess').checked = !!s.showProcess;
-  $('s_showTrials').checked = !!s.showTrials;
-
-  const m = loadMaster();
-  $('m_mg_min').value = m.mg.min; $('m_mg_max').value = m.mg.max;
-  $('m_rp_min').value = m.rp.min; $('m_rp_max').value = m.rp.max;
-  validateMasterUI();
-}
-
-/* validate master and warn */
-function validateMasterUI(){
-  const mgMin = Number($('m_mg_min').value || 0);
-  const mgMax = Number($('m_mg_max').value || 0);
-  $('m_mg_warn').textContent = mgMin>mgMax ? '管理費の下限が上限を超えています' : '';
-
-  const rpMin = Number($('m_rp_min').value || 0);
-  const rpMax = Number($('m_rp_max').value || 0);
-  $('m_rp_warn').textContent = rpMax>2000 ? '修繕積立金上限が大きすぎます' : '';
-}
-
-/* settings listeners */
-function attachSettingsHandlers(){
-  $('btn-settings').addEventListener('click', openSettings, {passive:true});
-  $('btn-closeSettings').addEventListener('click', closeSettings);
-  $('s_showProcess').addEventListener('change', ()=>{
-    const s = loadSettings(); s.showProcess = $('s_showProcess').checked; saveSettings(s);
-  }, {passive:true});
-  $('s_showTrials').addEventListener('change', ()=>{
-    const s = loadSettings(); s.showTrials = $('s_showTrials').checked; saveSettings(s);
-  }, {passive:true});
-
-  ['m_mg_min','m_mg_max','m_rp_min','m_rp_max'].forEach(id=>{
-    $(id).addEventListener('input', ()=>{
-      validateMasterUI();
-      const m = loadMaster();
-      m.mg.min = Number($('m_mg_min').value||0);
-      m.mg.max = Number($('m_mg_max').value||0);
-      m.rp.min = Number($('m_rp_min').value||0);
-      m.rp.max = Number($('m_rp_max').value||0);
-      saveMaster(m);
-    }, {passive:true});
-  });
-
-  $('btn-masterExport').addEventListener('click', ()=>{
-    const m = loadMaster();
-    const blob = new Blob([JSON.stringify(m, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'nexa_master.json'; a.click();
-    URL.revokeObjectURL(url);
-  }, {passive:true});
-
-  $('btn-masterImport').addEventListener('click', ()=>$('masterImportFile').click());
-  $('masterImportFile').addEventListener('change', (ev)=>{
-    const f = ev.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = ()=>{ try{
-      const parsed = JSON.parse(r.result);
-      saveMaster(parsed); initSettingsUI();
-      alert('マスタをインポートしました');
-    }catch(e){ alert('読み込みに失敗しました: ' + e.message) } };
-    r.readAsText(f);
-  }, {passive:true});
-}
-
-/* open / close */
-function openSettings(){
-  $('dialog-settings').style.display='block';
-}
-function closeSettings(){
-  $('dialog-settings').style.display='none';
-}
-
-/* ========================
-   IndexedDB for history
-   ======================== */
-const DB_NAME = 'nexa_db_v1';
+/* ===== storage keys ===== */
+const FORM_KEY = 'nexa_form_final_v1';
+const DB_NAME = 'nexa_db_final_v1';
 const STORE = 'results';
-let _db = null;
 
+/* ===== IndexedDB helpers ===== */
+let _db = null;
 function openDB(){ return new Promise((res,rej)=>{
   if(_db) return res(_db);
-  const rq = indexedDB.open(DB_NAME,1);
-  rq.onupgradeneeded = e => {
+  const req = indexedDB.open(DB_NAME,1);
+  req.onupgradeneeded = e => {
     const db = e.target.result;
-    if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
+    if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath:'id' });
   };
-  rq.onsuccess = e => { _db = e.target.result; res(_db); };
-  rq.onerror = e => rej(e);
-}); }
+  req.onsuccess = e => { _db = e.target.result; res(_db); };
+  req.onerror = e => rej(e);
+});}
+async function saveResult(obj){ await openDB(); return new Promise((res,rej)=>{
+  const tx = _db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(obj);
+  tx.oncomplete = ()=>res(); tx.onerror = e => rej(e);
+})}
+async function loadAll(){ await openDB(); return new Promise(res=>{
+  const tx = _db.transaction(STORE,'readonly'); const req = tx.objectStore(STORE).getAll();
+  req.onsuccess = e => res(e.target.result || []);
+});}
+async function clearAll(){ await openDB(); return new Promise(res=>{
+  const tx = _db.transaction(STORE,'readwrite'); tx.objectStore(STORE).clear();
+  tx.oncomplete = ()=>res();
+});}
 
-async function saveResultToDB(obj){
-  await openDB();
-  return new Promise((res,rej)=>{
-    const tx = _db.transaction(STORE,'readwrite');
-    const os = tx.objectStore(STORE);
-    os.put(obj);
-    tx.oncomplete = ()=>res();
-    tx.onerror = e=>rej(e);
-  });
+/* ===== autosave/restore form ===== */
+function saveForm(){
+  const state = {
+    price: $('price').value, area:$('area').value, built:$('built').value,
+    fees:$('fees').value, repair:$('repair').value, other:$('other').value,
+    income:$('income').value, ageOrDob:$('ageOrDob').value, loanType:$('loanType').value,
+    loanYears:$('loanYears').value, down:$('down').value,
+    address:$('address').value, stations:$('stations').value, commutes:$('commutes').value
+  };
+  localStorage.setItem(FORM_KEY, JSON.stringify(state));
 }
-async function loadAllResults(){ await openDB();
-  return new Promise(res=>{
-    const tx = _db.transaction(STORE,'readonly'); const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = e => res(e.target.result || []);
-  });
-}
-async function clearAllResults(){ await openDB();
-  return new Promise(res=>{
-    const tx = _db.transaction(STORE,'readwrite');
-    tx.objectStore(STORE).clear();
-    tx.oncomplete = ()=>res();
-  });
-}
-
-/* history UI */
-async function renderHistory(){
-  const list = await loadAllResults();
-  const box = $('history-list');
-  if(!list.length){ box.textContent='過去の評価はありません'; return; }
-  list.sort((a,b)=>new Date(b.time) - new Date(a.time));
-  box.innerHTML = list.slice(0,12).map(r=>{
-    return `<div style="padding:8px;border-radius:10px;background:rgba(255,255,255,.02);margin-bottom:8px">
-      <div style="font-weight:700">${r.rank}｜${r.summary}</div>
-      <div class="small">${new Date(r.time).toLocaleString()}</div>
-    </div>`;
-  }).join('');
+function restoreForm(){
+  const s = jparse(localStorage.getItem(FORM_KEY), {});
+  if(!s) return;
+  Object.keys(s).forEach(k=>{ const el = $(k); if(el) el.value = s[k]||''; });
 }
 
-/* export history */
-$('btn-exportHistory')?.addEventListener('click', async ()=>{
-  const all = await loadAllResults();
-  const blob = new Blob([JSON.stringify(all,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'nexa_history.json'; a.click();
-  URL.revokeObjectURL(url);
-}, {passive:true});
-
-$('btn-clearHistory')?.addEventListener('click', async ()=>{
-  if(!confirm('履歴を完全に削除しますか？')) return;
-  await clearAllResults(); renderHistory(); alert('履歴を削除しました');
-}, {passive:true});
-
-/* ========================
-   Evaluation core
-   ======================== */
-function parseAgeInput(v){
-  v = (v||'').trim();
-  if(/\d{4}-\d{2}-\d{2}/.test(v)){
-    const d = new Date(v); if(!isNaN(d)) return Math.max(0, new Date().getFullYear() - d.getFullYear());
-  }
-  const n = Number(v); if(!isNaN(n) && n>0 && n<120) return n;
-  return null;
+/* attach autosave */
+function attachAutosave(){
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', saveForm, {passive:true}));
 }
 
-/* rough monthly loan calc: use annuity approx monthly payment factor for simplicity */
+/* ===== core calc / montecarlo ===== */
+function uid(){ return crypto.randomUUID(); }
 function calcMonthlyPayment(principalYen, years, annualRate){
   const n = years * 12;
   const r = annualRate / 12;
   if(r === 0) return principalYen / n;
-  const factor = r / (1 - Math.pow(1+r, -n));
-  return principalYen * factor;
+  return principalYen * (r / (1 - Math.pow(1+r, -n)));
 }
-
-function monteCarloSimulation(base, trials){
+function monteCarlo(base, trials){
   let stable=0, stress=0;
   for(let i=0;i<trials;i++){
-    const interestShock = 1 + (Math.random()-0.5)*0.4; // ±20%
-    const feeShock = 1 + Math.random()*0.25;
-    const monthly = base.monthlyLoan * interestShock + base.monthlyFees * feeShock;
+    const ishock = 1 + (Math.random()-0.5)*0.4; // ±20%
+    const fshock = 1 + Math.random()*0.25; // +0~25%
+    const monthly = base.monthlyLoan * ishock + base.monthlyFees * fshock;
     if(monthly < base.safeThreshold) stable++;
     if(monthly > base.dangerThreshold) stress++;
   }
   return { stableRatio: stable/trials, stressRatio: stress/trials };
 }
-
-function sensitivityFactors(input){
-  const arr = [
-    {name:'物件価格', weight: input.price},
-    {name:'固定費（管理・修繕等）', weight: input.monthlyFees},
-    {name:'世帯年収', weight: input.income}
-  ];
-  return arr.sort((a,b)=>b.weight-a.weight).slice(0,3).map(x=>x.name);
+function sensitivity(input){
+  const arr = [{name:'物件価格',w:input.priceWan},{name:'固定費',w:input.monthlyFees},{name:'世帯年収',w:input.incomeWan}];
+  return arr.sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.name);
 }
 
-/* generate worldlines texts */
-function generateWorldlines(mc){
-  return [
-    {name:'前提継続', text: mc.stableRatio>0.7 ? '現在の前提が続けば、生活は比較的安定する可能性があります。' : '前提が続いても負担増に注意が必要です。'},
-    {name:'条件悪化', text: mc.stressRatio>0.3 ? '金利や費用上昇時に大きな圧迫を受ける可能性があります。' : '一定の悪化でも即破綻はしにくい傾向です。'},
-    {name:'条件改善', text: '収入増や頭金の積み増しにより、選択肢は広がります。'}
-  ];
-}
-
-/* main evaluate wrapper */
+/* ===== run evaluation ===== */
 async function runEvaluation(){
-  // collect
-  const priceWan = Number($('f_price').value || 0);
+  // gather
+  const priceWan = Number($('price').value || 0);
   const priceYen = priceWan * 10000;
-  const area = Number($('f_area').value || 0);
-  const fees = Number($('f_fees').value || 0);
-  const other = Number($('f_other').value || 0);
-  const monthlyFees = fees + other;
-  const incomeWan = Number($('f_income').value || 0);
+  const area = Number($('area').value || 0);
+  const fees = Number($('fees').value || 0);
+  const repair = Number($('repair').value || 0);
+  const other = Number($('other').value || 0);
+  const monthlyFees = fees + repair + other;
+  const incomeWan = Number($('income').value || 0);
   const incomeYen = incomeWan * 10000;
-
-  const loanYears = Number($('f_loanYears').value || 25);
-  const downWan = Number($('f_down').value || 0);
+  const loanYears = Number($('loanYears').value || 25);
+  const downWan = Number($('down').value || 0);
   const downYen = downWan * 10000;
   const principal = Math.max(0, priceYen - downYen);
-
-  // interest default assumptions (can be extended)
-  const annualRate = 0.005; // 0.5% base
+  const annualRate = 0.005; // 0.5% baseline
   const monthlyLoan = calcMonthlyPayment(principal, loanYears, annualRate);
-
-  const safeThreshold = incomeYen / 12 * 0.25; // 25% rule
+  const safeThreshold = incomeYen / 12 * 0.25;
   const dangerThreshold = incomeYen / 12 * 0.4;
 
-  // trials limit: choose reasonable count based on platform
-  let trials = 8000;
-  try{
-    // if on heavy device, reduce
-    if(navigator.userAgent.match(/iPhone|Android/)) trials = 3000;
-    if(navigator.deviceMemory && navigator.deviceMemory < 2) trials = 1500;
-  }catch(e){}
+  // trials adapt to device
+  let trials = 3000;
+  try{ if(navigator.deviceMemory && navigator.deviceMemory < 2) trials = 1000; }catch(e){}
 
-  const mc = monteCarloSimulation({
-    monthlyLoan, monthlyFees, safeThreshold, dangerThreshold
-  }, trials);
+  const mc = monteCarlo({ monthlyLoan, monthlyFees, safeThreshold, dangerThreshold }, trials);
 
   let rank='B', summary='慎重な検討が必要です。';
-  if(mc.stableRatio > 0.75) { rank='A'; summary='前提変化に対して比較的安定しています。'; }
-  if(mc.stressRatio > 0.4) { rank='C'; summary='条件悪化時の影響が大きい可能性があります。'; }
+  if(mc.stableRatio > 0.75){ rank='A'; summary='前提変化に対して比較的安定しています。'; }
+  if(mc.stressRatio > 0.4){ rank='C'; summary='条件悪化時の影響が大きい可能性があります。'; }
 
-  const factors = sensitivityFactors({ price: priceWan, monthlyFees, income: incomeWan });
-  const worldlines = generateWorldlines(mc);
+  const factors = sensitivity({ priceWan, monthlyFees, incomeWan });
+  const worldlines = [
+    {name:'前提継続', text: mc.stableRatio>0.7 ? '条件が続けば比較的安定' : '前提が続いても注意が必要'},
+    {name:'条件悪化', text: mc.stressRatio>0.3 ? '悪化時に負担増' : '多少の悪化で即破綻しにくい'},
+    {name:'条件改善', text: '収入増や頭金で選択肢が広がる'}
+  ];
 
-  const result = {
-    id: crypto.randomUUID(),
-    time: new Date().toISOString(),
-    input: {
-      priceWan, area, built: $('f_built').value, monthlyFees, incomeWan, loanYears, downWan,
-      address: $('f_address').value, stations: $('f_stations').value, commutes: $('f_commutes').value
-    },
-    rank, summary, trials, mc, factors, worldlines
-  };
+  const result = { id: uid(), time: new Date().toISOString(),
+    input:{priceWan,area,monthlyFees,incomeWan,loanYears,downWan}, rank, summary, trials, mc, factors, worldlines };
 
-  // show
-  $('card-result').style.display='block';
-  $('result-rank').textContent = rank;
-  $('result-summary').textContent = summary;
-  $('result-trials').textContent = (loadSettings().showTrials ? ('約' + trials.toLocaleString() + '通り') : '');
-  $('result-worldlines').innerHTML = worldlines.map(w=>`<li><strong>${w.name}</strong>： ${w.text}</li>`).join('');
-  $('result-factors').innerHTML = factors.map(f=>`<li>${f}</li>`).join('');
+  // render into UI
+  $('card-result').style.display = 'block';
+  $('result-rank').textContent = result.rank;
+  $('result-summary').textContent = result.summary;
+  $('result-trials').textContent = '約 ' + result.trials.toLocaleString() + ' 通り';
+  $('result-worldlines').innerHTML = result.worldlines.map(w=>`<li><strong>${w.name}</strong>： ${w.text}</li>`).join('');
+  $('result-factors').innerHTML = result.factors.map(f=>`<li>${f}</li>`).join('');
 
-  // save automatically to DB
-  await saveResultToDB(result);
+  // save
+  try{ await saveResult(result); }catch(e){ console.warn('save fail', e); }
+
+  // scroll result into view (center)
+  $('card-result').scrollIntoView({behavior:'smooth', block:'center'});
 
   return result;
 }
 
-/* ========================
-   Print / PDF: open printable HTML and call print()
-   Use browser-native print to avoid japanese font problems
-   ======================== */
-function openPrintableReport(result){
-  const html = buildReportHTML(result);
-  const w = window.open('', '_blank');
-  if(!w) { alert('ポップアップがブロックされました。設定を確認してください。'); return; }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-  // allow render then print
-  w.focus();
-  setTimeout(()=>{ try{ w.print(); }catch(e){ console.warn(e); } }, 500);
-}
+/* ===== UI wiring (DOMContentLoaded safe) ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
 
-function buildReportHTML(result){
-  const input = result.input;
-  const lines = result.worldlines.map(w=>`<li><strong>${w.name}</strong>：${w.text}</li>`).join('');
-  const factors = result.factors.map(f=>`<li>${f}</li>`).join('');
-  const header = `
-    <div style="font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif; padding:18px;">
-      <h1 style="margin:0 0 8px">NEXA 評価レポート</h1>
-      <div style="color:#666">${new Date(result.time).toLocaleString('ja-JP')}</div>
-      <hr style="margin:14px 0">
-    </div>
-  `;
-  const body = `
-    <div style="padding:0 18px 36px;font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;color:#111">
-      <h2>概要</h2>
-      <p><strong>ランク：</strong>${result.rank}　/　<strong>要約：</strong>${result.summary}</p>
-
-      <h3>入力サマリ</h3>
-      <ul>
-        <li>物件価格： ${input.priceWan} 万円</li>
-        <li>専有面積： ${input.area || '-'} ㎡</li>
-        <li>月額固定費： ${input.monthlyFees} 円</li>
-        <li>世帯年収： ${input.incomeWan} 万円</li>
-        <li>ローン期間： ${input.loanYears} 年</li>
-        <li>頭金： ${input.downWan} 万円</li>
-        <li>住所： ${input.address || '-'}</li>
-        <li>最寄り駅： ${input.stations || '-'}</li>
-      </ul>
-
-      <h3>想定される世界線</h3>
-      <ul>${lines}</ul>
-
-      <h3>感度（影響が大きい要因）</h3>
-      <ul>${factors}</ul>
-
-      <h3>試行について</h3>
-      <p>内部試行数：約 ${result.trials.toLocaleString()} 通りの近似シミュレーションに基づく判断材料です。数値はモデルによる近似であり、結果を保証するものではありません。</p>
-
-      <hr>
-      <div style="font-size:12px;color:#666">NEXA v1.0 ｜ © Yoshinobu Takamitsu</div>
-      <div style="font-size:11px;color:#666;margin-top:6px">免責：本資料は判断材料の整理を目的とし、最終判断および契約は利用者の責任で行ってください。</div>
-    </div>
-  `;
-  // small, printable CSS
-  const css = `<style>
-    @media print{ body{ -webkit-print-color-adjust:exact } }
-    body{margin:0;color:#222}
-    h1,h2,h3{color:#111}
-    ul{line-height:1.6}
-  </style>`;
-  return `<!doctype html><html><head><meta charset="utf-8">${css}</head><body>${header}${body}</body></html>`;
-}
-
-/* ========================
-   UI wiring
-   ======================== */
-function attachUI(){
-  attachAutosave();
-  attachSettingsHandlers();
-
-  // restore on load
+  // restore previous form, attach autosave
   restoreForm();
-  initSettingsUI();
+  attachAutosave();
 
-  $('btn-evaluate').addEventListener('click', async ()=>{
-    $('btn-evaluate').disabled = true;
+  // evaluate button
+  const evalBtn = $('btn-evaluate');
+  evalBtn.addEventListener('click', async (ev)=>{
+    if(evalBtn.disabled) return;
     try{
-      const res = await runEvaluation();
-      // scroll to result
-      $('card-result').scrollIntoView({behavior:'smooth', block:'center'});
+      evalBtn.disabled = true;
+      evalBtn.textContent = '評価中…';
+      await runEvaluation();
     }catch(e){ console.error(e); alert('評価中にエラーが発生しました'); }
-    $('btn-evaluate').disabled = false;
-  });
+    evalBtn.disabled = false;
+    evalBtn.textContent = '評価する';
+  }, {passive:false});
 
-  // history button
+  // history button toggles card-history
   $('btn-history').addEventListener('click', async ()=>{
-    // toggle
-    const el = $('card-history');
-    if(el.style.display === 'block'){ el.style.display='none'; } else {
-      await renderHistory(); el.style.display='block'; window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
-    }
+    const ch = $('card-history');
+    if(ch.style.display === 'block'){ ch.style.display = 'none'; return; }
+    ch.style.display = 'block';
+    const hs = await loadAll();
+    const box = $('history-list');
+    if(!hs.length) box.textContent = '履歴はありません';
+    else box.innerHTML = hs.slice(-12).reverse().map(h=>`
+      <div style="padding:8px;margin-bottom:8px;background:rgba(255,255,255,.02);border-radius:8px">
+        <div style="font-weight:700">${h.rank} ／ ${h.summary}</div>
+        <div class="small">${new Date(h.time).toLocaleString()}</div>
+      </div>
+    `).join('');
   }, {passive:true});
 
-  // settings open/close (already attached)
-  $('btn-settings').addEventListener('click', openSettings, {passive:true});
-  $('btn-closeSettings').addEventListener('click', closeSettings, {passive:true});
+  // export/clear history
+  $('exportHistory').addEventListener('click', async ()=>{
+    const all = await loadAll();
+    const blob = new Blob([JSON.stringify(all,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'nexa_history.json'; a.click(); URL.revokeObjectURL(url);
+  }, {passive:true});
+  $('clearHistory').addEventListener('click', async ()=>{
+    if(confirm('履歴を全部消しますか？')){ await clearAll(); $('history-list').textContent='履歴はありません'; alert('削除しました'); }
+  }, {passive:true});
 
-  // save snapshot explicit
-  $('btn-saveSnapshot').addEventListener('click', async ()=>{
-    try{
-      const last = await runEvaluation(); // evaluate and save
-      alert('評価を保存しました（履歴に追加）');
-    }catch(e){ console.error(e); alert('保存に失敗'); }
-  });
-
-  $('btn-pdf').addEventListener('click', async ()=>{
-    const list = await loadAllResults();
-    const last = list.sort((a,b)=> new Date(b.time) - new Date(a.time))[0];
-    if(!last){ alert('まず評価を実行してからPDFを出力してください。'); return; }
-    openPrintableReport(last);
-  });
-
-  $('btn-compare').addEventListener('click', async ()=>{
-    const list = await loadAllResults();
-    if(list.length < 2){ alert('比較可能な過去評価が足りません'); return; }
-    // compare latest two
-    const sorted = list.sort((a,b)=> new Date(b.time) - new Date(a.time));
-    const a = sorted[0], b = sorted[1];
-    const diffs = [];
-    if(a.rank !== b.rank) diffs.push(`ランクが変わりました: ${b.rank} → ${a.rank}`);
-    if(Math.abs(a.mc.stableRatio - b.mc.stableRatio) > 0.05) diffs.push('安定性の前提が5%以上変化');
-    if(diffs.length===0) diffs.push('大きな前提差分は見られません');
-    alert('比較結果:\n' + diffs.join('\n'));
-  });
-
-  // master import/export already wired
-  // attach open printable for direct use
-}
-
-/* ========================
-   Init on DOMContentLoaded
-   ======================== */
-document.addEventListener('DOMContentLoaded', ()=>{
-  attachUI();
-  // protect header click: ensure header is frontmost
-  const header = $('site-header'); header.style.zIndex = 99999; header.style.pointerEvents='auto';
+  // settings opens lightweight modal
+  $('btn-settings').addEventListener('click', ()=>{
+    openSettingsModal();
+  }, {passive:true});
 });
 
-/* ========================
-   Defensive: elementFromPoint debug helper (for inspection)
-   ======================== */
-window.nexaDebugElementAt = function(x,y){
-  try{ const el = document.elementFromPoint(x,y); return el ? el.outerHTML.slice(0,400) : null; }catch(e){ return String(e); }
-};
+/* ===== settings modal implementation ===== */
+function openSettingsModal(){
+  const root = $('modal-root');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="settings-backdrop" role="dialog" aria-modal="true">
+      <div class="modal">
+        <h3 style="margin-top:0">設定</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label><input type="checkbox" id="opt-showTrials" checked> 内部試行数を表示</label>
+          <label><input type="checkbox" id="opt-showWorldlines" checked> 想定世界線を表示</label>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="settings-close" class="icon-button" style="pointer-events:auto">閉じる</button>
+        </div>
+      </div>
+    </div>`;
+  // attach close
+  $('settings-backdrop').addEventListener('click', (e)=>{ if(e.target.id === 'settings-backdrop') closeSettingsModal(); });
+  $('settings-close').addEventListener('click', closeSettingsModal);
+}
+function closeSettingsModal(){ const root = $('modal-root'); root.innerHTML = ''; }
 
+/* ===== end of script ===== */
 </script>
 </body>
 </html>
