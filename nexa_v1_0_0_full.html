@@ -1,177 +1,439 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>NEXA — 評価ツール</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>NEXA</title>
-
+<link rel="stylesheet" href="data:;,">
 <style>
 :root{
-  --bg:#050A14;
-  --fg:#E6F1FF;
-  --sub:#9FB2CC;
-  --accent:#00E5FF;
-  --glass:rgba(20,30,60,.55);
-  --border:rgba(255,255,255,.08);
+  --bg:#050A14; --fg:#E6F1FF; --sub:#9FB2CC; --accent:#00E5FF;
+  --glass:rgba(18,28,54,.56); --border:rgba(255,255,255,.08);
 }
 *{box-sizing:border-box}
-html,body{
-  margin:0;height:100%;
-  background:var(--bg);color:var(--fg);
-  font-family:-apple-system,BlinkMacSystemFont,
-  "Hiragino Sans","Noto Sans JP",sans-serif;
-}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
 body{overflow:hidden}
 
-/* ===== HEADER ===== */
+/* header */
 header{
-  position:fixed;top:0;left:0;right:0;
-  padding:calc(env(safe-area-inset-top)+10px) 16px 10px;
-  backdrop-filter:blur(28px) saturate(140%);
-  background:var(--glass);
-  border-bottom:1px solid var(--border);
-  z-index:10;
+  position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top)+10px) 16px 10px;
+  background:var(--glass);backdrop-filter:blur(28px) saturate(140%);
+  border-bottom:1px solid var(--border);z-index:50;
 }
-header .row{
-  display:flex;justify-content:space-between;align-items:center;
-}
-header .title{
-  font-weight:700;letter-spacing:.06em;
-}
-header button{
-  background:none;border:none;
-  color:var(--fg);
-  font-size:20px;
-  padding:6px 10px;
-}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:700;letter-spacing:.06em}
+.header-btn{background:none;border:none;color:var(--fg);font-size:16px;padding:6px}
 
-/* ===== MAIN ===== */
+/* main */
 main{
-  height:100%;
-  padding:
-    calc(env(safe-area-inset-top)+72px)
-    16px
-    calc(env(safe-area-inset-bottom)+96px);
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-}
-.view{display:none}
-.view.active{display:block}
-
-/* ===== SECTION ===== */
-.section{
-  background:var(--glass);
-  backdrop-filter:blur(24px) saturate(140%);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:16px;
-  margin-bottom:16px;
-}
-.section h2{
-  margin:0 0 10px;
-  font-size:16px;
+  position:relative;padding:calc(env(safe-area-inset-top)+74px) 16px calc(env(safe-area-inset-bottom)+140px);
+  height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
 
-/* ===== BUTTON ===== */
-button.primary{
-  width:100%;
-  margin-top:18px;
-  padding:14px;
-  border-radius:18px;
-  border:none;
-  font-size:16px;
-  font-weight:700;
-  background:var(--accent);
-  color:#000;
+/* section card */
+.card{
+  background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px;
 }
+.card h2{margin:0 0 10px;font-size:16px}
+.label{font-size:12px;color:var(--sub);margin-top:8px;display:block}
+.input,select{width:100%;margin-top:6px;padding:12px;border-radius:12px;border:none;background:rgba(255,255,255,.03);color:var(--fg);font-size:15px}
 
-/* ===== FOOTER ===== */
-footer{
-  position:fixed;left:0;right:0;bottom:0;
-  padding:8px 16px calc(env(safe-area-inset-bottom)+8px);
-  backdrop-filter:blur(28px);
-  background:var(--glass);
-  border-top:1px solid var(--border);
-  font-size:11px;
-  color:var(--sub);
-  text-align:center;
-}
+/* rows */
+.row{display:flex;gap:10px}
+.col{flex:1}
+
+/* big action */
+.action-wrap{position:sticky;bottom:calc(env(safe-area-inset-bottom)+24px);left:16px;right:16px;display:flex;justify-content:center;z-index:40}
+button.primary{width:min(720px,100%);padding:14px;border-radius:22px;border:none;background:var(--accent);color:#000;font-weight:800;font-size:17px}
+
+/* footer */
+footer{position:fixed;left:0;right:0;bottom:0;padding:8px 16px calc(env(safe-area-inset-bottom)+8px);
+  text-align:center;background:linear-gradient(180deg,transparent,rgba(0,0,0,.12));font-size:11px;color:var(--sub);border-top:1px solid var(--border)}
+
+/* result area */
+.result-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.result-summary{font-size:14px;margin-bottom:8px}
+.worldlines{margin-left:16px}
+
+/* small */
+.small{font-size:12px;color:var(--sub)}
+.kv{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.history-item{font-size:12px;color:var(--sub);margin-bottom:6px}
 </style>
 </head>
-
 <body>
-
 <header>
-  <div class="row">
-    <div class="title" id="headerTitle">NEXA</div>
-    <button id="btnSettings">設定</button>
+  <div class="header-row">
+    <div class="brand">NEXA</div>
+    <div>
+      <button id="btnSettings" class="header-btn" aria-label="設定">設定</button>
+    </div>
   </div>
 </header>
 
-<main>
-  <!-- INPUT -->
-  <section id="viewInput" class="view active">
-    <div class="section">
-      <h2>入力</h2>
-      <p style="font-size:13px;color:var(--sub)">
-        ここに条件入力UIが入ります。
-      </p>
-    </div>
-    <button class="primary" id="btnEvaluate">評価する</button>
+<main id="main">
+  <!-- 物件 -->
+  <section class="card" id="cardProperty">
+    <h2>物件</h2>
+
+    <label class="label">物件価格（万円）</label>
+    <input id="price" class="input" type="number" inputmode="numeric" placeholder="例：3080">
+
+    <label class="label">専有面積（㎡）</label>
+    <input id="area" class="input" type="number" inputmode="numeric" placeholder="例：58">
+
+    <label class="label">築年（西暦）</label>
+    <input id="yearBuilt" class="input" type="number" placeholder="例：1998">
+
+    <label class="label">管理費（月額・円）</label>
+    <input id="mgmt" class="input" type="number" placeholder="例：15000">
+
+    <label class="label">修繕積立金（月額・円）</label>
+    <input id="reserve" class="input" type="number" placeholder="例：15000">
+
+    <label class="label">その他月額費用（ネット等・円）</label>
+    <input id="otherMonthly" class="input" type="number" placeholder="例：2000">
   </section>
 
-  <!-- RESULT -->
-  <section id="viewResult" class="view">
-    <div class="section">
-      <h2>結果</h2>
-      <p style="font-size:13px;color:var(--sub)">
-        評価結果が表示されます。
-      </p>
+  <!-- 世帯・ローン -->
+  <section class="card" id="cardHousehold">
+    <h2>世帯・ローン</h2>
+
+    <label class="label">世帯年収（万円、額面）</label>
+    <input id="income" class="input" type="number" placeholder="例：850">
+
+    <label class="label">代表者の購入時年齢（年） または 生年月日（YYYY-MM-DD）</label>
+    <input id="ageOrDob" class="input" type="text" placeholder="例：35 または 1990-04-12">
+
+    <label class="label">ローン形態</label>
+    <select id="loanType" class="input">
+      <option value="single">単独ローン</option>
+      <option value="joint">夫婦連帯ローン</option>
+    </select>
+
+    <div class="row" style="margin-top:8px">
+      <div class="col">
+        <label class="label">ローン期間（年） — 選択してください</label>
+        <select id="loanTerm" class="input">
+          <!-- 5-40年 -->
+        </select>
+      </div>
+      <div style="width:110px">
+        <label class="label">頭金（万円）</label>
+        <input id="down" class="input" type="number" placeholder="例：400">
+      </div>
     </div>
-    <button class="primary" id="btnBack">戻る</button>
+
+    <label class="label">ボーナス加味（月数・合算で年何ヶ月分扱うか。例：4.6 → 4.6）</label>
+    <input id="bonusMonths" class="input" type="number" step="0.1" placeholder="例：4.6">
   </section>
 
-  <!-- SETTINGS -->
-  <section id="viewSettings" class="view">
-    <div class="section">
-      <h2>設定</h2>
-      <p style="font-size:13px;color:var(--sub)">
-        表示・計算条件の設定画面です。
-      </p>
-    </div>
-    <button class="primary" id="btnSettingsBack">戻る</button>
+  <!-- 立地・通勤（任意） -->
+  <section class="card" id="cardLocation">
+    <h2>立地・通勤（任意）</h2>
+
+    <label class="label">物件住所（郵便番号 または 住所）</label>
+    <input id="address" class="input" type="text" placeholder="例：東京都港区芝大門1-1-30">
+
+    <label class="label">物件最寄り駅（任意で手入力、候補は自前マスタで絞れる）</label>
+    <input id="stationProperty" class="input" type="text" placeholder="例：大門">
+
+    <label class="label">職場最寄り駅（任意で手入力）</label>
+    <input id="stationWork" class="input" type="text" placeholder="例：二子玉川">
+
+    <label class="label">許容通勤時間（分）</label>
+    <input id="commuteLimit" class="input" type="number" placeholder="例：40">
   </section>
+
+  <!-- result -->
+  <section class="card" id="cardResult" style="display:none;">
+    <h2>評価結果</h2>
+    <div id="resultSummary" class="result-summary"></div>
+    <div class="kv"><div class="small">推定ランク</div><div id="rank" style="font-weight:800"></div></div>
+    <div class="kv"><div class="small">内部試行数</div><div id="trials" class="small"></div></div>
+
+    <h3 style="margin-top:12px;margin-bottom:6px">想定される世界線（基準比）</h3>
+    <ul id="worldlines" class="worldlines small"></ul>
+
+    <h3 style="margin-top:10px;margin-bottom:6px">影響が大きい要因</h3>
+    <ul id="factors" class="small"></ul>
+
+    <h3 style="margin-top:10px;margin-bottom:6px">過去の評価（最新5件）</h3>
+    <div id="history" class="small"></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button id="btnPdf" class="primary" style="flex:1">PDFで保存</button>
+      <button id="btnExportJSON" class="primary" style="flex:1;background:#7BD389">エクスポート</button>
+    </div>
+  </section>
+
 </main>
 
-<footer>
-© Yoshinobu Takamitsu ｜ 本アプリは判断補助を目的とします
-</footer>
+<div class="action-wrap">
+  <button id="btnEvaluate" class="primary">評価する</button>
+</div>
+
+<footer>© Yoshinobu Takamitsu ｜ 本アプリは判断補助を目的とします</footer>
+
+<!-- jsPDF CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-/* ===== ROUTER ===== */
-const views={
-  input:document.getElementById("viewInput"),
-  result:document.getElementById("viewResult"),
-  settings:document.getElementById("viewSettings")
-};
-const title=document.getElementById("headerTitle");
+/* ===== init loanTerm options ===== */
+const loanTermEl = document.getElementById('loanTerm');
+for(let y=5;y<=40;y++){ const o=document.createElement('option'); o.value=y; o.textContent=y+' 年'; loanTermEl.appendChild(o) }
 
-function show(name){
-  Object.values(views).forEach(v=>v.classList.remove("active"));
-  views[name].classList.add("active");
-  title.textContent=
-    name==="input"?"NEXA":
-    name==="result"?"結果":"設定";
+/* ===== small station master (expandable) =====
+   For offline operation we include a tiny sample master.
+   In production replace with comprehensive station dataset or API.
+*/
+const STATION_MASTER = [
+  {name:"品川", city:"東京", pref:"東京都"},
+  {name:"大門", city:"東京", pref:"東京都"},
+  {name:"芝大門", city:"東京", pref:"東京都"},
+  {name:"二子玉川", city:"東京", pref:"東京都"},
+  {name:"センター南", city:"横浜", pref:"神奈川県"},
+  {name:"センター北", city:"横浜", pref:"神奈川県"},
+  {name:"折尾", city:"北九州", pref:"福岡県"}
+];
+
+/* ===== utility ===== */
+const $ = id => document.getElementById(id);
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString(); }
+function nowISO(){ return new Date().toISOString(); }
+
+/* ===== MonteCarlo evaluation engine (simple but realistic-ish) =====
+   - monthlyLoan calculated via annuity formula using annualRate
+   - MonteCarlo shakes interest ±0.5% absolute and fees ±30%
+   - returns stableRatio / stressRatio and distribution
+*/
+function calcMonthlyLoan(priceMan, downMan, termY, annualRate=0.034){
+  const price = priceMan*10000;
+  const down = (downMan||0)*10000;
+  const principal = Math.max(0, price - down);
+  const n = termY*12;
+  const r = annualRate/12;
+  if(r===0) return principal / n;
+  const monthly = (principal * r) / (1 - Math.pow(1+r, -n));
+  return monthly;
 }
 
-/* ===== BUTTON BIND ===== */
-document.getElementById("btnEvaluate").onclick=()=>show("result");
-document.getElementById("btnBack").onclick=()=>show("input");
-document.getElementById("btnSettings").onclick=()=>show("settings");
-document.getElementById("btnSettingsBack").onclick=()=>show("input");
-</script>
+function monteCarloSim(params){
+  const trials = params.trials || 3000;
+  let stable=0, stress=0;
+  const arr = [];
+  for(let i=0;i<trials;i++){
+    const rateShock = params.rateBase + (Math.random()-0.5)*0.01; // ±0.5% abs
+    const monthlyLoan = calcMonthlyLoan(params.price, params.down, params.term, rateShock);
+    const feeShock = 1 + (Math.random()*0.3); // +0~30% on fees
+    const monthlyFees = (params.mgmt+params.reserve+params.other) * feeShock;
+    const burden = monthlyLoan + monthlyFees;
+    arr.push(burden);
+    if(burden < params.safe) stable++;
+    if(burden > params.danger) stress++;
+  }
+  const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+  return {
+    trials, stableRatio:stable/trials, stressRatio:stress/trials, meanBurden:mean
+  };
+}
 
+/* ===== evaluation wrapper ===== */
+async function evaluateAll(){
+  // collect inputs
+  const price = Number($('price').value)||0;
+  const area = Number($('area').value)||0;
+  const yearBuilt = Number($('yearBuilt').value)||0;
+  const mgmt = Number($('mgmt').value)||0;
+  const reserve = Number($('reserve').value)||0;
+  const other = Number($('otherMonthly').value)||0;
+
+  const incomeMan = Number($('income').value)||0; // 万円
+  const ageOrDob = $('ageOrDob').value.trim();
+  const loanType = $('loanType').value;
+  const term = Number($('loanTerm').value)||35;
+  const down = Number($('down').value)||0;
+  const bonusMonths = Number($('bonusMonths').value)||0;
+
+  // defensive: validate minimal fields
+  if(price<=0 || incomeMan<=0){
+    alert('物件価格と世帯年収は入力してください。');
+    return null;
+  }
+
+  // derive income monthly safe/danger thresholds (手取りではないがシンプルに)
+  const annualIncomeYen = incomeMan*10000;
+  // approximate monthly income (額面/12) and safe/danger fractions on disposable
+  const monthlyGross = annualIncomeYen / 12;
+  const safe = monthlyGross * 0.25;   // safe: housing burden <25% 月
+  const danger = monthlyGross * 0.45; // danger: >45% 月
+
+  // compute loan monthly baseline using a base rate (3.4% annual)
+  const baseRate = 0.034;
+  const monthlyLoanBase = calcMonthlyLoan(price, down, term, baseRate);
+
+  // Monte Carlo
+  const mc = monteCarloSim({
+    price, down, term, mgmt, reserve, other,
+    safe, danger, trials:3000, rateBase:baseRate
+  });
+
+  // rank logic
+  let rank='B', summary='慎重な検討が必要です。';
+  if(mc.stableRatio > 0.75) { rank='A'; summary='前提変化に対して比較的安定しています。'; }
+  if(mc.stressRatio > 0.4) { rank='C'; summary='条件悪化時の影響が大きい可能性があります。'; }
+
+  // worldlines with baseline compare
+  const baseline = monthlyLoanBase + (mgmt+reserve+other);
+  const wl = [
+    {name:'前提継続', text: mc.stableRatio>0.7 ? '現在の前提が続けば比較的安定が見込めます。' : '前提が続いても注意が必要です。', deltaPct: (mc.meanBurden - baseline)/baseline },
+    {name:'条件悪化', text: mc.stressRatio>0.3 ? '金利や費用上昇で家計に強い圧迫が生じる可能性があります。' : '一定の悪化でも即破綻しにくいです。', deltaPct: (baseline*1.15 - baseline)/baseline },
+    {name:'条件改善', text: '収入増や頭金によって選択肢が広がります。', deltaPct: (baseline*0.85 - baseline)/baseline }
+  ];
+
+  // prepare result object
+  const result = {
+    id:crypto.randomUUID(),
+    time: nowISO(),
+    input:{
+      price, area, yearBuilt, mgmt, reserve, other,
+      incomeMan, ageOrDob, loanType, term, down, bonusMonths
+    },
+    eval:{ rank, summary, trials:mc.trials, stableRatio:mc.stableRatio, stressRatio:mc.stressRatio, meanBurden:mc.meanBurden, baseline },
+    worldlines: wl,
+    factors: [
+      {name:'物件価格', weight: price},
+      {name:'固定費（管理・修繕等）', weight: (mgmt+reserve)},
+      {name:'世帯年収', weight: incomeMan}
+    ]
+  };
+
+  await saveResult(result);
+  return result;
+}
+
+/* ===== IndexedDB small wrapper for history ===== */
+const DBNAME='nexa_db_v1', STORE='results';
+let db=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    if(db) return res(db);
+    const rq = indexedDB.open(DBNAME,1);
+    rq.onupgradeneeded = e => { const d=e.target.result; if(!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE,{keyPath:'id'}) };
+    rq.onsuccess = e => { db=e.target.result; res(db) };
+    rq.onerror = e => rej(e);
+  });
+}
+async function saveResult(r){
+  await openDB();
+  return new Promise(res=>{
+    const tx = db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put(r);
+    tx.oncomplete = ()=>res();
+  });
+}
+async function loadAll(){
+  await openDB();
+  return new Promise(res=>{
+    const tx = db.transaction(STORE,'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = e => res(e.target.result || []);
+    req.onerror = ()=>res([]);
+  });
+}
+
+/* ===== UI wiring ===== */
+const btnEvaluate = document.getElementById('btnEvaluate');
+const cardResult = document.getElementById('cardResult');
+
+btnEvaluate.addEventListener('click', async ()=>{
+  btnEvaluate.disabled = true;
+  btnEvaluate.textContent = '評価中…';
+  const r = await evaluateAll();
+  btnEvaluate.disabled = false;
+  btnEvaluate.textContent = '評価する';
+  if(!r) return;
+  // populate result view
+  $('resultSummary').textContent = r.eval.summary;
+  $('rank').textContent = r.eval.rank;
+  $('trials').textContent = r.eval.trials.toLocaleString() + ' 通り (Monte Carlo)';
+  // worldlines
+  const ul = $('worldlines'); ul.innerHTML = '';
+  r.worldlines.forEach(w=>{
+    const li = document.createElement('li');
+    const pct = (w.deltaPct*100).toFixed(1);
+    li.innerHTML = `<strong>${w.name}</strong>： ${w.text} <span style="color:var(--sub)">（基準比 ${pct}%）</span>`;
+    ul.appendChild(li);
+  });
+  // factors
+  const fac = $('factors'); fac.innerHTML = r.factors.map(f=>`<li>${f.name}</li>`).join('');
+
+  // show cardResult and scroll into view
+  cardResult.style.display = 'block';
+  cardResult.scrollIntoView({behavior:'smooth'});
+  renderHistory(); // update history
+});
+
+/* settings button */
+document.getElementById('btnSettings').addEventListener('click', ()=>{
+  alert('設定画面は次フェーズで拡張します。現在は表示／入力の簡易版です。');
+});
+
+/* PDF export */
+document.getElementById('btnPdf').addEventListener('click', async ()=>{
+  const list = await loadAll();
+  if(!list.length){ alert('保存された評価がありません。評価を行ってからPDF出力してください。'); return; }
+  const latest = list.sort((a,b)=> new Date(b.time)-new Date(a.time))[0];
+
+  if(!window.jspdf){ alert('PDFエンジン読み込み失敗'); return; }
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({unit:'mm',format:'a4'});
+  let y=16;
+  pdf.setFontSize(14); pdf.text('NEXA 評価レポート',14,y); y+=8;
+  pdf.setFontSize(10);
+  pdf.text('評価日時：' + new Date(latest.time).toLocaleString('ja-JP'),14,y); y+=6;
+  pdf.text('推定ランク：' + latest.eval.rank,14,y); y+=6;
+  pdf.text('評価要約：',14,y); y+=6;
+  pdf.setFontSize(11);
+  pdf.text(latest.eval.summary,16,y,{maxWidth:180}); y+=12;
+
+  pdf.setFontSize(12); pdf.text('想定世界線（抜粋）',14,y); y+=8;
+  latest.worldlines.slice(0,3).forEach(w=>{
+    pdf.setFontSize(10);
+    pdf.text('・' + w.name + '： ' + w.text,16,y,{maxWidth:170}); y+=6;
+  });
+  y+=6;
+  pdf.setFontSize(9);
+  pdf.text('※本資料は参考用です。最終判断は利用者の責任でお願いします。',14,y);
+  pdf.save('nexa_report.pdf');
+});
+
+/* export JSON */
+document.getElementById('btnExportJSON').addEventListener('click', async ()=>{
+  const all = await loadAll();
+  const blob = new Blob([JSON.stringify(all,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = 'nexa_history.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* history render */
+async function renderHistory(){
+  const list = await loadAll();
+  const box = $('history');
+  if(!list.length){ box.textContent = '過去の評価はまだありません。'; return; }
+  const sorted = list.sort((a,b)=> new Date(b.time)-new Date(a.time)).slice(0,5);
+  box.innerHTML = sorted.map(r=>{
+    return `<div class="history-item">${new Date(r.time).toLocaleString()} ｜ ランク ${r.eval.rank}</div>`;
+  }).join('');
+}
+
+/* initial call to show nothing / safe state */
+renderHistory();
+
+</script>
 </body>
 </html>
