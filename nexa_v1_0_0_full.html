@@ -1,217 +1,167 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>NEXA</title>
 
 <style>
 :root{
-  --bg:#f5f5f7;
-  --card:#ffffff;
-  --text:#111;
-  --sub:#666;
-  --border:#ddd;
-  --accent:#007aff;
-}
-
-*{box-sizing:border-box;}
-html,body{
-  margin:0;
-  padding:0;
-  height:100%;
-  background:var(--bg);
-  color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,
-    "Hiragino Sans","Noto Sans JP",sans-serif;
+--bg:#f2f2f7;
+--card:rgba(255,255,255,.7);
+--blur:blur(20px);
+--radius:18px;
+--text:#111;
+--sub:#666;
+--accent:#007aff;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
 }
 
 body{
-  display:flex;
-  flex-direction:column;
+margin:0;
+background:var(--bg);
+color:var(--text);
 }
 
 header{
-  position:sticky;
-  top:0;
-  z-index:10;
-  background:rgba(255,255,255,0.9);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-  padding:env(safe-area-inset-top) 16px 12px;
+position:sticky;top:0;
+padding:14px;
+text-align:center;
+font-weight:600;
+backdrop-filter:var(--blur);
+background:rgba(255,255,255,.6);
 }
 
-header .row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+main{padding:12px;max-width:600px;margin:auto}
+
+.card{
+background:var(--card);
+backdrop-filter:var(--blur);
+border-radius:var(--radius);
+padding:14px;
+margin-bottom:12px;
 }
 
-header .title{
-  font-weight:600;
-  font-size:17px;
+label{font-size:14px;color:var(--sub)}
+
+input,select,button{
+width:100%;
+padding:12px;
+margin-top:6px;
+border-radius:12px;
+border:0;
+font-size:16px;
 }
 
-header button{
-  background:none;
-  border:none;
-  font-size:16px;
-  color:var(--accent);
+input,select{background:#fff}
+
+button{
+background:var(--accent);
+color:#fff;
+font-weight:600;
 }
 
-main{
-  flex:1;
-  overflow-y:auto;
-  padding:16px;
+#result{
+white-space:pre-line;
+font-size:15px;
 }
 
-.section{
-  background:var(--card);
-  border-radius:14px;
-  padding:16px;
-  margin-bottom:16px;
-}
-
-.section h2{
-  margin:0 0 12px;
-  font-size:16px;
-}
-
-label{
-  display:block;
-  font-size:13px;
-  color:var(--sub);
-  margin-top:12px;
-}
-
-input,select{
-  width:100%;
-  margin-top:6px;
-  padding:12px;
-  font-size:15px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:#fff;
-}
-
-button.primary{
-  width:100%;
-  padding:14px;
-  margin-top:20px;
-  border-radius:14px;
-  border:none;
-  background:var(--accent);
-  color:#fff;
-  font-size:17px;
-}
-
-footer{
-  text-align:center;
-  font-size:11px;
-  color:var(--sub);
-  padding:12px;
-}
-.view{display:none;}
-.view.active{display:block;}
+.small{font-size:13px;color:var(--sub)}
 </style>
 </head>
 
 <body>
 
-<header>
-  <div class="row">
-    <div class="title" id="headerTitle">NEXA</div>
-    <button id="btnSettings">設定</button>
-  </div>
-</header>
+<header>NEXA β</header>
 
 <main>
 
-<section id="viewInput" class="view active">
-  <div class="section">
-    <h2>物件条件</h2>
+<div class="card">
+<label>世帯年収（万円）</label>
+<input id="income" type="number" placeholder="例：600">
 
-    <label>物件価格（万円）</label>
-    <input type="number" placeholder="例：物件の希望価格">
+<label>物件価格（万円）</label>
+<input id="price" type="number" placeholder="例：4500">
 
-    <label>ローン年数</label>
-    <select>
-      <option>20年</option>
-      <option>25年</option>
-      <option>30年</option>
-      <option>35年</option>
-    </select>
-  </div>
+<label>築年数</label>
+<select id="age">
+<option value="5">0-10年</option>
+<option value="15">10-20年</option>
+<option value="25">20-30年</option>
+<option value="35">30年以上</option>
+</select>
 
-  <div class="section">
-    <h2>世帯条件</h2>
+<label>駅徒歩（分）</label>
+<select id="walk">
+<option>5</option><option>10</option><option>15</option>
+</select>
 
-    <label>世帯年収（万円）</label>
-    <input type="number" placeholder="例：世帯全体の年収合計">
+<label>駅重力ランク</label>
+<select id="rank">
+<option value="1.6">S</option>
+<option value="1.3">A</option>
+<option value="1.1">B</option>
+<option value="0.9">C</option>
+<option value="0.7">D</option>
+</select>
 
-    <label>通勤・通学の考慮</label>
-    <input type="text" placeholder="例：職場・学校の最寄り駅">
-  </div>
+<button onclick="calc()">世界線を見る</button>
+</div>
 
-  <button class="primary" id="btnEvaluate">評価する</button>
-</section>
-
-<section id="viewResult" class="view">
-  <div class="section">
-    <h2>評価結果</h2>
-    <p id="resultText" style="font-size:14px;line-height:1.6">
-      この段階では計算ロジックはまだ接続されていません。
-      次のフェーズで、世界線・安定性評価がここに表示されます。
-    </p>
-  </div>
-
-  <button class="primary" id="btnPdf">PDFとして保存</button>
-  <button class="primary" style="margin-top:10px;background:#ccc;color:#000" id="btnBack">
-    入力に戻る
-  </button>
-</section>
-
-<section id="viewSettings" class="view">
-  <div class="section">
-    <h2>設定</h2>
-    <p style="font-size:14px;line-height:1.6">
-      本アプリは判断材料の整理を目的としています。
-      将来の結果を保証するものではありません。
-    </p>
-  </div>
-
-  <button class="primary" id="btnSettingsBack">戻る</button>
-</section>
+<div class="card">
+<div id="result">評価はまだ実行されていません。</div>
+<button onclick="pdf()">PDF出力</button>
+<p class="small">
+本結果は判断補助情報であり、売買価格や将来価値を保証するものではありません。
+</p>
+</div>
 
 </main>
 
-<footer>
-© Yoshinobu Takamitsu
-</footer>
-
 <script>
-const views={
-  input:document.getElementById("viewInput"),
-  result:document.getElementById("viewResult"),
-  settings:document.getElementById("viewSettings")
-};
-const title=document.getElementById("headerTitle");
+function calc(){
+let i=+income.value||0;
+let p=+price.value||0;
+let a=+age.value;
+let w=+walk.value;
+let r=+rank.value;
 
-function show(v){
-  Object.values(views).forEach(x=>x.classList.remove("active"));
-  views[v].classList.add("active");
-  title.textContent=
-    v==="input"?"NEXA":
-    v==="result"?"評価結果":"設定";
+if(!i||!p)return result.innerText="入力不足";
+
+let loanLimit=i*7;
+let safety=p<=loanLimit?1:0.7;
+
+let ageBias=1-(a/100);
+let walkBias=1-(w/50);
+
+let score=(safety*r*ageBias*walkBias*100).toFixed(1);
+
+let zone="";
+if(score>80)zone="安定世界線";
+else if(score>60)zone="許容世界線";
+else if(score>40)zone="注意世界線";
+else zone="破綻世界線";
+
+result.innerText=
+`総合安定度: ${score}%
+世界線: ${zone}
+
+解釈:
+・高いほど無理が少ない
+・低いほど将来負担増
+・判断は常に利用者が行う`;
 }
 
-document.getElementById("btnEvaluate").onclick=()=>show("result");
-document.getElementById("btnBack").onclick=()=>show("input");
-document.getElementById("btnSettings").onclick=()=>show("settings");
-document.getElementById("btnSettingsBack").onclick=()=>show("input");
-document.getElementById("btnPdf").onclick=()=>alert("PDF出力は次フェーズで接続します");
+function pdf(){
+let w=window.open("");
+w.document.write(`<pre>${result.innerText}
+
+――――――――――
+本資料は判断補助目的のみ
+価格・価値を保証しません
+NEXA β</pre>`);
+w.print();
+}
 </script>
 
 </body>
