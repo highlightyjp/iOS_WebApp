@@ -1,168 +1,236 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>NEXA</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>NEXA — 修正版</title>
 <style>
 :root{
---bg:#f2f2f7;
---card:rgba(255,255,255,.7);
---blur:blur(20px);
---radius:18px;
---text:#111;
---sub:#666;
---accent:#007aff;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  --bg:#071023;--card:rgba(17,27,45,.55);--fg:#E6F1FF;--muted:#98A8C0;
+  --accent:#00E6FF;--glass-border:rgba(255,255,255,.06);
+  --radius:16px;
 }
-
-body{
-margin:0;
-background:var(--bg);
-color:var(--text);
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
+body{padding:0;margin:0; -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%}
+header{position:fixed;left:0;right:0;top:0;z-index:20;
+  padding:calc(env(safe-area-inset-top,20px)+10px) 14px 12px;
+  background:linear-gradient(180deg, rgba(8,15,28,0.6), rgba(8,15,28,0.35));
+  -webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);
+  border-bottom:1px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between;
 }
-
-header{
-position:sticky;top:0;
-padding:14px;
-text-align:center;
-font-weight:600;
-backdrop-filter:var(--blur);
-background:rgba(255,255,255,.6);
-}
-
-main{padding:12px;max-width:600px;margin:auto}
-
-.card{
-background:var(--card);
-backdrop-filter:var(--blur);
-border-radius:var(--radius);
-padding:14px;
-margin-bottom:12px;
-}
-
-label{font-size:14px;color:var(--sub)}
-
-input,select,button{
-width:100%;
-padding:12px;
-margin-top:6px;
-border-radius:12px;
-border:0;
-font-size:16px;
-}
-
-input,select{background:#fff}
-
-button{
-background:var(--accent);
-color:#fff;
-font-weight:600;
-}
-
-#result{
-white-space:pre-line;
-font-size:15px;
-}
-
-.small{font-size:13px;color:var(--sub)}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-weight:800;letter-spacing:.06em;font-size:18px}
+.header-right{display:flex;gap:10px;align-items:center}
+.icon-btn{background:none;border:none;color:var(--fg);padding:8px;border-radius:10px}
+main{padding:calc(env(safe-area-inset-top,20px)+82px) 16px calc(env(safe-area-inset-bottom,18px)+140px);min-height:100vh}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:16px;border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(12px)}
+h1,h2{margin:0;color:var(--fg)}
+h2{font-size:18px;margin-bottom:8px}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 6px}
+input[type="text"],input[type="number"],select,textarea{
+  width:100%;padding:14px;border-radius:12px;border:none;background:rgba(255,255,255,.04);color:var(--fg);font-size:16px}
+.select-row{display:flex;gap:10px;align-items:center}
+.select-row .half{flex:1}
+.primary-btn{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,18px)+16px);
+  background:linear-gradient(180deg,var(--accent),#00d3e6);color:#001; font-weight:700;border:none;padding:16px;border-radius:28px;font-size:18px;z-index:30;box-shadow:0 8px 18px rgba(0,230,255,.12)}
+.small-note{font-size:12px;color:var(--muted);margin-top:8px}
+.result-box{padding:14px;border-radius:12px;background:rgba(0,0,0,.18);margin-top:10px}
+.footer-note{position:fixed;left:0;right:0;bottom:0;padding:8px;text-align:center;font-size:12px;color:var(--muted);background:linear-gradient(180deg,rgba(8,15,28,0.25),rgba(8,15,28,0.5));-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--glass-border)}
+.hidden{display:none}
+@media(min-width:720px){main{max-width:720px;margin:0 auto}}
+/* small tweaks for iOS feel */
+.input-placeholder{color:rgba(230,241,255,.55)}
 </style>
 </head>
-
 <body>
 
-<header>NEXA β</header>
+<header>
+  <div class="header-left"><div class="logo">NEXA β</div></div>
+  <div class="header-right">
+    <button id="btn-settings" class="icon-btn" aria-label="設定">設定</button>
+  </div>
+</header>
 
 <main>
+  <section id="input-section" class="card" aria-labelledby="input-title">
+    <h2 id="input-title">入力</h2>
 
-<div class="card">
-<label>世帯年収（万円）</label>
-<input id="income" type="number" placeholder="例：600">
+    <label for="price">物件価格（万円）</label>
+    <input id="price" type="number" inputmode="numeric" placeholder="例：3080">
 
-<label>物件価格（万円）</label>
-<input id="price" type="number" placeholder="例：4500">
+    <label for="area">専有面積（㎡）</label>
+    <input id="area" type="number" placeholder="例：58">
 
-<label>築年数</label>
-<select id="age">
-<option value="5">0-10年</option>
-<option value="15">10-20年</option>
-<option value="25">20-30年</option>
-<option value="35">30年以上</option>
-</select>
+    <label for="built">築年（西暦）</label>
+    <input id="built" type="number" placeholder="例：1998">
 
-<label>駅徒歩（分）</label>
-<select id="walk">
-<option>5</option><option>10</option><option>15</option>
-</select>
+    <label for="fees">管理費（月額・円）</label>
+    <input id="fees" type="number" placeholder="例：15000">
 
-<label>駅重力ランク</label>
-<select id="rank">
-<option value="1.6">S</option>
-<option value="1.3">A</option>
-<option value="1.1">B</option>
-<option value="0.9">C</option>
-<option value="0.7">D</option>
-</select>
+    <label for="reserve">修繕積立金（月額・円）</label>
+    <input id="reserve" type="number" placeholder="例：15000">
 
-<button onclick="calc()">世界線を見る</button>
-</div>
+    <label for="other">その他月額費用（ネット等・円）</label>
+    <input id="other" type="number" placeholder="例：0">
+  </section>
 
-<div class="card">
-<div id="result">評価はまだ実行されていません。</div>
-<button onclick="pdf()">PDF出力</button>
-<p class="small">
-本結果は判断補助情報であり、売買価格や将来価値を保証するものではありません。
-</p>
-</div>
+  <section id="household-section" class="card">
+    <h2>世帯・ローン</h2>
+
+    <label for="income">世帯年収（万円、額面）</label>
+    <input id="income" type="number" placeholder="例：450">
+
+    <label for="age">代表者の購入時年齢（年）または生年月日（YYYYMMDD）</label>
+    <input id="age" type="text" placeholder="例：30 または 19900326">
+
+    <label for="loan-type">ローン形態</label>
+    <select id="loan-type">
+      <option>単独ローン</option>
+      <option>連帯ローン</option>
+    </select>
+
+    <label for="loan-years">ローン期間（年）</label>
+    <select id="loan-years">
+      <!-- 5年刻みで十分 -->
+      <option>10</option><option selected>35</option><option>30</option><option>25</option><option>20</option><option>15</option>
+    </select>
+
+    <label for="down">頭金（万円）</label>
+    <input id="down" type="number" placeholder="例：400">
+  </section>
+
+  <section id="place-section" class="card">
+    <h2>立地・通勤（任意）</h2>
+    <label for="address">物件住所（郵便番号 or 住所）</label>
+    <input id="address" type="text" placeholder="例：東京都港区芝大門1-1-30">
+
+    <label for="nearest">最寄り駅（任意）</label>
+    <input id="nearest" placeholder="任意入力。住所入力時は候補自動設定を行います">
+
+    <div class="small-note">※ 最寄り駅の自動候補は将来的にAPI連携で改善予定です。</div>
+  </section>
+
+  <section id="result-section" class="card">
+    <h2>評価結果</h2>
+    <div id="result-summary" class="result-box">評価はまだ実行されていません。</div>
+    <div id="result-world" class="result-box hidden"></div>
+    <div class="small-note">本アプリは判断補助を目的とします。最終判断は利用者ご自身で行ってください。</div>
+    <div style="height:8px"></div>
+    <button id="pdf-btn" style="width:100%;padding:12px;border-radius:12px;border:none;background:#0b74ff;color:#fff;font-weight:700">PDF出力</button>
+  </section>
 
 </main>
 
+<button id="eval-btn" class="primary-btn">評価する</button>
+<div class="footer-note">© Yoshinobu Takamitsu ｜ 本アプリは判断補助を目的とします</div>
+
+<!-- ライブラリ（CDN） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNa5sQ0qYkq8Q8G8qgGvKz5xX3m5V9W0e7v6Gx2cVqVnY6Q0q5s5n7pZk7eM8J9W1lKj2v8J2k3X6Y2ZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-VTUFb4h4yE6nZ8k6vE9v1gKzQ3g6YJ2qX8e0KJ2rQ4Kz4R4yR8z5H0q5g0r8gF2cY3c8s0w5Qx3E2YJr3q0Jw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <script>
-function calc(){
-let i=+income.value||0;
-let p=+price.value||0;
-let a=+age.value;
-let w=+walk.value;
-let r=+rank.value;
+/* シンプルで確実なDOM参照・イベント登録 */
+document.addEventListener('DOMContentLoaded',() => {
+  const $ = id => document.getElementById(id);
+  const PRICE = $('price'), FEES = $('fees'), RESERVE = $('reserve'), OTHER = $('other');
+  const INCOME = $('income'), AREA = $('area'), BUILT = $('built');
+  const EVAL = $('eval-btn'), RESULT_SUM = $('result-summary'), WORLD = $('result-world');
+  const PDFBTN = $('pdf-btn'), SETTINGS = $('btn-settings');
 
-if(!i||!p)return result.innerText="入力不足";
+  function calcMonthlyLoan(priceManen, years) {
+    // 単純モデル：年間利率0.36%（低め）→ 月利 approx price*1e4*0.003 という既存式を踏襲しつつ現実寄りに
+    const principal = priceManen * 10000;
+    const months = years*12;
+    const monthly = principal * 0.003; // 簡易
+    return monthly;
+  }
 
-let loanLimit=i*7;
-let safety=p<=loanLimit?1:0.7;
+  function monteCarloEval(base, trials=3000) {
+    let stable=0, stress=0;
+    for(let i=0;i<trials;i++){
+      const rate = 1 + (Math.random()-0.5)*0.35; // ±17.5%
+      const feeShock = 1 + Math.random()*0.25;   // +0~25%
+      const burden = base.monthlyLoan*rate + base.monthlyFees*feeShock;
+      if(burden < base.safe) stable++;
+      if(burden > base.danger) stress++;
+    }
+    return {stableRatio:stable/trials, stressRatio:stress/trials, trials};
+  }
 
-let ageBias=1-(a/100);
-let walkBias=1-(w/50);
+  function buildResultText(res){
+    const lines = [];
+    lines.push(`<strong>推定ランク：</strong> ${res.rank}`);
+    lines.push(`<strong>総合安定度：</strong> ${(res.mc.stableRatio*100).toFixed(1)}%`);
+    lines.push(`<div style="margin-top:8px"><strong>想定される世界線（基準との差）</strong></div>`);
+    res.worldlines.forEach(w=>{
+      lines.push(`<div>・<strong>${w.name}</strong>： ${w.text} <span style="color:var(--muted)">(${(w.delta*100).toFixed(1)}%)</span></div>`);
+    });
+    return lines.join('');
+  }
 
-let score=(safety*r*ageBias*walkBias*100).toFixed(1);
+  function generateWorldlines(mc){
+    // delta は仮の変動率（stableRatioを基準にした例）
+    return [
+      {name:'前提継続', text: mc.stableRatio>0.7 ? '現在の条件が続けば比較的安定' : '将来の負担増に注意', delta: (mc.stableRatio-0.7)},
+      {name:'条件悪化', text: mc.stressRatio>0.3 ? '金利・維持費上昇で影響大' : '多少の悪化なら耐えられる可能性', delta: (mc.stressRatio-0.3)},
+      {name:'条件改善', text: '収入増や頭金で選択肢が広がる', delta: 0.05}
+    ];
+  }
 
-let zone="";
-if(score>80)zone="安定世界線";
-else if(score>60)zone="許容世界線";
-else if(score>40)zone="注意世界線";
-else zone="破綻世界線";
+  function evaluate(){
+    const price = Number(PRICE.value)||0;
+    const feesSum = (Number(FEES.value)||0) + (Number(RESERVE.value)||0) + (Number(OTHER.value)||0);
+    const income = Number(INCOME.value)||0;
+    const years = Number($('loan-years').value)||35;
+    const monthlyLoan = calcMonthlyLoan(price, years);
+    const safe = income*10000/12*0.25;
+    const danger = income*10000/12*0.4;
 
-result.innerText=
-`総合安定度: ${score}%
-世界線: ${zone}
+    const mc = monteCarloEval({monthlyLoan, monthlyFees:feesSum, safe, danger}, 3000);
+    let rank='B', summary='慎重な検討が必要です。';
+    if(mc.stableRatio>0.75){rank='A'; summary='複数条件を考慮しても安定の傾向です。'}
+    if(mc.stressRatio>0.45){rank='C'; summary='条件悪化で負担が増す恐れがあります。'}
 
-解釈:
-・高いほど無理が少ない
-・低いほど将来負担増
-・判断は常に利用者が行う`;
-}
+    const worldlines = generateWorldlines(mc);
+    return {rank,summary,mc,worldlines};
+  }
 
-function pdf(){
-let w=window.open("");
-w.document.write(`<pre>${result.innerText}
+  EVAL.addEventListener('click',()=>{
+    const r = evaluate();
+    RESULT_SUM.innerHTML = buildResultText({rank:r.rank,mc:r.mc,worldlines:r.worldlines});
+    WORLD.classList.remove('hidden');
+    // スクロールして結果が見えるようにする（iOSで隠れないよう）
+    setTimeout(()=>{ document.querySelector('#result-section').scrollIntoView({behavior:'smooth',block:'center'}); },120);
+  });
 
-――――――――――
-本資料は判断補助目的のみ
-価格・価値を保証しません
-NEXA β</pre>`);
-w.print();
-}
+  PDFBTN.addEventListener('click',async()=>{
+    // キャプチャ領域： result-section
+    const node = document.getElementById('result-section');
+    if(!node){alert('結果がありません');return;}
+    // 高解像度でキャプチャ
+    const scale = Math.min(3, window.devicePixelRatio||2);
+    const canvas = await html2canvas(node, {scale:scale, useCORS:true, backgroundColor:'#ffffff'});
+    const imgData = canvas.toDataURL('image/jpeg',0.95);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:'portrait',unit:'px',format:[canvas.width,canvas.height]});
+    pdf.addImage(imgData,'JPEG',0,0,canvas.width,canvas.height);
+    pdf.save('nexa_report.pdf');
+  });
+
+  SETTINGS.addEventListener('click',()=>{
+    alert('設定画面は現在簡易モードです。設定は将来的に拡張します。');
+  });
+
+  // 初期値（汚染しない汎用プレースホルダになっていること）
+  PRICE.placeholder='例：3080';
+  AREA.placeholder='例：58';
+  BUILT.placeholder='例：1998';
+  FEES.placeholder='例：15000';
+  RESERVE.placeholder='例：15000';
+  OTHER.placeholder='例：0';
+  INCOME.placeholder='例：450';
+});
 </script>
-
 </body>
 </html>
