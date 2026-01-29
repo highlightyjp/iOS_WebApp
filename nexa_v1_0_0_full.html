@@ -1,235 +1,271 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>NEXA — 修正版</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NEXA — 修正版 v2</title>
 <style>
 :root{
-  --bg:#071023;--card:rgba(17,27,45,.55);--fg:#E6F1FF;--muted:#98A8C0;
-  --accent:#00E6FF;--glass-border:rgba(255,255,255,.06);
-  --radius:16px;
+  --bg:#071020;--card:rgba(20,30,44,0.48);--fg:#E7F3FF;--muted:#9FB0C6;
+  --accent:#00E6FF;--glass-border:rgba(255,255,255,0.06);--radius:16px;
+  --header-height:72px; --btn-height:72px;
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
-body{padding:0;margin:0; -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%}
-header{position:fixed;left:0;right:0;top:0;z-index:20;
-  padding:calc(env(safe-area-inset-top,20px)+10px) 14px 12px;
-  background:linear-gradient(180deg, rgba(8,15,28,0.6), rgba(8,15,28,0.35));
-  -webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);
-  border-bottom:1px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between;
+html,body{height:100%;margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased}
+header{
+  position:fixed;left:0;right:0;top:0;z-index:40;
+  height:calc(env(safe-area-inset-top,20px) + 56px);
+  padding:calc(env(safe-area-inset-top,20px)) 14px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg, rgba(6,12,24,0.55), rgba(6,12,24,0.28));
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  border-bottom:1px solid var(--glass-border);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02), 0 6px 24px rgba(2,6,12,0.45);
 }
-.header-left{display:flex;align-items:center;gap:12px}
-.logo{font-weight:800;letter-spacing:.06em;font-size:18px}
-.header-right{display:flex;gap:10px;align-items:center}
-.icon-btn{background:none;border:none;color:var(--fg);padding:8px;border-radius:10px}
-main{padding:calc(env(safe-area-inset-top,20px)+82px) 16px calc(env(safe-area-inset-bottom,18px)+140px);min-height:100vh}
-.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:16px;border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(12px)}
-h1,h2{margin:0;color:var(--fg)}
-h2{font-size:18px;margin-bottom:8px}
-label{display:block;font-size:13px;color:var(--muted);margin:8px 0 6px}
+.logo{font-weight:800;color:var(--fg);letter-spacing:.06em;font-size:18px}
+.header-right{display:flex;align-items:center;gap:8px}
+.icon-btn{background:transparent;border:none;color:var(--fg);padding:8px;border-radius:10px;font-size:15px}
+main{
+  padding:calc(var(--header-height) + 8px) 16px calc(var(--btn-height) + env(safe-area-inset-bottom,20px) + 24px);
+  min-height:100vh;position:relative;
+}
+.card{
+  background:linear-gradient(180deg, rgba(10,16,28,0.5), rgba(10,16,28,0.42));
+  border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(8px);backdrop-filter: blur(8px);
+}
+h2{margin:0 0 8px;color:var(--fg);font-size:18px}
+label{display:block;font-size:13px;color:var(--muted);margin-top:12px;margin-bottom:6px}
 input[type="text"],input[type="number"],select,textarea{
-  width:100%;padding:14px;border-radius:12px;border:none;background:rgba(255,255,255,.04);color:var(--fg);font-size:16px}
-.select-row{display:flex;gap:10px;align-items:center}
-.select-row .half{flex:1}
-.primary-btn{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,18px)+16px);
-  background:linear-gradient(180deg,var(--accent),#00d3e6);color:#001; font-weight:700;border:none;padding:16px;border-radius:28px;font-size:18px;z-index:30;box-shadow:0 8px 18px rgba(0,230,255,.12)}
-.small-note{font-size:12px;color:var(--muted);margin-top:8px}
-.result-box{padding:14px;border-radius:12px;background:rgba(0,0,0,.18);margin-top:10px}
-.footer-note{position:fixed;left:0;right:0;bottom:0;padding:8px;text-align:center;font-size:12px;color:var(--muted);background:linear-gradient(180deg,rgba(8,15,28,0.25),rgba(8,15,28,0.5));-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--glass-border)}
+  width:100%;padding:12px;border-radius:12px;border:none;background:rgba(255,255,255,0.03);color:var(--fg);font-size:16px}
+select{appearance:none;padding-right:32px}
+.primary-btn{
+  position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,20px) + 16px);
+  height:var(--btn-height);background:linear-gradient(180deg,var(--accent),#00cfe0);
+  color:#001;font-weight:800;border:none;border-radius:34px;font-size:18px;z-index:50;
+  box-shadow:0 16px 32px rgba(0,200,230,0.12);
+}
+.footer-note{
+  position:fixed;left:0;right:0;bottom:0;padding:8px 0;text-align:center;font-size:12px;color:var(--muted);
+  background:linear-gradient(180deg, rgba(6,12,24,0.08), rgba(6,12,24,0.16));
+  border-top:1px solid rgba(255,255,255,0.02);z-index:35;pointer-events:none;
+}
+.result-box{background:rgba(0,0,0,0.12);padding:10px;border-radius:10px;color:var(--fg)}
 .hidden{display:none}
+::-webkit-input-placeholder{color:rgba(231,243,255,0.45)}
+::placeholder{color:rgba(231,243,255,0.45)}
 @media(min-width:720px){main{max-width:720px;margin:0 auto}}
-/* small tweaks for iOS feel */
-.input-placeholder{color:rgba(230,241,255,.55)}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="header-left"><div class="logo">NEXA β</div></div>
+  <div class="logo">NEXA β</div>
   <div class="header-right">
     <button id="btn-settings" class="icon-btn" aria-label="設定">設定</button>
   </div>
 </header>
 
 <main>
-  <section id="input-section" class="card" aria-labelledby="input-title">
-    <h2 id="input-title">入力</h2>
-
+  <section class="card" id="input-section">
+    <h2>物件条件</h2>
     <label for="price">物件価格（万円）</label>
-    <input id="price" type="number" inputmode="numeric" placeholder="例：3080">
+    <input id="price" type="number" placeholder="例：価格（万円）">
 
     <label for="area">専有面積（㎡）</label>
-    <input id="area" type="number" placeholder="例：58">
+    <input id="area" type="number" placeholder="例：面積（㎡）">
 
     <label for="built">築年（西暦）</label>
-    <input id="built" type="number" placeholder="例：1998">
+    <input id="built" type="number" placeholder="例：築年（西暦）">
 
     <label for="fees">管理費（月額・円）</label>
-    <input id="fees" type="number" placeholder="例：15000">
+    <input id="fees" type="number" placeholder="例：管理費（月額・円）">
 
     <label for="reserve">修繕積立金（月額・円）</label>
-    <input id="reserve" type="number" placeholder="例：15000">
+    <input id="reserve" type="number" placeholder="例：修繕積立金（月額・円）">
 
     <label for="other">その他月額費用（ネット等・円）</label>
-    <input id="other" type="number" placeholder="例：0">
+    <input id="other" type="number" placeholder="例：その他月額費用（円）">
   </section>
 
-  <section id="household-section" class="card">
+  <section class="card">
     <h2>世帯・ローン</h2>
-
     <label for="income">世帯年収（万円、額面）</label>
-    <input id="income" type="number" placeholder="例：450">
+    <input id="income" type="number" placeholder="例：世帯年収（万円）">
 
     <label for="age">代表者の購入時年齢（年）または生年月日（YYYYMMDD）</label>
-    <input id="age" type="text" placeholder="例：30 または 19900326">
+    <input id="age" type="text" placeholder="例：年齢（30）または生年月日（19900326）">
 
     <label for="loan-type">ローン形態</label>
-    <select id="loan-type">
-      <option>単独ローン</option>
-      <option>連帯ローン</option>
-    </select>
+    <select id="loan-type"><option>単独ローン</option><option>連帯ローン</option></select>
 
-    <label for="loan-years">ローン期間（年）</label>
-    <select id="loan-years">
-      <!-- 5年刻みで十分 -->
-      <option>10</option><option selected>35</option><option>30</option><option>25</option><option>20</option><option>15</option>
-    </select>
+    <label for="loan-years">ローン期間（年・5年刻み）</label>
+    <select id="loan-years"><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option selected>35</option></select>
 
     <label for="down">頭金（万円）</label>
-    <input id="down" type="number" placeholder="例：400">
+    <input id="down" type="number" placeholder="例：頭金（万円）">
   </section>
 
-  <section id="place-section" class="card">
+  <section class="card">
     <h2>立地・通勤（任意）</h2>
     <label for="address">物件住所（郵便番号 or 住所）</label>
-    <input id="address" type="text" placeholder="例：東京都港区芝大門1-1-30">
+    <input id="address" type="text" placeholder="例：郵便番号または住所（任意）">
 
     <label for="nearest">最寄り駅（任意）</label>
-    <input id="nearest" placeholder="任意入力。住所入力時は候補自動設定を行います">
-
-    <div class="small-note">※ 最寄り駅の自動候補は将来的にAPI連携で改善予定です。</div>
+    <input id="nearest" type="text" placeholder="任意入力。住所入力時に候補自動設定（将来API連携）">
+    <div style="margin-top:8px;color:var(--muted);font-size:12px">※ 最寄り駅は任意です。住所を入れると候補を自動で提案します（将来的に実装）。</div>
   </section>
 
-  <section id="result-section" class="card">
+  <section class="card">
     <h2>評価結果</h2>
     <div id="result-summary" class="result-box">評価はまだ実行されていません。</div>
     <div id="result-world" class="result-box hidden"></div>
-    <div class="small-note">本アプリは判断補助を目的とします。最終判断は利用者ご自身で行ってください。</div>
-    <div style="height:8px"></div>
+    <div style="height:10px"></div>
     <button id="pdf-btn" style="width:100%;padding:12px;border-radius:12px;border:none;background:#0b74ff;color:#fff;font-weight:700">PDF出力</button>
   </section>
-
 </main>
 
 <button id="eval-btn" class="primary-btn">評価する</button>
 <div class="footer-note">© Yoshinobu Takamitsu ｜ 本アプリは判断補助を目的とします</div>
 
-<!-- ライブラリ（CDN） -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNa5sQ0qYkq8Q8G8qgGvKz5xX3m5V9W0e7v6Gx2cVqVnY6Q0q5s5n7pZk7eM8J9W1lKj2v8J2k3X6Y2ZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-VTUFb4h4yE6nZ8k6vE9v1gKzQ3g6YJ2qX8e0KJ2rQ4Kz4R4yR8z5H0q5g0r8gF2cY3c8s0w5Qx3E2YJr3q0Jw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- ライブラリ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-/* シンプルで確実なDOM参照・イベント登録 */
-document.addEventListener('DOMContentLoaded',() => {
-  const $ = id => document.getElementById(id);
-  const PRICE = $('price'), FEES = $('fees'), RESERVE = $('reserve'), OTHER = $('other');
-  const INCOME = $('income'), AREA = $('area'), BUILT = $('built');
-  const EVAL = $('eval-btn'), RESULT_SUM = $('result-summary'), WORLD = $('result-world');
-  const PDFBTN = $('pdf-btn'), SETTINGS = $('btn-settings');
+document.addEventListener('DOMContentLoaded',()=>{
 
-  function calcMonthlyLoan(priceManen, years) {
-    // 単純モデル：年間利率0.36%（低め）→ 月利 approx price*1e4*0.003 という既存式を踏襲しつつ現実寄りに
+  // 要素取得
+  const $ = id => document.getElementById(id);
+  const PRICE = $('price'), AREA=$('area'), BUILT=$('built'), FEES=$('fees'),
+        RESERVE=$('reserve'), OTHER=$('other'), INCOME=$('income'), AGE=$('age'),
+        LOAN_YEARS=$('loan-years'), DOWN=$('down'), ADDRESS=$('address'),
+        NEAREST=$('nearest'), EVAL=$('eval-btn'), RESULT_SUM=$('result-summary'),
+        RESULT_WORLD=$('result-world'), PDFBTN=$('pdf-btn'), SETTINGS=$('btn-settings');
+
+  // レイアウト補正（ヘッダー高さに合わせて main padding-top を確実にする）
+  function adjustLayout(){
+    const header = document.querySelector('header');
+    const main = document.querySelector('main');
+    if(header && main){
+      const h = header.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--header-height', h + 'px');
+      // ボタン高さは固定 var だが念のため取得してセット
+      const btn = EVAL;
+      const bh = btn ? btn.getBoundingClientRect().height : 72;
+      document.documentElement.style.setProperty('--btn-height', bh + 'px');
+      main.style.paddingTop = (h + 8) + 'px';
+      main.style.paddingBottom = (bh + (window.safeAreaInsetBottom||20) + 32) + 'px';
+    }
+  }
+  // safari safe area polyfill
+  window.safeAreaInsetBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 20;
+  adjustLayout();
+  window.addEventListener('resize', adjustLayout);
+  window.addEventListener('orientationchange', adjustLayout);
+
+  // 単純なローン月額モデル（検討用）
+  function calcMonthlyLoan(priceManen, years){
     const principal = priceManen * 10000;
     const months = years*12;
-    const monthly = principal * 0.003; // 簡易
-    return monthly;
+    // 仮定：年利0.6%を月利ベースで単純計算（実務ではA）
+    const annualRate = 0.006;
+    const monthlyRate = annualRate/12;
+    if(monthlyRate<=0) return principal/months;
+    const m = (principal * monthlyRate) / (1 - Math.pow(1+monthlyRate, -months));
+    return m;
   }
 
-  function monteCarloEval(base, trials=3000) {
+  function monteCarloEval(base, trials=3000){
     let stable=0, stress=0;
     for(let i=0;i<trials;i++){
-      const rate = 1 + (Math.random()-0.5)*0.35; // ±17.5%
-      const feeShock = 1 + Math.random()*0.25;   // +0~25%
-      const burden = base.monthlyLoan*rate + base.monthlyFees*feeShock;
+      const r = 1 + (Math.random()-0.5)*0.3; // ±15%
+      const feeR = 1 + Math.random()*0.2; // +0~20%
+      const burden = base.monthlyLoan * r + base.monthlyFees * feeR;
       if(burden < base.safe) stable++;
       if(burden > base.danger) stress++;
     }
     return {stableRatio:stable/trials, stressRatio:stress/trials, trials};
   }
 
-  function buildResultText(res){
-    const lines = [];
-    lines.push(`<strong>推定ランク：</strong> ${res.rank}`);
-    lines.push(`<strong>総合安定度：</strong> ${(res.mc.stableRatio*100).toFixed(1)}%`);
-    lines.push(`<div style="margin-top:8px"><strong>想定される世界線（基準との差）</strong></div>`);
-    res.worldlines.forEach(w=>{
-      lines.push(`<div>・<strong>${w.name}</strong>： ${w.text} <span style="color:var(--muted)">(${(w.delta*100).toFixed(1)}%)</span></div>`);
-    });
-    return lines.join('');
-  }
-
   function generateWorldlines(mc){
-    // delta は仮の変動率（stableRatioを基準にした例）
     return [
-      {name:'前提継続', text: mc.stableRatio>0.7 ? '現在の条件が続けば比較的安定' : '将来の負担増に注意', delta: (mc.stableRatio-0.7)},
-      {name:'条件悪化', text: mc.stressRatio>0.3 ? '金利・維持費上昇で影響大' : '多少の悪化なら耐えられる可能性', delta: (mc.stressRatio-0.3)},
-      {name:'条件改善', text: '収入増や頭金で選択肢が広がる', delta: 0.05}
+      {name:'前提継続', text: mc.stableRatio>0.7 ? '比較的安定する可能性が高い' : '将来の負担増に注意', delta:(mc.stableRatio-0.7)},
+      {name:'条件悪化', text: mc.stressRatio>0.3 ? '悪化時に負担が増す' : '多少の悪化なら耐えられる', delta:(mc.stressRatio-0.3)},
+      {name:'条件改善', text: '収入増や頭金で選択肢が広がる', delta:0.05}
     ];
   }
 
-  function evaluate(){
+  function buildResultText(res){
+    let s = `<strong>推定ランク：</strong> ${res.rank}<br><strong>総合安定度：</strong> ${(res.mc.stableRatio*100).toFixed(1)}%`;
+    s += '<div style="margin-top:8px"><strong>想定される世界線（基準との差）</strong></div>';
+    res.worldlines.forEach(w=>{
+      s += `<div style="margin-top:6px">・<strong>${w.name}</strong>： ${w.text} <span style="color:#9FB0C6">(${(w.delta*100).toFixed(1)}%)</span></div>`;
+    });
+    return s;
+  }
+
+  // 評価実行
+  EVAL.addEventListener('click',()=>{
     const price = Number(PRICE.value)||0;
-    const feesSum = (Number(FEES.value)||0) + (Number(RESERVE.value)||0) + (Number(OTHER.value)||0);
+    const fees = (Number(FEES.value)||0) + (Number(RESERVE.value)||0) + (Number(OTHER.value)||0);
     const income = Number(INCOME.value)||0;
-    const years = Number($('loan-years').value)||35;
+    const years = Number(LOAN_YEARS.value)||35;
     const monthlyLoan = calcMonthlyLoan(price, years);
     const safe = income*10000/12*0.25;
     const danger = income*10000/12*0.4;
 
-    const mc = monteCarloEval({monthlyLoan, monthlyFees:feesSum, safe, danger}, 3000);
-    let rank='B', summary='慎重な検討が必要です。';
-    if(mc.stableRatio>0.75){rank='A'; summary='複数条件を考慮しても安定の傾向です。'}
-    if(mc.stressRatio>0.45){rank='C'; summary='条件悪化で負担が増す恐れがあります。'}
-
-    const worldlines = generateWorldlines(mc);
-    return {rank,summary,mc,worldlines};
-  }
-
-  EVAL.addEventListener('click',()=>{
-    const r = evaluate();
-    RESULT_SUM.innerHTML = buildResultText({rank:r.rank,mc:r.mc,worldlines:r.worldlines});
-    WORLD.classList.remove('hidden');
-    // スクロールして結果が見えるようにする（iOSで隠れないよう）
-    setTimeout(()=>{ document.querySelector('#result-section').scrollIntoView({behavior:'smooth',block:'center'}); },120);
+    const mc = monteCarloEval({monthlyLoan, monthlyFees:fees, safe, danger}, 3000);
+    let rank='B';
+    if(mc.stableRatio>0.75) rank='A';
+    if(mc.stressRatio>0.45) rank='C';
+    const world = generateWorldlines(mc);
+    RESULT_SUM.innerHTML = buildResultText({rank,mc,worldlines:world});
+    RESULT_WORLD.classList.remove('hidden');
+    // 結果が見やすい位置までスクロール
+    setTimeout(()=>{ document.querySelector('#result-summary').scrollIntoView({behavior:'smooth',block:'center'}); },120);
   });
 
-  PDFBTN.addEventListener('click',async()=>{
-    // キャプチャ領域： result-section
-    const node = document.getElementById('result-section');
-    if(!node){alert('結果がありません');return;}
-    // 高解像度でキャプチャ
-    const scale = Math.min(3, window.devicePixelRatio||2);
-    const canvas = await html2canvas(node, {scale:scale, useCORS:true, backgroundColor:'#ffffff'});
+  // PDF出力：高解像度キャプチャ → A4にフィット
+  PDFBTN.addEventListener('click', async()=>{
+    const node = document.querySelector('#result-summary');
+    if(!node){ alert('評価結果がありません'); return; }
+    const scale = Math.min(3, (window.devicePixelRatio || 2));
+    const canvas = await html2canvas(document.querySelector('main'), {scale:scale, useCORS:true, backgroundColor:'#ffffff'});
     const imgData = canvas.toDataURL('image/jpeg',0.95);
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({orientation:'portrait',unit:'px',format:[canvas.width,canvas.height]});
-    pdf.addImage(imgData,'JPEG',0,0,canvas.width,canvas.height);
+    const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgW = pageW - margin*2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    // ページに収まらない場合は縦に分割（簡易対応）
+    if(imgH <= pageH - margin*2){
+      pdf.addImage(imgData,'JPEG',margin,margin,imgW,imgH);
+    } else {
+      // scale target width to imgW, then slice canvas into page-sized chunks
+      const sliceHpx = Math.floor((canvas.width * (pageH - margin*2)) / imgW);
+      let y = 0;
+      while(y < canvas.height){
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = Math.min(sliceHpx, canvas.height - y);
+        const ctx = slice.getContext('2d');
+        ctx.drawImage(canvas, 0, y, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+        const sliceData = slice.toDataURL('image/jpeg',0.95);
+        if(y>0) pdf.addPage();
+        const sliceImgH = (slice.height * imgW) / canvas.width;
+        pdf.addImage(sliceData,'JPEG',margin,margin,imgW,sliceImgH);
+        y += sliceHpx;
+      }
+    }
     pdf.save('nexa_report.pdf');
   });
 
-  SETTINGS.addEventListener('click',()=>{
-    alert('設定画面は現在簡易モードです。設定は将来的に拡張します。');
-  });
+  SETTINGS.addEventListener('click', ()=>{ alert('設定（簡易） — 将来的に詳細設定を追加します。'); });
 
-  // 初期値（汚染しない汎用プレースホルダになっていること）
-  PRICE.placeholder='例：3080';
-  AREA.placeholder='例：58';
-  BUILT.placeholder='例：1998';
-  FEES.placeholder='例：15000';
-  RESERVE.placeholder='例：15000';
-  OTHER.placeholder='例：0';
-  INCOME.placeholder='例：450';
+  // 初期レイアウト調整
+  setTimeout(adjustLayout,120);
 });
 </script>
 </body>
