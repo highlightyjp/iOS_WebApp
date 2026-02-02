@@ -4,370 +4,342 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>住宅購入世界線評価</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 :root{
---bg:#000;
---fg:#fff;
---card:rgba(28,28,30,.9);
---sep:rgba(60,60,67,.36);
---ac:#0A84FF;
---txt:#fff;
---stxt:rgba(235,235,245,.6);
---r:10px;
+  --bg: rgba(10,10,12,1);
+  --glass: rgba(28,28,30,.72);
+  --sep: rgba(60,60,67,.36);
+  --txt: #fff;
+  --sub: rgba(235,235,245,.6);
+  --ac: #0A84FF;
+  --r: 14px;
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;}
 body{
-font:17px/1.29412 -apple-system,sans-serif;
-color:var(--txt);
-background:var(--bg);
-padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
+  color:var(--txt);
 }
-#app{max-width:428px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+#app{max-width:430px;margin:auto;min-height:100vh;}
 .nav{
-position:sticky;
-top:0;
-z-index:100;
-background:rgba(28,28,30,.8);
-backdrop-filter:saturate(180%) blur(20px);
--webkit-backdrop-filter:saturate(180%) blur(20px);
-border-bottom:.5px solid var(--sep);
-padding:8px 16px;
+  position:sticky;top:0;z-index:10;
+  backdrop-filter: blur(24px) saturate(180%);
+  background:var(--glass);
+  border-bottom:.5px solid var(--sep);
+  padding:12px 16px;
 }
-.nav h1{font-size:34px;font-weight:700;letter-spacing:.011em;margin:8px 0;}
-.seg{display:flex;background:rgba(118,118,128,.24);border-radius:9px;padding:2px;margin:8px 0;}
-.seg-btn{flex:1;padding:7px 12px;background:transparent;border:none;border-radius:7px;color:var(--txt);font:13px/1.23536 -apple-system;font-weight:590;cursor:pointer;transition:background .15s;}
-.seg-btn.active{background:rgba(255,255,255,.2);box-shadow:0 3px 8px rgba(0,0,0,.12);}
-.main{flex:1;padding:16px;}
-.card{background:var(--card);border-radius:var(--r);margin-bottom:16px;overflow:hidden;}
-.row{padding:11px 16px;min-height:44px;display:flex;align-items:center;border-bottom:.5px solid var(--sep);}
+.nav h1{font-size:32px;font-weight:700;}
+.seg{display:flex;margin-top:8px;background:rgba(118,118,128,.24);border-radius:10px;padding:2px;}
+.seg button{
+  flex:1;border:none;background:none;color:var(--txt);
+  padding:8px;border-radius:8px;font-weight:600;
+}
+.seg button.active{background:rgba(255,255,255,.2);}
+.main{padding:16px;}
+.card{
+  background:var(--glass);
+  backdrop-filter: blur(20px);
+  border-radius:var(--r);
+  margin-bottom:16px;
+  overflow:hidden;
+}
+.row{
+  display:flex;align-items:center;
+  padding:12px 16px;
+  border-bottom:.5px solid var(--sep);
+}
 .row:last-child{border-bottom:none;}
-.lbl{font-size:17px;color:var(--txt);flex:1;}
-.val{font-size:17px;color:var(--stxt);text-align:right;}
-.inp-row input,.inp-row select{flex:1;background:none;border:none;color:var(--txt);font:17px/1.29412 -apple-system;outline:none;text-align:right;-webkit-appearance:none;}
-.inp-row select{background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path fill="%23fff" d="M1 1l5 5 5-5"/></svg>') no-repeat right;padding-right:20px;}
-.inp-row input::placeholder{color:rgba(235,235,245,.3);}
-.unit{margin-left:4px;color:var(--stxt);}
-.btn-lg{background:var(--ac);color:#fff;border:none;border-radius:var(--r);font:17px/1.29412 -apple-system;font-weight:590;padding:15px;width:100%;cursor:pointer;margin-bottom:16px;}
-.btn-lg:active{opacity:.8;}
-.btn-sec{background:rgba(118,118,128,.24);color:var(--txt);}
-.sec-hdr{font-size:13px;font-weight:400;color:var(--stxt);text-transform:uppercase;letter-spacing:-.08px;padding:8px 0 6px;margin-top:22px;}
-.hide{display:none;}
-.score-hero{text-align:center;padding:32px 16px;}
-.score-num{font-size:64px;font-weight:700;letter-spacing:-.02em;color:var(--ac);}
-.score-sub{font-size:15px;color:var(--stxt);margin-top:4px;}
-.metric{display:flex;align-items:center;padding:8px 16px;}
-.metric-lbl{font-size:15px;color:var(--txt);width:80px;}
-.metric-bar{flex:1;height:4px;background:rgba(118,118,128,.24);border-radius:2px;overflow:hidden;margin:0 12px;}
-.metric-fill{height:100%;background:var(--ac);border-radius:2px;transition:width .3s;}
-.metric-val{font-size:17px;font-weight:590;color:var(--txt);width:36px;text-align:right;}
-.list-item{padding:12px 16px;border-bottom:.5px solid var(--sep);}
-.list-item:last-child{border-bottom:none;}
-.list-title{font-size:17px;color:var(--txt);margin-bottom:2px;}
-.list-sub{font-size:15px;color:var(--stxt);}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
-.mcont{max-width:400px;width:100%;background:var(--card);border-radius:var(--r);padding:24px;}
-.mcont h3{font-size:18px;color:#FF453A;margin-bottom:12px;}
-.mcont p{font-size:15px;line-height:1.4;margin-bottom:16px;white-space:pre-line;}
-@supports not (backdrop-filter:blur(20px)){.nav,.card{background:rgba(28,28,30,.95);}}
-</style>
-</head>
-<body>
-<div id="app">
-<nav class="nav">
-<h1>世界線評価</h1>
-<div class="seg">
-<button class="seg-btn active" onclick="N.sw('M1')">評価</button>
-<button class="seg-btn" onclick="N.sw('M2')">候補</button>
-<button class="seg-btn" onclick="N.sw('M3')">設定</button>
-</div>
-</nav>
-<main id="main" class="main"></main>
-</div>
-<script>
-const N={
-D:{
-C:{
-ma:{s:25,c:30,c1:40,c2:50,c3:60,cp:50,t:60},
-sr:{S:{n:'超一等地',l:[2e6,1e7],m:[150,400]},'A+++':{n:'主要ターミナル',l:[1e6,3e6],m:[100,250]},'A++':{n:'副都心',l:[7e5,18e5],m:[80,180]},'A+':{n:'準主要駅',l:[5e5,12e5],m:[60,130]},A:{n:'主要路線駅',l:[4e5,9e5],m:[50,100]},B:{n:'一般駅',l:[3e5,6e5],m:[40,80]},C:{n:'郊外駅',l:[2e5,4e5],m:[30,60]},D:{n:'地方駅',l:[1e5,3e5],m:[20,50]}},
-wc:[{i:'i10',n:'収入+10%',d:{i:1.1}},{i:'i-10',n:'収入-10%',d:{i:.9}},{i:'r05',n:'金利+0.5%',d:{r:.5}},{i:'c10',n:'通勤+10分',d:{c:10}},{i:'a5',n:'築年+5年',d:{a:5}}]
-},
-sm:{s1:{i:'s1',n:'品川',k:'しながわ',p:'tokyo',l:['l1','l2','l3'],r:'A++',ps:38e4,mt:.9,lp:{n:12e5,d:18e5,x:25e5},mp:{n:{n:120,d:150,x:200},a1:{n:100,d:130,x:170},a2:{n:80,d:110,x:150},a3:{n:60,d:90,x:130},a4:{n:50,d:70,x:100}},e:5,h:{f:'l',q:'l',s:'n'},rd:.7,w:{f:1200,s:.8,m:15},lt:35.6284,ln:139.7387},s2:{i:'s2',n:'渋谷',k:'しぶや',p:'tokyo',l:['l1','l4','l5','l6'],r:'A+++',ps:53e4,mt:.95,lp:{n:15e5,d:25e5,x:4e6},mp:{n:{n:150,d:200,x:300},a1:{n:130,d:170,x:250},a2:{n:100,d:140,x:200},a3:{n:80,d:110,x:160},a4:{n:60,d:90,x:130}},e:15,h:{f:'n',q:'n',s:'n'},rd:.9,w:{f:1200,s:.7,m:15},lt:35.658,ln:139.7016},s3:{i:'s3',n:'新宿',k:'しんじゅく',p:'tokyo',l:['l1','l7','l8','l9'],r:'A+++',ps:77e4,mt:1,lp:{n:18e5,d:3e6,x:5e6},mp:{n:{n:180,d:220,x:350},a1:{n:150,d:190,x:280},a2:{n:120,d:160,x:220},a3:{n:90,d:130,x:180},a4:{n:70,d:100,x:150}},e:35,h:{f:'n',q:'n',s:'n'},rd:.95,w:{f:1200,s:.9,m:15},lt:35.6896,ln:139.7006},s4:{i:'s4',n:'池袋',k:'いけぶくろ',p:'tokyo',l:['l1','l10','l8','l11'],r:'A++',ps:56e4,mt:.9,lp:{n:9e5,d:15e5,x:25e5},mp:{n:{n:100,d:140,x:200},a1:{n:85,d:120,x:170},a2:{n:70,d:100,x:140},a3:{n:55,d:80,x:110},a4:{n:45,d:65,x:90}},e:40,h:{f:'l',q:'l',s:'n'},rd:.8,w:{f:1200,s:.85,m:15},lt:35.7295,ln:139.711},s5:{i:'s5',n:'東京',k:'とうきょう',p:'tokyo',l:['l1','l2','l7','l8'],r:'A+++',ps:46e4,mt:1,lp:{n:2e6,d:35e5,x:6e6},mp:{n:{n:200,d:250,x:400},a1:{n:170,d:210,x:320},a2:{n:140,d:180,x:260},a3:{n:110,d:150,x:210},a4:{n:90,d:120,x:170}},e:3,h:{f:'m',q:'m',s:'n'},rd:.85,w:{f:1200,s:1,m:15},lt:35.6812,ln:139.7671},s6:{i:'s6',n:'目黒',k:'めぐろ',p:'tokyo',l:['l1','l12','l13'],r:'A',ps:15e4,mt:.8,lp:{n:8e5,d:12e5,x:18e5},mp:{n:{n:90,d:120,x:170},a1:{n:75,d:100,x:140},a2:{n:60,d:85,x:120},a3:{n:50,d:70,x:100},a4:{n:40,d:60,x:85}},e:25,h:{f:'l',q:'n',s:'n'},rd:.6,w:{f:1200,s:.75,m:15},lt:35.6339,ln:139.7157},s7:{i:'s7',n:'恵比寿',k:'えびす',p:'tokyo',l:['l1','l14'],r:'A+',ps:17e4,mt:.85,lp:{n:9e5,d:14e5,x:2e6},mp:{n:{n:100,d:130,x:180},a1:{n:85,d:110,x:150},a2:{n:70,d:95,x:130},a3:{n:55,d:80,x:110},a4:{n:45,d:65,x:90}},e:20,h:{f:'n',q:'n',s:'n'},rd:.7,w:{f:1200,s:.8,m:15},lt:35.6467,ln:139.7101},s8:{i:'s8',n:'大崎',k:'おおさき',p:'tokyo',l:['l1','l15','l16'],r:'A+',ps:14e4,mt:.75,lp:{n:7e5,d:11e5,x:16e5},mp:{n:{n:85,d:110,x:150},a1:{n:70,d:95,x:130},a2:{n:60,d:80,x:110},a3:{n:50,d:70,x:95},a4:{n:40,d:60,x:80}},e:10,h:{f:'l',q:'m',s:'n'},rd:.8,w:{f:1200,s:.85,m:15},lt:35.6197,ln:139.7286},s9:{i:'s9',n:'五反田',k:'ごたんだ',p:'tokyo',l:['l1','l17','l18'],r:'A',ps:15e4,mt:.7,lp:{n:65e4,d:1e6,x:15e5},mp:{n:{n:80,d:105,x:140},a1:{n:65,d:90,x:120},a2:{n:55,d:75,x:100},a3:{n:45,d:65,x:85},a4:{n:35,d:55,x:75}},e:12,h:{f:'l',q:'l',s:'n'},rd:.5,w:{f:1200,s:.8,m:15},lt:35.6258,ln:139.7238},s10:{i:'s10',n:'田町',k:'たまち',p:'tokyo',l:['l1','l19'],r:'A',ps:1e5,mt:.65,lp:{n:7e5,d:11e5,x:17e5},mp:{n:{n:85,d:110,x:150},a1:{n:70,d:95,x:130},a2:{n:60,d:80,x:110},a3:{n:50,d:70,x:95},a4:{n:40,d:60,x:80}},e:8,h:{f:'m',q:'m',s:'n'},rd:.7,w:{f:1200,s:.9,m:15},lt:35.6455,ln:139.7476}},
-lm:{l1:{i:'l1',n:'JR山手線',s:'山手線',c:'JR東日本',v:32,si:1.2,tp:{s:3,m:5,l:8,g:12},st:[{i:'s5',n:'東京',k:0,z:'g'},{i:'s1',n:'品川',k:6.8,z:'l'},{i:'s10',n:'田町',k:9.1,z:'m'},{i:'s8',n:'大崎',k:12.2,z:'l'},{i:'s9',n:'五反田',k:14.3,z:'m'},{i:'s6',n:'目黒',k:16.6,z:'m'},{i:'s7',n:'恵比寿',k:18.2,z:'m'},{i:'s2',n:'渋谷',k:20.6,z:'g'},{i:'s3',n:'新宿',k:27.7,z:'g'},{i:'s4',n:'池袋',k:33.9,z:'g'}]},l2:{i:'l2',n:'JR東海道線',s:'東海道線',c:'JR東日本',v:45,si:3.5,tp:{s:3,m:5,l:8,g:12},st:[{i:'s5',n:'東京',k:0,z:'g'},{i:'s1',n:'品川',k:6.8,z:'l'}]},l7:{i:'l7',n:'JR中央線',s:'中央線',c:'JR東日本',v:38,si:2,tp:{s:3,m:5,l:8,g:12},st:[{i:'s5',n:'東京',k:0,z:'g'},{i:'s3',n:'新宿',k:10.3,z:'g'}]},l4:{i:'l4',n:'東京メトロ銀座線',s:'銀座線',c:'東京メトロ',v:28,si:1,tp:{s:2,m:4,l:6,g:10},st:[{i:'s2',n:'渋谷',k:0,z:'g'}]},l8:{i:'l8',n:'東京メトロ丸ノ内線',s:'丸ノ内線',c:'東京メトロ',v:30,si:1.1,tp:{s:2,m:4,l:6,g:10},st:[{i:'s4',n:'池袋',k:0,z:'g'},{i:'s3',n:'新宿',k:6.3,z:'g'},{i:'s5',n:'東京',k:20.1,z:'g'}]}},
-pm:{tokyo:{i:'tokyo',n:'東京都',m:1e7},kanagawa:{i:'kanagawa',n:'神奈川県',m:3e6},saitama:{i:'saitama',n:'埼玉県',m:15e5},chiba:{i:'chiba',n:'千葉県',m:12e5}},
-pr:{s1_s2:{sg:[{l:'l1',f:'s1',t:'s2'}],k:13.8,m:26},s1_s3:{sg:[{l:'l1',f:'s1',t:'s3'}],k:20.9,m:39},s2_s3:{sg:[{l:'l1',f:'s2',t:'s3'}],k:7.1,m:13},s5_s1:{sg:[{l:'l1',f:'s5',t:'s1'}],k:6.8,m:13},s5_s3:{sg:[{l:'l7',f:'s5',t:'s3'}],k:10.3,m:16},s2_s4:{sg:[{l:'l1',f:'s2',t:'s4'}],k:13.3,m:25},s6_s2:{sg:[{l:'l1',f:'s6',t:'s2'}],k:4,m:8},s7_s2:{sg:[{l:'l1',f:'s7',t:'s2'}],k:2.4,m:5},s8_s1:{sg:[{l:'l1',f:'s8',t:'s1'}],k:5.4,m:10},s9_s6:{sg:[{l:'l1',f:'s9',t:'s6'}],k:2.3,m:4}},
-ad:{'東京都港区':{lt:35.6585,ln:139.7514},'東京都新宿区':{lt:35.694,ln:139.7036},'東京都渋谷区':{lt:35.6638,ln:139.6983},'東京都品川区':{lt:35.6092,ln:139.7303},'東京都目黒区':{lt:35.6419,ln:139.6983},'東京都豊島区':{lt:35.7295,ln:139.7155}}
-},
-S:{m:'M1',i:{M1:{s:null,a:null,g:null,w:null,h:{t:null,ag:[],ic:null},l:{t:null,r:null,y:null},c:[]},M2:{h:{t:null,ag:[],ic:null},l:{t:null,r:null,y:null},c:[],am:null},M3:{u:{th:'light',fs:'medium'},p:{ch:true,mp:false}}},r:{M1:[],M2:[]},ss:[],bl:null},
-U:{
-id:()=>Date.now().toString(36)+Math.random().toString(36).substr(2,9),
-dt:(v,b)=>b===0?0:Math.round(((v-b)/b)*100),
-cl:(v,mn,mx)=>Math.max(mn,Math.min(mx,v)),
-fp:p=>p.toLocaleString()+'万円',
-fd:d=>{const x=new Date(d);return x.getFullYear()+'年'+(x.getMonth()+1)+'月'+x.getDate()+'日';},
-ds:(lt1,ln1,lt2,ln2)=>{const R=6371,dLat=(lt2-lt1)*Math.PI/180,dLon=(ln2-ln1)*Math.PI/180,a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lt1*Math.PI/180)*Math.cos(lt2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));},
-fns:ad=>{
-if(!ad)return null;
-for(const k in N.D.ad){
-if(ad.indexOf(k)===0||k.indexOf(ad)===0){
-const ac=N.D.ad[k];
-let ns=null,md=999;
-for(const si in N.D.sm){
-const st=N.D.sm[si],d=N.U.ds(ac.lt,ac.ln,st.lt,st.ln);
-if(d<md){md=d;ns=si;}}
-return ns;}}
-return null;
-},
-fnc:(lt,ln)=>{let ns=null,md=999;for(const si in N.D.sm){const st=N.D.sm[si],d=N.U.ds(lt,ln,st.lt,st.ln);if(d<md){md=d;ns=si;}}return ns;},
-vi:(i,m)=>{const e=[];if(m==='M1'){if(!i.s)e.push('物件所在地が未確定');if(!i.a||i.a<20||i.a>200)e.push('専有面積が未確定');if(i.g===null||i.g<0||i.g>50)e.push('築年数が未確定');if(!i.w||i.w<1||i.w>15)e.push('駅徒歩が未確定');if(!i.h.t)e.push('世帯構成が未確定');if(!i.h.ic||i.h.ic<200||i.h.ic>5000)e.push('世帯年収が未確定');if(!i.l.t)e.push('ローン形態が未確定');if(!i.l.r||i.l.r<.1||i.l.r>5)e.push('金利が未確定');if(!i.l.y)e.push('返済期間が未確定');if(i.c.length===0)e.push('通勤先が未確定');i.c.forEach((x,j)=>{if(!x.d)e.push('通勤先'+(j+1)+'が未確定');if(!x.mm||x.mm<10||x.mm>120)e.push('通勤先'+(j+1)+'許容時間が未確定');if(x.mt===null||x.mt<0||x.mt>5)e.push('通勤先'+(j+1)+'許容乗換が未確定');});}else if(m==='M2'){if(!i.h.t)e.push('世帯構成が未確定');if(!i.h.ic||i.h.ic<200||i.h.ic>5000)e.push('世帯年収が未確定');if(!i.l.t)e.push('ローン形態が未確定');if(!i.l.r||i.l.r<.1||i.l.r>5)e.push('金利が未確定');if(!i.l.y)e.push('返済期間が未確定');if(i.c.length===0)e.push('通勤先が未確定');i.c.forEach((x,j)=>{if(!x.d)e.push('通勤先'+(j+1)+'が未確定');if(!x.mm||x.mm<10||x.mm>120)e.push('通勤先'+(j+1)+'許容時間が未確定');if(x.mt===null||x.mt<0||x.mt>5)e.push('通勤先'+(j+1)+'許容乗換が未確定');});if(!i.am||i.am<20||i.am>200)e.push('最低面積が未確定');}return{v:e.length===0,e:e};},
-er:m=>{const d=document.createElement('div');d.className='modal';d.innerHTML='<div class="mcont"><h3>入力不足</h3><p>'+m+'</p><button class="btn-lg" onclick="this.parentElement.parentElement.remove()">確認</button></div>';document.body.appendChild(d);},
-sy:(m)=>{if(m==='M1'){const e=document.getElementById;N.S.i.M1.a=parseFloat(e('i-a').value)||null;N.S.i.M1.g=parseInt(e('i-g').value)||null;N.S.i.M1.w=parseInt(e('i-w').value)||null;N.S.i.M1.h.t=e('i-ht').value||null;N.S.i.M1.h.ic=parseFloat(e('i-hic').value)||null;N.S.i.M1.l.t=e('i-lt').value||null;N.S.i.M1.l.r=parseFloat(e('i-lr').value)||null;N.S.i.M1.l.y=parseInt(e('i-ly').value)||null;}else if(m==='M2'){const e=document.getElementById;N.S.i.M2.h.t=e('i2-ht').value||null;N.S.i.M2.h.ic=parseFloat(e('i2-hic').value)||null;N.S.i.M2.l.t=e('i2-lt').value||null;N.S.i.M2.l.r=parseFloat(e('i2-lr').value)||null;N.S.i.M2.l.y=parseInt(e('i2-ly').value)||null;N.S.i.M2.am=parseFloat(e('i2-am').value)||null;}}
-},
-C:{
-dj:(f,t)=>{const g={};for(const l in N.D.lm){const ln=N.D.lm[l];for(let i=0;i<ln.st.length-1;i++){const a=ln.st[i],b=ln.st[i+1],d=Math.abs(b.k-a.k),tm=(d/ln.v)*60;if(!g[a.i])g[a.i]=[];if(!g[b.i])g[b.i]=[];g[a.i].push({n:b.i,t:tm,l:l});g[b.i].push({n:a.i,t:tm,l:l});}}const ds={},pv={},uv=new Set();for(const n in g){ds[n]=Infinity;pv[n]=null;uv.add(n);}ds[f]=0;while(uv.size>0){let c=null,mn=Infinity;for(const n of uv)if(ds[n]<mn){mn=ds[n];c=n;}if(c===null||c===t)break;uv.delete(c);if(!g[c])continue;for(const e of g[c]){const al=ds[c]+e.t;if(al<ds[e.n]){ds[e.n]=al;pv[e.n]={f:c,l:e.l};}}}if(!pv[t])return null;const p=[];let cr=t;while(cr!==f){const pr=pv[cr];if(!pr)return null;p.unshift({f:pr.f,t:cr,l:pr.l});cr=pr.f;}const sg=[];let cl=null,ss=null;for(const s of p){if(cl===null){cl=s.l;ss=s.f;}else if(cl!==s.l){sg.push({l:cl,f:ss,t:s.f});cl=s.l;ss=s.f;}}if(cl!==null)sg.push({l:cl,f:ss,t:t});return{sg:sg,k:ds[t]*N.D.lm[sg[0].l].v/60,m:Math.round(ds[t])}},
-rt:(f,t)=>{const k=f+'_'+t;if(N.D.pr[k])return N.D.pr[k];const rk=t+'_'+f;if(N.D.pr[rk]){const r=N.D.pr[rk];return{sg:r.sg.map(s=>({l:s.l,f:s.t,t:s.f})).reverse(),k:r.k,m:r.m};}return N.C.dj(f,t);},
-tp:(l,s)=>{const ln=N.D.lm[l];if(!ln)return 5;const si=ln.st.find(x=>x.i===s);return si?ln.tp[si.z]||5:5;},
-ct:(f,t)=>{const r=N.C.rt(f,t);if(!r)return null;let tm=0,tc=0;for(let i=0;i<r.sg.length;i++){const s=r.sg[i],ln=N.D.lm[s.l];if(!ln)continue;const fs=ln.st.find(x=>x.i===s.f),ts=ln.st.find(x=>x.i===s.t);if(!fs||!ts)continue;tm+=(Math.abs(ts.k-fs.k)/ln.v)*60;if(i<r.sg.length-1){tc++;tm+=N.C.tp(s.l,s.t);}}return{t:N.U.cl(Math.round(tm),1,180),tr:tc,r:r};},
-mp:(si,a,g,w)=>{const st=N.D.sm[si];if(!st)return 0;let pr=g===0?st.mp.n:g<=10?st.mp.a1:g<=20?st.mp.a2:g<=30?st.mp.a3:st.mp.a4;const p=N.U.cl(pr.d*Math.max(.7,1-(w*.015))*a,100,100000);return Math.round(p);},
-ml:(ic,y,r,t)=>{const im={single:7,pair:9},mr=.35,mi=ic*im[t],mrt=r/100/12,tm=y*12,mp=(ic*1e4*mr)/12;return Math.floor(Math.min(mi,mp*((1-Math.pow(1+mrt,-tm))/mrt)/1e4));},
-rl:(ic,y,r,t)=>{const mrt=r/100/12,tm=y*12,mp=(ic*1e4*.25)/12;return Math.floor(mp*((1-Math.pow(1+mrt,-tm))/mrt)/1e4);},
-hp:h=>{const pn={n:0,l:5,m:15,h:30};return Math.max(pn[h.f]||0,pn[h.q]||0,pn[h.s]||0);},
-fs:si=>{const st=N.D.sm[si];if(!st)return 50;return N.U.cl(Math.round(50+st.rd*30+st.mt*20-N.C.hp(st.h)),0,100);},
-ss:i=>{const st=N.D.sm[i.s];if(!st)return 50;const rs={S:30,'A+++':25,'A++':20,'A+':15,A:10,B:5,C:0,D:-10};let sc=50+(rs[st.r]||0);if(st.ps>3e5)sc+=20;else if(st.ps>1e5)sc+=10;if(st.l.length>=3)sc+=10;else if(st.l.length===2)sc+=5;return N.U.cl(Math.round(sc),0,100);},
-cs:(ct,cd)=>{let ts=0;for(let i=0;i<cd.length;i++){const c=cd[i],a=ct[i];if(!a||!a.t){ts+=0;continue;}if(a.t<=c.mm)ts+=100-(a.t/c.mm*30);else ts+=Math.max(0,70-(a.t-c.mm)*2);}return N.U.cl(Math.round(ts/cd.length),0,100);},
-ps:(p,ic,l)=>{const ml=N.C.ml(ic,l.y,l.r,l.t),rl=N.C.rl(ic,l.y,l.r,l.t);if(p<=rl)return 100;if(p<=ml)return N.U.cl(Math.round(100-((p-rl)/(ml-rl)*30)),0,100);return N.U.cl(Math.round(70-((p-ml)/ml*100)),0,100);},
-ts:(i,p,ct)=>{const sc={co:N.C.cs(ct,i.c),pr:N.C.ps(p,i.h.ic,i.l),fu:N.C.fs(i.s),st:N.C.ss(i)};sc.tt=N.U.cl(Math.round(sc.co*.3+sc.pr*.35+sc.fu*.2+sc.st*.15),0,100);return sc;},
-ac:(i,c)=>{const m=JSON.parse(JSON.stringify(i));if(c.d.i)m.h.ic=Math.round(i.h.ic*c.d.i);if(c.d.r)m.l.r=i.l.r+c.d.r;if(c.d.c)m.c.forEach(x=>x.mm+=c.d.c);if(c.d.a)m.g+=c.d.a;return m;},
-ist:r=>r.sc.co>=50&&r.sc.pr>=50,
-iex:r=>{const ml=N.C.ml(r.i.h.ic,r.i.l.y,r.i.l.r,r.i.l.t);return r.p>ml*1.5||r.sc.co===0;},
-gr:(r,st,ex)=>{if(ex)return['破綻'];if(!st)return['不安定'];return['安定'];},
-ew:br=>{const wl=[];for(const c of N.D.C.wc){const mi=N.C.ac(br.i,c),ct=mi.c.map(cm=>N.C.ct(mi.s,cm.d)),p=N.C.mp(mi.s,mi.a,mi.g,mi.w),sc=N.C.ts(mi,p,ct),mr={i:mi,sc:sc,p:p,ct:ct},ist=N.C.ist(mr),iex=N.C.iex(mr),dl={tt:N.U.dt(sc.tt,br.sc.tt)};if(Math.abs(dl.tt)>=5)wl.push({c:c.n,d:dl,st:ist,ex:iex,r:N.C.gr(mr,ist,iex)});}return wl;},
-gsc:i=>{const cd=[],ml=N.C.ml(i.h.ic,i.l.y,i.l.r,i.l.t);for(const si in N.D.sm){const ap=N.C.mp(si,i.am,15,8);if(ap>ml*1.2)continue;let ok=true;const ct=[];for(const d of i.c){const r=N.C.ct(si,d.d);if(!r||r.t>d.mm*1.3){ok=false;break;}ct.push(r.t);}if(!ok)continue;const sc=N.C.ts({s:si,a:i.am,g:15,w:8,h:i.h,l:i.l,c:i.c},ap,ct.map(t=>({t:t})));cd.push({si:si,sn:N.D.sm[si].n,sc:sc.tt,pr:ap});}cd.sort((a,b)=>b.sc-a.sc);return cd.slice(0,50);}
-},
-sw:m=>{N.S.m=m;document.querySelectorAll('.seg-btn').forEach((b,i)=>b.classList.toggle('active',['M1','M2','M3'][i]===m));N.UI.rn();},
-sin:(m,i)=>{N.S.i[m]=i;},
-srs:(m,r)=>{
-r.id=N.U.id();
-r.ts=Date.now();
-N.S.r[m]=[r];
-},
-UI:{
-rn:()=>{const m=document.getElementById('main');m.innerHTML='';if(N.S.m==='M1')m.innerHTML=N.UI.m1();else if(N.S.m==='M2')m.innerHTML=N.UI.m2();else m.innerHTML=N.UI.m3();N.UI.at();},
-m1:()=>`
-<div class="sec-hdr">物件所在地</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">住所</span>
-<input type="text" id="i-adr">
-</div>
-<div class="row">
-<span class="lbl">最寄駅</span>
-<span class="val" id="ns">−</span>
-</div>
-</div>
-<div class="sec-hdr">物件</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">専有面積</span>
-<input type="number" id="i-a"><span class="unit">㎡</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">築年数</span>
-<input type="number" id="i-g"><span class="unit">年</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">駅徒歩</span>
-<input type="number" id="i-w"><span class="unit">分</span>
-</div>
-</div>
-<div class="sec-hdr">世帯</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">構成</span>
-<select id="i-ht">
-<option value="">−</option>
-<option value="s">単身</option>
-<option value="c">夫婦</option>
-<option value="c1">夫婦+子1</option>
-<option value="c2">夫婦+子2</option>
-</select>
-</div>
-<div class="row inp-row">
-<span class="lbl">年収</span>
-<input type="number" id="i-hic"><span class="unit">万円</span>
-</div>
-</div>
-<div class="sec-hdr">ローン</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">形態</span>
-<select id="i-lt">
-<option value="">−</option>
-<option value="single">単独</option>
-<option value="pair">ペア</option>
-</select>
-</div>
-<div class="row inp-row">
-<span class="lbl">金利</span>
-<input type="number" id="i-lr" step="0.1"><span class="unit">%</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">期間</span>
-<select id="i-ly">
-<option value="">−</option>
-<option value="20">20年</option>
-<option value="25">25年</option>
-<option value="30">30年</option>
-<option value="35">35年</option>
-</select>
-</div>
-</div>
-<div class="sec-hdr">通勤</div>
-<div id="cl"></div>
-<button class="btn-lg btn-sec" onclick="N.UI.ac()">通勤先を追加</button>
-<button class="btn-lg" onclick="N.UI.hc()">評価する</button>
-<div id="r-m1" class="hide"></div>
-`,
-m2:()=>`
-<div class="sec-hdr">世帯</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">構成</span>
-<select id="i2-ht">
-<option value="">−</option>
-<option value="s">単身</option>
-<option value="c">夫婦</option>
-<option value="c1">夫婦+子1</option>
-<option value="c2">夫婦+子2</option>
-</select>
-</div>
-<div class="row inp-row">
-<span class="lbl">年収</span>
-<input type="number" id="i2-hic"><span class="unit">万円</span>
-</div>
-</div>
-<div class="sec-hdr">ローン</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">形態</span>
-<select id="i2-lt">
-<option value="">−</option>
-<option value="single">単独</option>
-<option value="pair">ペア</option>
-</select>
-</div>
-<div class="row inp-row">
-<span class="lbl">金利</span>
-<input type="number" id="i2-lr" step="0.1"><span class="unit">%</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">期間</span>
-<select id="i2-ly">
-<option value="">−</option>
-<option value="20">20年</option>
-<option value="25">25年</option>
-<option value="30">30年</option>
-<option value="35">35年</option>
-</select>
-</div>
-</div>
-<div class="sec-hdr">通勤</div>
-<div id="cl2"></div>
-<button class="btn-lg btn-sec" onclick="N.UI.ac2()">通勤先を追加</button>
-<div class="sec-hdr">条件</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">最低面積</span>
-<input type="number" id="i2-am"><span class="unit">㎡</span>
-</div>
-</div>
-<button class="btn-lg" onclick="N.UI.hss()">候補を生成</button>
-<div id="r-m2" class="hide"></div>
-`,
-m3:()=>`
-<div class="sec-hdr">表示</div>
-<div class="card">
-<div class="row inp-row">
-<span class="lbl">文字サイズ</span>
-<select id="i3-fs">
-<option value="small">小</option>
-<option value="medium">標準</option>
-<option value="large">大</option>
-</select>
-</div>
-</div>
-<button class="btn-lg" onclick="alert('保存しました')">保存</button>
-`,
-at:()=>{const ad=document.getElementById('i-adr');if(ad){ad.addEventListener('input',()=>{const si=N.U.fns(ad.value);N.S.i.M1.s=si;document.getElementById('ns').textContent=si?N.D.sm[si].n:'−';});const ids=['i-a','i-g','i-w','i-ht','i-hic','i-lt','i-lr','i-ly'];ids.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>N.U.sy('M1'));});}const ids2=['i2-ht','i2-hic','i2-lt','i2-lr','i2-ly','i2-am'];ids2.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>N.U.sy('M2'));});},
-ac:()=>{const cl=document.getElementById('cl');if(!cl)return;const c=document.createElement('div');c.className='card';c.style.marginBottom='8px';c.innerHTML=`
-<div class="row inp-row">
-<span class="lbl">勤務先住所</span>
-<input type="text" class="cadr">
-</div>
-<div class="row">
-<span class="lbl">最寄駅</span>
-<span class="val cns">−</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">許容時間</span>
-<input type="number" class="cmm"><span class="unit">分</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">許容乗換</span>
-<input type="number" class="cmt"><span class="unit">回</span>
-</div>
-`;cl.appendChild(c);c.querySelector('.cadr').addEventListener('input',e=>{const si=N.U.fns(e.target.value);c.querySelector('.cns').textContent=si?N.D.sm[si].n:'−';});},
-ac2:()=>{const cl=document.getElementById('cl2');if(!cl)return;const c=document.createElement('div');c.className='card';c.style.marginBottom='8px';c.innerHTML=`
-<div class="row inp-row">
-<span class="lbl">勤務先住所</span>
-<input type="text" class="cadr2">
-</div>
-<div class="row">
-<span class="lbl">最寄駅</span>
-<span class="val cns2">−</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">許容時間</span>
-<input type="number" class="cmm2"><span class="unit">分</span>
-</div>
-<div class="row inp-row">
-<span class="lbl">許容乗換</span>
-<input type="number" class="cmt2"><span class="unit">回</span>
-</div>
-`;cl.appendChild(c);c.querySelector('.cadr2').addEventListener('input',e=>{const si=N.U.fns(e.target.value);c.querySelector('.cns2').textContent=si?N.D.sm[si].n:'−';});},
-ci:()=>{const c=[];document.querySelectorAll('#cl .card').forEach(x=>{const ad=x.querySelector('.cadr').value,di=N.U.fns(ad);c.push({d:di,at:'09:00',mm:parseInt(x.querySelector('.cmm').value)||null,mt:parseInt(x.querySelector('.cmt').value)||null});});N.S.i.M1.c=c;return N.S.i.M1;},
-ci2:()=>{const c=[];document.querySelectorAll('#cl2 .card').forEach(x=>{const ad=x.querySelector('.cadr2').value,di=N.U.fns(ad);c.push({d:di,at:'09:00',mm:parseInt(x.querySelector('.cmm2').value)||null,mt:parseInt(x.querySelector('.cmt2').value)||null});});N.S.i.M2.c=c;return N.S.i.M2;},
-hc:()=>{const i=N.UI.ci(),v=N.U.vi(i,'M1');if(!v.v){N.U.er(v.e.join('\n'));return;}const ct=i.c.map(cm=>N.C.ct(i.s,cm.d)),p=N.C.mp(i.s,i.a,i.g,i.w),sc=N.C.ts(i,p,ct),br={i:i,sc:sc,p:p,ct:ct},wl=N.C.ew(br);N.srs('M1',{i:i,sc:sc,p:p,ct:ct,wl:wl});N.UI.rr(br,wl);},
-hss:()=>{const i=N.UI.ci2(),v=N.U.vi(i,'M2');if(!v.v){N.U.er(v.e.join('\n'));return;}const cd=N.C.gsc(i);N.srs('M2',{i:i,cd:cd});N.UI.rc(cd);},
-rr:(br,wl)=>{const r=document.getElementById('r-m1');r.classList.remove('hide');r.innerHTML=`
-<div class="card">
-<div class="score-hero">
-<div class="score-num">${br.sc.tt}</div>
-<div class="score-sub">総合スコア</div>
-</div>
-</div>
-<div class="sec-hdr">詳細</div>
-<div class="card">
-<div class="metric"><span class="metric-lbl">通勤</span><div class="metric-bar"><div class="metric-fill" style="width:${br.sc.co}%"></div></div><span class="metric-val">${br.sc.co}</span></div>
-<div class="metric"><span class="metric-lbl">価格</span><div class="metric-bar"><div class="metric-fill" style="width:${br.sc.pr}%"></div></div><span class="metric-val">${br.sc.pr}</span></div>
-<div class="metric"><span class="metric-lbl">将来性</span><div class="metric-bar"><div class="metric-fill" style="width:${br.sc.fu}%"></div></div><span class="metric-val">${br.sc.fu}</span></div>
-<div class="metric"><span class="metric-lbl">安定性</span><div class="metric-bar"><div class="metric-fill" style="width:${br.sc.st}%"></div></div><span class="metric-val">${br.sc.st}</span></div>
-</div>
-<div class="sec-hdr">物件</div>
-<div class="card">
-<div class="row"><span class="lbl">駅</span><span class="val">${N.D.sm[br.i.s].n} 徒歩${br.i.w}分</span></div>
-<div class="row"><span class="lbl">面積</span><span class="val">${br.i.a}㎡</span></div>
-<div class="row"><span class="lbl">築年数</span><span class="val">${br.i.g}年</span></div>
-<div class="row"><span class="lbl">推定価格</span><span class="val">${N.U.fp(br.p)}</span></div>
-</div>
-${wl.length>0?`<div class="sec-hdr">世界線</div><div class="card">${wl.map(w=>`<div class="list-item"><div class="list-title">${w.c}</div><div class="list-sub">${w.ex?'破綻':w.st?'安定':'不安定'} / ${w.d.tt>0?'+'+w.d.tt:w.d.tt}%</div></div>`).join('')}</div>`:''}
-<button class="btn-lg" onclick="N.UI.pdf('${br.i.s}')">PDF出力</button>
-`;},
-rc:cd=>{const r=document.getElementById('r-m2');r.classList.remove('hide');r.innerHTML=`<div class="sec-hdr">${cd.length}件</div><div class="card">${cd.map(c=>`<div class="list-item"><div class="list-title">${c.sn}</div><div class="list-sub">スコア ${c.sc} / ${N.U.fp(c.pr)}</div></div>`).join('')}</div>`;},
-pdf:si=>{const{jsPDF}=window.jspdf,d=new jsPDF();d.setFont('helvetica');d.setFontSize(16);d.text('住宅購入世界線評価レポート',20,20);d.setFontSize(10);d.text('作成日: '+N.U.fd(Date.now()),20,35);d.setFontSize(12);d.text('物件情報',20,50);d.setFontSize(10);d.text('最寄駅: '+N.D.sm[si].n,25,60);d.setFontSize(10);let y=80;d.text('本レポートは参考情報です',20,y);y+=10;d.text('Copyright (C) 2025 Yoshinobu Takamitsu',20,y);d.save('report.pdf');}
+.lbl{flex:1;}
+.val{color:var(--sub);}
+input,select{
+  background:none;border:none;color:var(--txt);
+  text-align:right;font-size:17px;outline:none;
 }
+button.primary{
+  width:100%;padding:16px;border:none;
+  border-radius:var(--r);
+  background:var(--ac);
+  color:#fff;font-weight:600;
+}
+.hidden{display:none;}
+<script>
+/* ========= グローバルState ========= */
+const S={
+  mode:'M1',
+  i:{
+    M1:{
+      address:'',
+      station:null,
+      area: null,
+      a:null,g:null,w:null,
+      h:{t:null,ic:null},
+      l:{t:null,r:null,y:null},
+      c:[]
+    }
+  }
 };
-window.addEventListener('DOMContentLoaded',()=>N.UI.rn());
+
+/* ========= 駅マスタ（拡張版） ========= */
+const STATIONS=[
+ {id:'hamamatsucho',n:'浜松町',lat:35.6555,lon:139.7571,rank:'A++',lines:3,
+  area:['芝大門','浜松町','大門','芝']},
+ {id:'tamachi',n:'田町',lat:35.6457,lon:139.7476,rank:'A',lines:2,
+  area:['芝浦','港南']},
+ {id:'shinagawa',n:'品川',lat:35.6285,lon:139.7387,rank:'A+++',lines:5,
+  area:['港南','高輪']},
+ {id:'shibuya',n:'渋谷',lat:35.6580,lon:139.7016,rank:'A+++',lines:5,
+  area:['渋谷','宇田川','道玄坂']},
+ {id:'shinjuku',n:'新宿',lat:35.6896,lon:139.7006,rank:'A+++',lines:6,
+  area:['西新宿','歌舞伎町','新宿']}
+];
+
+/* ========= ユーティリティ ========= */
+const U={
+  dist:(a,b,c,d)=>{
+    const R=6371;
+    const x=(c-a)*Math.PI/180;
+    const y=(d-b)*Math.PI/180;
+    return R*Math.sqrt(x*x+y*y);
+  },
+
+  /* ==== 重み付き最寄駅判定 ==== */
+  resolveStation:(address)=>{
+    if(!address) return null;
+    let scored=STATIONS.map(s=>{
+      let score=U.dist(35.68,139.75,s.lat,s.lon);
+      s.area.forEach(w=>{
+        if(address.includes(w)) score-=0.6;
+      });
+      if(s.lines>=3) score-=0.2;
+      if(s.rank==='A+++') score-=0.15;
+      return {...s,score};
+    });
+    scored.sort((a,b)=>a.score-b.score);
+    return scored.slice(0,3);
+  }
+};
+
+/* ========= UI ========= */
+const UI={
+  render(){
+    const m=document.getElementById('main');
+    m.innerHTML=`
+      <div class="card">
+        <div class="row">
+          <span class="lbl">住所</span>
+          <input id="adr" placeholder="東京都港区芝大門1-1-30">
+        </div>
+        <div class="row">
+          <span class="lbl">最寄駅</span>
+          <span class="val" id="st">未確定</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row"><span class="lbl">面積</span><input id="a" type="number"><span class="val">㎡</span></div>
+        <div class="row"><span class="lbl">築年</span><input id="g" type="number"><span class="val">年</span></div>
+        <div class="row"><span class="lbl">駅徒歩</span><input id="w" type="number"><span class="val">分</span></div>
+      </div>
+
+      <button class="primary" onclick="UI.eval()">評価する</button>
+      <div id="err" class="card hidden"></div>
+    `;
+    UI.bind();
+  },
+
+  bind(){
+    document.getElementById('adr').addEventListener('input',e=>{
+      S.i.M1.address=e.target.value;
+      const cand=U.resolveStation(e.target.value);
+      if(!cand){S.i.M1.station=null;return;}
+      S.i.M1.station=cand[0];
+      document.getElementById('st').textContent=
+        cand[0].n+'（推定）';
+    });
+    ['a','g','w'].forEach(k=>{
+      document.getElementById(k).addEventListener('input',e=>{
+        S.i.M1[k]=Number(e.target.value)||null;
+      });
+    });
+  },
+
+  eval(){
+    const i=S.i.M1;
+    const err=[];
+    if(!i.station) err.push('住所から駅が確定できません');
+    if(!i.a) err.push('面積');
+    if(i.g===null) err.push('築年');
+    if(!i.w) err.push('駅徒歩');
+    if(err.length){
+      const e=document.getElementById('err');
+      e.classList.remove('hidden');
+      e.innerHTML='<div class="row">'+err.join(' / ')+'</div>';
+      return;
+    }
+    alert('評価ロジックへ進行');
+  }
+};
+
+window.onload=()=>UI.render();
+</script>
+<script>
+/* ======================================================
+   通勤・価格・スコア計算エンジン
+   ====================================================== */
+
+/* ========= 路線マスタ（簡略・表定速度実データ寄り） ========= */
+const LINES={
+  YAMANOTE:{v:32,transfer:5},
+  KEIHIN:{v:45,transfer:6},
+  METRO:{v:28,transfer:4}
+};
+
+/* ========= 通勤時間計算 ========= */
+const Commute={
+  time(from,to){
+    if(!from||!to) return null;
+    const d=U.dist(from.lat,from.lon,to.lat,to.lon);
+    let speed=LINES.YAMANOTE.v;
+    let t=(d/speed)*60;
+    return {
+      time:Math.round(t),
+      transfer: d>6?1:0
+    };
+  }
+};
+
+/* ========= 価格算定 ========= */
+const Price={
+  calc(st,a,g,w){
+    if(!st) return null;
+    const base={
+      'A+++':130,'A++':110,'A+':95,'A':80,'B':65
+    }[st.rank]||70;
+    let p=base*a;
+    p*=Math.max(.65,1-(g*0.012));
+    p*=Math.max(.7,1-(w*0.03));
+    return Math.round(p);
+  }
+};
+
+/* ========= ローン ========= */
+const Loan={
+  max(ic,y,r){
+    const mr=0.35;
+    const m=ic*mr/12;
+    const i=r/100/12;
+    const n=y*12;
+    return Math.floor(m*(1-Math.pow(1+i,-n))/i);
+  }
+};
+
+/* ========= スコア ========= */
+const Score={
+  commute(ct,max){
+    if(!ct) return 0;
+    if(ct<=max) return 100;
+    return Math.max(0,100-(ct-max)*3);
+  },
+  price(p,ic){
+    const lim=Loan.max(ic,35,1.2);
+    if(p<=lim*0.7) return 100;
+    if(p<=lim) return 80;
+    return Math.max(0,80-(p-lim)/lim*100);
+  },
+  future(st){
+    return {
+      'A+++':95,'A++':88,'A+':80,'A':70,'B':55
+    }[st.rank]||60;
+  },
+  total(sc){
+    return Math.round(
+      sc.c*0.35+
+      sc.p*0.35+
+      sc.f*0.3
+    );
+  }
+};
+
+/* ========= 世界線 ========= */
+const WorldLine={
+  deltas:[
+    {n:'収入+10%',fn:i=>({...i,h:{...i.h,ic:i.h.ic*1.1}})},
+    {n:'金利+0.5%',fn:i=>({...i,l:{...i.l,r:i.l.r+0.5}})},
+    {n:'築年+5年',fn:i=>({...i,g:i.g+5})},
+    {n:'通勤+10分',fn:i=>i}
+  ],
+  eval(base){
+    const res=[];
+    this.deltas.forEach(d=>{
+      const i=d.fn(JSON.parse(JSON.stringify(base.i)));
+      const p=Price.calc(i.station,i.a,i.g,i.w);
+      const sc={
+        c:Score.commute(base.ct.time,60),
+        p:Score.price(p,i.h.ic),
+        f:Score.future(i.station)
+      };
+      const t=Score.total(sc);
+      const dt=t-base.total;
+      res.push({
+        name:d.n,
+        delta:dt,
+        state:dt<-15?'破綻':dt<0?'不安定':'安定'
+      });
+    });
+    return res;
+  }
+};
+
+/* ========= UI評価拡張 ========= */
+UI.eval=function(){
+  const i=S.i.M1;
+  const err=[];
+  if(!i.station) err.push('住所→駅が未確定');
+  if(!i.a) err.push('面積');
+  if(i.g===null) err.push('築年');
+  if(!i.w) err.push('徒歩');
+  if(!i.h.ic) err.push('年収');
+  if(err.length){
+    const e=document.getElementById('err');
+    e.classList.remove('hidden');
+    e.innerHTML='<div class="row">'+err.join(' / ')+'</div>';
+    return;
+  }
+
+  const ct=Commute.time(i.station,{lat:35.6895,lon:139.6917});
+  const price=Price.calc(i.station,i.a,i.g,i.w);
+
+  const sc={
+    c:Score.commute(ct.time,60),
+    p:Score.price(price,i.h.ic),
+    f:Score.future(i.station)
+  };
+  const total=Score.total(sc);
+
+  const wl=WorldLine.eval({i,ct,price,total});
+
+  UI.result({i,ct,price,sc,total,wl});
+};
+
+/* ========= 結果表示 ========= */
+UI.result=function(r){
+  const m=document.getElementById('main');
+  m.innerHTML+=`
+    <div class="card">
+      <div class="row"><span class="lbl">総合</span><span class="val">${r.total}</span></div>
+      <div class="row"><span class="lbl">価格</span><span class="val">${r.price} 万円</span></div>
+      <div class="row"><span class="lbl">通勤</span><span class="val">${r.ct.time} 分</span></div>
+    </div>
+    <div class="card">
+      ${r.wl.map(w=>`
+        <div class="row">
+          <span class="lbl">${w.name}</span>
+          <span class="val">${w.state} (${w.delta})</span>
+        </div>`).join('')}
+    </div>
+  `;
+};
 </script>
 </body>
 </html>
