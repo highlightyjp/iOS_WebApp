@@ -1,0 +1,13 @@
+# 国土数値情報N02データ（大容量・再ダウンロード可能）
+N02-21_GML.zip
+Shift-JIS/
+UTF-8/
+*.xml
+*.xsd
+
+# 生成された中間ファイル（HTMLに埋め込み済み）
+D.json
+LN.json
+stations.json
+lines.json
+railway_data.js
