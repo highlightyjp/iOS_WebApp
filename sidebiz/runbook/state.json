@@ -1,0 +1,15 @@
+{
+  "current_phase": 1,
+  "phase_started": "2026-07-07",
+  "revenue_actual_by_month": {},
+  "active_listings": [],
+  "pending_decisions": [],
+  "platform_priority": ["crowdworks", "coconala", "direct"],
+  "employment_constraint": "一般社団法人勤務。競業避止規定なし。副業規定明文なし(要:低リスク運用継続)",
+  "nda_status": {
+    "template_ready": true,
+    "signed_count": 0
+  },
+  "clients": [],
+  "last_updated": "2026-07-07"
+}
