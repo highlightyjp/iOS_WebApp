@@ -3,7 +3,10 @@
   "phase_started": "2026-07-07",
   "revenue_actual_by_month": {},
   "active_listings": [],
-  "pending_decisions": [],
+  "pending_decisions": [
+    "A1/A2の自動処理ツール(sidebiz/tools/配下)をB2で販売する際の適正価格が未検証。B2_products/operation.mdの仮価格(3,000円/5,000円)はプロンプト集想定であり、コード同梱ツールとしての価格は別途要判断",
+    "B2でのツール販売形態:ソースコード同梱の買い切りか、動作のみ提供するサービス型か、APIキーは顧客自身に用意させる前提でよいかを要判断"
+  ],
   "platform_priority": ["crowdworks", "coconala", "direct"],
   "employment_constraint": "一般社団法人勤務。競業避止規定なし。副業規定明文なし(要:低リスク運用継続)",
   "nda_status": {
