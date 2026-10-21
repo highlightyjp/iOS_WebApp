@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1f4e8c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="コーデ帳">
@@ -602,6 +605,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     $("gh-off").onclick = () => run(async () => { await window.__gh.save(null); msg("解除しました（トークンを削除）。データは端末内に残ります。"); });
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mountUI); else mountUI();
+  try { if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (_) {}
   window.claude = { async use(name) {
     if (name === "db") { await open(); if (!gh) { const c = await tx("readonly", (s) => s.get(GHK)); if (c && c.token) gh = c; } return db; }
     if (name === "user") return { async id() { return "local"; } };
