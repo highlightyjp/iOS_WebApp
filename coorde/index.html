@@ -573,6 +573,36 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     async pull() { for (const k of SYNC_DOCS) { const v = await ghGet(k); if (v != null) { mem[k] = v; await tx("readwrite", (s) => s.put(v, k)); (subs[k] || []).forEach((f) => f({ exists: true, data: () => v })); } } },
     async pushAll() { for (const k of SYNC_DOCS) { const v = await load(k); if (v != null) { await ghGet(k).catch(() => {}); await ghPut(k, v); } } },
   };
+
+  // ---- TinyFish互換(fetch_content)：CORS可のAPIは直接取得／不可のものはGitHub Actions中継（許可ホストのみ） ----
+  const DIRECT = [/^api\.open-meteo\.com$/, /^www\.jma\.go\.jp$/];
+  const relayUrl = (p) => `https://api.github.com/repos/${gh.repo}/${p}`;
+  async function relay(urls, meta, links) {
+    if (!gh) throw Object.assign(new Error("同期設定（トークン）が必要です"), { code: "relay_unconfigured" });
+    const rid = "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const d = await fetch(relayUrl("actions/workflows/coorde-fetch.yml/dispatches"), { method: "POST", headers: { ...ghHead(), "Content-Type": "application/json" }, body: JSON.stringify({ ref: gh.branch, inputs: { rid, urls: JSON.stringify(urls), meta: String(!!meta), links: String(!!links) } }) });
+    if (!d.ok) throw ghErr(d, "中継の起動");
+    const t0 = Date.now();
+    while (Date.now() - t0 < 150000) {
+      await new Promise((r) => setTimeout(r, 5000));
+      const r = await fetch(relayUrl("contents/coorde-relay/" + rid + ".json?ref=" + encodeURIComponent(gh.branch)), { headers: { ...ghHead(), Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
+      if (r.status === 404) continue;
+      if (!r.ok) throw ghErr(r, "中継結果の読込");
+      return (await r.json()).results || [];
+    }
+    throw Object.assign(new Error("中継がタイムアウトしました"), { code: "relay_timeout" });
+  }
+  const mcp = { async callTool(server, tool, args) {
+    if (server !== "TinyFish" || tool !== "fetch_content") throw Object.assign(new Error("未対応のコネクタです"), { code: "server_not_connected" });
+    const urls = (args && args.urls) || [], res = [], rest = [];
+    await Promise.all(urls.map(async (u) => {
+      let host = ""; try { host = new URL(u).hostname; } catch (_) {}
+      if (!DIRECT.some((r) => r.test(host))) { rest.push(u); return; }
+      try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) res.push({ url: u, final_url: u, status: r.status, text: await r.text() }); } catch (_) {}
+    }));
+    if (rest.length) { try { for (const x of await relay(rest, args.page_metadata, args.links)) if (x && !x.error && x.text != null) res.push(x); } catch (e) { window.__store.relayError = e.message; if (!res.length) throw e; } }
+    return { payload: { results: res, errors: [] } };
+  } };
   const db = { collection() { return { doc(k) { return {
     async get() { const d = await load(k); return d == null ? { exists: false, data: () => undefined } : { exists: true, data: () => d }; },
     async set(data) {
@@ -593,7 +623,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     document.head.appendChild(st);
     const btn = document.createElement("button"); btn.id = "gh-btn"; btn.type = "button"; btn.textContent = "同期"; document.body.appendChild(btn);
     const pn = document.createElement("div"); pn.id = "gh-pn";
-    pn.innerHTML = '<div class="b" role="dialog" aria-label="GitHub同期"><b>GitHub同期（手持ち服）</b><label for="gh-repo">リポジトリ（owner/repo）</label><input id="gh-repo" autocomplete="off" autocapitalize="off"><label for="gh-dir">フォルダ</label><input id="gh-dir" autocomplete="off" autocapitalize="off"><label for="gh-br">ブランチ</label><input id="gh-br" autocomplete="off" autocapitalize="off"><label for="gh-tk">トークン（Fine-grained PAT・対象リポジトリのContents:Read and write のみ）</label><input id="gh-tk" type="password" autocomplete="off"><div><button id="gh-save" type="button">保存して接続確認</button><button id="gh-pull" type="button">GitHubから取り込む</button><button id="gh-push" type="button">GitHubへ反映</button><button id="gh-off" type="button">同期を解除</button><button id="gh-x" type="button">閉じる</button></div><div class="m" id="gh-m" role="status"></div></div>';
+    pn.innerHTML = '<div class="b" role="dialog" aria-label="GitHub同期"><b>GitHub同期（手持ち服）</b><label for="gh-repo">リポジトリ（owner/repo）</label><input id="gh-repo" autocomplete="off" autocapitalize="off"><label for="gh-dir">フォルダ</label><input id="gh-dir" autocomplete="off" autocapitalize="off"><label for="gh-br">ブランチ</label><input id="gh-br" autocomplete="off" autocapitalize="off"><label for="gh-tk">トークン（Fine-grained PAT・対象リポジトリのContents と Actions の Read and write のみ）</label><input id="gh-tk" type="password" autocomplete="off"><div><button id="gh-save" type="button">保存して接続確認</button><button id="gh-pull" type="button">GitHubから取り込む</button><button id="gh-push" type="button">GitHubへ反映</button><button id="gh-off" type="button">同期を解除</button><button id="gh-x" type="button">閉じる</button></div><div class="m" id="gh-m" role="status"></div></div>';
     document.body.appendChild(pn);
     const $ = (i) => document.getElementById(i), msg = (t) => { $("gh-m").textContent = t; };
     const run = async (f) => { try { await f(); } catch (e) { msg("失敗: " + (e && e.message || e)); } };
@@ -612,6 +642,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     if (name === "downloads") return { async save({ filename, data }) {
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/csv;charset=utf-8" }));
       a.download = filename; document.body.appendChild(a); a.click(); a.remove(); } };
+    if (name === "mcp") return mcp;
     return null;
   } };
 })();
