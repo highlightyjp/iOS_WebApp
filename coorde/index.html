@@ -531,24 +531,79 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   (async () => { try { if (navigator.storage?.persist) { window.__store.persisted = (await navigator.storage.persisted?.()) || (await navigator.storage.persist()); } } catch (_) {} })();
   const load = async (k) => {
     if (k in mem) return mem[k];
+    if (gh && SYNC_DOCS.includes(k)) { try { const r = await ghGet(k); if (r != null) { mem[k] = r; await tx("readwrite", (s) => s.put(r, k)); return r; } } catch (e) { window.__store.ghError = e.message; } }
     let v = await tx("readonly", (s) => s.get(k));
     if (v == null) { try { const raw = localStorage.getItem("coorde:" + k); if (raw != null) v = JSON.parse(raw); } catch (_) {} }
     if (v == null && seed[k] != null) v = seed[k];
     if (v != null) { mem[k] = v; await tx("readwrite", (s) => s.put(v, k)); }
     return v == null ? null : v;
   };
+
+  // ---- GitHub同期コネクタ（SYNC_DOCSのみ。private リポジトリの JSON を正本にする） ----
+  const SYNC_DOCS = ["wardrobe"];
+  const GHK = "__gh";
+  let gh = null; // {repo, dir, branch, token}
+  const sha = {};
+  const b64e = (str) => { const b = new TextEncoder().encode(str); let t = ""; for (let i = 0; i < b.length; i += 8192) t += String.fromCharCode.apply(null, b.subarray(i, i + 8192)); return btoa(t); };
+  const b64d = (str) => new TextDecoder().decode(Uint8Array.from(atob(str.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
+  const ghUrl = (k) => `https://api.github.com/repos/${gh.repo}/contents/${gh.dir.replace(/^\/|\/$/g, "")}/${encodeURIComponent(k)}.json`;
+  const ghHead = () => ({ Authorization: "Bearer " + gh.token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" });
+  const ghErr = (r, op) => Object.assign(new Error(`GitHub ${op}に失敗しました（${r.status}）`), { code: "gh_" + r.status });
+  async function ghGet(k) {
+    const r = await fetch(ghUrl(k) + "?ref=" + encodeURIComponent(gh.branch), { headers: ghHead(), cache: "no-store" });
+    if (r.status === 404) { delete sha[k]; return null; }
+    if (!r.ok) throw ghErr(r, "読込");
+    const j = await r.json(); sha[k] = j.sha; return JSON.parse(b64d(j.content));
+  }
+  async function ghPut(k, data) {
+    const body = { message: `coorde: ${k}`, content: b64e(JSON.stringify(data, null, 1)), branch: gh.branch };
+    if (sha[k]) body.sha = sha[k];
+    const r = await fetch(ghUrl(k), { method: "PUT", headers: { ...ghHead(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (r.status === 409 || r.status === 422) throw Object.assign(new Error("他の端末で更新されています。再読込してください。"), { code: "gh_conflict" });
+    if (!r.ok) throw ghErr(r, "保存");
+    sha[k] = (await r.json()).content.sha;
+  }
+  window.__gh = {
+    async config() { return gh ? { repo: gh.repo, dir: gh.dir, branch: gh.branch, token: !!gh.token } : null; },
+    async save(c) { gh = c && c.token ? { repo: String(c.repo).trim(), dir: String(c.dir || "").trim(), branch: String(c.branch || "main").trim(), token: String(c.token).trim() } : null; await tx("readwrite", (s) => (gh ? s.put(gh, GHK) : s.delete(GHK))); },
+    async test() { if (!gh) throw new Error("未設定"); const r = await fetch(`https://api.github.com/repos/${gh.repo}`, { headers: ghHead() }); if (!r.ok) throw ghErr(r, "接続"); const j = await r.json(); return { private: j.private, push: !!(j.permissions && j.permissions.push) }; },
+    async pull() { for (const k of SYNC_DOCS) { const v = await ghGet(k); if (v != null) { mem[k] = v; await tx("readwrite", (s) => s.put(v, k)); (subs[k] || []).forEach((f) => f({ exists: true, data: () => v })); } } },
+    async pushAll() { for (const k of SYNC_DOCS) { const v = await load(k); if (v != null) { await ghGet(k).catch(() => {}); await ghPut(k, v); } } },
+  };
   const db = { collection() { return { doc(k) { return {
     async get() { const d = await load(k); return d == null ? { exists: false, data: () => undefined } : { exists: true, data: () => d }; },
     async set(data) {
       mem[k] = JSON.parse(JSON.stringify(data));
       const ok = await tx("readwrite", (s) => s.put(mem[k], k));
+      if (gh && SYNC_DOCS.includes(k)) { try { await ghPut(k, mem[k]); window.__store.ghError = null; } catch (e) { window.__store.ghError = e.message; throw e; } }
       if (window.__store.backend === "indexeddb" && ok === undefined) throw Object.assign(new Error("保存に失敗しました"), { code: "storage_failed" });
       (subs[k] || []).forEach((f) => { try { f({ exists: true, data: () => mem[k] }); } catch (_) {} });
     },
     onSnapshot(cb) { (subs[k] = subs[k] || []).push(() => {}); return () => {}; },
   }; } }; } };
+
+  // ---- 同期設定UI（アプリ本体は無変更。右下の「同期」ボタン） ----
+  const mountUI = () => {
+    if (!document.body || document.getElementById("gh-btn")) return;
+    const st = document.createElement("style");
+    st.textContent = "#gh-btn{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9000;min-height:44px;min-width:44px;padding:0 14px;border:1px solid #767676;border-radius:22px;background:#fff;color:#1a1a1c;font:600 14px system-ui,sans-serif}#gh-pn{position:fixed;inset:0;z-index:9001;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center}#gh-pn.on{display:flex}#gh-pn .b{background:#fff;color:#1a1a1c;width:100%;max-width:480px;padding:16px;border-radius:12px 12px 0 0;font:14px/1.6 system-ui,sans-serif;max-height:90vh;overflow:auto}#gh-pn label{display:block;margin-top:8px;font-weight:600}#gh-pn input{width:100%;box-sizing:border-box;min-height:44px;padding:8px;font-size:16px;border:1px solid #767676;border-radius:8px}#gh-pn button{min-height:44px;padding:0 14px;margin:8px 8px 0 0;border:1px solid #767676;border-radius:8px;background:#f2f2f2;color:#1a1a1c;font-size:14px}#gh-pn .m{margin-top:8px;white-space:pre-wrap}@media(prefers-color-scheme:dark){#gh-btn,#gh-pn .b{background:#242426;color:#f2f2f2}#gh-pn input,#gh-pn button{background:#1a1a1c;color:#f2f2f2}}";
+    document.head.appendChild(st);
+    const btn = document.createElement("button"); btn.id = "gh-btn"; btn.type = "button"; btn.textContent = "同期"; document.body.appendChild(btn);
+    const pn = document.createElement("div"); pn.id = "gh-pn";
+    pn.innerHTML = '<div class="b" role="dialog" aria-label="GitHub同期"><b>GitHub同期（手持ち服）</b><label for="gh-repo">リポジトリ（owner/repo）</label><input id="gh-repo" autocomplete="off" autocapitalize="off"><label for="gh-dir">フォルダ</label><input id="gh-dir" autocomplete="off" autocapitalize="off"><label for="gh-br">ブランチ</label><input id="gh-br" autocomplete="off" autocapitalize="off"><label for="gh-tk">トークン（Fine-grained PAT・対象リポジトリのContents:Read and write のみ）</label><input id="gh-tk" type="password" autocomplete="off"><div><button id="gh-save" type="button">保存して接続確認</button><button id="gh-pull" type="button">GitHubから取り込む</button><button id="gh-push" type="button">GitHubへ反映</button><button id="gh-off" type="button">同期を解除</button><button id="gh-x" type="button">閉じる</button></div><div class="m" id="gh-m" role="status"></div></div>';
+    document.body.appendChild(pn);
+    const $ = (i) => document.getElementById(i), msg = (t) => { $("gh-m").textContent = t; };
+    const run = async (f) => { try { await f(); } catch (e) { msg("失敗: " + (e && e.message || e)); } };
+    btn.onclick = async () => { const c = await window.__gh.config(); $("gh-repo").value = c ? c.repo : "highlightyjp/app"; $("gh-dir").value = c ? c.dir : "coorde-data"; $("gh-br").value = c ? c.branch : "main"; $("gh-tk").value = ""; msg(c ? "同期: 有効" + (window.__store.ghError ? "／直近エラー: " + window.__store.ghError : "") : "同期: 未設定"); pn.classList.add("on"); };
+    $("gh-x").onclick = () => pn.classList.remove("on");
+    $("gh-save").onclick = () => run(async () => { const c = await window.__gh.config(); const tk = $("gh-tk").value || (c && c.token ? "__keep__" : ""); if (!tk) return msg("トークンを入力してください。"); if (tk === "__keep__") return msg("保存済みのトークンがあります。変更するときだけ入力してください。"); await window.__gh.save({ repo: $("gh-repo").value, dir: $("gh-dir").value, branch: $("gh-br").value, token: tk }); $("gh-tk").value = ""; const r = await window.__gh.test(); msg("接続OK。private=" + r.private + "／書込権限=" + r.push + (r.private ? "" : "\n警告: このリポジトリは公開です。個人データを置かないでください。")); });
+    $("gh-pull").onclick = () => run(async () => { if (!confirm("手持ち服を、GitHubの内容で上書きします。よろしいですか？")) return; await window.__gh.pull(); msg("取り込みました。画面を再読込してください。"); });
+    $("gh-push").onclick = () => run(async () => { if (!confirm("GitHubの手持ち服を、この端末の内容で上書きします。よろしいですか？")) return; await window.__gh.pushAll(); msg("反映しました。"); });
+    $("gh-off").onclick = () => run(async () => { await window.__gh.save(null); msg("解除しました（トークンを削除）。データは端末内に残ります。"); });
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mountUI); else mountUI();
   window.claude = { async use(name) {
-    if (name === "db") { await open(); return db; }
+    if (name === "db") { await open(); if (!gh) { const c = await tx("readonly", (s) => s.get(GHK)); if (c && c.token) gh = c; } return db; }
     if (name === "user") return { async id() { return "local"; } };
     if (name === "downloads") return { async save({ filename, data }) {
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/csv;charset=utf-8" }));
