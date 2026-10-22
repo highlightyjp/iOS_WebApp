@@ -1,0 +1,16 @@
+{
+  "name": "マチアプ手帳",
+  "short_name": "マチアプ手帳",
+  "description": "マッチングアプリの連絡先・進捗・デート・KPIを管理する個人用手帳",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F5F1",
+  "theme_color": "#F2F5F1",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
