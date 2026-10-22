@@ -1,5 +1,5 @@
 "use strict";
-var VERSION = "2.0.0";
+var VERSION = "2.1.0";
 var CACHE = "machiapp-techo-" + VERSION;
 var FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./LICENSES.txt"];
 
