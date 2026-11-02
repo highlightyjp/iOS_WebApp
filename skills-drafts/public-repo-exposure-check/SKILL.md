@@ -52,3 +52,7 @@ description: public リポジトリ（push と同時に GitHub Pages で公開�
 
 ## 抽出元
 `skills-drafts/INDEX.md` の「12」を参照。
+
+## 清書版への参照（2026-11-02 追記）
+
+本下書きはラウンド3で S16 `skills-drafts/S16-prepublish-exposure-check/SKILL.md` に統合・清書された（主として）。本下書きの本文は変更していない。対応表は `skills-drafts/INDEX.md` の「11. ラウンド3 清書（S8・S16）」を参照。
