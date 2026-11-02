@@ -57,3 +57,7 @@ Service Worker のキャッシュにより「更新したのに旧版が表示�
 
 ## 抽出元
 `skills-drafts/INDEX.md` の「06」を参照。
+
+## 清書版（ラウンド3、2026-11-02 追記）
+
+本下書きの清書は `skills-drafts/S14-pwa-update-release/SKILL.md`（ラウンド2の S14）。本下書きは削除・変更せず残している。清書との差異は清書の「注意点」に記載した。

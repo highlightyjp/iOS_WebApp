@@ -58,3 +58,7 @@ claude.ai のランタイム機能に依存するアプリを、本体（アプ�
 
 ## 抽出元
 `skills-drafts/INDEX.md` の「07」を参照。
+
+## 清書版（ラウンド3、2026-11-02 追記）
+
+本下書きの清書は `skills-drafts/S15-artifact-to-standalone-port/SKILL.md`（ラウンド2の S15）。本下書きは削除・変更せず残している。清書との差異は清書の「注意点」に記載した。
