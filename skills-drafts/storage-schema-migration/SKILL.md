@@ -62,3 +62,7 @@ description: 端末内保存（localStorage / IndexedDB）のキー名・デー�
 
 ## 抽出元
 `skills-drafts/INDEX.md` の「04」を参照。
+
+## 清書版（ラウンド3、2026-11-02 追記）
+
+本下書きの清書は `skills-drafts/S13-saved-data-schema-migration/SKILL.md`（ラウンド2の S13）。本下書きは削除・変更せず残している。清書との差異は清書の「注意点」に記載した。

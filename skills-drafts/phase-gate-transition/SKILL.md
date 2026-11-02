@@ -51,3 +51,7 @@ description: フェーズ制で進める作業（Phase A/B/C、Phase 0→1 等�
 
 ## 抽出元
 `skills-drafts/INDEX.md` の「08」を参照。
+
+## 清書版（ラウンド3、2026-11-02 追記）
+
+本下書きの清書は `skills-drafts/S12-phase-gate-freeze-lineage/SKILL.md`（ラウンド2の S12）。本下書きは削除・変更せず残している。清書との差異は清書の「注意点」に記載した。
