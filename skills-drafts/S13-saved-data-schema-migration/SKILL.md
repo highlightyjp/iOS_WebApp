@@ -6,7 +6,7 @@ description: 端末内保存（localStorage・IndexedDB）のキーや構造を�
 # 保存スキーマ移行（S13）
 
 状態: 清書（ラウンド3）。評価（試行・採点）は未実施。
-由来: ラウンド2の S13。統合リスト（ラウンド1）の 21。統合リストの原文は未取得（INDEX 11章）。
+由来: ラウンド2の S13。統合リスト（ラウンド1）の 21。統合リストの原文は未取得（INDEX 12章）。
 旧下書き: `storage-schema-migration`（INDEX 4章の 04）。番号と旧下書きの対応付けは本清書の作成セッションによる評価・解釈で、本人の決定ではない。
 
 ## 目的
@@ -167,4 +167,4 @@ description: 端末内保存（localStorage・IndexedDB）のキーや構造を�
 
 ## 抽出元
 
-`skills-drafts/INDEX.md` の「11. ラウンド3 清書（S12〜S15）」を参照。
+`skills-drafts/INDEX.md` の「12. ラウンド3 清書（S12〜S15）」を参照。
