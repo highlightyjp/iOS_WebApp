@@ -97,3 +97,7 @@ sys.exit(1 if removed_any or stubs or empties else 0)
 
 ## 抽出元
 `skills-drafts/INDEX.md` の「02」を参照。
+
+## 清書版への参照（2026-11-02 追記）
+
+本下書きはラウンド3で S8 `skills-drafts/S8-single-html-safe-modification/SKILL.md` に統合・清書された（改変前の機能台帳・差分・スタブ検出として）。本下書きの本文は変更していない。対応表は `skills-drafts/INDEX.md` の「11. ラウンド3 清書（S8・S16）」を参照。
