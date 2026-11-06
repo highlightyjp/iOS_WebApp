@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI朝会 2026年11月6日（金）</title>
+<style>
+  :root { --bg:#0d1117; --card:#161c26; --ink:#e8edf4; --sub:#8fa1b5; --acc:#7cc4ff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP",sans-serif; padding:18px; }
+  .wrap { max-width:1150px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+  h1 { font-size:30px; font-weight:600; }
+  .next { color:var(--sub); font-size:16px; }
+  .cols { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+  @media (max-width: 760px) { .cols { grid-template-columns:1fr; } }
+  .card { background:var(--card); border-radius:16px; padding:18px 20px; margin-bottom:16px; }
+  .card h2 { font-size:15px; color:var(--acc); letter-spacing:2px; margin-bottom:12px; }
+  .att { display:flex; align-items:center; gap:10px; padding:5px 0; font-size:16px; flex-wrap:wrap; }
+  .ava { flex:0 0 auto; width:34px; height:34px; border-radius:50%; color:#0d1117; font-weight:700; display:inline-flex; align-items:center; justify-content:center; font-size:16px; }
+  .ava.big { width:44px; height:44px; font-size:20px; }
+  .aname { font-weight:600; } .arole { color:var(--sub); } .astat { margin-left:auto; color:var(--sub); font-size:14px; }
+  .msg { display:flex; gap:12px; padding:10px 0; }
+  .mwho { font-size:14px; color:var(--sub); margin-bottom:4px; }
+  .mtext { background:#1d2635; border-radius:12px; padding:12px 16px; font-size:17px; line-height:1.6; }
+  ul { padding-left:20px; } li { font-size:16px; line-height:1.55; margin:4px 0; }
+  .event { font-size:17px; padding:4px 0; display:flex; gap:12px; } .etime { color:var(--sub); white-space:nowrap; }
+  .glabel { font-size:15px; color:var(--sub); margin-bottom:6px; }
+  .gbar { background:#232f42; border-radius:999px; height:12px; overflow:hidden; }
+  .gfill { background:var(--acc); height:100%; }
+  footer { color:var(--sub); font-size:13px; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>AI朝会 第1回・試行</h1><span class="next">2026年11月6日（金） ・ 次回：11月9日（月）9:00</span></header>
+  <div class="cols">
+    <div>
+      <div class="card"><h2>出席</h2><div class="att"><span class="ava" style="background:#7cc4ff">イ</span><span class="aname">アイリス</span><span class="arole">司令塔・議長</span><span class="astat">出席</span></div><div class="att"><span class="ava" style="background:#e8a06a">C</span><span class="aname">Claude</span><span class="arole">実装・分析</span><span class="astat">出席</span></div><div class="att"><span class="ava" style="background:#5a6a7d">G</span><span class="aname">Grok</span><span class="arole">調査・速報</span><span class="astat">欠席（利用枠枯渇）</span></div><div class="att"><span class="ava" style="background:#5a6a7d">O</span><span class="aname">ChatGPT</span><span class="arole">企画・反証</span><span class="astat">欠席（日次運用は当面見送り）</span></div></div>
+      <div class="card"><h2>朝会のやり取り</h2><div class="msg"><span class="ava big" style="background:#7cc4ff">イ</span><div class="mbody"><div class="mwho">アイリス</div><div class="mtext">おはよう、第1回の朝会を始める。今日は15時からBCP帰宅訓練、天気は晴れ。サイクル基盤は基線65回・pass 45で、job と qol に論点が残ってる。生活台帳の要注意は11件、週末の山は明日の配達3件と、月曜に向けた在宅勤務セットアップ。</div></div></div><div class="msg"><span class="ava big" style="background:#e8a06a">C</span><div class="mbody"><div class="mwho">Claude</div><div class="mtext">問題は2つ。job と qol は基線の pass が 0 のまま発見済みが各2件残っていて、テスト定義の問題か実装の問題かは未確認。週末は競馬の登録3レース、明日の配達3件、在宅勤務セットアップが重なり、今日は15時の訓練で作業時間が減る。提案として、C2（outfit の雨判定への天気自動供給）を本番切替なしで試作することと、job／qol の基線 pass 0 の原因を読み取り専用で切り分けること。Grok 欠席の間の急ぎの調査は当部門で引き受ける。</div></div></div><div class="msg"><span class="ava big" style="background:#7cc4ff">イ</span><div class="mbody"><div class="mwho">アイリス</div><div class="mtext">ありがとう。決定は2件。C2 の試作は私、job／qol の原因切り分けは Claude 部門。どちらも可逆な範囲で、承認ゲートには触れない。Grok は枠が戻るまで欠席で回す。</div></div></div></div>
+    </div>
+    <div>
+      <div class="card"><h2>今日の予定</h2><div class="event"><span class="etime">15:00–19:00</span><span>BCP帰宅訓練</span></div></div>
+      <div class="card"><h2>朝会決定</h2><ul><li>C2（outfit の雨判定へ天気を自動供給）を本番切替なしで試作 — 担当：アイリス</li><li>job／qol の基線 pass 0 の原因を読み取り専用で切り分ける — 担当：Claude部門</li></ul></div>
+      <div class="card"><h2>状態</h2><div class="gauge"><div class="glabel">サイクル基盤 pass：45 / 65</div><div class="gbar"><div class="gfill" style="width:69%"></div></div></div></div>
+    </div>
+  </div>
+  <footer>AI朝会ビュー（試作） ・ 議事録は別途保存</footer>
+</div>
+</body>
+</html>
