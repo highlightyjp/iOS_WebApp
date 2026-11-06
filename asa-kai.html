@@ -24,6 +24,10 @@
   .mwho { font-size:14px; color:var(--sub); margin-bottom:4px; }
   .mtext { background:#1d2635; border-radius:12px; padding:12px 16px; font-size:17px; line-height:1.6; }
   ul { padding-left:20px; } li { font-size:16px; line-height:1.55; margin:4px 0; }
+  .dmeta { color:var(--sub); font-size:13px; }
+  .dept { padding:7px 0; border-bottom:1px solid #232f42; } .dept:last-child { border-bottom:none; }
+  .dname { font-size:16px; font-weight:600; } .dstat { color:var(--acc); font-size:13px; margin-left:8px; }
+  .ddetail { color:var(--sub); font-size:14px; line-height:1.5; }
   .event { font-size:17px; padding:4px 0; display:flex; gap:12px; } .etime { color:var(--sub); white-space:nowrap; }
   .glabel { font-size:15px; color:var(--sub); margin-bottom:6px; }
   .gbar { background:#232f42; border-radius:999px; height:12px; overflow:hidden; }
@@ -41,7 +45,8 @@
     </div>
     <div>
       <div class="card"><h2>今日の予定</h2><div class="event"><span class="etime">15:00–19:00</span><span>BCP帰宅訓練</span></div></div>
-      <div class="card"><h2>朝会決定</h2><ul><li>C2（outfit の雨判定へ天気を自動供給）を本番切替なしで試作 — 担当：アイリス</li><li>job／qol の基線 pass 0 の原因を読み取り専用で切り分ける — 担当：Claude部門</li></ul></div>
+      <div class="card"><h2>朝会決定</h2><ul><li>C2（outfit の雨判定へ天気を自動供給）を本番切替なしで試作<div class="dmeta">A-20261106-01 ・ アイリス ・ 進行中</div></li><li>job／qol の基線 pass 0 の原因を読み取り専用で切り分ける<div class="dmeta">A-20261106-02 ・ Claude部門 ・ 依頼済み</div></li></ul></div>
+      <div class="card"><h2>部門の状態</h2><div class="dept"><div class="dname">アイリス（司令塔）<span class="dstat">稼働</span></div><div class="ddetail">朝会の議長、巡回、ダッシュボードと朝会ビューの生成</div></div><div class="dept"><div class="dname">Claude部門<span class="dstat">稼働</span></div><div class="ddetail">本日の朝会に出席。job／qol の切り分けが次の担当</div></div><div class="dept"><div class="dname">Grok部門<span class="dstat">停止</span></div><div class="ddetail">利用枠枯渇（402）。朝会前に疎通を試し、回復次第自動で復帰</div></div><div class="dept"><div class="dname">ChatGPT部門<span class="dstat">休止</span></div><div class="ddetail">日次運用は当面見送り</div></div><div class="dept"><div class="dname">バックオフィス<span class="dstat">稼働</span></div><div class="ddetail">定期ジョブ群（見張り・要約・巡回）</div></div></div>
       <div class="card"><h2>状態</h2><div class="gauge"><div class="glabel">サイクル基盤 pass：45 / 65</div><div class="gbar"><div class="gfill" style="width:69%"></div></div></div></div>
     </div>
   </div>
