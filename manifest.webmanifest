@@ -1,0 +1,12 @@
+{
+  "name": "AI本部",
+  "short_name": "AI本部",
+  "start_url": "asa-kai.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    {"src": "honnbu-icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}
