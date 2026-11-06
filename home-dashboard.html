@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アイリス常駐ダッシュボード（試作）</title>
+<style>
+  :root { --bg:#0d1117; --card:#161c26; --ink:#e8edf4; --sub:#8fa1b5; --acc:#7cc4ff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP",sans-serif; padding:20px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:1100px; margin:0 auto; }
+  .card { background:var(--card); border-radius:18px; padding:20px 24px; }
+  .wide { grid-column:1 / -1; }
+  #clock { font-size:96px; font-weight:200; letter-spacing:2px; line-height:1; }
+  #date { font-size:26px; color:var(--sub); margin-top:8px; }
+  .wtext { font-size:44px; margin:6px 0; }
+  .wsub { font-size:22px; color:var(--sub); }
+  .card h2 { font-size:18px; color:var(--acc); font-weight:600; margin-bottom:12px; letter-spacing:2px; }
+  .event { font-size:24px; padding:6px 0; display:flex; gap:16px; }
+  .etime { color:var(--sub); white-space:nowrap; }
+  .bubble-wrap { display:flex; gap:18px; align-items:flex-start; }
+  .face { flex:0 0 84px; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #2c3e55, #16202e); display:flex; align-items:center; justify-content:center; font-size:30px; color:var(--acc); border:2px solid #2c4258; }
+  #bubble { font-size:26px; line-height:1.55; background:#1d2635; border-radius:14px; padding:16px 20px; position:relative; }
+  #vstatus { font-size:18px; color:var(--sub); margin-top:10px; min-height:24px; }
+  #vlog { font-size:18px; color:var(--sub); margin-top:6px; max-height:90px; overflow:hidden; }
+  button { font-size:20px; padding:10px 22px; border-radius:999px; border:1px solid var(--acc); background:transparent; color:var(--acc); }
+  button.on { background:var(--acc); color:#0d1117; }
+  footer { max-width:1100px; margin:14px auto 0; color:var(--sub); font-size:14px; display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="card">
+    <div id="clock">--:--</div>
+    <div id="date">2026年11月6日（金）</div>
+  </div>
+  <div class="card">
+    <h2>天気（東京）</h2>
+    <div class="wtext" id="wtext">晴れ</div>
+    <div class="wsub"><span id="wtemp">最高 24℃ / 最低 12℃</span> ・ 降水確率 <span id="wpop">10</span>%</div>
+    <div class="wsub" id="wsrc">天気は表示時に気象庁データで更新します</div>
+  </div>
+  <div class="card wide">
+    <h2>今日の予定</h2>
+    <div class="event"><span class="etime">15:00–19:00</span><span class="etitle">BCP帰宅訓練</span></div>
+  </div>
+  <div class="card wide">
+    <h2>アイリス</h2>
+    <div class="bubble-wrap">
+      <div class="face">イ</div>
+      <div id="bubble">おつかれさま、よし。今日は15時からBCP帰宅訓練。天気は晴れで、傘はいらないよ。明日の午前中は水の配達、14時から無印とニトリの荷物が届く。</div>
+    </div>
+    <div style="margin-top:16px;">
+      <button id="vbtn">音声テスト開始</button>
+      <span id="vstate" style="margin-left:12px; color:var(--sub); font-size:18px;">待機中</span>
+    </div>
+    <div id="vstatus">「アイリス」と呼びかけてから話すと、聞き取り結果が吹き出しに出ます（端末側の試作機能）</div>
+    <div id="vlog"></div>
+  </div>
+</div>
+<footer><span>常駐ダッシュボード試作 v0.1（端末非依存）</span><span>スナップショット: 2026-11-06 11:22 JST</span></footer>
+<script>
+// 時計
+function tick(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = p(d.getHours()) + ':' + p(d.getMinutes());
+}
+tick(); setInterval(tick, 10000);
+
+// 気象庁 天気（東京地方 130010）ライブ取得。失敗時はスナップショット表示のまま
+fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/130000.json')
+  .then(r => r.json())
+  .then(j => {
+    const ts = j[0].timeSeries[0];
+    const area = ts.areas.find(a => a.area.code === '130010') || ts.areas[0];
+    if (area && area.weathers && area.weathers[0]) {
+      document.getElementById('wtext').textContent = area.weathers[0].replace(/\s+/g,' ');
+      if (area.pops && area.pops[0] !== '') document.getElementById('wpop').textContent = area.pops[0];
+      document.getElementById('wsrc').textContent = '気象庁の最新データで表示中';
+    }
+  })
+  .catch(() => { document.getElementById('wsrc').textContent = '天気の取得に失敗したため、生成時点の情報を表示中'; });
+
+// 音声テスト: Web Speech API（Chrome系）で連続認識し、ウェイクワード「アイリス」を検出する試作
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const vbtn = document.getElementById('vbtn'), vstate = document.getElementById('vstate'),
+      vlog = document.getElementById('vlog'), bubble = document.getElementById('bubble');
+let recog = null, listening = false, armed = false;
+function logLine(t){ const d=document.createElement('div'); d.textContent=t; vlog.prepend(d); }
+if (!SR) {
+  vstate.textContent = 'このブラウザは音声認識に未対応です（Chrome系で開いてください）';
+  vbtn.disabled = true;
+} else {
+  vbtn.addEventListener('click', () => listening ? stopListen() : startListen());
+}
+function startListen(){
+  recog = new SR();
+  recog.lang = 'ja-JP'; recog.continuous = true; recog.interimResults = true;
+  recog.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i], text = r[0].transcript.trim();
+      if (!r.isFinal) continue;
+      logLine('♪ ' + text);
+      if (!armed && text.includes('アイリス')) {
+        armed = true;
+        bubble.textContent = 'はーい、聞いてるよ。';
+        vstate.textContent = '呼びかけを検出。続けて話してください';
+        const rest = text.split('アイリス').pop().trim();
+        if (rest) { handleCommand(rest); }
+      } else if (armed) {
+        handleCommand(text);
+      }
+    }
+  };
+  recog.onend = () => { if (listening) { try { recog.start(); } catch(_){} } };
+  recog.onerror = e => { if (e.error === 'not-allowed') { stopListen(); vstate.textContent = 'マイクが許可されていません'; } };
+  listening = true; vbtn.textContent = '音声テスト停止'; vbtn.classList.add('on');
+  vstate.textContent = '聞き取り中…「アイリス」と呼びかけてください';
+  recog.start();
+}
+function stopListen(){
+  listening = false; armed = false;
+  vbtn.textContent = '音声テスト開始'; vbtn.classList.remove('on');
+  vstate.textContent = '待機中';
+  if (recog) { recog.onend = null; recog.stop(); }
+}
+function handleCommand(text){
+  bubble.textContent = '聞き取ったよ：「' + text + '」— これは端末側の試作だから、まだ私には届いてない。接続は次の段で作る。';
+  vstate.textContent = '聞き取り完了。もう一度呼びかけてください';
+  armed = false;
+}
+</script>
+</body>
+</html>
