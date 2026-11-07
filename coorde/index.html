@@ -49,7 +49,7 @@
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 16px);scrollbar-gutter:stable;font-family:var(--font-family-sans);-webkit-text-size-adjust:100%}
 html.modal-open,html.modal-open body{overflow:hidden}
 *,*::before,*::after{box-sizing:border-box}
-body{margin:0;background:#fff;color:var(--gray-800);font-family:var(--font-family-sans);font-size:16px;line-height:1.7;letter-spacing:.02em;overflow-wrap:anywhere}
+body{margin:0;padding-bottom:72px;background:#fff;color:var(--gray-800);font-family:var(--font-family-sans);font-size:16px;line-height:1.7;letter-spacing:.02em;overflow-wrap:anywhere}
 button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}
 button{cursor:pointer}
 h1,h2,h3,h4{margin:0;font-weight:700;color:var(--gray-800)}
@@ -178,7 +178,7 @@ input[type=color]{width:100%;min-height:48px;padding:4px;border:1px solid var(--
 .badge.lt{background:#fff;color:var(--gray-800)}
 
 /* 通知バナー（標準スタイル：枠3px・角丸12px。種別：success／error／warning／info-1／info-2） */
-#notices{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:60;display:grid;gap:8px}
+#notices{position:static;display:grid;gap:8px}
 #notices:not(:empty){margin-bottom:16px}
 .dads-banner{--_c:var(--blue-900);display:grid;grid-template-columns:28px 1fr auto;gap:8px 12px;margin-top:16px;border:3px solid var(--_c);border-radius:12px;background:#fff;padding:12px 16px 16px;color:var(--gray-800)}
 #notices .dads-banner{margin-top:0;box-shadow:var(--elevation-1)}
@@ -207,7 +207,7 @@ input[type=color]{width:100%;min-height:48px;padding:4px;border:1px solid var(--
 .step[aria-current] .step__num{outline:2px solid var(--gray-800);outline-offset:2px;box-shadow:0 0 0 2px #fff}
 .step[aria-current] a{font-weight:700}
 .step a:focus-visible{outline-offset:2px}
-.coach{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin:-8px 0 24px}
+.coach{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin:0 0 24px}
 
 /* リソースリスト／記述リスト */
 .rl{list-style:none;margin:0;padding:0}
@@ -239,7 +239,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
 .look:first-child{border-top:0;padding-top:4px}
 .look-h{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .look-h h3{flex:1;font-size:20px;line-height:1.5}
-.board{display:grid;grid-template-columns:104px 1fr;gap:16px;align-items:start}
+.board{display:grid;grid-template-columns:104px 1fr;gap:16px;align-items:start}@media (max-width:560px){.board{grid-template-columns:1fr}.board .fig{width:120px;justify-self:center}}
 .fig{width:104px;height:auto;display:block;border:1px solid var(--gray-420);border-radius:8px}
 .tile{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-420)}
 .th{width:40px;height:54px;border-radius:4px;overflow:hidden;border:1px solid var(--gray-420);flex:none}
@@ -366,7 +366,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     </fieldset>
     <p class="page-lead" id="ph-title" style="margin-top:16px;font-weight:700;color:var(--gray-900)"></p>
     <dl class="dl-grid" id="hl"></dl>
-    <div class="btn-row"><button class="btn" id="ph-here" type="button"><span data-ico="pin" class="sm"></span>現在地</button><button class="btn" id="ph-update" type="button"><span data-ico="refresh" class="sm"></span>最新化</button><button class="btn" id="ph-more" type="button" aria-haspopup="menu">その他の操作<span data-ico="chevdown" class="sm"></span></button></div>
+    <div class="btn-row"><button class="btn" id="ph-here" type="button"><span data-ico="pin" class="sm"></span>現在地</button><button class="btn" id="ph-update" type="button"><span data-ico="refresh" class="sm"></span>更新</button><button class="btn" id="ph-more" type="button" aria-haspopup="menu">その他の操作<span data-ico="chevdown" class="sm"></span></button></div>
 
     <h2 class="visually-hidden dads-visually-hidden">準備の進み具合</h2>
     <nav aria-label="今日の準備の進み具合" style="margin-top:32px"><ol class="steps" id="path"></ol></nav>
@@ -401,7 +401,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
       <div class="card-h"><h2 id="h-wkset">条件</h2></div>
       <div class="card-b">
         <fieldset class="rg" style="margin-top:0"><legend>開始日</legend><div class="opts" id="wk-start"><label class="rd"><input type="radio" name="wk-start" value="tomorrow" checked><span>明日</span></label><label class="rd"><input type="radio" name="wk-start" value="today"><span>今日</span></label><label class="rd"><input type="radio" name="wk-start" value="monday"><span>次の月曜</span></label></div></fieldset>
-        <div class="fe"><span class="lbl" id="wk-days-l">各日の予定</span><p class="help" style="margin:-4px 0 8px">ボタンを押すごとに、出勤 → 休日 → 社外 の順に切り替わります。</p><div class="chips" id="wk-days" role="group" aria-labelledby="wk-days-l"></div></div>
+        <div class="fe"><span class="lbl" id="wk-days-l">各日の予定</span><p class="help" style="margin:0 0 8px">ボタンを押すごとに、出勤 → 休日 → 社外 の順に切り替わります。</p><div class="chips" id="wk-days" role="group" aria-labelledby="wk-days-l"></div></div>
         <div id="wk-wxnote"></div>
         <div class="fe"><label class="chk"><input type="checkbox" id="wk-store" checked><span>店の商品（ユニクロ・GU）も使う</span></label></div>
         <div class="fe"><label for="wk-budget">追加購入の予算（円）<span class="help" style="margin:0 0 0 8px;display:inline;font-weight:400">（任意）</span></label><input class="inp" id="wk-budget" type="number" inputmode="numeric" placeholder="例：5000"></div>
@@ -414,7 +414,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   </section>
 
   <section class="panel" id="p-check" aria-labelledby="h1-check" hidden>
-    <div class="page-head"><h1 class="page-title" id="h1-check" tabindex="-1">コーデを評価</h1><p class="page-lead">手持ち服の組み合わせを選んで、判断基準に照らして評価します。</p></div>
+    <div class="page-head"><h1 class="page-title" id="h1-check" tabindex="-1">コーデを評価</h1><p class="page-lead">手持ち服の組み合わせを選ぶと、天気や予定に合うか、着方まで確認できます。</p></div>
     <section class="card" aria-labelledby="h-eval">
       <div class="card-h"><h2 id="h-eval">評価する組み合わせ</h2></div>
       <div class="card-b">
@@ -432,7 +432,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   </section>
 
   <section class="panel" id="p-closet" aria-labelledby="h1-closet" hidden>
-    <div class="page-head"><h1 class="page-title" id="h1-closet" tabindex="-1">クローゼット</h1><p class="page-lead">手持ち服と購入候補を管理します。</p></div>
+    <div class="page-head"><h1 class="page-title" id="h1-closet" tabindex="-1">クローゼット</h1><p class="page-lead">持っている服と、買うか迷っている服を確認します。</p></div>
     <form class="card" id="search-form" role="search" aria-labelledby="h-search" onsubmit="return false">
       <div class="card-h"><h2 id="h-search">検索</h2></div>
       <div class="card-b">
@@ -452,7 +452,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   </section>
 
   <section class="panel" id="p-browser" aria-labelledby="h1-browser" hidden>
-    <div class="page-head"><h1 class="page-title" id="h1-browser" tabindex="-1">ブラウザ</h1><p class="page-lead">TinyFish経由でページの本文・画像・リンクを取得して表示する簡易ブラウザです。スクリプト描画やログインが必要なページは表示できません。</p></div>
+    <div class="page-head"><h1 class="page-title" id="h1-browser" tabindex="-1">ブラウザ</h1><p class="page-lead">Webページの本文・画像・リンクを開きます。ログインが必要なページなどは開けないことがあります。</p></div>
     <div class="br-bar"><button class="btn sm" id="br-back" type="button" disabled>戻る</button><button class="btn sm" id="br-fwd" type="button" disabled>進む</button><button class="btn sm" id="br-rl" type="button" disabled>再読込</button><button class="btn sm" id="br-home" type="button">ホーム</button>
       <input class="inp" id="br-url" type="text" inputmode="url" autocomplete="off" aria-label="URLまたは検索語" placeholder="URL または検索語（検索はYahoo!検索）"><button class="btn brand sm" id="br-go" type="button">開く</button><button class="btn sm" id="br-star" type="button" disabled>☆ ブックマーク</button></div>
     <div id="br-prog" role="status" aria-live="polite"></div>
@@ -460,29 +460,29 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   </section>
 
   <section class="panel" id="p-ops" aria-labelledby="h1-ops" hidden>
-    <div class="page-head"><h1 class="page-title" id="h1-ops" tabindex="-1">分析</h1><p class="page-lead">手持ち服の状況、データの鮮度、保存の履歴を確認します。</p></div>
+    <div class="page-head"><h1 class="page-title" id="h1-ops" tabindex="-1">記録</h1><p class="page-lead">よく着る服、長く着ていない服、洗濯中の服を確認します。</p></div>
     <div id="ops-body"></div>
   </section>
 
   <section class="panel" id="p-settings" aria-labelledby="h1-settings" hidden>
     <div class="page-head"><h1 class="page-title" id="h1-settings" tabindex="-1">設定</h1></div>
     <section class="card" aria-labelledby="h-upd">
-      <div class="card-h"><h2 id="h-upd">データ更新<small>TinyFish経由</small></h2></div>
+      <div class="card-h"><h2 id="h-upd">天気・価格の更新<small>気象庁・Open-Meteo／ユニクロ・GU公式</small></h2></div>
       <div class="card-b">
         <div id="upd-status"></div>
         <div id="upd-prog" role="status" aria-live="polite"></div>
-        <div class="scoped info"><span data-ico="info"></span><span>「最新化」を押すと、このページがTinyFishコネクタ経由で天気（気象庁・Open-Meteo）と価格（ユニクロ・GU公式）を取得し、そのまま書き込みます。Claudeは使いません。初回は利用の許可を求められます。</span></div>
+        <div class="scoped info"><span data-ico="info"></span><span>「更新」を押すと、天気（気象庁・Open-Meteo）と、購入候補の価格・販売状況（ユニクロ・GU公式）を取りに行きます。初回は利用の許可を求められます。</span></div>
         <fieldset class="rg"><legend>更新する項目</legend>
           <label class="chk"><input type="checkbox" id="u-weather" checked><span>天気（登録した全地点の今日・明日）</span></label>
           <label class="chk"><input type="checkbox" id="u-price" checked><span>価格と販売状況（購入候補・店の商品）</span></label>
         </fieldset>
-        <div class="btn-row"><button class="btn brand block" id="u-go" type="button">最新化</button></div>
+        <div class="btn-row"><button class="btn brand block" id="u-go" type="button">更新</button></div>
       </div>
     </section>
     <section class="card" aria-labelledby="h-eng">
       <div class="card-h"><h2 id="h-eng">コーデの組み方</h2></div>
       <div class="card-b">
-        <p class="help" style="margin-top:0">標準はページ内ルールで即時に算出します（Claude不要）。色・明度・気温・雨・場面・着用履歴を採点して選びます。</p>
+        <p class="help" style="margin-top:0">通常は、色・明度・気温・雨・予定・着用履歴をもとに、その場で組みます。</p>
         <label class="chk"><input type="checkbox" id="ai-on"><span>Claudeで組む（遅い・あなたのClaude利用枠を使う）</span></label>
         <p class="help" id="ai-help"></p>
       </div>
@@ -629,7 +629,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     const run = async (f) => { try { await f(); } catch (e) { msg("失敗: " + (e && e.message || e)); } };
     btn.onclick = async () => { const c = await window.__gh.config(); $("gh-repo").value = c ? c.repo : "highlightyjp/app"; $("gh-dir").value = c ? c.dir : "coorde-data"; $("gh-br").value = c ? c.branch : "main"; $("gh-tk").value = ""; msg(c ? "同期: 有効" + (window.__store.ghError ? "／直近エラー: " + window.__store.ghError : "") : "同期: 未設定"); pn.classList.add("on"); };
     $("gh-x").onclick = () => pn.classList.remove("on");
-    $("gh-save").onclick = () => run(async () => { const c = await window.__gh.config(); const tk = $("gh-tk").value || (c && c.token ? "__keep__" : ""); if (!tk) return msg("トークンを入力してください。"); if (tk === "__keep__") return msg("保存済みのトークンがあります。変更するときだけ入力してください。"); await window.__gh.save({ repo: $("gh-repo").value, dir: $("gh-dir").value, branch: $("gh-br").value, token: tk }); $("gh-tk").value = ""; const r = await window.__gh.test(); msg("接続OK。private=" + r.private + "／書込権限=" + r.push + (r.private ? "" : "\n警告: このリポジトリは公開です。個人データを置かないでください。")); });
+    $("gh-save").onclick = () => run(async () => { const c = await window.__gh.config(); const tk = $("gh-tk").value || (c && c.token ? "__keep__" : ""); if (!tk) return msg("トークンを入力してください。"); if (tk === "__keep__") return msg("保存済みのトークンがあります。変更するときだけ入力してください。"); await window.__gh.save({ repo: $("gh-repo").value, dir: $("gh-dir").value, branch: $("gh-br").value, token: tk }); $("gh-tk").value = ""; const r = await window.__gh.test(); msg("接続できました。" + (r.push ? "この端末から反映できます。" : "読み取りだけできます。") + (r.private ? "" : "\n注意：このリポジトリは公開されています。個人データを置かないでください。")); });
     $("gh-pull").onclick = () => run(async () => { if (!confirm("手持ち服を、GitHubの内容で上書きします。よろしいですか？")) return; await window.__gh.pull(); msg("取り込みました。画面を再読込してください。"); });
     $("gh-push").onclick = () => run(async () => { if (!confirm("GitHubの手持ち服を、この端末の内容で上書きします。よろしいですか？")) return; await window.__gh.pushAll(); msg("反映しました。"); });
     $("gh-off").onclick = () => run(async () => { await window.__gh.save(null); msg("解除しました（トークンを削除）。データは端末内に残ります。"); });
@@ -837,7 +837,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     catch (e) { state.saveInfo = { at: state.saveInfo?.at || null, err: e?.code || "unknown" }; throw e; }
     finally { renderLinks(); }
   }
-  const dbErr = (e) => (e?.code === "no_db" ? "保存先に接続できないため保存できません。" : e?.code === "read_failed" ? "読み込みに失敗したデータのため、上書きを止めています。ページを開き直してください。" : "保存できませんでした（" + (e?.code || "不明なエラー") + "）。");
+  const dbErr = (e) => (e?.code === "no_db" ? "保存先に接続できないため保存できません。" : e?.code === "read_failed" ? "読み込みに失敗したデータのため、上書きを止めています。ページを開き直してください。" : "保存できませんでした。ページを開き直しても直らない場合は、バックアップを書き出してください。");
 
   // ---------- store snapshot ----------
   const storeCombos = () => Object.values(state.store).flatMap((d) => d?.items || []);
@@ -867,7 +867,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   }
 
   // ---------- navigation (水平メニュー／モバイルメニュー) ----------
-  const TABS = [["home", "ホーム"], ["week", "週間"], ["check", "評価"], ["closet", "クローゼット"], ["browser", "ブラウザ"], ["ops", "分析"], ["settings", "設定"]];
+  const TABS = [["home", "ホーム"], ["week", "週間"], ["check", "評価"], ["closet", "クローゼット"], ["browser", "ブラウザ"], ["ops", "記録"], ["settings", "設定"]];
   function renderNav() {
     const items = TABS.map(([k, l]) => `<li><a href="#${k}" data-tab="${k}"${curTab === k ? ' aria-current="page"' : ""}>${esc(l)}</a></li>`).join("");
     $("#hmenu-list").innerHTML = items; $("#mmenu-list").innerHTML = items;
@@ -907,12 +907,12 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   document.addEventListener("change", () => saveUI());
   $("#help-btn").addEventListener("click", () => modal("ヘルプ", `
     <ul class="rl">
-      <li><span class="lead-ico">${ico("refresh")}</span><div class="main"><p class="t1 plain"><b>最新化</b></p><p>天気と価格はTinyFish経由でこのページが取得します。「最新化」を押すと、完了後に表示が切り替わります。</p></div></li>
+      <li><span class="lead-ico">${ico("refresh")}</span><div class="main"><p class="t1 plain"><b>更新</b></p><p>天気と価格はこのページが取得します。「更新」を押すと、完了後に表示が切り替わります。</p></div></li>
       <li><span class="lead-ico">${ico("hanger")}</span><div class="main"><p class="t1 plain"><b>全身コーデ提案</b></p><p>手持ち服と店の商品から全身を3案組みます。手持ちだけの案は「これを着る」で記録できます。</p></div></li>
       <li><span class="lead-ico">${ico("calendar")}</span><div class="main"><p class="t1 plain"><b>1週間コーデ</b></p><p>「週間」で開始日と各日の予定を決めて押すと、7日分の全身コーデと洗濯の回し方を作って保存します。1日だけ出し直すこともできます。</p></div></li>
       <li><span class="lead-ico">${ico("laundry")}</span><div class="main"><p class="t1 plain"><b>洗濯中</b></p><p>クローゼットの各服の「操作」から切り替えます。洗濯中の服は提案に使いません。</p></div></li>
       <li><span class="lead-ico">${ico("search")}</span><div class="main"><p class="t1 plain"><b>検索</b></p><p>クローゼットの検索欄で、手持ち服・購入候補・店の商品を探せます。キーボードの「/」でも検索欄に移動できます。</p></div></li>
-      <li><span class="lead-ico">${ico("success")}</span><div class="main"><p class="t1 plain"><b>分析</b></p><p>手持ち服の状況、運用チェック（データの鮮度・重複・価格未取得など）、着用ランキング、変更履歴、CSV出力があります。クローゼットでは表示の絞り込み・並べ替え・複数選択の一括操作ができ、条件はこの端末に記憶されます。</p></div></li>
+      <li><span class="lead-ico">${ico("success")}</span><div class="main"><p class="t1 plain"><b>記録</b></p><p>よく着る服、長く着ていない服、洗濯中の服、着用ランキング、保存した記録を確認できます。書き出しもここから行えます。クローゼットでは表示の絞り込み・並べ替え・複数選択の一括操作ができ、条件はこの端末に記憶されます。</p></div></li>
     </ul>`, `<button class="btn brand" data-close type="button">閉じる</button>`));
   // クローゼットの検索（検索ボックス）
   function runSearch() {
@@ -963,7 +963,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   function pathSteps() {
     const worn = !!state.wear.find((w) => w.date === dayDate());
     return [
-      ["c-weather", "天気", weatherOk(), "天気が未取得です。「最新化」で取得してください。"],
+      ["c-weather", "天気", weatherOk(), "天気がまだありません。上部の「更新」を押してください。"],
       ["c-events", "予定", state.events !== null, "予定を読み込んでください。"],
       ["c-suggest", "コーデ", state.proposedOn === dayDate() || worn, "全身コーデを出してください。"],
       ["c-suggest", "着用記録", worn, "着る案の「これを着る」を押すと記録されます。"],
@@ -1013,7 +1013,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     const w = currentWeather(), date = dayDate(), loc = activeLoc(), el = $("#wx");
     $("#wx-sub").textContent = loc.name + "・" + jpDate(date);
     let h = "";
-    if (!w) h += `<div class="scoped warn">${ico("warning")}<span>${esc(loc.name)}の${dayLabel()}の天気がありません。「最新化」で取得するか、▼メニューから手入力してください。</span></div>`;
+    if (!w) h += `<div class="scoped warn">${ico("warning")}<span>${esc(loc.name)}の${dayLabel()}の天気がありません。上部の「更新」で取得するか、「その他の操作」から手入力してください。</span></div>`;
     else {
       h += `<div class="pops">${(w.pops || []).map((p) => `<div>${esc(p.label)}<b>${p.value == null ? "―" : esc(p.value) + "%"}</b></div>`).join("")}</div>`;
       h += `<dl class="dl" style="margin-top:8px"><dt>出典</dt><dd>${esc(w.source)}</dd>${w.fetchedAt ? `<dt>取得</dt><dd>${esc(w.fetchedAt)}</dd>` : ""}</dl>`;
@@ -1085,17 +1085,17 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     if (!name || !address) { toast("表示名と住所・地名を入れてください。", "err"); return false; }
     const exists = locs().find((l) => l.address === address);
     const key = exists ? exists.key : "loc" + Date.now().toString(36);
-    if (!isValidLocationKey(key)) { toast("地点IDが不正です。", "err"); return false; }
+    if (!isValidLocationKey(key)) { toast("この地点は登録できませんでした。", "err"); return false; }
     if (!exists) state.profile.locations = [...locs(), { key, name, address }];
     state.profile.activeLoc = key;
     try { await put("profile", state.profile); } catch (e) { toast(dbErr(e), "err"); return false; }
     renderLocSelect(); renderLocs(); renderHome(); if (!exists) audit("追加", "天気の地点", `${name}（${address}）`);
-    toast(exists ? `「${exists.name}」に切り替えました。` : `「${name}」を追加しました。天気は「最新化」で取得されます。`);
+    toast(exists ? `「${exists.name}」に切り替えました。` : `「${name}」を追加しました。天気は「更新」で取得されます。`);
     return true;
   }
   function renderLocs() {
     $("#locs-h").innerHTML = `天気の地点 <span class="cnt">(${locs().length})</span>`;
-    $("#locs").innerHTML = `<ul class="rl">${locs().map((l) => `<li><span class="lead-ico">${ico("pin", "sm")}</span><div class="main"><div class="t1">${esc(l.name)} ${l.key === activeLoc().key ? '<span class="badge brand">表示中</span>' : ""}</div><dl class="dl"><dt>住所</dt><dd>${esc(l.address)}</dd><dt>予報</dt><dd>${l.jma ? "気象庁＋Open-Meteo" : "Open-Meteo"}</dd><dt>座標</dt><dd>${esc(coordText(l))}</dd></dl></div><button class="btn sm" data-lm="${esc(l.key)}" type="button" aria-haspopup="menu" aria-label="${esc(l.name)}の操作">操作${ico("chevdown", "sm")}</button></li>`).join("")}</ul>`;
+    $("#locs").innerHTML = `<ul class="rl">${locs().map((l) => `<li><span class="lead-ico">${ico("pin", "sm")}</span><div class="main"><div class="t1">${esc(l.name)} ${l.key === activeLoc().key ? '<span class="badge brand">表示中</span>' : ""}</div><dl class="dl"><dt>住所</dt><dd>${esc(l.address)}</dd><dt>予報</dt><dd>${l.jma ? "気象庁＋Open-Meteo" : "Open-Meteo"}</dd></dl></div><button class="btn sm" data-lm="${esc(l.key)}" type="button" aria-haspopup="menu" aria-label="${esc(l.name)}の操作">操作${ico("chevdown", "sm")}</button></li>`).join("")}</ul>`;
     $("#locs").querySelectorAll("[data-lm]").forEach((b) => b.addEventListener("click", (e) => {
       const l = locs().find((x) => x.key === b.dataset.lm); if (!l) return;
       openMenu(e.currentTarget, [
@@ -1111,7 +1111,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     }));
   }
   function openLocNew() {
-    const m = modal("地点を追加", `<div class="fe"><label for="l-name"><span class="req">*</span>表示名</label><input class="inp" id="l-name" placeholder="例：会社"></div><div class="fe"><label for="l-addr"><span class="req">*</span>住所・地名</label><input class="inp" id="l-addr" placeholder="例：東京都千代田区"></div><p class="help">天気は次の「最新化」で取得されます。</p>`,
+    const m = modal("地点を追加", `<div class="fe"><label for="l-name"><span class="req">*</span>表示名</label><input class="inp" id="l-name" placeholder="例：会社"></div><div class="fe"><label for="l-addr"><span class="req">*</span>住所・地名</label><input class="inp" id="l-addr" placeholder="例：東京都千代田区"></div><p class="help">天気は次の「更新」で取得されます。</p>`,
       `<button class="btn" data-close type="button">キャンセル</button><button class="btn brand" id="l-save" type="button">保存</button>`);
     $("#l-save", m).onclick = async () => { if (await addLocation($("#l-name", m).value, $("#l-addr", m).value)) closeModal(); };
   }
@@ -1170,7 +1170,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   const WMO = { 0: "晴れ", 1: "ほぼ晴れ", 2: "曇り", 3: "曇り", 45: "霧", 48: "霧", 51: "小雨", 53: "小雨", 55: "小雨", 61: "雨", 63: "雨", 65: "大雨", 71: "小雪", 73: "小雪", 75: "大雪", 77: "小雪", 80: "にわか雨", 81: "にわか雨", 82: "にわか雨", 85: "にわか雪", 86: "にわか雪", 95: "雷雨", 96: "雷雨", 99: "雷雨" };
   const API_BASE = { uniqlo: "https://www.uniqlo.com/jp/api/commerce/v5/ja/products/", gu: "https://www.gu-global.com/jp/api/commerce/v5/ja/products/" };
   const TF_FATAL = ["server_not_connected", "needs_reauth", "not_in_manifest", "blocked_by_policy", "user_declined", "not_granted"];
-  const tfErrText = (c) => ({ server_not_connected: "TinyFishのコネクタが未接続です（claude.ai の設定 → コネクタ）", needs_reauth: "TinyFishの再接続が必要です", not_in_manifest: "このページでのTinyFish利用が許可されていません", blocked_by_policy: "組織の設定でTinyFish利用が止められています", user_declined: "TinyFishの利用が許可されませんでした", not_granted: "TinyFishの利用が許可されていません" }[c] || "TinyFishの呼び出しに失敗しました（" + (c || "不明") + "）");
+  const tfErrText = (c) => ({ server_not_connected: "天気・価格の取得に使う接続が未接続です（アプリの設定で接続してください）", needs_reauth: "天気・価格の取得に使う接続をし直してください", not_in_manifest: "このページでは天気・価格の取得が許可されていません", blocked_by_policy: "組織の設定で天気・価格の取得が止められています", user_declined: "天気・価格の取得が許可されませんでした", not_granted: "天気・価格の取得が許可されていません" }[c] || "天気・価格を取得できませんでした。");
   const jstNow = () => new Date(Date.now() + 9 * 3600e3).toISOString();
   const r1 = (x) => (x == null || isNaN(x) ? null : Math.round(x * 10) / 10);
 
@@ -1197,7 +1197,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     if (!Array.isArray(rs)) throw Object.assign(new Error("bad_payload"), { code: "bad_payload" });
     return urls.map((u) => {
       const r = rs.find((x) => x && (x.url === u || x.final_url === u));
-      if (!r) return { ok: false, msg: "応答なし" + (p.errors && p.errors.length ? "：" + JSON.stringify(p.errors).slice(0, 80) : "") };
+      if (!r) return { ok: false, msg: "応答なし" };
       try { return { ok: true, data: tfJSON(r.text) }; } catch (_) { return { ok: false, msg: "JSONとして読めない応答" }; }
     });
   }
@@ -1280,7 +1280,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   const setProg = (msg, kind) => { const el = $("#upd-prog"); if (!el) return; el.innerHTML = msg ? `<div class="scoped ${kind || "info"}"><span>${esc(msg)}</span></div>` : ""; };
   async function runWeather(old, errs, onlyKey) {
     const L = locs(), bad = L.find((l) => !isValidLocationKey(l.key));
-    if (bad) throw Object.assign(new Error("loc"), { code: "bad_location", msg: `地点キー「${bad.key}」が不正（小文字英数・ハイフン・アンダースコア、32文字以内）なので処理を停止` });
+    if (bad) throw Object.assign(new Error("loc"), { code: "bad_location", msg: "地点を登録できなかったため処理を止めました" });
     const out = { ...(old?.weather || {}) }; Object.keys(out).forEach((k) => { if (!L.some((l) => l.key === k)) delete out[k]; });
     const at = jstNow(), fetchedAt = at.slice(0, 10) + " " + at.slice(11, 16);
     const coord = {};
@@ -1358,7 +1358,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     const quick = !!(opt && opt.quick);
     const o = quick ? { weather: true, price: false } : { weather: $("#u-weather").checked, price: $("#u-price").checked };
     if (!o.weather && !o.price) { toast("更新する項目を1つ以上選んでください。", "err"); return; }
-    if (!state.mcp) { toast("このページからTinyFishに接続できません。", "err"); setProg("TinyFishに接続できないため更新できません。", "err"); return; }
+    if (!state.mcp) { toast("このページから天気・価格を取得できません。", "err"); setProg("天気・価格を取得できないため更新できません。", "err"); return; }
     updBusy = true; $("#u-go").disabled = true; $("#ph-update").disabled = true;
     const old = state.feed || {}, fresh = [];
     // 今回更新しない範囲の既存エラーは引き継ぐ（更新する範囲のエラーは今回の結果で置き換える）
@@ -1376,7 +1376,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
       state.feed = feed; renderHome(); renderCatalog(); renderWeekForm(); renderWeek(); renderOps();
       audit("最新化", "天気・価格", `${o.weather ? "天気" + Object.keys(feed.weather).length + "地点" : ""}${o.weather && o.price ? "・" : ""}${o.price ? "価格" + feed.catalog.length + "件" : ""}／取得できなかったもの${errors.length}件`);
       setProg("");
-      toast(errors.length ? `最新化しました（${feed.updatedAt.slice(11, 16)}）。取得できなかったもの：${errors.length}件` : `最新化しました（${feed.updatedAt.slice(11, 16)}）。`, errors.length ? "info" : undefined);
+      toast(errors.length ? `更新しました（${feed.updatedAt.slice(11, 16)}）。取得できなかったもの：${errors.length}件` : `更新しました（${feed.updatedAt.slice(11, 16)}）。`, errors.length ? "info" : undefined);
     } catch (e) {
       const msg = e?.msg || (e?.code === "bad_location" ? e.message : tfErrText(e?.code));
       if (e?.code === "bad_location") { try { await put("feed", normFeed({ ...old, errors: [...normErrors(old.errors), { scope: "system", ref: null, msg }] })); } catch (_) {} }
@@ -1388,11 +1388,10 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     const stores = storeCombos(), fi = freshInfo();
     el.innerHTML = `<dl class="dl">
       <dt>最終更新</dt><dd>${esc(f?.updatedAt ? f.updatedAt.replace("T", " ").slice(0, 16) : "未取得")} <span class="badge ${fi.today ? "ok" : "warn"}">${fi.today ? "最新" : "要更新"}</span></dd>
-      <dt>更新者</dt><dd>${esc(f?.via || "―")}</dd>
       <dt>天気</dt><dd>${f?.weather ? Object.keys(f.weather).length + "地点・" + (Object.values(f.weather)[0]?.days?.length || 2) + "日分" : "なし"}</dd>
       <dt>価格</dt><dd>${f?.catalog ? f.catalog.length + "件" : "なし"}</dd>
       <dt>店の商品</dt><dd>${stores.length ? stores.length + "商品（" + esc(Object.values(state.store)[0]?.fetchedAt || "") + " 取得）" : "未登録"}</dd>
-    </dl>${f?.errors?.length ? `<div class="scoped err">${ico("error")}<span>取得できなかったもの：${esc(f.errors.map((e) => e.msg ?? e).join("、"))}</span></div>` : ""}`;
+    </dl>${f?.errors?.length ? `<div class="scoped err">${ico("error")}<span>取得できなかったもの：${f.errors.length}件</span></div>` : ""}`;
   }
   $("#u-go").addEventListener("click", runUpdate);
   $("#ph-update").addEventListener("click", runUpdate);
@@ -1505,7 +1504,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     if (pre) { if (pre.url) $("#k-url", m).value = pre.url; if (pre.name) $("#k-name", m).value = pre.name; if (pre.price != null) $("#k-price", m).value = pre.price; setTimeout(() => $("#k-url", m).dispatchEvent(new Event("input")), 0); }
     $("#k-url", m).addEventListener("input", () => {
       const v = $("#k-url", m).value.trim(), d = v ? detectUrl(v) : null, el = $("#k-detect", m);
-      el.textContent = !v ? "" : !d ? "URLの形式ではありません。" : d.store === "url" ? "その他の店：価格は「最新化」で取得を試みます。取れない店は価格を手入力してください。" : `${STORE_NAME[d.store]}・商品番号 ${d.productId}${d.colorCode ? "・色コード " + d.colorCode : "（色を選んだ状態のURLだと色まで判定できます）"}`;
+      el.textContent = !v ? "" : !d ? "URLの形式ではありません。" : d.store === "url" ? "その他の店：価格は「更新」で取得を試みます。取れない店は価格を手入力してください。" : `${STORE_NAME[d.store]}の商品ページです。色を選んだ状態のURLだと、色も取り込めます。`;
     });
     $("#k-img", m)?.addEventListener("change", async (e) => {
       const f = e.target.files?.[0]; if (!f) return;
@@ -1527,7 +1526,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
       if (!name || !color) { toast("名前と色の名前を入れてください。", "err"); return; }
       const price = $("#k-price", m).value ? Number($("#k-price", m).value) : null;
       const item = { id: "c" + Date.now().toString(36), ...d, name, color, hex: $("#k-hex", m).value, cat: $("#k-cat", m).value, price, addedAt: todayJST() };
-      if (await saveCatalog([...state.catalog, item])) { closeModal(); toast(d.store === "manual" ? "購入候補に追加しました。" : "購入候補に追加しました。価格は次の「最新化」で取得されます。"); }
+      if (await saveCatalog([...state.catalog, item])) { closeModal(); toast(d.store === "manual" ? "購入候補に追加しました。" : "購入候補に追加しました。価格は次の「更新」で取得されます。"); }
     };
   }
   $("#k-open").addEventListener("click", () => openCatalogNew());
@@ -1884,7 +1883,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
       if (c.am != null && c.tmax != null && c.tmax - c.am >= 6) n.push(`朝${c.am}℃→日中${c.tmax}℃：羽織を携行すると調整できる`);
       if (c.wx && c.wx.date && c.wx.date !== c.date) n.push(`天気は${c.wx.date}のデータで、この日のものではない`);
       if (!c.wx) n.push("天気データがないため、気温に依存する判断は反映していない");
-      n.push("ページ内ルールで算出（Claude未使用）。色・明度・気温・雨・場面・着用履歴を採点");
+      n.push("色・明度・気温・雨・予定・着用履歴を見て組みました");
       return n.concat(extra || []).slice(0, 4);
     }
     function suggestResult({ pool, date, scene, wx, evt, budget }) {
@@ -1899,9 +1898,9 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
       }
       for (const e of list) { if (picks.length >= 3) break; if (!picks.includes(e) && !picks.some((p) => p.o.top.id === e.o.top.id && p.o.bottom.id === e.o.bottom.id && p.o.shoes.id === e.o.shoes.id)) picks.push(e); }
       const wxs = wx ? `${wx.condition}、最高${wx.tmax}℃／最低${wx.tmin}℃` : "天気データなし";
-      return { summary: `${wxs}・${scene}。明度差・汗染み・雨・着用履歴の採点が高い順に3案。`, options: picks.map((e) => ({
+      return { summary: `${wxs}・${scene}。明度差・汗染み・雨・着用履歴を踏まえた${picks.length}案。`, options: picks.map((e) => ({
         label: label(e.o), slots: slotsOf(e.o), howto: howto(e.o, c),
-        pros: e.r.pros.slice(0, 3).map((p) => p[1]), cons: (e.r.cons.length ? e.r.cons.slice(0, 3).map((p) => p[1]) : ["採点ルール上の欠点なし（実物の見た目・サイズ感はルールでは判定できない）"]) })),
+        pros: e.r.pros.slice(0, 3).map((p) => p[1]), cons: (e.r.cons.length ? e.r.cons.slice(0, 3).map((p) => p[1]) : ["目立つ欠点はありません（実物の見た目・サイズ感は写真や試着で確認してください）"]) })),
         notes: noteList(c) };
     }
     // 1週間：ビームサーチ
@@ -1929,9 +1928,9 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
       const tot = [...buys.values()].map((x) => priceOfItem(x)?.price).filter((v) => v != null).reduce((a, b) => a + b, 0);
       const hotd = days.filter((d) => d.wx && d.wx.tmax >= 28).length, rainy = best.picks.filter((p) => p.c.rain).length;
       return {
-        summary: trim(`7日分をページ内ルールで算出。雨${rainy}日・28℃以上${hotd}日。上衣の連続使用なし。`, 60),
-        days: days.map((d, i) => { const p = best.picks[i]; return { date: d.date, slots: slotsOf(p.o), howto: trim(howto(p.o, p.c), 40), why: trim(p.r.pros[0]?.[1] || "採点ルール上の加点要素なし", 40), warn: trim(p.r.cons[0]?.[1] || "", 40) }; }),
-        notes: [buys.size ? `追加購入${buys.size}点 ${yen(tot)}` : "追加購入なし（手持ちで完成）", "ページ内ルールで算出（Claude未使用）"].slice(0, 2) };
+        summary: trim(`7日分を組みました。雨${rainy}日・28℃以上${hotd}日。上衣の連続使用なし。`, 60),
+        days: days.map((d, i) => { const p = best.picks[i]; return { date: d.date, slots: slotsOf(p.o), howto: trim(howto(p.o, p.c), 40), why: trim(p.r.pros[0]?.[1] || "目立つ長所はありません", 40), warn: trim(p.r.cons[0]?.[1] || "", 40) }; }),
+        notes: [buys.size ? `追加購入${buys.size}点 ${yen(tot)}` : "追加購入なし（手持ちで完成）", "色・明度・気温・雨・予定・着用履歴を見て組みました"].slice(0, 2) };
     }
     function dayResult({ pool, day, plan, i, evt }) {
       const prev = plan.days.slice(0, i).map((x) => resolveSlots(x.slots).items), after = plan.days.slice(i + 1).map((x) => resolveSlots(x.slots).items);
@@ -1954,8 +1953,8 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
           const n = { ...o, [k]: alt }; if (Object.values(n).filter((x) => x && !owned(x)).length > 0) return; if (n.inner && !info(n.top).shirt) return;
           const rr = score(n, c); if (!rr.hard && rr.s - r.s >= 2) cands.push({ k, alt, d: rr.s - r.s });
         }); });
-        cands.sort((a, b) => b.d - a.d).slice(0, 3).forEach((x) => fixes.push(x.alt ? `${catName[x.k]}を「${x.alt.name}（${x.alt.color}）」に替える（採点+${Math.round(x.d * 10) / 10}）` : `${catName[x.k]}を外す（採点+${Math.round(x.d * 10) / 10}）`));
-        if (!fixes.length) fixes.push("手持ち服の差し替えでは採点が2点以上上がる案がありません");
+        cands.sort((a, b) => b.d - a.d).slice(0, 3).forEach((x) => fixes.push(x.alt ? `${catName[x.k]}を「${x.alt.name}（${x.alt.color}）」に替えると、今の組み合わせより合います` : `${catName[x.k]}を外すと、今の組み合わせより合います`));
+        if (!fixes.length) fixes.push("手持ち服の差し替えでは、より合う案がありません");
       }
       return { verdict, pros: r.pros.slice(0, 4).map((p) => p[1]), cons: r.cons.slice(0, 4).map((p) => p[1]), fixes, howto: o.top ? howto(o, c) : "" };
     }
@@ -1966,7 +1965,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
 
   (function () {
     const cb = $("#ai-on"); if (!cb) return;
-    const sync = () => { cb.disabled = !state.sample; try { cb.checked = !!state.sample && localStorage.getItem("coorde.ai") === "1"; } catch (_) {} $("#ai-help").textContent = state.sample ? "" : "このページからClaudeに問い合わせできないため、ページ内ルールのみです。"; try { renderWeekForm(); } catch (_) {} };
+    const sync = () => { cb.disabled = !state.sample; try { cb.checked = !!state.sample && localStorage.getItem("coorde.ai") === "1"; } catch (_) {} $("#ai-help").textContent = state.sample ? "" : "この画面では詳しく組む機能を使えないため、通常の組み方で出します。"; try { renderWeekForm(); } catch (_) {} };
     cb.addEventListener("change", () => { try { localStorage.setItem("coorde.ai", cb.checked ? "1" : "0"); } catch (_) {} sync(); });
     window.__aiSync = sync;
   })();
@@ -2009,7 +2008,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
     if (BR.cache.has(url)) return BR.cache.get(url);
     const res = await state.mcp.callTool(TF_SERVER, "fetch_content", { urls: [url], format: "html", links: true, image_links: true, iframe_links: false, page_metadata: true, ttl: 0, per_url_timeout_ms: 90000, purpose: "コーデ帳のブラウザでページを表示" }, { cache: false });
     const p = res?.payload, r = p && Array.isArray(p.results) && p.results[0];
-    if (!r) throw Object.assign(new Error("no_result"), { code: "no_result", msg: p?.errors?.length ? "取得できませんでした：" + JSON.stringify(p.errors).slice(0, 120) : "取得できませんでした（応答なし）" });
+    if (!r) throw Object.assign(new Error("no_result"), { code: "no_result", msg: "取得できませんでした" });
     const page = { url, final: r.final_url || url, title: r.title || r.page_metadata?.og?.title || url, at: jstNow().slice(0, 16).replace("T", " "), html: brClean(r.text, r.final_url || url),
       links: [...new Set(arr(r.links).filter((u) => typeof u === "string" && /^https?:\/\//.test(u)))].slice(0, 80), images: [...new Set(arr(r.image_links).filter((u) => typeof u === "string" && /^https:\/\//.test(u) && !/pixel|akam|beacon|\.gif(\?|$)/i.test(u)))].slice(0, 12),
       price: brPrice(r), desc: r.description ? String(r.description).replace(/<[^>]+>/g, " ").slice(0, 200) : "" };
@@ -2019,7 +2018,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   async function brOpen(input, opt) {
     if (BR.busy) return;
     const url = brNormalize(input); if (!url) { toast("URLの形式が正しくありません（http/https のみ）。", "err"); return; }
-    if (!state.mcp) { brProg("このページからTinyFishに接続できないため表示できません。", "err"); return; }
+    if (!state.mcp) { brProg("このページから外部のページを取得できないため表示できません。", "err"); return; }
     BR.busy = true; BR.url = url; $("#br-url").value = url; brProg("読み込み中…"); brBtns();
     try {
       if (opt?.reload) BR.cache.delete(url);
@@ -2040,7 +2039,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   function brShow(page) {
     const v = $("#br-view"), cur = page.final;
     v.innerHTML = `<article class="card"><div class="card-h"><h2>${esc(page.title)}<small>${esc(brLabel(cur))}・取得 ${esc(page.at)}</small></h2></div><div class="card-b">
-      ${page.price != null ? `<div class="scoped info"><span>価格らしき値：<b>${yen(page.price)}</b>（ページから読み取り。税込かは未確認）</span></div>` : ""}
+      ${page.price != null ? `<div class="scoped info"><span>価格として表示されている金額：<b>${yen(page.price)}</b>（税込かどうかは元のページで確認してください）</span></div>` : ""}
       <div class="btn-row"><button class="btn sm" id="br-add" type="button">購入候補に追加</button><a class="btn sm" href="${esc(cur)}" target="_blank" rel="noopener">本物のページを別タブで開く</a></div>
       ${page.images.length ? `<div class="br-imgs">${page.images.map((u) => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join("")}</div>` : ""}
       <div class="br-doc">${page.html || '<p class="empty">本文を取得できませんでした（スクリプト描画やログイン必須のページは表示できません）。</p>'}</div>
@@ -2171,8 +2170,8 @@ JSONだけで答えてください。形式：
       const d = b.dataset.d; state.weekScenes[d] = SCENES[(SCENES.indexOf(sceneOf(d)) + 1) % SCENES.length]; renderWeekForm(); saveUI();
     }));
     const have = dates.filter((d) => weatherFor(d)).length;
-    $("#wk-wxnote").innerHTML = have === 7 ? "" : `<div class="scoped warn">${ico("warning")}<span>${loc.name}の天気は${have}/7日分です。足りない日は天気なしで組みます。「最新化」で8日分が取得されます。</span></div>`;
-    $("#wk-hint").textContent = useAI() ? "結果は自動で保存され、次回も表示されます。押すたびにあなたのClaude利用枠を使います。" : "ページ内ルールで即時に算出します（Claude未使用）。結果は自動で保存されます。";
+    $("#wk-wxnote").innerHTML = have === 7 ? "" : `<div class="scoped warn">${ico("warning")}<span>${loc.name}の天気は${have}/7日分です。足りない日は天気なしで組みます。「更新」で8日分を取得できます。</span></div>`;
+    $("#wk-hint").textContent = useAI() ? "結果は自動で保存され、次回も表示されます。押すたびにあなたのClaude利用枠を使います。" : "色・明度・気温・雨・予定・着用履歴をもとに組みます。結果は自動で保存されます。";
   }
 
   async function loadWeekEvents(dates) {
@@ -2447,7 +2446,7 @@ JSONだけで答えてください。形式：
         try { const nd = NORM[k] ? NORM[k](data.docs[k]) : data.docs[k]; await put(k, nd); applyDoc[k]?.(nd); done.push(k); } catch (e) { failed.push(k); }
       }
       state.uiReady = true; audit("復元", "バックアップ", done.join("・") + (failed.length ? "／失敗：" + failed.join("・") : ""));
-      toast(failed.length ? `一部を復元できませんでした（${failed.join("・")}）。` : `${done.length}項目を復元しました。`, failed.length ? "err" : "ok");
+      toast(failed.length ? `${failed.length}項目を復元できませんでした。` : `${done.length}項目を復元しました。`, failed.length ? "err" : "ok");
     };
   });
 
@@ -2458,7 +2457,7 @@ JSONだけで答えてください。形式：
     $("#links").innerHTML = `<ul class="rl">
       ${row("calendar", "var(--s-teal)", "Googleカレンダー", state.eventsMsg, state.events !== null)}
       ${row("hanger", "var(--s-blue)", "Claudeへの問い合わせ（提案・評価）", state.sample ? "使用可" + (state.canImages ? "・画像の読み取り可" : "") : "使用不可", !!state.sample)}
-      ${row("closet", "var(--s-purple)", "データの保存先", state.col ? "接続済み" + (state.saveInfo?.at ? "・最終保存 " + state.saveInfo.at : "") + (state.saveInfo?.err ? "・直近の保存に失敗（" + state.saveInfo.err + "）" : "") + (state.readFail.size ? "・読み込めなかったデータあり（" + [...state.readFail].join("・") + "）" : "") : "未接続（サインインが必要）", !!state.col && !state.saveInfo?.err && !state.readFail.size)}
+      ${row("closet", "var(--s-purple)", "データの保存先", state.col ? "接続済み" + (state.saveInfo?.at ? "・最終保存 " + state.saveInfo.at : "") + (state.saveInfo?.err ? "・直近の保存に失敗しました" : "") + (state.readFail.size ? "・一部のデータを読み込めていません" : "") : "未接続（サインインが必要）", !!state.col && !state.saveInfo?.err && !state.readFail.size)}
     </ul>`;
   }
 
@@ -2555,7 +2554,7 @@ JSONだけで答えてください。形式：
   function renderCloset() {
     const box = $("#closet");
     $("#closet-h").innerHTML = `手持ち服 <span class="cnt">(${state.wardrobe.length})</span>`;
-    if (!state.wardrobe.length) { box.innerHTML = `<p class="empty">手持ち服がまだありません。「新規」から登録してください。</p>`; renderSlots(); renderOps(); return; }
+    if (!state.wardrobe.length) { box.innerHTML = `<p class="empty">手持ち服がまだありません。「新規追加」から登録してください。</p>`; renderSlots(); renderOps(); return; }
     state.sel = new Set([...state.sel].filter((id) => state.wardrobe.some((x) => x.id === id)));
     const list = cvList(), v = state.cv;
     const opt = (val, cur, lab) => `<option value="${val}"${val === cur ? " selected" : ""}>${lab}</option>`;
@@ -2602,17 +2601,17 @@ JSONだけで答えてください。形式：
   function opsChecks() {
     const C = [], f = state.feed, L = locs();
     const add = (sev, title, detail, tab) => C.push({ sev, title, detail, tab });
-    if (state.readFail.size) add("err", "読み込めなかったデータ", [...state.readFail].join("・") + "（上書き防止のため保存を止めています）", null);
-    if (!f?.updatedAt) add("err", "天気・価格が未取得", "「最新化」を実行してください", "settings");
+    if (state.readFail.size) add("err", "読み込めなかったデータ", "一部のデータを読み込めなかったため、保存を止めています", null);
+    if (!f?.updatedAt) add("err", "天気・価格が未取得", "「更新」を実行してください", "settings");
     else {
       const h = Math.floor((Date.now() - Date.parse(f.updatedAt)) / 36e5);
-      add(h >= 24 ? "warn" : "ok", "データの鮮度", `最終更新から${h}時間（${f.updatedAt.replace("T", " ").slice(0, 16)}・${f.via || "―"}）`, h >= 24 ? "settings" : null);
-      if (f.errors?.length) add("warn", "取得できなかった項目", f.errors.length + "件：" + f.errors.slice(0, 3).map((e) => e.msg ?? e).join("／") + (f.errors.length > 3 ? "ほか" : ""), "settings");
+      add(h >= 24 ? "warn" : "ok", "最後に更新してからの時間", `最後の更新から${h}時間（${f.updatedAt.replace("T", " ").slice(0, 16)}）`, h >= 24 ? "settings" : null);
+      if (f.errors?.length) add("warn", "取得できなかった項目", f.errors.length + "件あります。設定の「天気・価格の更新」からもう一度更新してください", "settings");
       const miss = L.filter((l) => (f.weather?.[l.key]?.days?.length || 0) < 8).map((l) => l.name);
       if (miss.length) add("warn", "天気が8日分そろっていない地点", miss.join("、"), "settings");
     }
     const unres = L.filter((l) => !(typeof l.lat === "number") && !geoLookup(l.address)).map((l) => l.name);
-    if (unres.length) add("warn", "座標が内蔵データで解決できない地点", unres.join("、") + "（最新化時に住所検索を使います）", "settings");
+    if (unres.length) add("warn", "天気を取得しにくい地点", unres.join("、") + "（更新時に住所から探します）", "settings");
     const dup = {}; state.wardrobe.forEach((x) => (dup[dupKey(x)] ||= []).push(x.name));
     const dups = Object.values(dup).filter((v) => v.length > 1);
     if (dups.length) add("warn", "手持ち服の重複の疑い", dups.map((v) => v[0] + "×" + v.length).join("、"), "closet");
@@ -2627,7 +2626,7 @@ JSONだけで答えてください。形式：
     const oos = pc.filter((x) => /在庫なし/.test(x.p.note || "")).map((x) => x.c.name);
     if (oos.length) add("info", "在庫なしの購入候補", oos.join("、"), "closet");
     const dq = state.wardrobe.filter((x) => !x.hex || !x.color || !x.cat || !x.name);
-    if (dq.length) add("warn", "必須項目が欠けた手持ち服", dq.map((x) => x.name || x.id).join("、"), "closet");
+    if (dq.length) add("warn", "必須項目が欠けた手持ち服", dq.map((x) => x.name || "名前が入っていない服").join("、"), "closet");
     const wsh = state.wardrobe.filter(isWashing).length;
     if (wsh) add("info", "洗濯中の服", wsh + "点（提案には使いません）", "closet");
     const st = state.wardrobe.filter(staleItem);
@@ -2652,12 +2651,12 @@ JSONだけで答えてください。形式：
     const rank = wearRank(), top = rank.slice(0, 5), mx = top[0]?.c || 1;
     const sevBadge = { ok: '<span class="badge ok">正常</span>', warn: '<span class="badge warn">要確認</span>', err: '<span class="badge err">異常</span>', info: '<span class="badge">情報</span>' };
     el.innerHTML = `
-    <div class="kpis">${kpi(state.wardrobe.length, "手持ち服（点）")}${kpi(state.wardrobe.filter(isWashing).length, "洗濯中（点）")}${kpi(d30, "直近30日の着用記録（日）")}${kpi(state.wardrobe.filter(staleItem).length, "30日以上未着用（点）")}${kpi(state.catalog.length + "件／" + yen(cand.reduce((a, b) => a + b, 0)), "購入候補（価格取得済みの合計）")}${kpi(h == null ? "―" : h + "時間", "最終更新からの経過", h != null && h >= 24 ? "warn" : "")}</div>
-    <section class="card" style="margin-top:24px" aria-labelledby="h-chk"><div class="card-h"><h2 id="h-chk">運用チェック<small>${bad ? bad + "件の確認事項" : "確認事項はありません"}</small></h2></div><div class="card-b"><ul class="rl">${chk.map((c, i) => `<li><div class="main"><div class="t1">${sevBadge[c.sev]} ${esc(c.title)}</div><p class="help" style="margin:4px 0 0">${esc(c.detail)}</p></div>${c.tab ? `<button class="btn sm" data-ops-go="${i}" type="button">開く</button>` : ""}</li>`).join("")}</ul></div></section>
+    <div class="kpis">${kpi(state.wardrobe.length, "手持ち服（点）")}${kpi(state.wardrobe.filter(isWashing).length, "洗濯中（点）")}${kpi(d30, "直近30日の着用記録（日）")}${kpi(state.wardrobe.filter(staleItem).length, "30日以上未着用（点）")}${kpi(state.catalog.length + "件／" + yen(cand.reduce((a, b) => a + b, 0)), "購入候補の合計（価格が分かるもの）")}${kpi(h == null ? "―" : h + "時間", "最終更新からの経過", h != null && h >= 24 ? "warn" : "")}</div>
+    <section class="card" style="margin-top:24px" aria-labelledby="h-chk"><div class="card-h"><h2 id="h-chk">確認事項<small>${bad ? bad + "件の確認事項" : "確認事項はありません"}</small></h2></div><div class="card-b"><ul class="rl">${chk.map((c, i) => `<li><div class="main"><div class="t1">${sevBadge[c.sev]} ${esc(c.title)}</div><p class="help" style="margin:4px 0 0">${esc(c.detail)}</p></div>${c.tab ? `<button class="btn sm" data-ops-go="${i}" type="button">開く</button>` : ""}</li>`).join("")}</ul></div></section>
     <section class="card" aria-labelledby="h-rank"><div class="card-h"><h2 id="h-rank">着用ランキング<small>着用記録（最大60日分）の回数</small></h2></div><div class="card-b">${top.length ? `<ul class="rl">${top.map((r) => `<li><span class="sw" style="background:${esc(r.x.hex)}"></span><div class="main"><div class="t1">${esc(r.x.name)}（${esc(r.x.color)}）</div><div class="bar" aria-hidden="true"><span style="width:${Math.round(r.c / mx * 100)}%"></span></div><p class="help" style="margin:4px 0 0">${r.c}回・最終 ${esc(r.last.slice(5).replace("-", "/"))}</p></div></li>`).join("")}</ul>` : `<p class="empty">着用の記録がまだありません。</p>`}</div></section>
     <section class="card" aria-labelledby="h-mix"><div class="card-h"><h2 id="h-mix">手持ち服の構成<small>種類別の点数と着用済み率</small></h2></div><div class="card-b">${(() => { const cats = {}; state.wardrobe.forEach((x) => { const o = (cats[x.cat] ||= { n: 0, w: 0 }); o.n++; if (lastWorn(x.id)) o.w++; }); const mxn = Math.max(1, ...Object.values(cats).map((o) => o.n)); const rows = Object.entries(cats); return rows.length ? `<ul class="rl">${rows.map(([k, o]) => `<li><div class="main"><div class="t1">${esc(catName[k] || k)}　${o.n}点</div><div class="bar" aria-hidden="true"><span style="width:${Math.round(o.n / mxn * 100)}%"></span></div><p class="help" style="margin:4px 0 0">着用記録あり ${o.w}/${o.n}点</p></div></li>`).join("")}</ul>` : `<p class="empty">手持ち服がありません。</p>`; })()}</div></section>
-    <section class="card" aria-labelledby="h-aud"><div class="card-h"><h2 id="h-aud">変更履歴<small>このページからの保存を新しい順に記録（最大100件）</small></h2></div><div class="card-b">${state.audit.length ? `<ul class="tl">${state.audit.slice(0, 20).map((a) => `<li><span class="lead-ico">${ico("edit", "sm")}</span><div class="body"><div><a>${esc(a.op)}</a>（${esc(a.target)}）：${esc(a.summary)}</div><div class="meta">${esc(a.at.replace("T", " ").slice(0, 16).replaceAll("-", "/"))}</div></div></li>`).join("")}</ul>` : `<p class="empty">まだ記録はありません。</p>`}</div></section>
-    <section class="card" aria-labelledby="h-exp"><div class="card-h"><h2 id="h-exp">CSV出力</h2></div><div class="card-b"><p class="help" style="margin-top:0">Excelで開けます（UTF-8・BOM付き）。保存前に確認が出ます。</p><div class="btn-row"><button class="btn" id="x-closet" type="button">手持ち服</button><button class="btn" id="x-wear" type="button">着用履歴</button><button class="btn" id="x-aud" type="button">変更履歴</button></div></div></section>`;
+    <section class="card" aria-labelledby="h-aud"><div class="card-h"><h2 id="h-aud">保存した記録<small>このページで保存した内容を新しい順に表示（最大100件）</small></h2></div><div class="card-b">${state.audit.length ? `<ul class="tl">${state.audit.slice(0, 20).map((a) => `<li><span class="lead-ico">${ico("edit", "sm")}</span><div class="body"><div><a>${esc(a.op)}</a>（${esc(a.target)}）：${esc(a.summary)}</div><div class="meta">${esc(a.at.replace("T", " ").slice(0, 16).replaceAll("-", "/"))}</div></div></li>`).join("")}</ul>` : `<p class="empty">まだ記録はありません。</p>`}</div></section>
+    <section class="card" aria-labelledby="h-exp"><div class="card-h"><h2 id="h-exp">CSV出力</h2></div><div class="card-b"><p class="help" style="margin-top:0">Excelで開けます。保存前に確認が出ます。</p><div class="btn-row"><button class="btn" id="x-closet" type="button">手持ち服</button><button class="btn" id="x-wear" type="button">着用履歴</button><button class="btn" id="x-aud" type="button">保存した記録</button></div></div></section>`;
     el.querySelectorAll("[data-ops-go]").forEach((b) => b.addEventListener("click", () => goTab(chk[Number(b.dataset.opsGo)].tab)));
     $("#x-closet").onclick = () => csvOut("closet.csv", ["種類", "名前", "色", "状態", "最終着用", "メモ"], state.wardrobe.map((x) => [catName[x.cat] || x.cat, x.name, x.color, isWashing(x) ? "洗濯中" : "着用可", lastWorn(x.id) || "", x.note || ""]));
     $("#x-wear").onclick = () => csvOut("wear.csv", ["日付", "種類", "服"], state.wear.flatMap((w) => Object.entries(w.ids || {}).map(([slot, id]) => { const x = state.wardrobe.find((y) => y.id === id); return [w.date, slot, x ? x.name + "（" + x.color + "）" : id]; })));
@@ -2704,7 +2703,7 @@ JSONだけで答えてください。形式：
     state.store = Object.fromEntries(["top", "inner", "outer", "bottom", "socks"].map((k) => [k, docs["store-" + k]]).filter(([, d]) => d && Array.isArray(d.items)));
     restoreUI(docs.ui);
     state.uiReady = true;
-    if (state.readFail.size) toast("一部のデータを読み込めませんでした（" + [...state.readFail].join("・") + "）。上書きを防ぐため、そのデータの保存を止めています。ページを開き直してください。", "err", true);
+    if (state.readFail.size) toast("一部のデータを読み込めませんでした。上書きを防ぐため、そのデータの保存を止めています。ページを開き直してください。", "err", true);
     renderLocSelect(); renderHome(); renderCloset(); renderCatalog(); renderLog(); renderLocs(); renderLinks(); renderWeekForm(); renderWeek(); renderOps();
     loadEvents();
     // 他の画面・チャットからの更新を反映する（自分の書き込みの反映は初回を除いて同じ内容なので無害）
