@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Twitch 切り分け</title>
+<style>
+  html,body{ margin:0; padding:0; background:#0b0e14; color:#eef2f7;
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif; }
+  #summary{ padding:14px 14px 10px; font-size:15px; line-height:1.9; }
+  #summary .ok{ color:#7ee2a8; font-weight:700; }
+  #summary .ng{ color:#ff9a9a; font-weight:700; }
+  #summary .wait{ color:#ffd479; }
+  #anc{ font-size:12.5px; color:#aeb9c6; line-height:1.6; word-break:break-all; }
+  .variant{ padding:10px 14px 16px; border-top:1px solid #232b38; }
+  .variant h3{ margin:0 0 4px; font-size:14.5px; }
+  .variant .st{ font-size:14px; margin-bottom:8px; }
+  .box{ background:#000; overflow:hidden; border-radius:10px; }
+  .box.small{ width:100%; height:200px; }
+  .box.large{ width:800px; height:450px; }
+</style>
+</head>
+<body>
+<div id="summary">
+  <div id="anc">祖先オリジン: 読取中…</div>
+  <div>A 小さい枠・今の方式: <span id="sumA" class="wait">測定中</span></div>
+  <div>B 大きい枠・今の方式: <span id="sumB" class="wait">測定中</span></div>
+  <div>C 大きい枠・単純な埋め込み: <span id="sumC" class="wait">測定中</span></div>
+  <div>D 大きい枠・親を localhost だけ: <span id="sumD" class="wait">測定中</span></div>
+</div>
+
+<div class="variant"><h3>A: JS方式／親=このページ＋localhost／枠は今と同じ小ささ</h3>
+  <div class="st" id="stA">測定中…</div><div class="box small" id="boxA"></div></div>
+
+<div class="variant"><h3>B: JS方式／親=このページ＋localhost／枠 800×450</h3>
+  <div class="st" id="stB">測定中…</div><div class="box large" id="boxB"></div></div>
+
+<div class="variant"><h3>C: 単純な埋め込み（iframe）／枠 800×450</h3>
+  <div class="st" id="stC">測定中…</div><div class="box large" id="boxC"></div></div>
+
+<div class="variant"><h3>D: JS方式／親=localhost だけ／枠 800×450</h3>
+  <div class="st" id="stD">測定中…</div><div class="box large" id="boxD"></div></div>
+
+<script src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script>
+(function(){
+  var HOST = location.hostname;
+  var CH = 'twitchdev';
+  document.getElementById('anc').textContent =
+    '祖先オリジン: ' + (location.ancestorOrigins && location.ancestorOrigins.length
+      ? Array.prototype.join.call(location.ancestorOrigins, ' , ') : '（なし／取得不可）')
+    + ' ／ 参照元: ' + (document.referrer || 'なし')
+    + ' ／ このページのホスト: ' + HOST;
+
+  function verdict(key, ok, text){
+    var st = document.getElementById('st' + key);
+    var sum = document.getElementById('sum' + key);
+    st.textContent = text;
+    sum.textContent = ok ? 'READY が来た' : 'READY が来ない';
+    sum.className = ok ? 'ok' : 'ng';
+  }
+  function armTimeout(key, t0){
+    setTimeout(function(){
+      var sum = document.getElementById('sum' + key);
+      if (sum.className === 'wait'){
+        verdict(key, false, '15秒待っても READY が来ない（' + Math.round(performance.now() - t0) + 'ms）');
+      }
+    }, 15000);
+  }
+  function jsPlayer(key, parents, channel){
+    var t0 = performance.now();
+    try{
+      var holder = document.createElement('div');
+      holder.id = 'holder' + key;
+      holder.style.width = '100%'; holder.style.height = '100%';
+      document.getElementById('box' + key).appendChild(holder);
+      var p = new Twitch.Player(holder.id, {
+        width: '100%', height: '100%', channel: channel,
+        parent: parents, autoplay: false, muted: true, layout: 'video'
+      });
+      p.addEventListener(Twitch.Player.READY, function(){
+        verdict(key, true, 'READY が来た（' + Math.round(performance.now() - t0) + 'ms）');
+      });
+      p.addEventListener(Twitch.Player.ONLINE, function(){
+        document.getElementById('st' + key).textContent += ' ／ 配信中';
+      });
+      p.addEventListener(Twitch.Player.OFFLINE, function(){
+        document.getElementById('st' + key).textContent += ' ／ 配信は休止中';
+      });
+    }catch(e){
+      verdict(key, false, '作る所で失敗: ' + String(e && e.message || e));
+      return;
+    }
+    armTimeout(key, t0);
+  }
+
+  if (typeof Twitch === 'undefined'){
+    ['A','B','D'].forEach(function(k){ verdict(k, false, 'Twitch 本体の読み込みに失敗'); });
+  } else {
+    jsPlayer('A', [HOST, 'localhost'], CH);
+    jsPlayer('B', [HOST, 'localhost'], CH);
+    jsPlayer('D', ['localhost'], CH);
+  }
+
+  // C: plain iframe embed
+  (function(){
+    var t0 = performance.now();
+    var f = document.createElement('iframe');
+    f.src = 'https://player.twitch.tv/?channel=' + CH +
+      '&parent=' + encodeURIComponent(HOST) + '&parent=localhost&muted=true&autoplay=false';
+    f.width = '800'; f.height = '450'; f.setAttribute('allowfullscreen', '');
+    f.onload = function(){
+      var sum = document.getElementById('sumC');
+      if (sum.className === 'wait'){
+        sum.textContent = '枠は読み込めた（中身の応答は目視）';
+        sum.className = 'ok';
+        document.getElementById('stC').textContent =
+          'iframe の読み込み完了（' + Math.round(performance.now() - t0) + 'ms）。映像が出ているかは目視で確認';
+      }
+    };
+    document.getElementById('boxC').appendChild(f);
+    setTimeout(function(){
+      var sum = document.getElementById('sumC');
+      if (sum.className === 'wait'){
+        sum.textContent = '読み込みも終わらない'; sum.className = 'ng';
+        document.getElementById('stC').textContent = '15秒待っても iframe の読み込みが終わらない';
+      }
+    }, 15000);
+  })();
+})();
+</script>
+</body>
+</html>
