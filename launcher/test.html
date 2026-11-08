@@ -52,6 +52,7 @@
     <div class="label">橋の往復（プレイヤーブリッジ経由）</div>
     <div class="framebox" id="bridgeBox"></div>
   </div>
+  <button class="act" id="copyBtnTop">結果をコピー</button>
   <textarea id="resultText" readonly></textarea>
   <button class="act sub2" id="copyBtn">結果テキストをコピー</button>
   <div class="label" style="margin-top:14px; font-size:12px; color:#9fb0c3;">まとめ画像（長押しで保存できます）</div>
@@ -297,11 +298,13 @@ async function runAll(){
   finish();
 }
 document.getElementById('rerun').addEventListener('click', runAll);
-document.getElementById('copyBtn').addEventListener('click', async () => {
+async function copyResult(){
   const ta = document.getElementById('resultText');
   ta.select();
   try{ await navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand('copy'); }
-});
+}
+document.getElementById('copyBtn').addEventListener('click', copyResult);
+document.getElementById('copyBtnTop').addEventListener('click', copyResult);
 runAll();
 </script>
 </body>
