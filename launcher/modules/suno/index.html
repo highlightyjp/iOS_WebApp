@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>音楽</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161c26; --card-border:#26303f; --text:#eef2f7; --sub:#93a1b3;
+    --accent:#7dd3fc; --accent-ink:#082f49; --danger:#fda4af;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:radial-gradient(1200px 600px at 80% -10%, #173a2e 0%, transparent 60%),
+               radial-gradient(1000px 500px at -10% 0%, #3b2f17 0%, transparent 55%), var(--bg);
+    color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+    padding:calc(14px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom));
+  }
+  header{ display:flex; align-items:baseline; gap:10px; }
+  h1{ font-size:24px; margin:0; }
+  #meta{ color:var(--sub); font-size:13px; }
+  #search{
+    width:100%; margin-top:14px; padding:13px 14px; border-radius:12px; border:1px solid var(--card-border);
+    background:var(--card); color:var(--text); font-size:16px;
+  }
+  .chips{ display:flex; gap:8px; margin-top:12px; overflow-x:auto; padding-bottom:2px; }
+  .chip{
+    flex:0 0 auto; padding:9px 14px; border-radius:999px; border:1px solid var(--card-border);
+    background:var(--card); color:var(--text); font-size:14px; cursor:pointer;
+  }
+  .chip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  #list{ margin-top:8px; }
+  .row{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    padding:10px 6px; border:0; border-bottom:1px solid #1b2330; background:transparent; color:var(--text); cursor:pointer;
+  }
+  .row img{ width:54px; height:54px; border-radius:10px; object-fit:cover; background:#222b38; flex:0 0 auto; }
+  .row .grow{ flex:1 1 auto; min-width:0; }
+  .row .t{ font-size:16px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .m{ color:var(--sub); font-size:12.5px; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .side{ flex:0 0 auto; color:var(--sub); font-size:18px; width:30px; text-align:center; }
+  .row.playing .t{ color:var(--accent); }
+  #status{ color:var(--sub); font-size:14px; line-height:1.7; margin-top:18px; }
+  #status .err{ color:var(--danger); }
+  /* 詳細 */
+  #detail{
+    position:fixed; inset:0; z-index:30; overflow-y:auto; display:none;
+    background:rgba(10,13,18,.97); padding:calc(12px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+  }
+  #detail.open{ display:block; }
+  #detail img.hero{ width:100%; max-width:340px; aspect-ratio:1; border-radius:16px; object-fit:cover; display:block; margin:10px auto; background:#222b38; }
+  #detail h2{ font-size:21px; margin:12px 0 4px; }
+  #detail .dm{ color:var(--sub); font-size:13.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+  #detail .lyrics{
+    margin-top:16px; padding:14px; border-radius:12px; border:1px solid var(--card-border);
+    background:var(--card); font-size:14.5px; line-height:1.85; white-space:pre-wrap;
+  }
+  .bigbtn{
+    display:block; width:100%; padding:15px; border-radius:12px; border:0; margin-top:14px;
+    background:var(--accent); color:var(--accent-ink); font-size:16px; font-weight:700; text-align:center; text-decoration:none; cursor:pointer;
+  }
+  .ghostbtn{
+    display:block; width:100%; padding:13px; border-radius:12px; border:1px solid var(--card-border); margin-top:10px;
+    background:var(--card); color:var(--text); font-size:15px; text-align:center; text-decoration:none; cursor:pointer;
+  }
+  .backbtn{
+    border:1px solid var(--card-border); background:var(--card); color:var(--text);
+    border-radius:999px; padding:9px 16px; font-size:15px; cursor:pointer;
+  }
+  /* プレイヤーバー */
+  #player{
+    position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:20;
+    display:none; align-items:center; gap:10px; padding:10px 12px; border-radius:16px;
+    background:rgba(22,28,38,.92); border:1px solid var(--card-border); backdrop-filter:blur(14px);
+  }
+  #player.show{ display:flex; }
+  #player img{ width:44px; height:44px; border-radius:8px; object-fit:cover; background:#222b38; }
+  #player .pt{ flex:1 1 auto; min-width:0; font-size:14.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #player button{
+    flex:0 0 auto; width:44px; height:44px; border-radius:50%; border:0; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-size:18px;
+  }
+  #seekWrap{ position:fixed; left:10px; right:10px; z-index:20; display:none; padding:0 4px; }
+  #seek{ width:100%; }
+  /* 試験結果 */
+  #testBox{ display:none; margin-top:16px; padding:14px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); }
+  #testBox pre{ white-space:pre-wrap; font-size:13px; line-height:1.7; margin:10px 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>音楽</h1>
+  <div id="meta">読み込み中…</div>
+</header>
+<input id="search" type="search" placeholder="曲名やスタイルで探す" autocomplete="off">
+<div class="chips" id="chips">
+  <button class="chip on" data-f="all" type="button">すべて</button>
+  <button class="chip" data-f="liked" type="button">いいね</button>
+  <button class="chip" data-f="bundled" type="button">単体アプリで再生できた曲</button>
+</div>
+<div id="status"></div>
+<div id="list"></div>
+
+<div id="testBox">
+  <button id="copyTestBtn" class="bigbtn" type="button" style="margin-top:0;">結果テキストをコピー</button>
+  <div id="copyMsg" style="font-size:13px;color:var(--accent);min-height:18px;margin-top:8px;"></div>
+  <pre id="testText"></pre>
+</div>
+
+<div id="detail"></div>
+
+<div id="seekWrap"><input id="seek" type="range" min="0" max="1000" value="0"></div>
+<div id="player">
+  <img id="pCover" alt="">
+  <div class="pt" id="pTitle"></div>
+  <button id="pPrev" type="button" aria-label="前へ" style="background:var(--card);color:var(--text);border:1px solid var(--card-border);font-size:14px;">⏮</button>
+  <button id="pToggle" type="button" aria-label="再生・停止">▶</button>
+  <button id="pNext" type="button" aria-label="次へ" style="background:var(--card);color:var(--text);border:1px solid var(--card-border);font-size:14px;">⏭</button>
+</div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+'use strict';
+const SNAPSHOT_URL = 'https://highlightyjp.github.io/iOS_WebApp/suno/suno-snapshot-full.json';
+// 音源の配布方法が決まったら、ここに置き場の住所を入れる（末尾は / ）。
+// 例：公開の置き場に置く場合 'https://highlightyjp.github.io/iOS_WebApp/launcher/modules/suno/audio/'
+//     自宅から配信する場合 'http://<dynabookのTailnet名>:<port>/audio/'
+const AUDIO_BASE = '';
+
+let items = [], likedIds = new Set(), lyricsById = {}, filter = 'all', query = '';
+let queue = [], queueIdx = -1, currentId = null;
+const audio = document.getElementById('audio');
+
+function playableSrc(it){
+  const u = it.audio_url || '';
+  if (u.startsWith('http')) return u;
+  if (u.startsWith('audio/') && AUDIO_BASE) return AUDIO_BASE + u.slice('audio/'.length);
+  return null;
+}
+function fmtDur(sec){
+  if (!sec && sec !== 0) return '';
+  const s = Math.round(sec);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+function fmtDate(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+}
+function passes(it){
+  if (filter === 'liked' && !likedIds.has(it.id)) return false;
+  if (filter === 'bundled' && !(it.audio_url || '').startsWith('audio/')) return false;
+  if (query){
+    const q = query.toLowerCase();
+    const hay = ((it.title || '') + ' ' + (it.style_tags || '') + ' ' + (it.style || '')).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+function render(){
+  const list = document.getElementById('list');
+  list.textContent = '';
+  const shown = items.filter(passes);
+  document.getElementById('meta').textContent = shown.length + '曲／全' + items.length + '曲';
+  shown.slice(0, 400).forEach(it => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'row' + (it.id === currentId ? ' playing' : '');
+    const img = document.createElement('img');
+    img.alt = ''; img.loading = 'lazy';
+    if (it.cover_image_url) img.src = it.cover_image_url;
+    const grow = document.createElement('div'); grow.className = 'grow';
+    const t = document.createElement('div'); t.className = 't'; t.textContent = it.title || '（無題）';
+    const m = document.createElement('div'); m.className = 'm';
+    m.textContent = [fmtDur(it.duration_sec), fmtDate(it.created_at), (it.style_tags || '').split(',').slice(0, 3).join(' ')].filter(Boolean).join(' ・ ');
+    grow.append(t, m);
+    const side = document.createElement('div'); side.className = 'side';
+    side.textContent = playableSrc(it) ? '▶' : '›';
+    b.append(img, grow, side);
+    b.addEventListener('click', () => openDetail(it));
+    list.appendChild(b);
+  });
+  if (shown.length > 400){
+    const d = document.createElement('div');
+    d.style.cssText = 'color:var(--sub);font-size:13px;padding:12px 6px;';
+    d.textContent = '先頭の400曲まで表示しています。検索で絞ってください。';
+    list.appendChild(d);
+  }
+  if (!shown.length){
+    document.getElementById('status').textContent = '条件に合う曲がありません。';
+  } else {
+    document.getElementById('status').textContent = '';
+  }
+}
+function openDetail(it){
+  const d = document.getElementById('detail');
+  d.textContent = '';
+  const back = document.createElement('button');
+  back.type = 'button'; back.className = 'backbtn'; back.textContent = '← 戻る';
+  back.addEventListener('click', () => { d.classList.remove('open'); });
+  d.appendChild(back);
+  if (it.cover_image_large_url || it.cover_image_url){
+    const img = document.createElement('img');
+    img.className = 'hero'; img.alt = '';
+    img.src = it.cover_image_large_url || it.cover_image_url;
+    d.appendChild(img);
+  }
+  const h = document.createElement('h2'); h.textContent = it.title || '（無題）'; d.appendChild(h);
+  const dm = document.createElement('div'); dm.className = 'dm';
+  dm.textContent = [fmtDur(it.duration_sec), fmtDate(it.created_at), it.style_tags || ''].filter(Boolean).join(' ・ ');
+  d.appendChild(dm);
+  const src = playableSrc(it);
+  if (src){
+    const play = document.createElement('button');
+    play.type = 'button'; play.className = 'bigbtn'; play.textContent = '▶ ここで再生する';
+    play.addEventListener('click', () => { playItem(it, true); d.classList.remove('open'); });
+    d.appendChild(play);
+  }
+  if (it.song_url){
+    const a = document.createElement('a');
+    a.className = 'ghostbtn'; a.href = it.song_url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = 'Suno で開く';
+    d.appendChild(a);
+  }
+  const ly = lyricsById[it.id];
+  if (ly && ly.text){
+    const box = document.createElement('div'); box.className = 'lyrics'; box.textContent = ly.text;
+    d.appendChild(box);
+  } else if (it.style
+){
+    const st = document.createElement('div'); st.className = 'dm'; st.style.marginTop = '14px';
+    st.textContent = it.style;
+    d.appendChild(st);
+  }
+  d.classList.add('open');
+  d.scrollTop = 0;
+}
+
+// ===== 再生 =====
+function playItem(it, autoplay){
+  const src = playableSrc(it);
+  if (!src) return;
+  currentId = it.id;
+  audio.src = src;
+  document.getElementById('pCover').src = it.cover_image_url || '';
+  document.getElementById('pTitle').textContent = it.title || '（無題）';
+  document.getElementById('player').classList.add('show');
+  const sw = document.getElementById('seekWrap');
+  sw.style.display = 'block';
+  sw.style.bottom = 'calc(86px + env(safe-area-inset-bottom))';
+  if ('mediaSession' in navigator){
+    try{
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: it.title || '', artist: 'Suno',
+        artwork: it.cover_image_large_url ? [{ src: it.cover_image_large_url, sizes: '512x512' }] : []
+      });
+    }catch(e){ /* 任意機能 */ }
+  }
+  if (autoplay) audio.play().catch(() => {});
+  render();
+}
+function rebuildQueue(){
+  queue = items.filter(passes).filter(it => playableSrc(it));
+}
+function stepQueue(dir){
+  rebuildQueue();
+  if (!queue.length) return;
+  let i = queue.findIndex(it => it.id === currentId);
+  i = i < 0 ? 0 : (i + dir + queue.length) % queue.length;
+  queueIdx = i;
+  playItem(queue[i], true);
+}
+document.getElementById('pToggle').addEventListener('click', () => {
+  if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+});
+document.getElementById('pPrev').addEventListener('click', () => stepQueue(-1));
+document.getElementById('pNext').addEventListener('click', () => stepQueue(1));
+audio.addEventListener('play', () => { document.getElementById('pToggle').textContent = '⏸'; });
+audio.addEventListener('pause', () => { document.getElementById('pToggle').textContent = '▶'; });
+audio.addEventListener('ended', () => stepQueue(1));
+audio.addEventListener('timeupdate', () => {
+  if (audio.duration) document.getElementById('seek').value = String(Math.round(audio.currentTime / audio.duration * 1000));
+});
+document.getElementById('seek').addEventListener('input', (e) => {
+  if (audio.duration) audio.currentTime = audio.duration * (Number(e.target.value) / 1000);
+});
+
+// ===== 絞り込み =====
+document.getElementById('search').addEventListener('input', (e) => { query = e.target.value.trim(); render(); });
+document.getElementById('chips').addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  filter = btn.dataset.f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === btn));
+  render();
+});
+
+// ===== 読み込み =====
+const testMode = new URLSearchParams(location.search).get('test') === '1';
+const t0 = performance.now();
+async function load(){
+  const status = document.getElementById('status');
+  try{
+    const res = await fetch(SNAPSHOT_URL + '?v=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const snap = await res.json();
+    items = (snap.sections && snap.sections.library && snap.sections.library.items) || [];
+    const liked = (snap.sections && snap.sections.liked && snap.sections.liked.items) || [];
+    likedIds = new Set(liked.map(x => x.id));
+    lyricsById = (snap.sections && snap.sections.lyrics) || {};
+    status.textContent = 'データの時点：' + (snap.generated_at || '不明');
+    render();
+    if (testMode) runModuleTest(snap);
+  }catch(e){
+    status.innerHTML = '';
+    const s = document.createElement('span'); s.className = 'err';
+    s.textContent = '曲の一覧を読み込めませんでした（' + e.message + '）。通信を確認して、開き直してください。';
+    status.appendChild(s);
+    if (testMode) reportTest([
+      { id: 'M1', gate: null, label: '曲の一覧の取得', result: 'fail', detail: String(e && e.message || e), ms: Math.round(performance.now() - t0) }
+    ], { fps: null, jankFrames: 0, longTasks: 0, memoryMB: null, dpr: window.devicePixelRatio || 1 });
+  }
+}
+
+// ===== 試験（契約 launcher-test/v1） =====
+function reportTest(testItems, perf){
+  const msg = {
+    contract: 'launcher-test/v1', moduleId: 'suno', version: '1.0',
+    items: testItems, perf,
+    untouched: { checked: false, same: true },
+    summary: { pass: testItems.filter(i => i.result === 'pass').length, fail: testItems.filter(i => i.result === 'fail').length, na: testItems.filter(i => i.result === 'na').length }
+  };
+  try{ window.parent.postMessage(msg, '*'); }catch(e){ /* 親がいない場合もある */ }
+  const box = document.getElementById('testBox');
+  box.style.display = 'block';
+  const lines = ['音楽モジュール 試験結果'];
+  testItems.forEach(i => lines.push(i.label + '：' + (i.result === 'pass' ? 'できた' : i.result === 'fail' ? 'できなかった' : '対象外') + '（' + i.detail + '）'));
+  document.getElementById('testText').textContent = lines.join('\n');
+  document.getElementById('copyTestBtn').onclick = async () => {
+    const m = document.getElementById('copyMsg');
+    try{ await navigator.clipboard.writeText(lines.join('\n')); m.textContent = 'コピーしました。そのままチャットに貼れます。'; }
+    catch(e){ m.textContent = 'コピーできませんでした。下の文を選んでコピーしてください。'; }
+    setTimeout(() => { m.textContent = ''; }, 4000);
+  };
+}
+async function runModuleTest(snap){
+  const out = [];
+  out.push({ id: 'M1', gate: null, label: '曲の一覧の取得', result: items.length ? 'pass' : 'fail', detail: items.length + '曲（時点：' + (snap.generated_at || '不明') + '）', ms: Math.round(performance.now() - t0) });
+  const cover = items.find(i => i.cover_image_url);
+  if (cover){
+    const ok = await new Promise(res => {
+      const im = new Image();
+      im.onload = () => res(true); im.onerror = () => res(false);
+      im.src = cover.cover_image_url;
+      setTimeout(() => res(false), 8000);
+    });
+    out.push({ id: 'M2', gate: null, label: 'ジャケット画像の表示', result: ok ? 'pass' : 'fail', detail: cover.title || '', ms: null });
+  }
+  const playable = items.filter(i => playableSrc(i));
+  out.push({ id: 'M3', gate: null, label: 'この中で再生できる曲', result: 'na', detail: playable.length + '曲（音源の置き場は未設定：' + (AUDIO_BASE ? AUDIO_BASE : 'なし') + '）', ms: null });
+  reportTest(out, { fps: null, jankFrames: 0, longTasks: 0, memoryMB: null, dpr: window.devicePixelRatio || 1 });
+}
+
+load();
+</script>
+</body>
+</html>
