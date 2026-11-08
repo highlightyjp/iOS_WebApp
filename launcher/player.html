@@ -48,7 +48,7 @@
 const CONTRACT = 'streamhub-player/v1';
 const HOST = 'highlightyjp.github.io';
 const params = new URLSearchParams(location.search);
-const isDemo = params.get('demo') === '1';
+const isDemo = !!params.get('demo');
 
 function post(event, data){
   const payload = Object.assign({ contract: CONTRACT, event }, data || {});
