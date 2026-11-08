@@ -26,6 +26,9 @@
   #msg{ padding:20px; font-size:15px; line-height:1.7; display:none; }
   .label{ font-size:12px; color:#aab; padding:8px 12px 0; display:none; }
   body.demo .label{ display:block; }
+  #twDiag{ display:none; padding:10px 12px; font-size:12px; line-height:1.6; color:#ffd479;
+    background:rgba(255,255,255,.06); white-space:pre-wrap; word-break:break-all; }
+  body.demo #twDiag{ display:block; }
 </style>
 </head>
 <body>
@@ -34,6 +37,7 @@
   <div class="slot" id="ytSlot"></div>
   <div class="label">Twitch</div>
   <div class="slot" id="twSlot" style="display:none"></div>
+  <div id="twDiag"></div>
   <div id="msg"></div>
 </div>
 
@@ -130,7 +134,7 @@ window.onYouTubeIframeAPIReady = function(){
 };
 
 /* ---------- Twitch ---------- */
-let twPlayer = null;
+let twPlayer = null, twReady = false;
 function initTwitch(){
   const wantTw = isDemo || params.get('type') === 'twitch';
   if (!wantTw) return;
@@ -139,18 +143,33 @@ function initTwitch(){
   if (!channel && !video){ if (!isDemo) showMsg('チャンネルの指定がありません'); return; }
   const slot = document.getElementById('twSlot');
   slot.style.display = 'block';
+  const diag = document.getElementById('twDiag');
+  const say = (t) => { if (isDemo && diag) diag.textContent += t + '\n'; };
+  if (isDemo && diag){
+    diag.textContent = '';
+    say('診断: 祖先オリジン = ' + (location.ancestorOrigins ? [...location.ancestorOrigins].join(' , ') : '取得不可'));
+    say('診断: 参照元 = ' + (document.referrer || 'なし'));
+    say('診断: Twitch 読込 = ' + (typeof Twitch !== 'undefined' ? 'OK' : '失敗'));
+    setTimeout(() => { if (!twReady) say('診断: 10秒待っても READY が来ない（枠は出ても中身が応答していない）'); }, 10000);
+  }
   const holder = document.createElement('div');
   holder.id = 'twHolder';
   slot.appendChild(holder);
   const opts = { width: '100%', height: '100%', parent: [HOST, 'localhost'], autoplay: false, muted: false, layout: 'video' };
   if (video) opts.video = video; else opts.channel = channel;
-  twPlayer = new Twitch.Player('twHolder', opts);
-  twPlayer.addEventListener(Twitch.Player.READY, () => post('ready', { provider:'twitch' }));
+  try{
+    twPlayer = new Twitch.Player('twHolder', opts);
+  }catch(e){
+    say('診断: Player 生成で例外 = ' + String(e));
+    post('error', { provider:'twitch', message: String(e) });
+    return;
+  }
+  twPlayer.addEventListener(Twitch.Player.READY, () => { twReady = true; say('診断: READY'); post('ready', { provider:'twitch' }); });
   twPlayer.addEventListener(Twitch.Player.PLAY, () => post('playing', { provider:'twitch' }));
   twPlayer.addEventListener(Twitch.Player.PAUSE, () => post('paused', { provider:'twitch' }));
   twPlayer.addEventListener(Twitch.Player.ENDED, () => post('ended', { provider:'twitch' }));
-  twPlayer.addEventListener(Twitch.Player.ONLINE, () => post('online', { provider:'twitch' }));
-  twPlayer.addEventListener(Twitch.Player.OFFLINE, () => post('offline', { provider:'twitch' }));
+  twPlayer.addEventListener(Twitch.Player.ONLINE, () => { say('診断: ONLINE'); post('online', { provider:'twitch' }); });
+  twPlayer.addEventListener(Twitch.Player.OFFLINE, () => { say('診断: OFFLINE（配信は休止中）'); post('offline', { provider:'twitch' }); });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTwitch);
 else initTwitch();
