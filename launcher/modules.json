@@ -3,11 +3,11 @@
   "generated_at": "2026-11-08T23:55:00+09:00",
   "modules": [
     {
-      "desc": "自分の曲を聴く",
+      "desc": "曲の一覧・検索・歌詞。タップで Suno を開きます",
       "icon": "🎵",
       "id": "suno",
       "name": "音楽",
-      "status": "preparing",
+      "status": "ready",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/suno/index.html"
     },
     {
