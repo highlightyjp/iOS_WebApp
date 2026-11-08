@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>ランチャー</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:rgba(255,255,255,.08); --card-border:rgba(255,255,255,.14);
+    --text:#f2f4f8; --sub:#a7b0bf; --accent:#7dd3fc; --radius:20px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#eef1f6; --card:rgba(255,255,255,.75); --card-border:rgba(20,30,50,.08); --text:#141a24; --sub:#5b6575; }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; background:
+    radial-gradient(120% 60% at 10% 0%, rgba(125,211,252,.25), transparent 60%),
+    radial-gradient(120% 60% at 100% 10%, rgba(196,181,253,.22), transparent 60%), var(--bg);
+    color:var(--text); min-height:100vh; }
+  header{ padding:calc(16px + env(safe-area-inset-top)) 20px 8px; }
+  h1{ font-size:22px; margin:0 0 4px; font-weight:700; letter-spacing:.02em; }
+  #status{ color:var(--sub); font-size:13px; min-height:18px; }
+  main{ padding:8px 16px calc(24px + env(safe-area-inset-bottom)); max-width:640px; margin:0 auto; }
+  #updateBox{ display:none; width:100%; margin:12px 0 4px; padding:18px; border-radius:var(--radius);
+    border:1px solid var(--card-border); background:var(--accent); color:#082f49; font-size:17px; font-weight:700; text-align:left; }
+  #updateBox small{ display:block; font-weight:500; font-size:13px; margin-top:4px; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .card{ appearance:none; border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
+    border-radius:var(--radius); padding:18px 16px; text-align:left; color:var(--text); min-height:104px; cursor:pointer; }
+  .card .icon{ font-size:28px; display:block; margin-bottom:8px; }
+  .card .name{ font-size:16px; font-weight:600; display:block; }
+  .card .desc{ font-size:12px; color:var(--sub); display:block; margin-top:4px; line-height:1.5; }
+  .card[disabled]{ opacity:.45; cursor:default; }
+  .sectionTitle{ font-size:13px; color:var(--sub); margin:24px 2px 0; font-weight:600; }
+  #addForm{ margin-top:12px; border:1px solid var(--card-border); background:var(--card); border-radius:var(--radius); padding:16px; }
+  #addForm input{ width:100%; padding:12px; margin:6px 0; border-radius:12px; border:1px solid var(--card-border);
+    background:transparent; color:var(--text); font-size:15px; }
+  #addForm button{ width:100%; padding:13px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:15px; font-weight:700; }
+  .privRow{ display:flex; align-items:center; gap:8px; }
+  .privRow .grow{ flex:1; }
+  .del{ border:0; background:transparent; color:var(--sub); font-size:18px; padding:8px; cursor:pointer; }
+  #testOpenBtn{ width:100%; margin-top:12px; padding:14px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:15px; font-weight:600; text-align:left; cursor:pointer; }
+  #testView{ position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:11; }
+  #testBody{ flex:1; overflow-y:auto; padding:16px; max-width:640px; margin:0 auto; width:100%; }
+  #runTestBtn{ width:100%; padding:14px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:16px; font-weight:700; cursor:pointer; }
+  #runTestBtn[disabled]{ opacity:.5; }
+  .tItem{ border:1px solid var(--card-border); background:var(--card); border-radius:14px; padding:12px 14px; margin-top:10px; }
+  .tItem .tHead{ font-size:15px; font-weight:600; }
+  .tItem .tDetail{ font-size:13px; color:var(--sub); margin-top:4px; line-height:1.6; white-space:pre-wrap; }
+  .tPass{ color:#4ade80; } .tFail{ color:#f87171; } .tNa{ color:#fbbf24; }
+  #testStage{ height:280px; border:1px solid var(--card-border); border-radius:14px; overflow:hidden; margin-top:10px; background:#000; }
+  #testStage iframe{ width:100%; height:100%; border:0; display:block; }
+  #testText{ width:100%; min-height:180px; margin-top:12px; border-radius:12px; border:1px solid var(--card-border); background:transparent; color:var(--text); font-size:13px; padding:12px; }
+  .tBtnRow{ display:flex; gap:10px; margin-top:10px; }
+  .tBtnRow button{ flex:1; padding:12px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; }
+  #testImageWrap img{ width:100%; margin-top:12px; border-radius:12px; border:1px solid var(--card-border); }
+  #viewer{ position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:10; }
+  #viewerBar{ display:flex; align-items:center; gap:12px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+    border-bottom:1px solid var(--card-border); }
+  #backBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); border-radius:999px; padding:9px 16px; font-size:15px; }
+  #viewerTitle{ font-size:16px; font-weight:600; }
+  #frameWrap{ flex:1; }
+  #frameWrap iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ホーム</h1>
+  <div id="status">一覧を読み込んでいます</div>
+</header>
+<main>
+  <button id="updateBox"></button>
+  <div class="grid" id="moduleGrid"></div>
+
+  <div class="sectionTitle">点検</div>
+  <button id="testOpenBtn" type="button">試験モード（本編の保存には触れません）</button>
+
+  <div class="sectionTitle">自分で足したもの（この端末だけ）</div>
+  <div class="grid" id="privateGrid"></div>
+  <form id="addForm">
+    <input id="addName" type="text" placeholder="名前" autocomplete="off" />
+    <input id="addUrl" type="url" placeholder="https://…" autocomplete="off" />
+    <button type="submit">足す</button>
+  </form>
+</main>
+
+<div id="testView">
+  <div id="testBar" style="display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--card-border);">
+    <button id="testBackBtn" type="button" style="border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:9px 16px;font-size:15px;">← 戻る</button>
+    <div style="font-size:16px;font-weight:600;">試験モード</div>
+  </div>
+  <div id="testBody">
+    <button id="runTestBtn" type="button">点検する</button>
+    <div style="font-size:13px;color:var(--sub);margin-top:8px;line-height:1.6;">試験は試験用の保存場所だけを使います。本編の保存（一覧と自分で足したもの）は、読んで照合するだけです。</div>
+    <div id="testResults"></div>
+    <div class="sectionTitle">試験の場所（再生の応答はここで確かめます）</div>
+    <div id="testStage"></div>
+    <textarea id="testText" readonly placeholder="結果はここに出ます"></textarea>
+    <div class="tBtnRow">
+      <button id="copyTestBtn" type="button">結果をコピー</button>
+      <button id="imageTestBtn" type="button">まとめ画像を作る</button>
+    </div>
+    <div id="testImageWrap"></div>
+  </div>
+</div>
+
+<div id="viewer">
+  <div id="viewerBar">
+    <button id="backBtn">← 戻る</button>
+    <div id="viewerTitle"></div>
+  </div>
+  <div id="frameWrap"></div>
+</div>
+
+<script>
+'use strict';
+const APP_VERSION = '1.3';
+const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
+const MODULES_URL = REMOTE_BASE + 'modules.json';
+const APPS_URL = REMOTE_BASE + 'apps.json';
+const LS_MODULES = 'launcher.modules.v1';
+const LS_PRIVATE = 'launcher.privateModules.v1';
+
+// 同梱の予備一覧（通信できない時の最初の表示）。文言は画面用に人の言葉で書く。
+const FALLBACK_MODULES = {
+  contract: 'launcher-modules/v1',
+  generated_at: 'bundled',
+  modules: [
+    { id:'suno', name:'音楽', icon:'🎵', desc:'自分の曲を聴く', url: REMOTE_BASE + 'modules/suno/index.html', status:'preparing' },
+    { id:'streamhub', name:'動画と配信', icon:'📺', desc:'YouTube と Twitch をまとめて見る', url: REMOTE_BASE + 'modules/streamhub/index.html', status:'preparing' },
+    { id:'check', name:'再生の確認', icon:'▶️', desc:'YouTube と Twitch が中で再生できるか確かめる', url: REMOTE_BASE + 'player.html?demo=1', status:'ready' }
+  ]
+};
+
+const grid = document.getElementById('moduleGrid');
+const privateGrid = document.getElementById('privateGrid');
+const statusEl = document.getElementById('status');
+const viewer = document.getElementById('viewer');
+const frameWrap = document.getElementById('frameWrap');
+const viewerTitle = document.getElementById('viewerTitle');
+
+function loadPrivate(){
+  try{ return JSON.parse(localStorage.getItem(LS_PRIVATE) || '[]'); }catch(e){ return []; }
+}
+function savePrivate(list){ localStorage.setItem(LS_PRIVATE, JSON.stringify(list)); }
+
+function openModule(mod){
+  viewerTitle.textContent = mod.name;
+  frameWrap.textContent = '';
+  const iframe = document.createElement('iframe');
+  iframe.src = mod.url;
+  iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.setAttribute('referrerpolicy', 'origin');
+  frameWrap.appendChild(iframe);
+  viewer.style.display = 'flex';
+}
+function closeViewer(){
+  viewer.style.display = 'none';
+  frameWrap.textContent = ''; // 閉じたら再生も止める
+}
+document.getElementById('backBtn').addEventListener('click', closeViewer);
+
+function card(mod, extra){
+  const btn = document.createElement('button');
+  btn.className = 'card';
+  const icon = document.createElement('span'); icon.className = 'icon'; icon.textContent = mod.icon || '🔹';
+  const name = document.createElement('span'); name.className = 'name'; name.textContent = mod.name;
+  const desc = document.createElement('span'); desc.className = 'desc';
+  desc.textContent = mod.status === 'preparing' ? '準備中です' : (mod.desc || '');
+  btn.append(icon, name, desc);
+  if (mod.status === 'preparing'){ btn.disabled = true; }
+  else { btn.addEventListener('click', () => openModule(mod)); }
+  if (extra) extra(btn, mod);
+  return btn;
+}
+
+function render(modules){
+  grid.textContent = '';
+  modules.forEach(m => grid.appendChild(card(m)));
+  renderPrivate();
+}
+function renderPrivate(){
+  privateGrid.textContent = '';
+  loadPrivate().forEach((m, i) => {
+    const c = document.createElement('button');
+    c.className = 'card';
+    const icon = document.createElement('span'); icon.className = 'icon'; icon.textContent = m.icon || '🔹';
+    const name = document.createElement('span'); name.className = 'name'; name.textContent = m.name;
+    const del = document.createElement('span'); del.className = 'del'; del.textContent = '× おわりにする';
+    del.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const list = loadPrivate(); list.splice(i, 1); savePrivate(list); renderPrivate();
+    });
+    c.append(icon, name, del);
+    c.addEventListener('click', () => openModule(m));
+    privateGrid.appendChild(c);
+  });
+}
+
+document.getElementById('addForm').addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  const name = document.getElementById('addName').value.trim();
+  const url = document.getElementById('addUrl').value.trim();
+  if (!name || !/^https:\/\//.test(url)) { statusEl.textContent = '名前と https の住所を入れてください'; return; }
+  const list = loadPrivate();
+  list.push({ id:'priv-' + Date.now(), name, url, icon:'🔹', status:'ready' });
+  savePrivate(list);
+  document.getElementById('addName').value = '';
+  document.getElementById('addUrl').value = '';
+  statusEl.textContent = '足しました。この端末の中だけにあります';
+  renderPrivate();
+});
+
+function fetchWithTimeout(url, ms){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { cache:'no-store', signal: ctl.signal }).finally(() => clearTimeout(t));
+}
+
+async function refreshModules(){
+  let stored = null;
+  try{ stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null'); }catch(e){}
+  render((stored && stored.modules) || FALLBACK_MODULES.modules);
+  try{
+    const res = await fetchWithTimeout(MODULES_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    if (!data || !Array.isArray(data.modules)) throw new Error('bad shape');
+    if (!stored || data.generated_at !== stored.generated_at){
+      localStorage.setItem(LS_MODULES, JSON.stringify(data));
+      render(data.modules);
+    }
+    statusEl.textContent = '一覧は最新です';
+  }catch(e){
+    statusEl.textContent = stored ? '前回の一覧を表示しています' : '通信できないため、予備の一覧を表示しています';
+  }
+}
+
+function cmpVer(a, b){
+  const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++){ if ((pa[i]||0) !== (pb[i]||0)) return (pa[i]||0) - (pb[i]||0); }
+  return 0;
+}
+
+async function checkUpdate(){
+  try{
+    const res = await fetchWithTimeout(APPS_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) return;
+    const data = await res.json();
+    const app = (data.apps || [])[0];
+    if (!app || cmpVer(app.version, APP_VERSION) <= 0) return;
+    const box = document.getElementById('updateBox');
+    box.style.display = 'block';
+    box.innerHTML = '';
+    box.appendChild(document.createTextNode('新しい版があります（' + app.version + '）'));
+    const small = document.createElement('small');
+    small.textContent = 'タップすると SideStore で更新します';
+    box.appendChild(small);
+    box.addEventListener('click', () => {
+      const url = 'sidestore://install?url=' + encodeURIComponent(app.downloadURL);
+      window.location.href = url;
+    });
+  }catch(e){ /* 更新確認は静かに失敗してよい */ }
+}
+
+// ===== 試験モード（契約 launcher-test/v1） =====
+// 隔離: 書き込みは試験専用キーだけ。本編の保存（LS_MODULES／LS_PRIVATE）は読み取りと照合だけ。
+const LS_TEST_HIST = 'launcher.test.history.v1';
+const LS_TEST_SCRATCH = 'launcher.test.scratch.v1';
+const moduleTestResults = {};
+let testRunning = false;
+
+window.addEventListener('message', (e) => {
+  const d = e.data;
+  if (d && d.contract === 'launcher-test/v1' && d.moduleId) moduleTestResults[d.moduleId] = d;
+});
+
+function fnv(str){
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+function dataSnapshot(){
+  return fnv((localStorage.getItem(LS_MODULES) || '') + '|' + (localStorage.getItem(LS_PRIVATE) || ''));
+}
+function resultWord(r){ return r === 'pass' ? 'できた' : (r === 'fail' ? 'できなかった' : '取得できない'); }
+
+document.getElementById('testOpenBtn').addEventListener('click', () => {
+  document.getElementById('testView').style.display = 'flex';
+});
+document.getElementById('testBackBtn').addEventListener('click', () => {
+  document.getElementById('testView').style.display = 'none';
+  document.getElementById('testStage').textContent = '';
+});
+
+function loadIntoStage(url, timeoutMs){
+  const stage = document.getElementById('testStage');
+  stage.textContent = '';
+  return new Promise((resolve) => {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+    let done = false;
+    const t0 = performance.now();
+    iframe.addEventListener('load', () => {
+      if (done) return; done = true;
+      resolve({ loaded: true, ms: Math.round(performance.now() - t0) });
+    });
+    iframe.src = url;
+    stage.appendChild(iframe);
+    setTimeout(() => { if (!done){ done = true; resolve({ loaded: false, ms: Math.round(performance.now() - t0) }); } }, timeoutMs);
+  });
+}
+
+function collectPlayerEvents(ms){
+  return new Promise((resolve) => {
+    const events = [];
+    const t0 = Date.now();
+    const fn = (e) => {
+      const d = e.data;
+      if (d && d.contract === 'streamhub-player/v1') events.push({ event: d.event, provider: d.provider || '', code: d.code || '', at: Date.now() - t0 });
+    };
+    window.addEventListener('message', fn);
+    setTimeout(() => { window.removeEventListener('message', fn); resolve(events); }, ms);
+  });
+}
+
+async function runTests(){
+  if (testRunning) return;
+  testRunning = true;
+  const runBtn = document.getElementById('runTestBtn');
+  runBtn.disabled = true; runBtn.textContent = '点検しています…';
+  const resultsEl = document.getElementById('testResults');
+  resultsEl.textContent = '';
+  const items = []; const perf = [];
+  const before = dataSnapshot();
+  const startedAt = new Date();
+  let modulesData = null;
+
+  // T1 一覧の取得と照合
+  let t0 = performance.now();
+  try{
+    const res = await fetchWithTimeout(MODULES_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    modulesData = await res.json();
+    perf.push({ id: 'fetch-modules', label: '一覧の取得', ms: Math.round(performance.now() - t0) });
+    const ok = modulesData.contract === 'launcher-modules/v1' && Array.isArray(modulesData.modules) && !!modulesData.generated_at;
+    items.push({ id: 'T1', label: '一覧の取得と照合', result: ok ? 'pass' : 'fail',
+      detail: ok ? ('契約は launcher-modules/v1／生成 ' + modulesData.generated_at + '／' + modulesData.modules.length + '件') : '中身の形が契約と違う' });
+  }catch(e){
+    items.push({ id: 'T1', label: '一覧の取得と照合', result: 'fail', detail: '取得できない（' + String(e.message || e) + '）' });
+  }
+
+  // T2 更新の判定
+  t0 = performance.now();
+  try{
+    const res = await fetchWithTimeout(APPS_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    perf.push({ id: 'fetch-apps', label: '更新の確認', ms: Math.round(performance.now() - t0) });
+    const app = (data.apps || [])[0];
+    if (app){
+      const newer = cmpVer(app.version, APP_VERSION) > 0;
+      items.push({ id: 'T2', label: '更新の判定', result: 'pass',
+        detail: '最新は ' + app.version + '／この端末は ' + APP_VERSION + (newer ? '（新しい版がある）' : '（最新）') + '。更新の実行そのものは SideStore 側の操作なので、ここでは判定まで' });
+    } else {
+      items.push({ id: 'T2', label: '更新の判定', result: 'fail', detail: '配布リストにアプリが無い' });
+    }
+  }catch(e){
+    items.push({ id: 'T2', label: '更新の判定', result: 'fail', detail: '取得できない（' + String(e.message || e) + '）' });
+  }
+
+  // T3 予備の一覧の表示（試験の場所へ描く）
+  {
+    const stage = document.getElementById('testStage');
+    stage.textContent = '';
+    const fb = document.createElement('div');
+    fb.style.cssText = 'padding:14px;color:#f2f4f8;font-size:15px;line-height:2;';
+    FALLBACK_MODULES.modules.forEach(m => {
+      const d = document.createElement('div'); d.textContent = (m.icon || '🔹') + ' ' + m.name; fb.appendChild(d);
+    });
+    stage.appendChild(fb);
+    items.push({ id: 'T3', label: '予備の一覧の表示', result: fb.childElementCount === FALLBACK_MODULES.modules.length ? 'pass' : 'fail',
+      detail: '予備の ' + FALLBACK_MODULES.modules.length + '件を試験の場所に描けた（通信が落ちた時の逃げ道）' });
+  }
+
+  // T4 使えるモジュールへの到達＋モジュール試験の受け取り
+  {
+    let stored = null;
+    try{ stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null'); }catch(e){}
+    const list = (modulesData && modulesData.modules) || (stored && stored.modules) || FALLBACK_MODULES.modules;
+    const ready = list.filter(m => m.status === 'ready');
+    const lines = []; let worst = 'pass'; let maxMs = 0;
+    for (const m of ready){
+      const sep = m.url.includes('?') ? '&' : '?';
+      const r = await loadIntoStage(m.url + sep + 'test=1', 6000);
+      maxMs = Math.max(maxMs, r.ms);
+      const hasTest = !!moduleTestResults[m.id];
+      lines.push(m.name + '：' + (r.loaded ? '読み込みできた' : '読み込みが返らない') + (hasTest ? '／試験の結果も届いた' : '／試験の応答なし（未実装として扱う）'));
+      if (!r.loaded) worst = 'fail';
+    }
+    if (ready.length) perf.push({ id: 'module-load', label: 'モジュールの読み込み（最長）', ms: maxMs });
+    items.push({ id: 'T4', label: 'モジュールへの到達', result: ready.length ? worst : 'na',
+      detail: ready.length ? lines.join('\n') : '取得できない：使える状態のモジュールが今は無い' });
+  }
+
+  // T5／T6 再生ブリッジの応答（YouTube／Twitch）
+  {
+    const eventsP = collectPlayerEvents(12000);
+    const bootT0 = performance.now();
+    await loadIntoStage(REMOTE_BASE + 'player.html?demo=2', 6000);
+    const events = await eventsP;
+    const boot = events.find(e => e.event === 'boot');
+    const yt = events.filter(e => e.provider === 'youtube');
+    const tw = events.filter(e => e.provider === 'twitch');
+    const firstReady = events.find(e => e.event === 'ready' || e.event === 'playing');
+    if (firstReady) perf.push({ id: 'bridge-ready', label: '再生の応答まで', ms: Math.round(performance.now() - bootT0) });
+    const ytErr = yt.find(e => e.event === 'error');
+    const ytOk = yt.some(e => e.event === 'ready' || e.event === 'playing');
+    items.push({ id: 'T5', gate: 'S1', label: '再生の応答（YouTube）', result: ytOk ? 'pass' : 'fail',
+      detail: !boot ? 'ブリッジからの返事自体が無い' : (ytOk ? '再生の準備まで届いた' : ('応答なし' + (ytErr ? '／エラー ' + ytErr.code : ''))) });
+    const twErr = tw.find(e => e.event === 'error');
+    const twOk = tw.some(e => e.event === 'ready' || e.event === 'online' || e.event === 'playing');
+    const twOff = tw.some(e => e.event === 'offline');
+    items.push({ id: 'T6', gate: 'S2', label: '再生の応答（Twitch）', result: twOk ? 'pass' : 'fail',
+      detail: !boot ? 'ブリッジからの返事自体が無い' : (twOk ? (twOff ? 'READYは届いた（配信は休止中）' : 'READYが届いた') : ('12秒待っても READY が来ない（枠だけ出て中身が応答していない）' + (twErr ? '／エラー ' + twErr.code : ''))) });
+  }
+
+  // T7 保存の往復（試験用の場所だけ）
+  try{
+    const v = 'test-' + Date.now();
+    localStorage.setItem(LS_TEST_SCRATCH, v);
+    const back = localStorage.getItem(LS_TEST_SCRATCH);
+    localStorage.removeItem(LS_TEST_SCRATCH);
+    items.push({ id: 'T7', label: '保存の往復', result: back === v ? 'pass' : 'fail',
+      detail: '試験用の場所へ書いて、読み戻して、消せた。本編の保存場所は使っていない' });
+  }catch(e){
+    items.push({ id: 'T7', label: '保存の往復', result: 'fail', detail: '保存できない（' + String(e.message || e) + '）' });
+  }
+
+  // T8 本編の保存の同一性
+  {
+    const after = dataSnapshot();
+    items.push({ id: 'T8', label: '本編の保存の同一性', result: before === after ? 'pass' : 'fail',
+      detail: before === after ? '試験の前後で同一' : '試験の前後で変わった（要確認）' });
+  }
+
+  // T9 圏外での表示（再現できないので na）
+  items.push({ id: 'T9', label: '圏外での表示', result: 'na',
+    detail: '取得できない：圏外そのものは端末の操作（機内モード）が要るため、試験の中では再現できない。逃げ道の表示は T3 で確認した' });
+
+  // 性能の前回比（履歴は試験専用キーに最大5件）
+  let hist = [];
+  try{ hist = JSON.parse(localStorage.getItem(LS_TEST_HIST) || '[]'); }catch(e){}
+  const prev = hist.length ? hist[hist.length - 1] : null;
+  const perfLines = perf.map(p => {
+    const pv = prev && prev.perf ? prev.perf[p.id] : null;
+    return p.label + ' ' + p.ms + 'ms' + (pv != null ? '（前回 ' + pv + 'ms、差 ' + (p.ms - pv >= 0 ? '+' : '') + (p.ms - pv) + 'ms）' : '（前回なし）');
+  });
+  hist.push({ at: startedAt.toISOString(), perf: Object.fromEntries(perf.map(p => [p.id, p.ms])) });
+  if (hist.length > 5) hist = hist.slice(-5);
+  try{ localStorage.setItem(LS_TEST_HIST, JSON.stringify(hist)); }catch(e){}
+
+  // モジュールからの結果（launcher-test/v1 で届いた分）
+  const modResults = Object.values(moduleTestResults);
+  const modLines = modResults.map(r => {
+    const pass = (r.items || []).filter(i => i.result === 'pass').length;
+    const all = (r.items || []).length;
+    const same = r.untouched && r.untouched.checked ? (r.untouched.same ? '本編の保存は同一' : '本編の保存が変わった') : '保存の照合なし';
+    return (r.moduleId) + '：' + pass + '／' + all + '件が「できた」／' + same;
+  });
+
+  // 結果テキスト（クロギリの型に寄せる）
+  const lines = [];
+  lines.push('ランチャー 試験モード結果');
+  lines.push('日時：' + startedAt.toLocaleString('ja-JP'));
+  lines.push('端末：' + navigator.userAgent);
+  lines.push('殻の版：' + APP_VERSION);
+  lines.push('本編の保存：試験では触れていない（試験前後で同一：' + (before === dataSnapshot() ? 'はい' : 'いいえ') + '）');
+  lines.push('');
+  items.forEach((it, i) => {
+    lines.push((i + 1) + '. ' + it.label + '：' + resultWord(it.result));
+    lines.push(it.detail);
+  });
+  lines.push('');
+  lines.push('性能：');
+  perfLines.forEach(l => lines.push('- ' + l));
+  if (modLines.length){
+    lines.push('');
+    lines.push('モジュールからの結果：');
+    modLines.forEach(l => lines.push('- ' + l));
+  }
+  lines.push('');
+  lines.push('画像について：まとめ画像は結果画面を描き直したものです。再生画面とモジュールの実画面は、別オリジンの枠のため取得できません。');
+  const text = lines.join('\n');
+  document.getElementById('testText').value = text;
+
+  // 画面への表示
+  items.forEach(it => {
+    const div = document.createElement('div'); div.className = 'tItem';
+    const head = document.createElement('div'); head.className = 'tHead';
+    const mark = document.createElement('span');
+    mark.className = it.result === 'pass' ? 'tPass' : (it.result === 'fail' ? 'tFail' : 'tNa');
+    mark.textContent = it.result === 'pass' ? '● ' : (it.result === 'fail' ? '● ' : '● ');
+    const name = document.createElement('span'); name.textContent = it.id + ' ' + it.label + '：' + resultWord(it.result);
+    head.append(mark, name);
+    const det = document.createElement('div'); det.className = 'tDetail'; det.textContent = it.detail;
+    div.append(head, det);
+    resultsEl.appendChild(div);
+  });
+
+  runBtn.disabled = false; runBtn.textContent = 'もう一度 点検する';
+  testRunning = false;
+}
+document.getElementById('runTestBtn').addEventListener('click', runTests);
+
+document.getElementById('copyTestBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('testText');
+  if (!ta.value) return;
+  try{ await navigator.clipboard.writeText(ta.value); }catch(e){ ta.select(); document.execCommand('copy'); }
+});
+
+document.getElementById('imageTestBtn').addEventListener('click', () => {
+  const text = document.getElementById('testText').value;
+  if (!text) return;
+  const wrap = document.getElementById('testImageWrap');
+  wrap.textContent = '';
+  // 結果画面の描き直し画像（実画面の撮影ではない）
+  const rawLines = text.split('\n');
+  const lines = [];
+  rawLines.forEach(l => {
+    let s = l;
+    while (s.length > 46){ lines.push(s.slice(0, 46)); s = '　' + s.slice(46); }
+    lines.push(s);
+  });
+  const W = 1200, LH = 42, PAD = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = PAD * 2 + lines.length * LH;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#11161d'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#f2f4f8'; ctx.font = '26px sans-serif'; ctx.textBaseline = 'top';
+  lines.forEach((l, i) => ctx.fillText(l, PAD, PAD + i * LH));
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(blob);
+    img.alt = '試験モード結果のまとめ画像（描き直し）';
+    wrap.appendChild(img);
+  }, 'image/png');
+});
+
+refreshModules();
+checkUpdate();
+</script>
+</body>
+</html>
