@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LLM検証（切り分け）</title>
 <style>
   body{ font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; margin:0; padding:calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); background:#0d1117; color:#eef2f7; }
@@ -20,6 +20,7 @@
   .bar{ height:10px; border-radius:6px; background:#26303f; overflow:hidden; margin-top:8px; }
   .bar > div{ height:100%; width:0%; background:#7dd3fc; transition:width .2s; }
 </style>
+<style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
 </head>
 <body>
 <h1>LLM検証（端末の中で動くか）</h1>
