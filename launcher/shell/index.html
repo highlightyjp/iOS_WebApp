@@ -94,6 +94,11 @@
     <button id="runTestBtn" type="button">点検する</button>
     <div style="font-size:13px;color:var(--sub);margin-top:8px;line-height:1.6;">試験は試験用の保存場所だけを使います。本編の保存（一覧と自分で足したもの）は、読んで照合するだけです。</div>
     <div id="testResults"></div>
+    <div id="testShareRow" style="display:none;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 6px;">
+      <button id="copyTestBtnTop" type="button" style="width:100%;padding:15px;border-radius:12px;border:0;background:var(--accent);color:#082f49;font-size:16px;font-weight:700;cursor:pointer;">結果テキストをコピー</button>
+      <button id="shareTestBtn" type="button" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--card-border);background:var(--card);color:var(--text);font-size:15px;margin-top:8px;cursor:pointer;">共有する</button>
+      <div id="copyDoneMsg" style="font-size:13px;color:var(--accent);margin-top:8px;min-height:18px;"></div>
+    </div>
     <div class="sectionTitle">試験の場所（再生の応答はここで確かめます）</div>
     <div id="testStage"></div>
     <textarea id="testText" readonly placeholder="結果はここに出ます"></textarea>
@@ -512,14 +517,37 @@ async function runTests(){
 
   runBtn.disabled = false; runBtn.textContent = 'もう一度 点検する';
   testRunning = false;
+  // 結果の取得を簡単に：上部の大きなボタンを見せて、結果の先頭へ戻す
+  document.getElementById('testShareRow').style.display = 'block';
+  resultsEl.scrollIntoView({ block: 'start' });
 }
 document.getElementById('runTestBtn').addEventListener('click', runTests);
 
-document.getElementById('copyTestBtn').addEventListener('click', async () => {
+async function copyTestText(){
+  const ta = document.getElementById('testText');
+  if (!ta.value) return false;
+  try{ await navigator.clipboard.writeText(ta.value); return true; }
+  catch(e){
+    try{ ta.select(); document.execCommand('copy'); return true; }catch(_){ return false; }
+  }
+}
+function noteCopied(ok){
+  const m = document.getElementById('copyDoneMsg');
+  m.textContent = ok ? 'コピーしました。そのままチャットに貼れます。' : 'コピーできませんでした。下の結果欄を長押しで選んでください。';
+  setTimeout(() => { m.textContent = ''; }, 4000);
+}
+document.getElementById('copyTestBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('copyTestBtnTop').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('shareTestBtn').addEventListener('click', async () => {
   const ta = document.getElementById('testText');
   if (!ta.value) return;
-  try{ await navigator.clipboard.writeText(ta.value); }catch(e){ ta.select(); document.execCommand('copy'); }
+  if (navigator.share){
+    try{ await navigator.share({ title: 'ランチャー 試験モード結果', text: ta.value }); }catch(e){ /* 閉じられただけ */ }
+  } else {
+    noteCopied(await copyTestText());
+  }
 });
+if (!navigator.share) document.getElementById('shareTestBtn').style.display = 'none';
 
 document.getElementById('imageTestBtn').addEventListener('click', () => {
   const text = document.getElementById('testText').value;
