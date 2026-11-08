@@ -122,6 +122,8 @@
 <script>
 'use strict';
 const APP_VERSION = '1.3';
+const SHELL_BUILD = '2026-11-09-0210';
+const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
 const APPS_URL = REMOTE_BASE + 'apps.json';
@@ -584,7 +586,29 @@ document.getElementById('reloadListBtn').addEventListener('click', () => {
   refreshModules();
 });
 
+// 前面に戻ったら、一覧を取り直す。殻ページ自体が古ければ、読み直して今の版にそろえる
+let shellCheckRunning = false;
+async function checkShellFresh(){
+  if (shellCheckRunning) return;
+  shellCheckRunning = true;
+  try{
+    const res = await fetch(SHELL_BUILD_URL + '?v=' + Date.now(), { cache: 'no-store' });
+    if (res.ok){
+      const stamp = (await res.text()).trim();
+      if (stamp && stamp !== SHELL_BUILD){ location.reload(); return; }
+    }
+  }catch(e){ /* 取れなければ今の版のまま続ける */ }
+  shellCheckRunning = false;
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible'){
+    checkShellFresh();
+    refreshModules();
+  }
+});
+
 refreshModules();
+checkShellFresh();
 checkUpdate();
 </script>
 </body>
