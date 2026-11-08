@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>再生</title>
 <!--
   プレイヤーブリッジ（契約 streamhub-player/v1）
@@ -30,6 +30,7 @@
     background:rgba(255,255,255,.06); white-space:pre-wrap; word-break:break-all; }
   body.demo #twDiag{ display:block; }
 </style>
+<style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
 </head>
 <body>
 <div class="wrap" id="wrap">
