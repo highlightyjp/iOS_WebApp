@@ -20,7 +20,9 @@
       "version": "1.0",
       "versionDate": "2026-11-08T08:17:11.736Z",
       "size": 618556,
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned.ipa"
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned.ipa",
+      "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/icon-512.png"
     }
-  ]
+  ],
+  "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/icon-512.png"
 }
