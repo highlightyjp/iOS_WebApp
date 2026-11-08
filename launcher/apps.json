@@ -10,6 +10,13 @@
       "localizedDescription": "Suno と StreamHub を1つの枠で使うための入れ物。本文（モジュール）は起動時に自動で最新になる。",
       "versions": [
         {
+          "version": "1.1",
+          "date": "2026-11-08T10:46:14.587Z",
+          "size": 618587,
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned.ipa",
+          "localizedDescription": "v1.1。オリジンを https:// に変更（capacitor:// からの移行）。"
+        },
+        {
           "version": "1.0",
           "date": "2026-11-08T08:17:11.736Z",
           "size": 618556,
@@ -17,9 +24,9 @@
           "localizedDescription": "初版。殻のみ（一覧の取得・モジュール表示・更新の確認）"
         }
       ],
-      "version": "1.0",
-      "versionDate": "2026-11-08T08:17:11.736Z",
-      "size": 618556,
+      "version": "1.1",
+      "versionDate": "2026-11-08T10:46:14.587Z",
+      "size": 618587,
       "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/icon-512.png"
     }
