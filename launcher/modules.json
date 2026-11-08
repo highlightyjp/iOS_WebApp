@@ -19,12 +19,12 @@
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/streamhub/index.html"
     },
     {
-      "desc": "再生まわりの一括点検（結果テキスト＋まとめ画像）",
+      "desc": "Twitch の切り分け中（4方式を同時検証）",
       "icon": "▶️",
       "id": "check",
       "name": "テストモード",
       "status": "ready",
-      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/test.html"
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/diag-twitch.html"
     }
   ]
 }
