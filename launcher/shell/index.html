@@ -68,6 +68,7 @@
 <header>
   <h1>ホーム</h1>
   <div id="status">一覧を読み込んでいます</div>
+  <button id="reloadListBtn" type="button" style="margin-top:10px;border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:8px 16px;font-size:14px;cursor:pointer;">↻ 一覧を更新する</button>
 </header>
 <main>
   <button id="updateBox"></button>
@@ -576,6 +577,11 @@ document.getElementById('imageTestBtn').addEventListener('click', () => {
     img.alt = '試験モード結果のまとめ画像（描き直し）';
     wrap.appendChild(img);
   }, 'image/png');
+});
+
+document.getElementById('reloadListBtn').addEventListener('click', () => {
+  document.getElementById('status').textContent = '一覧を読み込んでいます';
+  refreshModules();
 });
 
 refreshModules();
