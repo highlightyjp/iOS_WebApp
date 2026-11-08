@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LLM検証（切り分け）</title>
+<style>
+  body{ font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; margin:0; padding:calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); background:#0d1117; color:#eef2f7; }
+  h1{ font-size:19px; margin:0 0 6px; }
+  p.note{ color:#93a1b3; font-size:13.5px; line-height:1.7; }
+  .rowline{ font-size:15px; line-height:1.8; border-bottom:1px solid #26303f; padding:8px 0; }
+  .ok{ color:#6ee7a0; font-weight:700; } .ng{ color:#fda4af; font-weight:700; }
+  button.model{ display:block; width:100%; text-align:left; padding:14px; margin-top:10px; border-radius:12px; border:1px solid #26303f; background:#161c26; color:#eef2f7; font-size:15.5px; cursor:pointer; }
+  button.model small{ display:block; color:#93a1b3; font-size:12.5px; margin-top:3px; }
+  button.model.sel{ border-color:#7dd3fc; }
+  #runBtn{ width:100%; padding:15px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-top:16px; cursor:pointer; }
+  #runBtn[disabled]{ opacity:.5; }
+  #copyBtn{ width:100%; padding:14px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-bottom:10px; cursor:pointer; }
+  pre#out{ white-space:pre-wrap; word-break:break-word; font-size:13.5px; line-height:1.75; background:#161c26; border:1px solid #26303f; border-radius:12px; padding:12px; min-height:60px; }
+  .bar{ height:10px; border-radius:6px; background:#26303f; overflow:hidden; margin-top:8px; }
+  .bar > div{ height:100%; width:0%; background:#7dd3fc; transition:width .2s; }
+</style>
+</head>
+<body>
+<h1>LLM検証（端末の中で動くか）</h1>
+<button id="copyBtn" type="button">結果テキストをコピー</button>
+<div id="copyMsg" style="font-size:13px;color:#7dd3fc;min-height:18px;"></div>
+<div class="rowline" id="envGpu">WebGPU: 確認中…</div>
+<div class="rowline" id="envAdapter">アダプタ: —</div>
+<p class="note">モデルの読み込みは、初回だけ数GBのダウンロードがあります（Wi-Fi推奨）。読み込み中はこの画面を開いたままにしてください。結果は上のボタンでコピーして、チャットに貼れます。</p>
+
+<div id="models"></div>
+<button id="runBtn" type="button" disabled>モデルを選んでください</button>
+<div class="bar"><div id="barFill"></div></div>
+<div class="rowline" id="progress">進み具合: —</div>
+<pre id="out">結果はここに出ます。</pre>
+
+<script type="module">
+const MODELS = [
+  { id: 'Qwen3-8B-q4f16_1-MLC', label: 'Qwen3-8B（挑戦枠）', mb: 4700, note: '約4.7GB。性能は一番高い。端末の上限を探る' },
+  { id: 'Qwen3-4B-q4f16_1-MLC', label: 'Qwen3-4B（基準）', mb: 2560, note: '約2.5GB。自宅のディナと同じ系統' },
+  { id: 'Qwen3-1.7B-q4f16_1-MLC', label: 'Qwen3-1.7B', mb: 1230, note: '約1.2GB。受け皿' },
+  { id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', label: 'Qwen2.5-0.5B', mb: 290, note: '約0.3GB。Spaceでは52 tok/sの実績' },
+];
+let selected = null;
+let webllm = null;
+const results = { env: '', model: '', cache: '', load: '', bench: '', error: '' };
+
+function resultText(){
+  const lines = ['端末内LLM 検証結果', '日時：' + new Date().toLocaleString('ja-JP'),
+    '端末：' + navigator.userAgent,
+    'WebGPU・環境：' + results.env,
+    'モデル：' + (results.model || '未選択'),
+    'キャッシュ：' + (results.cache || '—'),
+    '読み込み：' + (results.load || '—'),
+    '測定：' + (results.bench || '—')];
+  if (results.error) lines.push('失敗：' + results.error);
+  return lines.join('\n');
+}
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('copyMsg');
+  try{ await navigator.clipboard.writeText(resultText()); msg.textContent = 'コピーしました。そのままチャットに貼れます。'; }
+  catch(e){ msg.textContent = 'コピーできませんでした。結果欄を長押しで選んでください。'; document.getElementById('out').textContent = resultText(); }
+  setTimeout(() => { msg.textContent = ''; }, 4000);
+});
+
+async function checkEnv(){
+  const gpuEl = document.getElementById('envGpu');
+  const adEl = document.getElementById('envAdapter');
+  if (!('gpu' in navigator)){
+    gpuEl.innerHTML = 'WebGPU: <span class="ng">使えない（navigator.gpu がない）</span>';
+    results.env = 'WebGPU なし';
+    return false;
+  }
+  try{
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter){
+      gpuEl.innerHTML = 'WebGPU: <span class="ng">アダプタが取れない</span>';
+      results.env = 'WebGPU アダプタなし';
+      return false;
+    }
+    gpuEl.innerHTML = 'WebGPU: <span class="ok">使える</span>';
+    let info = '';
+    try{
+      const i = adapter.info || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
+      if (i) info = [i.vendor, i.architecture, i.description].filter(Boolean).join(' / ');
+    }catch(e){ /* 情報が取れなくても可否には影響しない */ }
+    adEl.textContent = 'アダプタ: ' + (info || '（詳細は取れず）');
+    results.env = 'WebGPU 可。' + info;
+    return true;
+  }catch(e){
+    gpuEl.innerHTML = 'WebGPU: <span class="ng">確認で失敗</span>';
+    results.env = 'WebGPU 確認失敗：' + (e && e.message || e);
+    return false;
+  }
+}
+
+async function buildModelButtons(){
+  const wrap = document.getElementById('models');
+  try{
+    webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.87');
+  }catch(e){
+    document.getElementById('out').textContent = 'LLMの道具（WebLLM）を読み込めませんでした：' + (e && e.message || e);
+    results.error = 'WebLLM の読み込み失敗';
+    return;
+  }
+  for (const m of MODELS){
+    let cached = null;
+    try{ cached = await webllm.hasModelInCache(m.id); }catch(e){ cached = null; }
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'model';
+    b.innerHTML = '';
+    const strong = document.createElement('strong'); strong.textContent = m.label;
+    const small = document.createElement('small');
+    small.textContent = m.note + '／キャッシュ：' + (cached === true ? 'あり（ダウンロード不要）' : cached === false ? 'なし' : '不明');
+    b.append(strong, small);
+    b.addEventListener('click', () => {
+      selected = m;
+      results.model = m.id;
+      results.cache = cached === true ? 'あり' : cached === false ? 'なし' : '不明';
+      document.querySelectorAll('button.model').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      const run = document.getElementById('runBtn');
+      run.disabled = false;
+      run.textContent = m.label + ' を読み込んで測る';
+    });
+    wrap.appendChild(b);
+  }
+}
+
+const BENCH_PROMPT = '次の文から、日付・場所・金額を取り出して、項目ごとに1行で答えてください。\n文：来週の火曜日、つまり11月17日に、板橋区の高島平で開催される説明会に参加する。参加費は3,500円で、当日現金で払う。帰りに駅前の店で2,980円の本を買う予定。\n/no_think';
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+  if (!selected || !webllm) return;
+  const run = document.getElementById('runBtn');
+  const prog = document.getElementById('progress');
+  const fill = document.getElementById('barFill');
+  const out = document.getElementById('out');
+  run.disabled = true;
+  results.error = ''; results.load = ''; results.bench = '';
+  out.textContent = '読み込み中…';
+  const t0 = performance.now();
+  let engine;
+  try{
+    engine = await webllm.CreateMLCEngine(selected.id, {
+      initProgressCallback: (r) => {
+        const pct = Math.round((r.progress || 0) * 100);
+        fill.style.width = pct + '%';
+        prog.textContent = '進み具合: ' + pct + '% ' + (r.text || '');
+      }
+    });
+  }catch(e){
+    results.error = '読み込み失敗：' + (e && e.message || e);
+    out.textContent = resultText();
+    run.disabled = false;
+    return;
+  }
+  const loadMs = Math.round(performance.now() - t0);
+  results.load = (loadMs / 1000).toFixed(1) + '秒';
+  prog.textContent = '進み具合: 読み込み完了（' + results.load + '）。測っています…';
+  try{
+    const stream = await engine.chat.completions.create({
+      messages: [{ role: 'user', content: BENCH_PROMPT }],
+      stream: true, temperature: 0.2, max_tokens: 160,
+      stream_options: { include_usage: true }
+    });
+    const g0 = performance.now();
+    let text = '', tokens = 0, ttft = 0;
+    for await (const chunk of stream){
+      const d = chunk.choices && chunk.choices[0] && chunk.choices[0].delta;
+      if (d && d.content){
+        if (!ttft) ttft = Math.round(performance.now() - g0);
+        text += d.content;
+      }
+      if (chunk.usage && chunk.usage.completion_tokens) tokens = chunk.usage.completion_tokens;
+    }
+    const secs = (performance.now() - g0) / 1000;
+    let tps = tokens ? tokens / secs : 0;
+    try{
+      const s = await engine.runtimeStatsText();
+      const m = /([0-9]+(?:\.[0-9]+)?)\s*tok\/s/i.exec(s || '');
+      if (m) tps = parseFloat(m[1]);
+    }catch(e){ /* 速度は自前計算で代替済み */ }
+    results.bench = '速度 ' + tps.toFixed(1) + ' tok/s、最初の文字まで ' + ttft + 'ms、生成 ' + tokens + ' トークン／' + secs.toFixed(1) + '秒';
+    out.textContent = resultText() + '\n\n--- モデルの答え ---\n' + text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  }catch(e){
+    results.error = '生成失敗：' + (e && e.message || e);
+    out.textContent = resultText();
+  }
+  try{ await engine.unload(); }catch(e){ /* 後片付けは任意 */ }
+  run.disabled = false;
+  run.textContent = 'もう一度測る';
+});
+
+(async () => {
+  const ok = await checkEnv();
+  if (ok) buildModelButtons();
+  else document.getElementById('out').textContent = resultText();
+})();
+</script>
+</body>
+</html>
