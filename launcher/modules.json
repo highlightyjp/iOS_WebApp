@@ -1,6 +1,6 @@
 {
   "contract": "launcher-modules/v1",
-  "generated_at": "2026-11-08T17:46:00+09:00",
+  "generated_at": "2026-11-08T23:55:00+09:00",
   "modules": [
     {
       "desc": "自分の曲を聴く",
@@ -19,12 +19,12 @@
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/streamhub/index.html"
     },
     {
-      "desc": "YouTube と Twitch が中で再生できるか確かめる",
+      "desc": "再生まわりの一括点検（結果テキスト＋まとめ画像）",
       "icon": "▶️",
       "id": "check",
-      "name": "再生の確認",
+      "name": "テストモード",
       "status": "ready",
-      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/player.html?demo=2"
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/test.html"
     }
   ]
 }
