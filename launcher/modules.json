@@ -25,6 +25,13 @@
       "name": "テストモード",
       "status": "ready",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/test.html"
+    },
+    {
+      "id": "llmprobe",
+      "name": "LLM検証",
+      "desc": "端末の中でLLMが動くかの実測（期間限定）",
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm.html",
+      "status": "ready"
     }
   ]
 }
