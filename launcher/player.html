@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>再生</title>
+<!--
+  プレイヤーブリッジ（契約 streamhub-player/v1）
+  置き場所: https://highlightyjp.github.io/iOS_WebApp/launcher/player.html
+  使い方（URLパラメータ）:
+    ?type=youtube&id=VIDEO_ID[&list=PLAYLIST_ID][&sb=1][&autoplay=1][&start=秒]
+    ?type=twitch&channel=CHANNEL_NAME
+    ?type=twitch&video=VIDEO_ID
+    ?demo=1  … 確認用（YouTube と Twitch を並べる）
+  親への通知: window.parent.postMessage({contract:'streamhub-player/v1', event, provider, ...}, '*')
+    events: ready / playing / paused / ended / error / online / offline / skipped
+  親からの命令: postMessage({contract:'streamhub-player/v1', cmd, ...})
+    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state')
+-->
+<style>
+  html,body{ margin:0; padding:0; background:#000; color:#fff; height:100%;
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  .wrap{ display:flex; flex-direction:column; height:100%; }
+  .slot{ flex:1; min-height:200px; position:relative; }
+  .slot iframe, .slot > div{ width:100%; height:100%; }
+  #msg{ padding:20px; font-size:15px; line-height:1.7; display:none; }
+  .label{ font-size:12px; color:#aab; padding:8px 12px 0; display:none; }
+  body.demo .label{ display:block; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="label">YouTube</div>
+  <div class="slot" id="ytSlot"></div>
+  <div class="label">Twitch</div>
+  <div class="slot" id="twSlot" style="display:none"></div>
+  <div id="msg"></div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script>
+'use strict';
+const CONTRACT = 'streamhub-player/v1';
+const HOST = 'highlightyjp.github.io';
+const params = new URLSearchParams(location.search);
+const isDemo = params.get('demo') === '1';
+
+function post(event, data){
+  const payload = Object.assign({ contract: CONTRACT, event }, data || {});
+  try{ window.parent.postMessage(payload, '*'); }catch(e){}
+}
+function showMsg(text){
+  const m = document.getElementById('msg');
+  m.style.display = 'block'; m.textContent = text;
+}
+
+/* ---------- YouTube ---------- */
+let ytPlayer = null, ytReady = false, sbSegments = [], sbTimer = null;
+
+async function loadSponsorBlock(videoId){
+  sbSegments = [];
+  if (params.get('sb') !== '1') return;
+  try{
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(videoId));
+    const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const res = await fetch('https://sponsor.ajay.app/api/skipSegments/' + hex.slice(0, 4));
+    if (!res.ok) return;
+    const groups = await res.json();
+    for (const g of groups){
+      if (g.videoID !== videoId) continue;
+      for (const s of (g.segments || [])){
+        if (s.actionType === 'skip') sbSegments.push(s.segment);
+      }
+    }
+    sbSegments.sort((a, b) => a[0] - b[0]);
+  }catch(e){ /* 取れなければ飛ばさない、それだけ */ }
+}
+function startSbWatch(){
+  stopSbWatch();
+  if (!sbSegments.length) return;
+  sbTimer = setInterval(() => {
+    if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+    const t = ytPlayer.getCurrentTime();
+    for (const [start, end] of sbSegments){
+      if (t >= start && t < end - 0.3){
+        ytPlayer.seekTo(end, true);
+        post('skipped', { provider:'youtube', segment:[start, end] });
+        break;
+      }
+    }
+  }, 400);
+}
+function stopSbWatch(){ if (sbTimer){ clearInterval(sbTimer); sbTimer = null; } }
+
+window.onYouTubeIframeAPIReady = function(){
+  const wantYt = isDemo || params.get('type') === 'youtube';
+  if (!wantYt) return;
+  const videoId = params.get('id') || (isDemo ? 'aqz-KE-bpKQ' : null);
+  if (!videoId){ showMsg('動画の指定がありません'); return; }
+  const holder = document.createElement('div');
+  holder.id = 'ytHolder';
+  document.getElementById('ytSlot').appendChild(holder);
+  ytPlayer = new YT.Player('ytHolder', {
+    width: '100%', height: '100%',
+    videoId,
+    playerVars: {
+      playsinline: 1, rel: 0, modestbranding: 1,
+      origin: 'https://' + HOST,
+      autoplay: params.get('autoplay') === '1' ? 1 : 0,
+      start: Number(params.get('start') || 0) || undefined,
+      list: params.get('list') || undefined,
+      listType: params.get('list') ? 'playlist' : undefined
+    },
+    events: {
+      onReady: async () => {
+        ytReady = true;
+        await loadSponsorBlock(videoId);
+        startSbWatch();
+        post('ready', { provider:'youtube', videoId });
+      },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.PLAYING) post('playing', { provider:'youtube' });
+        if (e.data === YT.PlayerState.PAUSED) post('paused', { provider:'youtube' });
+        if (e.data === YT.PlayerState.ENDED) post('ended', { provider:'youtube' });
+      },
+      onError: (e) => post('error', { provider:'youtube', code: e.data })
+    }
+  });
+};
+
+/* ---------- Twitch ---------- */
+let twPlayer = null;
+function initTwitch(){
+  const wantTw = isDemo || params.get('type') === 'twitch';
+  if (!wantTw) return;
+  const channel = params.get('channel') || (isDemo ? 'twitchdev' : null);
+  const video = params.get('video');
+  if (!channel && !video){ if (!isDemo) showMsg('チャンネルの指定がありません'); return; }
+  const slot = document.getElementById('twSlot');
+  slot.style.display = 'block';
+  const holder = document.createElement('div');
+  holder.id = 'twHolder';
+  slot.appendChild(holder);
+  const opts = { width: '100%', height: '100%', parent: [HOST, 'localhost'], autoplay: false, muted: false, layout: 'video' };
+  if (video) opts.video = video; else opts.channel = channel;
+  twPlayer = new Twitch.Player('twHolder', opts);
+  twPlayer.addEventListener(Twitch.Player.READY, () => post('ready', { provider:'twitch' }));
+  twPlayer.addEventListener(Twitch.Player.PLAY, () => post('playing', { provider:'twitch' }));
+  twPlayer.addEventListener(Twitch.Player.PAUSE, () => post('paused', { provider:'twitch' }));
+  twPlayer.addEventListener(Twitch.Player.ENDED, () => post('ended', { provider:'twitch' }));
+  twPlayer.addEventListener(Twitch.Player.ONLINE, () => post('online', { provider:'twitch' }));
+  twPlayer.addEventListener(Twitch.Player.OFFLINE, () => post('offline', { provider:'twitch' }));
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTwitch);
+else initTwitch();
+if (isDemo) document.body.classList.add('demo');
+if (!isDemo && params.get('type') === 'twitch') document.getElementById('ytSlot').style.display = 'none';
+
+/* ---------- 親からの命令 ---------- */
+window.addEventListener('message', (ev) => {
+  const d = ev.data;
+  if (!d || d.contract !== CONTRACT || !d.cmd) return;
+  const target = d.provider || params.get('type') || (isDemo ? 'youtube' : null);
+  try{
+    if (target === 'youtube' && ytPlayer){
+      if (d.cmd === 'play') ytPlayer.playVideo();
+      if (d.cmd === 'pause') ytPlayer.pauseVideo();
+      if (d.cmd === 'seekTo') ytPlayer.seekTo(Number(d.sec || 0), true);
+      if (d.cmd === 'load' && d.id){ ytPlayer.loadVideoById(d.id); loadSponsorBlock(d.id).then(startSbWatch); }
+      if (d.cmd === 'getState') post('state', { provider:'youtube',
+        time: ytPlayer.getCurrentTime(), duration: ytPlayer.getDuration(), state: ytPlayer.getPlayerState() });
+    }
+    if (target === 'twitch' && twPlayer){
+      if (d.cmd === 'play') twPlayer.play();
+      if (d.cmd === 'pause') twPlayer.pause();
+      if (d.cmd === 'seekTo') twPlayer.seek(Number(d.sec || 0));
+      if (d.cmd === 'getState') post('state', { provider:'twitch',
+        time: twPlayer.getCurrentTime(), duration: twPlayer.getDuration(), paused: twPlayer.isPaused() });
+    }
+  }catch(e){ post('error', { provider: target, message: String(e) }); }
+});
+
+post('boot', { demo: isDemo });
+</script>
+</body>
+</html>
