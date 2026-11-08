@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>テストモード（再生まわり）</title>
+<!--
+  テストモード ― StreamHub／プレイヤーブリッジの自己点検（クロギリ試験モードの型）
+  置き場所: https://highlightyjp.github.io/iOS_WebApp/launcher/test.html
+  約束:
+  - 固定のテスト用コンテンツだけを使う。本人の登録・キュー・履歴には触れない。
+  - 書き込みはテスト専用キー（streamhub.test.*）だけ。本データの同一性を項目として確認する。
+  - 測れないものは理由つきで「取得できない／未実施」と出す。白紙を「できた」と言わない。
+-->
+<style>
+  html,body{ margin:0; padding:0; background:#0b0e13; color:#eef2f8;
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  main{ padding:16px; max-width:640px; margin:0 auto; }
+  h1{ font-size:19px; margin:4px 0 2px; }
+  .sub{ color:#9fb0c3; font-size:12.5px; line-height:1.6; }
+  .row{ display:flex; gap:10px; align-items:flex-start; padding:11px 12px; margin-top:8px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:14px; }
+  .mark{ font-size:16px; width:22px; text-align:center; flex:none; }
+  .body{ flex:1; min-width:0; }
+  .name{ font-size:14.5px; font-weight:600; }
+  .detail{ font-size:12.5px; color:#c3cedd; line-height:1.55; margin-top:2px; word-break:break-all; }
+  .ms{ color:#8fa2bb; font-size:12px; flex:none; }
+  button.act{ width:100%; margin-top:14px; padding:14px; border:0; border-radius:14px;
+    background:#7dd3fc; color:#082f49; font-size:15.5px; font-weight:700; }
+  button.sub2{ background:rgba(255,255,255,.12); color:#eef2f8; }
+  textarea{ width:100%; box-sizing:border-box; margin-top:14px; min-height:190px; padding:12px;
+    border-radius:12px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05);
+    color:#eef2f8; font-size:12px; line-height:1.6; }
+  .stage{ margin-top:10px; }
+  .stage .label{ font-size:12px; color:#9fb0c3; margin:10px 0 4px; }
+  .framebox{ position:relative; width:100%; height:200px; background:#000; border-radius:12px; overflow:hidden; }
+  .framebox iframe, .framebox > div{ width:100%; height:100%; }
+  #summaryImg{ width:100%; border-radius:12px; margin-top:8px; display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>テストモード（再生まわり）</h1>
+  <div class="sub">固定のテスト用コンテンツだけで点検します。あなたの登録や履歴には触れません。</div>
+  <div id="rows"></div>
+  <button class="act" id="rerun">もう一度はかる</button>
+  <div class="stage">
+    <div class="label">YouTube（テスト再生）</div>
+    <div class="framebox" id="ytBox"></div>
+    <div class="label">Twitch（テスト再生）</div>
+    <div class="framebox" id="twBox"></div>
+    <div class="label">橋の往復（プレイヤーブリッジ経由）</div>
+    <div class="framebox" id="bridgeBox"></div>
+  </div>
+  <textarea id="resultText" readonly></textarea>
+  <button class="act sub2" id="copyBtn">結果テキストをコピー</button>
+  <div class="label" style="margin-top:14px; font-size:12px; color:#9fb0c3;">まとめ画像（長押しで保存できます）</div>
+  <img id="summaryImg" alt="テスト結果のまとめ画像" />
+</main>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script>
+'use strict';
+const HOST = 'highlightyjp.github.io';
+const BASE = 'https://' + HOST + '/iOS_WebApp/launcher/';
+const LS_LAST = 'streamhub.test.last';
+const results = []; // {name, status: 'pass'|'fail'|'na', detail, ms}
+const rowsEl = document.getElementById('rows');
+let dataHashBefore = '';
+
+function hashStr(s){ let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(16); }
+function snapshotData(){
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (k && !k.startsWith('streamhub.test.')) keys.push(k + '=' + localStorage.getItem(k));
+  }
+  keys.sort();
+  return hashStr(keys.join('|'));
+}
+function render(){
+  rowsEl.textContent = '';
+  for (const r of results){
+    const row = document.createElement('div'); row.className = 'row';
+    const mark = document.createElement('div'); mark.className = 'mark';
+    mark.textContent = r.status === 'pass' ? '✓' : (r.status === 'fail' ? '✗' : '–');
+    const body = document.createElement('div'); body.className = 'body';
+    const name = document.createElement('div'); name.className = 'name'; name.textContent = r.name;
+    const det = document.createElement('div'); det.className = 'detail'; det.textContent = r.detail || '';
+    body.append(name, det);
+    const ms = document.createElement('div'); ms.className = 'ms';
+    ms.textContent = (typeof r.ms === 'number') ? Math.round(r.ms) + 'ms' : '';
+    row.append(mark, body, ms);
+    rowsEl.appendChild(row);
+  }
+}
+function addResult(name, status, detail, ms){
+  const found = results.find(r => r.name === name);
+  if (found) Object.assign(found, { status, detail, ms });
+  else results.push({ name, status, detail, ms });
+  render();
+}
+function wait(ms){ return new Promise(res => setTimeout(res, ms)); }
+async function waitFor(fn, timeoutMs, stepMs){
+  const t0 = performance.now();
+  while (performance.now() - t0 < timeoutMs){
+    const v = fn();
+    if (v) return v;
+    await wait(stepMs || 200);
+  }
+  return null;
+}
+
+/* ---------- 1. 一覧の照合 ---------- */
+async function checkManifests(){
+  const t0 = performance.now();
+  try{
+    const [m, a] = await Promise.all([
+      fetch(BASE + 'modules.json?t=' + Date.now(), { cache: 'no-store' }),
+      fetch(BASE + 'apps.json?t=' + Date.now(), { cache: 'no-store' })
+    ]);
+    if (!m.ok || !a.ok) throw new Error('http ' + m.status + '/' + a.status);
+    const mj = await m.json(), aj = await a.json();
+    const app = (aj.apps || [])[0] || {};
+    addResult('一覧の照合', 'pass',
+      'modules 生成 ' + (mj.generated_at || '不明') + '／殻の最新版 ' + (app.version || '不明'),
+      performance.now() - t0);
+  }catch(e){
+    addResult('一覧の照合', 'fail', '取得に失敗: ' + String(e), performance.now() - t0);
+  }
+}
+
+/* ---------- 2. YouTube ---------- */
+let ytPlayer = null, ytState = { readyAt: 0, playing: false };
+window.onYouTubeIframeAPIReady = function(){
+  const holder = document.createElement('div'); holder.id = 'ytHolder';
+  document.getElementById('ytBox').appendChild(holder);
+  ytPlayer = new YT.Player('ytHolder', {
+    width: '100%', height: '100%', videoId: 'aqz-KE-bpKQ',
+    playerVars: { playsinline: 1, rel: 0, modestbranding: 1, mute: 1, origin: 'https://' + HOST },
+    events: {
+      onReady: () => { ytState.readyAt = performance.now(); },
+      onStateChange: (e) => { if (e.data === YT.PlayerState.PLAYING) ytState.playing = true; },
+      onError: (e) => { ytState.error = e.data; }
+    }
+  });
+};
+async function checkYouTube(){
+  const t0 = performance.now();
+  const ready = await waitFor(() => ytState.readyAt, 12000);
+  if (!ready){ addResult('YouTube の再生開始', 'fail', '12秒待っても準備が終わらない' + (ytState.error ? '（エラー ' + ytState.error + '）' : ''), performance.now() - t0); return; }
+  const readyMs = ytState.readyAt - t0;
+  try{ ytPlayer.playVideo(); }catch(e){}
+  const playing = await waitFor(() => ytState.playing, 8000);
+  if (!playing){ addResult('YouTube の再生開始', 'fail', '再生状態にならない' + (ytState.error ? '（エラー ' + ytState.error + '）' : ''), performance.now() - t0); return; }
+  const t1 = ytPlayer.getCurrentTime();
+  await wait(1500);
+  const t2 = ytPlayer.getCurrentTime();
+  try{ ytPlayer.pauseVideo(); }catch(e){}
+  if (t2 - t1 >= 0.8) addResult('YouTube の再生開始', 'pass', '準備まで ' + Math.round(readyMs) + 'ms、再生位置が ' + (t2 - t1).toFixed(1) + '秒 進んだ', performance.now() - t0);
+  else addResult('YouTube の再生開始', 'fail', '再生位置が進まない（' + (t2 - t1).toFixed(2) + '秒）', performance.now() - t0);
+}
+
+/* ---------- 3. Twitch ---------- */
+async function checkTwitch(){
+  const t0 = performance.now();
+  const anc = (location.ancestorOrigins && location.ancestorOrigins.length) ? [...location.ancestorOrigins].join(' , ') : 'なし（最上位で表示中）';
+  if (typeof Twitch === 'undefined'){ addResult('Twitch の応答', 'fail', '読み込み自体に失敗。祖先オリジン: ' + anc, performance.now() - t0); return; }
+  const holder = document.createElement('div'); holder.id = 'twHolder';
+  document.getElementById('twBox').appendChild(holder);
+  const ev = { ready: false, online: null };
+  try{
+    const p = new Twitch.Player('twHolder', { width: '100%', height: '100%', channel: 'twitchdev',
+      parent: [HOST, 'localhost'], autoplay: false, muted: true, layout: 'video' });
+    p.addEventListener(Twitch.Player.READY, () => { ev.ready = performance.now(); });
+    p.addEventListener(Twitch.Player.ONLINE, () => { ev.online = true; });
+    p.addEventListener(Twitch.Player.OFFLINE, () => { ev.online = false; });
+  }catch(e){
+    addResult('Twitch の応答', 'fail', '生成で例外: ' + String(e) + '。祖先オリジン: ' + anc, performance.now() - t0);
+    return;
+  }
+  const readyAt = await waitFor(() => ev.ready, 12000);
+  if (!readyAt){ addResult('Twitch の応答', 'fail', '12秒待っても READY が来ない。祖先オリジン: ' + anc, performance.now() - t0); return; }
+  await waitFor(() => ev.online !== null, 4000);
+  const state = ev.online === true ? '配信中と判定' : (ev.online === false ? '休止中と判定（枠は健全）' : '配信状態は未判定');
+  addResult('Twitch の応答', 'pass', 'READY まで ' + Math.round(readyAt - t0) + 'ms、' + state + '。祖先オリジン: ' + anc, performance.now() - t0);
+}
+
+/* ---------- 4. 橋の往復 ---------- */
+async function checkBridge(){
+  const t0 = performance.now();
+  const box = document.getElementById('bridgeBox');
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  let stateReply = null;
+  const onMsg = (ev) => {
+    const d = ev.data;
+    if (d && d.contract === 'streamhub-player/v1' && d.event === 'state') stateReply = d;
+  };
+  window.addEventListener('message', onMsg);
+  iframe.src = BASE + 'player.html?type=youtube&id=aqz-KE-bpKQ';
+  box.appendChild(iframe);
+  await wait(2500);
+  for (let i = 0; i < 10 && !stateReply; i++){
+    try{ iframe.contentWindow.postMessage({ contract: 'streamhub-player/v1', cmd: 'getState', provider: 'youtube' }, '*'); }catch(e){}
+    await wait(800);
+  }
+  window.removeEventListener('message', onMsg);
+  if (stateReply) addResult('橋の命令の往復', 'pass', '状態が返った（再生位置 ' + Number(stateReply.time || 0).toFixed(1) + '秒）', performance.now() - t0);
+  else addResult('橋の命令の往復', 'fail', '状態取得への返事が無い', performance.now() - t0);
+}
+
+/* ---------- 5. 提供区間の情報 ---------- */
+async function checkSponsorBlock(){
+  const t0 = performance.now();
+  try{
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('aqz-KE-bpKQ'));
+    const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const res = await fetch('https://sponsor.ajay.app/api/skipSegments/' + hex.slice(0, 4));
+    addResult('提供区間の情報の到達', 'pass', '応答 ' + res.status + '（取れる・無いは動画ごとに違う）', performance.now() - t0);
+  }catch(e){
+    addResult('提供区間の情報の到達', 'fail', '到達できない: ' + String(e), performance.now() - t0);
+  }
+}
+
+/* ---------- 結果テキストとまとめ画像 ---------- */
+function buildText(){
+  const lines = [];
+  lines.push('StreamHub テストモード結果');
+  lines.push('日時：' + new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) + '（日本時間）');
+  lines.push('端末：' + navigator.userAgent);
+  let prev = null;
+  try{ prev = JSON.parse(localStorage.getItem(LS_LAST) || 'null'); }catch(e){}
+  for (const r of results){
+    const mark = r.status === 'pass' ? 'できた' : (r.status === 'fail' ? 'できなかった' : '対象外・未実施');
+    let line = '- ' + r.name + '：' + mark + (typeof r.ms === 'number' ? '（' + Math.round(r.ms) + 'ms）' : '') + (r.detail ? ' ― ' + r.detail : '');
+    if (prev && prev.items && prev.items[r.name] && typeof prev.items[r.name].ms === 'number' && typeof r.ms === 'number'){
+      const d = Math.round(r.ms - prev.items[r.name].ms);
+      line += '［前回との差 ' + (d >= 0 ? '+' : '') + d + 'ms］';
+    }
+    lines.push(line);
+  }
+  return lines.join('\n');
+}
+function drawSummary(text){
+  const W = 1080, pad = 56, lineH = 34;
+  const cvs = document.createElement('canvas');
+  const ctx0 = cvs.getContext('2d');
+  ctx0.font = '24px sans-serif';
+  const wrapped = [];
+  for (const raw of text.split('\n')){
+    let line = '';
+    for (const ch of raw){
+      if (ctx0.measureText(line + ch).width > W - pad * 2){ wrapped.push(line); line = ch; }
+      else line += ch;
+    }
+    wrapped.push(line);
+  }
+  cvs.width = W; cvs.height = pad * 2 + wrapped.length * lineH + 20;
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = '#0b0e13'; ctx.fillRect(0, 0, cvs.width, cvs.height);
+  ctx.fillStyle = '#eef2f8'; ctx.font = '24px sans-serif';
+  wrapped.forEach((l, i) => ctx.fillText(l, pad, pad + 28 + i * lineH));
+  const img = document.getElementById('summaryImg');
+  img.src = cvs.toDataURL('image/png');
+  img.style.display = 'block';
+}
+function finish(){
+  const text = buildText();
+  document.getElementById('resultText').value = text;
+  const store = { at: Date.now(), items: {} };
+  for (const r of results) store.items[r.name] = { status: r.status, ms: r.ms };
+  try{ localStorage.setItem(LS_LAST, JSON.stringify(store)); }catch(e){}
+  drawSummary(text);
+}
+
+/* ---------- 本データの同一性 ---------- */
+async function checkIsolation(){
+  await wait(300);
+  const after = snapshotData();
+  if (after === dataHashBefore) addResult('本データの同一性', 'pass', '試験の前後で、テスト用以外の保存内容は同一', 0);
+  else addResult('本データの同一性', 'fail', 'テスト用以外の保存内容が変わった', 0);
+}
+
+async function runAll(){
+  results.length = 0; render();
+  dataHashBefore = snapshotData();
+  addResult('抽出の経路（dynabook／副）', 'na', '未実施：抽出サービスがまだ無いため、対象外として明記', 0);
+  addResult('ログイン保持の確認', 'na', '対象外：自動では確かめられないため、手動確認の項目として分ける', 0);
+  await checkManifests();
+  await checkYouTube();
+  await checkTwitch();
+  await checkBridge();
+  await checkSponsorBlock();
+  await checkIsolation();
+  finish();
+}
+document.getElementById('rerun').addEventListener('click', runAll);
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('resultText');
+  ta.select();
+  try{ await navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand('copy'); }
+});
+runAll();
+</script>
+</body>
+</html>
