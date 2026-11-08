@@ -129,6 +129,39 @@ async function buildModelButtons(){
   }
 }
 
+// 落ちた時の痕跡：読み込み開始前に印を残し、成功したら消す。印が残っていたら前回は途中で落ちた
+const ATTEMPT_KEY = 'llmprobe.attempt.v1';
+function markAttempt(modelId, stage){
+  try{ localStorage.setItem(ATTEMPT_KEY, JSON.stringify({ model: modelId, stage, at: Date.now() })); }catch(e){ /* 保存できなくても本流は続ける */ }
+}
+function readAttempt(){
+  try{ return JSON.parse(localStorage.getItem(ATTEMPT_KEY) || 'null'); }catch(e){ return null; }
+}
+function clearAttempt(){
+  try{ localStorage.removeItem(ATTEMPT_KEY); }catch(e){ /* 同上 */ }
+}
+
+// 文脈（覚えていられる長さ）を短くして読み込む。抽出や要約の仕事には 2048 で十分で、
+// 覚える場所の分だけメモリが大きく減る。作れなければ通常の作り方に倒す
+async function createEngine(modelId, onProgress){
+  let appConfig = null;
+  try{
+    const pre = webllm.prebuiltAppConfig;
+    if (pre && Array.isArray(pre.model_list)){
+      const list = pre.model_list.map(r => {
+        if (r.model_id === modelId){
+          return Object.assign({}, r, { overrides: Object.assign({}, r.overrides || {}, { context_window_size: 2048 }) });
+        }
+        return r;
+      });
+      appConfig = Object.assign({}, pre, { model_list: list });
+    }
+  }catch(e){ appConfig = null; }
+  const opts = { initProgressCallback: onProgress };
+  if (appConfig) opts.appConfig = appConfig;
+  return await webllm.CreateMLCEngine(modelId, opts);
+}
+
 const BENCH_PROMPT = '次の文から、日付・場所・金額を取り出して、項目ごとに1行で答えてください。\n文：来週の火曜日、つまり11月17日に、板橋区の高島平で開催される説明会に参加する。参加費は3,500円で、当日現金で払う。帰りに駅前の店で2,980円の本を買う予定。\n/no_think';
 
 document.getElementById('runBtn').addEventListener('click', async () => {
@@ -140,22 +173,23 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   run.disabled = true;
   results.error = ''; results.load = ''; results.bench = '';
   out.textContent = '読み込み中…';
+  markAttempt(selected.id, 'loading');
   const t0 = performance.now();
   let engine;
   try{
-    engine = await webllm.CreateMLCEngine(selected.id, {
-      initProgressCallback: (r) => {
-        const pct = Math.round((r.progress || 0) * 100);
-        fill.style.width = pct + '%';
-        prog.textContent = '進み具合: ' + pct + '% ' + (r.text || '');
-      }
+    engine = await createEngine(selected.id, (r) => {
+      const pct = Math.round((r.progress || 0) * 100);
+      fill.style.width = pct + '%';
+      prog.textContent = '進み具合: ' + pct + '% ' + (r.text || '');
     });
   }catch(e){
+    clearAttempt();
     results.error = '読み込み失敗：' + (e && e.message || e);
-    out.textContent = resultText();
+    out.textContent = resultText() + '\n\n大きいモデルで失敗した時は、下の小さいモデルで試してください（自動では落としません）。';
     run.disabled = false;
     return;
   }
+  markAttempt(selected.id, 'loaded');
   const loadMs = Math.round(performance.now() - t0);
   results.load = (loadMs / 1000).toFixed(1) + '秒';
   prog.textContent = '進み具合: 読み込み完了（' + results.load + '）。測っています…';
@@ -189,14 +223,25 @@ document.getElementById('runBtn').addEventListener('click', async () => {
     out.textContent = resultText();
   }
   try{ await engine.unload(); }catch(e){ /* 後片付けは任意 */ }
+  clearAttempt();
   run.disabled = false;
   run.textContent = 'もう一度測る';
 });
 
 (async () => {
+  const prev = readAttempt();
   const ok = await checkEnv();
   if (ok) buildModelButtons();
   else document.getElementById('out').textContent = resultText();
+  if (prev && prev.stage === 'loading'){
+    // 前回は読み込みの途中で画面ごと落ちた形跡。理由はメモリ不足が本命
+    results.error = '前回は ' + prev.model + ' の読み込み中に落ちました（画面ごと終了した形跡）';
+    document.getElementById('out').textContent =
+      '前回は、モデルの読み込み中に落ちた形跡があります。おそらくメモリ不足です。\n\n' +
+      '対策は入れてあります：覚える長さ（文脈）を短くして読み込むので、必要なメモリが大きく減ります。\n\n' +
+      '同じモデルでもう一度「読み込んで測る」を押してください（ダウンロード済みなら取り直しは不要です）。' +
+      'それでも落ちる時は、1つ小さいモデルで試してください。その結果が、この端末の天井になります。';
+  }
 })();
 </script>
 </body>
