@@ -148,8 +148,8 @@ window.onYouTubeIframeAPIReady = function(){
 };
 async function checkYouTube(){
   const t0 = performance.now();
-  const ready = await waitFor(() => ytState.readyAt, 12000);
-  if (!ready){ addResult('YouTube の再生開始', 'fail', '12秒待っても準備が終わらない' + (ytState.error ? '（エラー ' + ytState.error + '）' : ''), performance.now() - t0); return; }
+  const ready = await waitFor(() => ytState.readyAt, 25000);
+  if (!ready){ addResult('YouTube の再生開始', 'fail', '25秒待っても準備が終わらない' + (ytState.error ? '（エラー ' + ytState.error + '）' : ''), performance.now() - t0); return; }
   const readyMs = ytState.readyAt - t0;
   try{ ytPlayer.playVideo(); }catch(e){}
   const playing = await waitFor(() => ytState.playing, 8000);
