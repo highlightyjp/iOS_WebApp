@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="color-scheme" content="light dark" />
 <title>ランチャー</title>
 <style>
@@ -63,6 +63,7 @@
   #frameWrap{ flex:1; }
   #frameWrap iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
 </style>
+<style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
 </head>
 <body>
 <header>
@@ -122,7 +123,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.3';
-const SHELL_BUILD = '2026-11-09-0210';
+const SHELL_BUILD = '2026-11-09-0225';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -236,11 +237,13 @@ async function refreshModules(){
     if (!res.ok) throw new Error('http ' + res.status);
     const data = await res.json();
     if (!data || !Array.isArray(data.modules)) throw new Error('bad shape');
-    if (!stored || data.generated_at !== stored.generated_at){
+    // 変化の判定は中身そのもので行う（generated_at の付け忘れで凍らないように）
+    if (JSON.stringify(data.modules) !== JSON.stringify(stored && stored.modules)){
       localStorage.setItem(LS_MODULES, JSON.stringify(data));
       render(data.modules);
     }
-    statusEl.textContent = '一覧は最新です';
+    const now = new Date();
+    statusEl.textContent = '一覧は最新です（' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0') + ' 取得）';
   }catch(e){
     statusEl.textContent = stored ? '前回の一覧を表示しています' : '通信できないため、予備の一覧を表示しています';
   }
