@@ -129,7 +129,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.7';
-const SHELL_BUILD = '2026-11-09-2305';
+const SHELL_BUILD = '2026-11-09-2258';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -367,9 +367,9 @@ window.addEventListener('message', (e) => {
   }
   bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '受けた', detail: 'action=' + (d.action || '?') });
   const reply = (obj) => {
-    try { e.source.postMessage(Object.assign({ contract: d.contract, requestId: d.requestId }, obj), location.origin); } catch (_) {}
+    try { e.source.postMessage(Object.assign({ contract: d.contract, requestId: d.requestId, moduleId: d.moduleId }, obj), location.origin); } catch (_) {}
     if (obj.status && obj.status !== 'accepted') {
-      bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '応答 ' + obj.status + (obj.code ? '/' + obj.code : '') });
+      bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '応答 ' + obj.status + (obj.code ? '/' + obj.code : ''), detail: '自オリジン ' + location.origin });
     }
   };
   if (d.contract === 'launcher-media/v1') handleMediaSave(d, reply);
