@@ -73,6 +73,10 @@
 </header>
 <main>
   <button id="updateBox"></button>
+  <div id="resumeBox" style="display:none;border:1px solid var(--card-border);background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+    <div style="font-size:14.5px;line-height:1.6;">LLM検証が途中で落ちています。<span id="resumeCount">3</span>秒後に続きを自動で開きます。</div>
+    <button id="resumeCancelBtn" type="button" style="margin-top:8px;padding:9px 16px;border-radius:999px;border:1px solid var(--card-border);background:transparent;color:var(--text);font-size:14px;">開かない</button>
+  </div>
   <div class="grid" id="moduleGrid"></div>
 
   <div class="sectionTitle">点検</div>
@@ -123,7 +127,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.3';
-const SHELL_BUILD = '2026-11-09-0225';
+const SHELL_BUILD = '2026-11-09-1455';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -610,9 +614,46 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// LLM検証が落ちた後の自動復帰：検証ページが残した合図（30分以内）を見たら、
+// 数秒後に検証ページを自動で開く。検証ページ側が落ちた所から続きを始める
+let resumeTimer = null;
+function checkProbeResume(){
+  let beat = null;
+  try{ beat = JSON.parse(localStorage.getItem('llmprobe.resume.v1') || 'null'); }catch(e){ /* 読めなければ復帰しない */ }
+  if (!beat || !beat.at || Date.now() - beat.at > 30 * 60 * 1000) return;
+  const box = document.getElementById('resumeBox');
+  const countEl = document.getElementById('resumeCount');
+  box.style.display = 'block';
+  let remain = 3;
+  countEl.textContent = String(remain);
+  const iv = setInterval(() => {
+    remain -= 1;
+    if (remain <= 0){ clearInterval(iv); return; }
+    countEl.textContent = String(remain);
+  }, 1000);
+  resumeTimer = setTimeout(() => {
+    clearInterval(iv);
+    box.style.display = 'none';
+    let url = REMOTE_BASE + 'diag-llm.html';
+    let name = 'LLM検証';
+    try{
+      const stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null');
+      const found = stored && (stored.modules || []).find(m => m.id === 'llmprobe');
+      if (found && found.url){ url = found.url; name = found.name || name; }
+    }catch(e){ /* 予備の住所で開く */ }
+    openModule({ id: 'llmprobe', name, url });
+  }, 3000);
+  document.getElementById('resumeCancelBtn').addEventListener('click', () => {
+    if (resumeTimer) clearTimeout(resumeTimer);
+    clearInterval(iv);
+    box.style.display = 'none';
+  });
+}
+
 refreshModules();
 checkShellFresh();
 checkUpdate();
+checkProbeResume();
 </script>
 </body>
 </html>
