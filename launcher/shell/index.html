@@ -126,8 +126,8 @@
 
 <script>
 'use strict';
-const APP_VERSION = '1.3';
-const SHELL_BUILD = '2026-11-09-1605';
+const APP_VERSION = '1.7';
+const SHELL_BUILD = '2026-11-09-2240';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -158,6 +158,10 @@ function loadPrivate(){
 }
 function savePrivate(list){ localStorage.setItem(LS_PRIVATE, JSON.stringify(list)); }
 
+// 殻の橋（launcher-llm/v1／launcher-media/v1）の宛先照合に使う、今開いているモジュール
+let currentModuleId = null;
+let currentFrameEl = null;
+
 function openModule(mod){
   viewerTitle.textContent = mod.name;
   frameWrap.textContent = '';
@@ -167,11 +171,15 @@ function openModule(mod){
   iframe.setAttribute('allowfullscreen', '');
   iframe.setAttribute('referrerpolicy', 'origin');
   frameWrap.appendChild(iframe);
+  currentModuleId = mod.id;
+  currentFrameEl = iframe;
   viewer.style.display = 'flex';
 }
 function closeViewer(){
   viewer.style.display = 'none';
   frameWrap.textContent = ''; // 閉じたら再生も止める
+  currentModuleId = null;
+  currentFrameEl = null;
 }
 document.getElementById('backBtn').addEventListener('click', closeViewer);
 
@@ -291,6 +299,108 @@ window.addEventListener('message', (e) => {
   const d = e.data;
   if (d && d.contract === 'launcher-test/v1' && d.moduleId) moduleTestResults[d.moduleId] = d;
 });
+
+// ===== 殻の橋（契約 launcher-llm/v1 ／ launcher-media/v1） =====
+// 受け付けるのは「今開いているモジュール」の iframe からの依頼だけ（オリジン＋送り元＋moduleId の照合）。
+const LLM_MODELS = {
+  'qwen3-4b': { file: 'Qwen3-4B-Q4_K_M.gguf', nCtx: 2048, nBatch: 512 },
+  'qwen3-8b': { file: 'Qwen3-8B-Q4_K_M.gguf', nCtx: 1024, nBatch: 128 }
+};
+const MEDIA_CODES = ['denied', 'too-large', 'unsupported-type', 'busy', 'failed'];
+let mediaBusy = false;
+let llmBusyMirror = false;
+
+function nativePlugin(name){
+  try { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null; }
+  catch (e) { return null; }
+}
+
+window.addEventListener('message', (e) => {
+  if (e.origin !== location.origin) return;
+  const d = e.data;
+  if (!d || typeof d !== 'object') return;
+  if (d.contract !== 'launcher-llm/v1' && d.contract !== 'launcher-media/v1') return;
+  if (!currentFrameEl || e.source !== currentFrameEl.contentWindow) return;
+  if (!d.moduleId || d.moduleId !== currentModuleId) return;
+  const reply = (obj) => {
+    try { e.source.postMessage(Object.assign({ contract: d.contract, requestId: d.requestId }, obj), location.origin); } catch (_) {}
+  };
+  if (d.contract === 'launcher-media/v1') handleMediaSave(d, reply);
+  else handleLlm(d, reply);
+});
+
+async function handleMediaSave(d, reply){
+  if (d.action !== 'saveImage') { reply({ status: 'error', code: 'failed' }); return; }
+  if (mediaBusy) { reply({ status: 'error', code: 'busy' }); return; }
+  if (d.mimeType !== 'image/jpeg' && d.mimeType !== 'image/png') { reply({ status: 'error', code: 'unsupported-type' }); return; }
+  if (typeof d.dataBase64 !== 'string' || !d.dataBase64) { reply({ status: 'error', code: 'unsupported-type' }); return; }
+  if (d.dataBase64.length * 3 / 4 > 20 * 1024 * 1024) { reply({ status: 'error', code: 'too-large' }); return; }
+  const saver = nativePlugin('MediaSaver');
+  if (!saver) { reply({ status: 'error', code: 'failed' }); return; }
+  mediaBusy = true;
+  reply({ status: 'accepted' });
+  try {
+    await saver.saveImage({ dataBase64: d.dataBase64, mimeType: d.mimeType, filename: typeof d.filename === 'string' ? d.filename : '' });
+    reply({ status: 'ok' });
+  } catch (err) {
+    const msg = (err && err.message) || '';
+    reply({ status: 'error', code: MEDIA_CODES.includes(msg) ? msg : 'failed' });
+  } finally { mediaBusy = false; }
+}
+
+async function handleLlm(d, reply){
+  const llama = nativePlugin('LlamaCore');
+  if (!llama) { reply({ status: 'error', code: 'failed' }); return; }
+  const key = (typeof d.model === 'string' && LLM_MODELS[d.model]) ? d.model : 'qwen3-4b';
+  const spec = LLM_MODELS[key];
+  if (d.action === 'status') {
+    try {
+      const info = await llama.modelInfo({ name: spec.file });
+      const st = await llama.status({});
+      let state = 'ready';
+      if (!info || !info.exists) state = 'no-model';
+      else if (st && st.busy) state = 'busy';
+      reply({ status: 'ok', state, model: key, loaded: !!(st && st.loaded) });
+    } catch (err) { reply({ status: 'error', code: 'failed' }); }
+    return;
+  }
+  if (d.action !== 'generate') { reply({ status: 'error', code: 'failed' }); return; }
+  if (typeof d.prompt !== 'string' || !d.prompt.trim()) { reply({ status: 'error', code: 'failed' }); return; }
+  if (llmBusyMirror) { reply({ status: 'error', code: 'busy' }); return; }
+  let info = null;
+  try { info = await llama.modelInfo({ name: spec.file }); } catch (err) {}
+  if (!info || !info.exists) { reply({ status: 'error', code: 'no-model' }); return; }
+  reply({ status: 'accepted' });
+  llmBusyMirror = true;
+  const maxTokens = Math.max(1, Math.min(parseInt(d.maxTokens, 10) || 256, 1024));
+  let temperature = (typeof d.temperature === 'number') ? d.temperature : 0.2;
+  temperature = Math.max(0, Math.min(temperature, 1));
+  const args = { name: spec.file, prompt: d.prompt, maxTokens, temperature, nCtx: spec.nCtx, nBatch: spec.nBatch };
+  if (typeof d.system === 'string' && d.system) args.system = d.system;
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (!settled) { settled = true; reply({ status: 'error', code: 'failed', detail: 'timeout' }); }
+  }, 300000);
+  try {
+    const r = await llama.generate(args);
+    if (!settled) {
+      settled = true;
+      reply({ status: 'ok', text: r.text || '', stats: { genTokens: r.genTokens || 0, tokPerSec: Math.round((r.tokPerSec || 0) * 10) / 10, ttftMs: Math.round(r.ttftMs || 0), loadMs: Math.round(r.loadMs || 0), reused: !!r.reused } });
+    }
+  } catch (err) {
+    if (!settled) {
+      settled = true;
+      const msg = (err && err.message) || '';
+      let code = 'failed';
+      if (msg === 'busy') code = 'busy';
+      else if (msg.indexOf('prompt too long') === 0) code = 'too-long';
+      reply({ status: 'error', code, detail: msg.slice(0, 200) });
+    }
+  } finally {
+    clearTimeout(timer);
+    llmBusyMirror = false;
+  }
+}
 
 function fnv(str){
   let h = 0x811c9dc5;
