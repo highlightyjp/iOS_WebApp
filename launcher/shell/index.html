@@ -100,6 +100,8 @@
     <button id="runTestBtn" type="button">点検する</button>
     <div style="font-size:13px;color:var(--sub);margin-top:8px;line-height:1.6;">試験は試験用の保存場所だけを使います。本編の保存（一覧と自分で足したもの）は、読んで照合するだけです。</div>
     <div id="testResults"></div>
+    <div class="sectionTitle">橋の記録（モジュールからの依頼の受け取り）</div>
+    <pre id="bridgeLog" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.7;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:12px;">（まだありません）</pre>
     <div id="testShareRow" style="display:none;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 6px;">
       <button id="copyTestBtnTop" type="button" style="width:100%;padding:15px;border-radius:12px;border:0;background:var(--accent);color:#082f49;font-size:16px;font-weight:700;cursor:pointer;">結果テキストをコピー</button>
       <button id="shareTestBtn" type="button" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--card-border);background:var(--card);color:var(--text);font-size:15px;margin-top:8px;cursor:pointer;">共有する</button>
@@ -127,7 +129,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.7';
-const SHELL_BUILD = '2026-11-09-2240';
+const SHELL_BUILD = '2026-11-09-2305';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -315,15 +317,60 @@ function nativePlugin(name){
   catch (e) { return null; }
 }
 
+// 橋の受け取り記録（試験モードで読める。捨てた理由も残す＝取りこぼしの切り分け用）
+const LS_BRIDGE_LOG = 'launcher.bridge.log.v1';
+function bridgeLog(entry){
+  try {
+    const arr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]');
+    arr.push(Object.assign({ at: new Date().toLocaleTimeString('ja-JP') }, entry));
+    while (arr.length > 30) arr.shift();
+    localStorage.setItem(LS_BRIDGE_LOG, JSON.stringify(arr));
+  } catch (e) {}
+  renderBridgeLog();
+}
+function renderBridgeLog(){
+  const el = document.getElementById('bridgeLog');
+  if (!el) return;
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]'); } catch (e) {}
+  el.textContent = arr.length
+    ? arr.map(x => '[' + x.at + '] ' + x.contract + ' moduleId=' + (x.moduleId || '?') + ' → ' + x.result + (x.detail ? '（' + x.detail + '）' : '')).join('\n')
+    : '（まだありません）';
+}
+// 送り元が、今開いているモジュールの枠（その中に入れ子になった枠も含む）かどうか
+function isFrameInTree(win, root){
+  if (!win || !root) return false;
+  if (win === root) return true;
+  try {
+    for (let i = 0; i < root.frames.length; i++){
+      if (isFrameInTree(win, root.frames[i])) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
 window.addEventListener('message', (e) => {
-  if (e.origin !== location.origin) return;
   const d = e.data;
   if (!d || typeof d !== 'object') return;
   if (d.contract !== 'launcher-llm/v1' && d.contract !== 'launcher-media/v1') return;
-  if (!currentFrameEl || e.source !== currentFrameEl.contentWindow) return;
-  if (!d.moduleId || d.moduleId !== currentModuleId) return;
+  if (e.origin !== location.origin) {
+    bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '捨てた', detail: 'オリジン違い: ' + e.origin });
+    return;
+  }
+  if (!currentFrameEl || !isFrameInTree(e.source, currentFrameEl.contentWindow)) {
+    bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '捨てた', detail: '送り元が今開いているモジュールの枠と一致しない' });
+    return;
+  }
+  if (!d.moduleId || d.moduleId !== currentModuleId) {
+    bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '捨てた', detail: 'moduleId が開いているもの（' + currentModuleId + '）と違う' });
+    return;
+  }
+  bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '受けた', detail: 'action=' + (d.action || '?') });
   const reply = (obj) => {
     try { e.source.postMessage(Object.assign({ contract: d.contract, requestId: d.requestId }, obj), location.origin); } catch (_) {}
+    if (obj.status && obj.status !== 'accepted') {
+      bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '応答 ' + obj.status + (obj.code ? '/' + obj.code : '') });
+    }
   };
   if (d.contract === 'launcher-media/v1') handleMediaSave(d, reply);
   else handleLlm(d, reply);
@@ -414,6 +461,7 @@ function resultWord(r){ return r === 'pass' ? 'できた' : (r === 'fail' ? 'で
 
 document.getElementById('testOpenBtn').addEventListener('click', () => {
   document.getElementById('testView').style.display = 'flex';
+  renderBridgeLog();
 });
 document.getElementById('testBackBtn').addEventListener('click', () => {
   document.getElementById('testView').style.display = 'none';
