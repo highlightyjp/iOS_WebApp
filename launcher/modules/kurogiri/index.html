@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<script>/* モジュール文脈（ランチャー内）でのみタップズームを抑止する。Web版では何もしない */
-(function(){try{if(location.hostname==='highlightyjp.github.io'&&location.pathname.indexOf('/launcher/')!==-1){var m=document.querySelector('meta[name="viewport"]');if(m){var c=m.getAttribute('content')||'';if(c.indexOf('maximum-scale')===-1)m.setAttribute('content',c+', maximum-scale=1, user-scalable=no')}var st=document.createElement('style');st.textContent='html,body{touch-action:manipulation}';document.head.appendChild(st);document.addEventListener('gesturestart',function(e){e.preventDefault()},{passive:false});}}catch(e){}})();</script>
+<script>/* ランチャー文脈の判定はここで1回だけ行い、結果を window.__kuroLauncher に置いて全体（ズーム抑止・写真保存の連携など）で共有する。モジュール文脈（ランチャー内）でのみタップズームを抑止する。Web版では何もしない */
+(function(){try{var inLauncher=(location.hostname==='highlightyjp.github.io'&&location.pathname.indexOf('/launcher/')!==-1);window.__kuroLauncher=inLauncher;if(inLauncher){var m=document.querySelector('meta[name="viewport"]');if(m){var c=m.getAttribute('content')||'';if(c.indexOf('maximum-scale')===-1)m.setAttribute('content',c+', maximum-scale=1, user-scalable=no')}var st=document.createElement('style');st.textContent='html,body{touch-action:manipulation}';document.head.appendChild(st);document.addEventListener('gesturestart',function(e){e.preventDefault()},{passive:false});}}catch(e){}})();</script>
 <meta name="color-scheme" content="dark"/>
 <link rel="icon" href="data:,"/>
 <title>クロギリ</title>
@@ -546,6 +546,10 @@ header .hset{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid var
 #tm-handover{display:none;background:rgba(194,161,94,.08);border:1px solid rgba(194,161,94,.35);border-radius:14px;padding:11px 12px;margin:0 0 9px}
 #tm-handover.on{display:block}
 #tm-handover img{width:100%;display:block;border-radius:10px;margin-top:8px;background:#0a1524}
+.tm-handover-block{margin-top:10px;border-top:1px solid rgba(194,161,94,.25);padding-top:9px}
+.tm-save-status{font-size:11.5px;color:#f0d9a0;line-height:1.6;margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.tm-save-status:empty{display:none}
+.tm-handover-block .tm-actions{margin:8px 0 2px}
 /* 見た目の自動取得: ギャラリーとまとめ画像 */
 #tm-gallery:empty{display:none}
 .tmv-head{font-size:13.5px;font-weight:600;color:#fff;margin:14px 0 4px}
@@ -675,16 +679,16 @@ button.tmv-cell{font-family:inherit;text-align:left;padding:0;cursor:pointer;wid
 <div id="testmode" role="dialog" aria-label="試験モード">
   <div class="tm-head"><strong>試験モード</strong><span>本編の保存には触れません</span><button class="btn small" data-act="tm-exit">本編に戻る</button></div>
   <div class="tm-body">
-    <p class="tm-note">動きを機能ごとに切り分けて、1つずつ確かめる画面です。試験用の状態で動かすので、本編の進み具合と保存はそのまま残ります。1つの失敗が、ほかの試験を止めることはありません。開くと「10. 端末性能の計測」も自動で測り、前回の記録があれば今回との差も結果に残します。「見た目も含めて実行」では、試験と同時に全場面の画像も取得し、下のギャラリーとまとめ画像にまとめます。「まとめて渡す」では、場面のまとめ画像の下に結果テキスト全文を描き込んだ画像を大きく表示します（まとめ画像がなければ先に取得し、テキストが入っていない版しかなければ作り直します）。このページをMuseアプリの中で開いている場合、共有シートからMuseを選んでもチャットへは届かないため、主の経路は共有シートに頼りません。表示された画像を長押しで保存してチャットへ貼るだけで、場面とテキストの両方が渡ります。結果テキストのコピーも副として行います。共有シートで送りたい場合は、その下の副ボタンから開けます。</p>
+    <p class="tm-note">動きを機能ごとに切り分けて、1つずつ確かめる画面です。試験用の状態で動かすので、本編の進み具合と保存はそのまま残ります。1つの失敗が、ほかの試験を止めることはありません。開くと「10. 端末性能の計測」も自動で測り、前回の記録があれば今回との差も結果に残します。「見た目も含めて実行」では、試験と同時に全場面の画像も取得し、下のギャラリーとまとめ画像にまとめます。「まとめて渡す」では、見た目のまとめ画像と、結果テキスト全文の画像の2枚を大きく表示します（まとめ画像がなければ先に取得し、結果テキストの画像が古い版しかなければ作り直します）。このページをMuseアプリの中で開いている場合、共有シートからMuseを選んでもチャットへは届かないため、主の経路は共有シートに頼りません。表示された画像を1枚ずつ長押しで保存してチャットへ貼れば、場面とテキストの両方が渡ります。結果テキストのコピーもあわせて行います。共有シートで送りたい場合は、各画像のボタンから1枚ずつ送れます。</p>
     <div id="tm-stage"></div>
     <p id="tm-stagecap">試験用の描画エリア ― 3Dの試験はここに描かれます</p>
     <div id="tm-list"></div>
     <div class="tm-actions"><button class="btn primary" data-act="tm-runall">全部を実行</button><button class="btn" data-act="tm-copy">結果をコピー</button></div>
     <div class="tm-actions"><button class="btn primary" data-act="tm-runall-visual">見た目も含めて実行</button><button class="btn" data-act="tm-visual-auto">見た目を取得</button></div>
-    <div class="tm-actions"><button class="btn primary" data-act="tm-share">まとめて渡す（テキスト入りのまとめ画像を表示）</button><button class="btn ghost" data-act="tm-share-sheet">共有シートでも送る</button></div>
+    <div class="tm-actions"><button class="btn primary" data-act="tm-share">まとめて渡す（まとめ画像2枚を表示）</button></div>
     <p class="tm-share-status" id="tm-share-status" aria-live="polite"></p>
     <textarea id="tm-report" readonly placeholder="実行すると、ここに報告用の結果テキストがまとまります"></textarea>
-    <div id="tm-handover"><div class="tm-row"><span class="tm-name">受け渡し用 ― まとめ画像</span><button class="btn small" data-act="tm-handover-close">閉じる</button></div><p class="tm-detail" id="tm-handover-note"></p><p class="tm-detail" id="tm-handover-copy"></p><p class="tm-detail" id="tm-handover-how">渡し方 ― この画像1枚に、場面の絵と結果テキスト全文の両方が入っています。画像を長押しして保存し、チャットへ貼れば両方渡ります。</p><img id="tm-handover-img" alt="全場面のまとめ画像（受け渡し用）"></div>
+    <div id="tm-handover"><div class="tm-row"><span class="tm-name">受け渡し用 ― まとめ画像（2枚）</span><button class="btn small" data-act="tm-handover-close">閉じる</button></div><p class="tm-detail" id="tm-handover-note"></p><p class="tm-detail" id="tm-handover-copy"></p><p class="tm-detail" id="tm-handover-how">渡し方 ― 画像は2枚あります。1枚目（見た目のまとめ）と2枚目（結果テキスト全文）を、それぞれ「写真に保存」で写真へ保存し、チャットへ貼ってください。</p><div class="tm-handover-block" id="tm-handover-block-scenes"><div class="tm-row"><span class="tm-name">1枚目 ― 見た目のまとめ</span></div><div id="tm-handover-img-scenes"></div><p class="tm-detail" id="tm-handover-fail-scenes" style="display:none">この画像は作れませんでした。場面の絵は、下のギャラリーの個別画像から渡してください。</p><div class="tm-actions" id="tm-handover-actions-scenes"><button class="btn small" data-act="tm-view-one" data-a1="scenes">大きく表示して保存</button><button class="btn small" id="tm-save-btn-scenes" data-act="tm-save-photo" data-a1="scenes">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="scenes">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-scenes" aria-live="polite"></p></div><div class="tm-handover-block" id="tm-handover-block-text"><div class="tm-row"><span class="tm-name">2枚目 ― 結果テキスト（全文）</span></div><div id="tm-handover-img-text"></div><p class="tm-detail" id="tm-handover-fail-text" style="display:none">この画像は作れませんでした。結果テキストは、上の結果欄からコピーして渡してください。</p><div class="tm-actions" id="tm-handover-actions-text"><button class="btn small" data-act="tm-view-one" data-a1="text">大きく表示して保存</button><button class="btn small" id="tm-save-btn-text" data-act="tm-save-photo" data-a1="text">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="text">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-text" aria-live="polite"></p></div></div>
     <div class="tm-visualbox"><div class="tm-row"><span class="tm-name">見た目の確認（撮影用）</span><button class="btn small" data-act="tm-visual">開く</button></div><div class="tm-detail">各場面を全面で1つずつ表示します。場面はタップか前後のボタンで順に進めます。場面名は小さく出すだけで、消すこともできます。3Dの場面では、その場で画像にして、長押しで写真に保存できます。</div><div class="tm-detail">場面：タイトル扉 ／ 章の扉（第5章・第8章）／ 母港（長門・赤城）／ 作戦の航空戦 ／ 図鑑の零戦（塗装2種）／ 作戦の見通し ／ 運命の対比報告 ／ 研究の添付図面</div><div class="tm-detail">上の「見た目を取得」では、この顔ぶれを自動で順に組み立てて画像にし、ギャラリーとまとめ画像を作ります。取れた場面と取れなかった場面（理由つき）は、結果テキストの末尾にも残ります。</div></div>
     <div id="tm-gallery"></div>
     <div id="tm-probes" style="position:absolute;visibility:hidden;pointer-events:none;left:0;top:0"></div>
@@ -1654,7 +1658,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v48';
+var APP_VERSION='v53';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -3707,7 +3711,7 @@ function initAirGL(){if(AGL||typeof THREE==='undefined')return;var wrap=$('airgl
  if(scene.userData.m3env&&scene.userData.m3env.wakeGroup)scene.userData.m3env.wakeGroup.visible=false;
  AGL={scene:scene,renderer:renderer,cam:cam,wrap:wrap,mesh:null,dist:20,distSm:null,clock:new THREE.Clock(),reported:false};
  airSetMesh();
- function frame(){requestAnimationFrame(frame);if(!AGL.mesh)return;var vis=wrap.clientWidth>0&&wrap.offsetParent!==null;if(!vis)return;
+ function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!AGL.mesh)return;var vis=wrap.clientWidth>0&&wrap.offsetParent!==null;if(!vis)return;
   var t=AGL.clock.getElapsedTime();if(!RM3D)AGL.mesh.rotation.y=t*0.45;AGL.mesh.position.y=2.3+Math.sin(t*0.9)*0.35;
   AGL.mesh.userData.props.forEach(function(pr){if(!RM3D)pr.rotation.z+=0.85});
   if(scene.userData.m3env)m3EnvTick(scene.userData.m3env,t);
@@ -3912,7 +3916,7 @@ function initGL(){if(HGL||typeof THREE==='undefined')return;var wrap=$('glwrap')
  m3Sea(scene,'harbor');
  HGL={scene:scene,renderer:renderer,cam:cam,wrap:wrap,handle:null,name:null,reported:false,ang:0.7,Rsm:null,clock:new THREE.Clock()};
  harborSetShip(effectiveFlagship());
- function frame(){requestAnimationFrame(frame);if(!HGL.handle)return;var t=HGL.clock.getElapsedTime();m3Animate(HGL.handle,t,false);
+ function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!HGL.handle)return;var t=HGL.clock.getElapsedTime();m3Animate(HGL.handle,t,false);
   if(!RM3D)HGL.ang+=0.0016;
   /* F2: 船体が画面幅の約7〜8割を占めるよう、周回角度と画面の横縦比と艦の全長から距離を毎フレーム合わせる */
   var asp=wrap.clientWidth/Math.max(1,wrap.clientHeight);
@@ -3940,7 +3944,7 @@ function initOpGL(){if(OGL||typeof THREE==='undefined')return;var wrap=$('opglwr
  opSetShip(effectiveFlagship());buildAirWar(scene,effectiveFlagship());
  /* 背景の僚艦: 画面の主役ではないため簡易形で置く (輪郭と艦種の読みだけを残す) */
  var esc=buildShipByName('雪風',false,true);esc.setCrew(false);esc.group.position.set(-285,0,-215);esc.group.rotation.y=0.55;scene.add(esc.group);OGL.escort=esc;
- function frame(){requestAnimationFrame(frame);if(!OGL.handle)return;var t=OGL.clock.getElapsedTime();m3Animate(OGL.handle,t,true);updateAirWar(t);
+ function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!OGL.handle)return;var t=OGL.clock.getElapsedTime();m3Animate(OGL.handle,t,true);updateAirWar(t);
   if(OGL.escort){OGL.escort.group.position.y=Math.sin(t*0.5+1.3)*0.12;m3Animate(OGL.escort,t,false)}
   OGL.handle.group.position.y=Math.sin(t*0.5)*0.14;OGL.handle.group.rotation.z=Math.sin(t*0.37)*0.004;
   var k=((SHIP3D_SPEC[OGL.name]?SHIP3D_SPEC[OGL.name].L:250)/250);
@@ -3977,7 +3981,7 @@ function openSettings(){var st=(S&&S.settings)||{delegate:'all',ngplus:'carry',m
  h+='<p class="sheet-h">記録の書き出しと読み戻し</p><p>今の記録を、文字の写しとして取り出せる。写しを手元に残しておけば、後から読み戻して、その時点の続きへ戻れる。</p>';
  h+='<p style="margin:10px 0 4px"><b>書き出し</b> ― 今の記録の写し</p><textarea class="settext" id="set-export" readonly>'+settingsExportEscaped()+'</textarea><div class="btnrow"><button class="btn small" data-act="exp-copy">写しをコピーする</button></div>';
  h+='<p style="margin:14px 0 4px"><b>読み戻し</b> ― 写しを貼って取り込む</p><textarea class="settext" id="set-import" placeholder="ここに写しを貼る"></textarea><p class="setmsg" id="set-import-msg" aria-live="polite"></p><div class="btnrow"><button class="btn small" data-act="imp-check">読み戻す</button></div><div class="setconfirm" id="set-import-confirm" style="display:none"><p>今の記録は、貼られた写しの内容に置き換わります。置き換える前の今の記録は、控えとして残ります。</p><div class="btnrow"><button class="btn small primary" data-act="imp-do">置き換えて読み戻す</button><button class="btn small" data-act="imp-cancel">やめる</button></div></div>';
- h+='<p class="sheet-h">試験モード</p><p>動きを機能ごとに切り分けて確かめる、試験専用の画面。試験用の状態で動かし、本編の保存には触れない。失敗した項目には理由が残り、結果はテキストでコピーでき、「まとめて渡す」では場面のまとめ画像の下に結果テキスト全文を描き込んだ画像を大きく表示し、その画像1枚の保存と貼り付けで場面とテキストの両方をチャットへ渡せる（テキストのコピーと共有シートは副の経路として残してある）。開くと端末性能（CPU／GPUの速さ・3D描画・画面・容量など）も自動で測って結果に残し、前回の記録があれば差も出す。取れない項目は「取得できない」と明記する。「見た目の確認」では各場面を全面で順に表示して撮影でき、3Dの場面は画像にして保存もできる。「見た目も含めて実行」では試験と同時に全場面の画像を自動で取得し、ギャラリーとまとめ画像にして結果テキストと一緒に渡せる。</p><div class="btnrow"><button class="btn small" data-act="testmode">試験モードを開く</button></div>';
+ h+='<p class="sheet-h">試験モード</p><p>動きを機能ごとに切り分けて確かめる、試験専用の画面。試験用の状態で動かし、本編の保存には触れない。失敗した項目には理由が残り、結果はテキストでコピーでき、「まとめて渡す」では、場面のまとめ画像と結果テキスト全文の画像の2枚を大きく表示し、1枚ずつ保存して貼れば、場面とテキストの両方をチャットへ渡せる（テキストのコピーと共有シートは副の経路として残してある）。開くと端末性能（CPU／GPUの速さ・3D描画・画面・容量など）も自動で測って結果に残し、前回の記録があれば差も出す。取れない項目は「取得できない」と明記する。「見た目の確認」では各場面を全面で順に表示して撮影でき、3Dの場面は画像にして保存もできる。「見た目も含めて実行」では試験と同時に全場面の画像を自動で取得し、ギャラリーとまとめ画像にして結果テキストと一緒に渡せる。</p><div class="btnrow"><button class="btn small" data-act="testmode">試験モードを開く</button></div>';
  openSheet('設定',h)}
 function setSetting(key,val){if(!S)return;if(!S.settings)S.settings={delegate:'all',ngplus:'carry',modern:'limited',crew:'on'};S.settings[key]=val;if(key==='delegate'){S.delegatedStep='';if(S.started&&S.phase==='proposals')runDelegation()}audit('設定変更',{key:key,value:val});if(key==='crew'&&typeof applyCrewSetting==='function')applyCrewSetting();save();openSettings();if(S.started)renderAll();toast('設定を変えた')}
 function settingsExportText(){try{var raw=localStorage.getItem(SAVE_KEY);if(raw)return raw}catch(e){}
@@ -4029,7 +4033,9 @@ function enterTestMode(){if(TM.active)return;closeDrawer();
  S=freshState();S.started=true;S.chapter=5;STEPS=CHAPTER_STEPS[5];S.phase='op';S.op={id:'midway',def:OPS.midway,step:5,done:false,result:null,ivDone:{},auditMark:0};
  TM.active=true;window.__TM_ACTIVE=true;TM.results={};TM.perf=null;TM.visual=null;TM.perfPrev=tmPerfLoadPrev();var gv=$('tm-gallery');if(gv)gv.innerHTML='';var hb3=$('tm-handover');if(hb3)hb3.classList.remove('on');tmShareStatus('');
  renderTmList();tmReportUpdate();$('testmode').classList.add('on');tmEnsureStage();setTimeout(function(){if(TM.active)tmRunOne('perf')},350)}
-function exitTestMode(){if(typeof tmvClose==='function')tmvClose();if(window.TV&&TV.on&&typeof tvExit==='function')tvExit();if(TM.renderer){try{TM.renderer.dispose();if(TM.renderer.forceContextLoss)TM.renderer.forceContextLoss()}catch(e){}var wrap=$('tm-stage');if(wrap)while(wrap.firstChild)wrap.removeChild(wrap.firstChild);TM.renderer=null;TM.scene=null;TM.cam=null}
+/* 試験用の描画基盤の後始末: 破棄しても、次に要る時は tmEnsureStage が作り直す */
+function tmDisposeStageRenderer(){if(!TM.renderer)return;try{TM.renderer.dispose();if(TM.renderer.forceContextLoss)TM.renderer.forceContextLoss()}catch(e){}var wrap=$('tm-stage');if(wrap)while(wrap.firstChild)wrap.removeChild(wrap.firstChild);TM.renderer=null;TM.scene=null;TM.cam=null}
+function exitTestMode(){if(typeof tmvClose==='function')tmvClose();if(window.TV&&TV.on&&typeof tvExit==='function')tvExit();tmDisposeStageRenderer();
  if(typeof AIRW!=='undefined')AIRW=null;
  S=TM.savedS;STEPS=TM.savedSteps||STEPS;TM.active=false;window.__TM_ACTIVE=false;$('testmode').classList.remove('on');renderAll()}
 function renderTmList(){var box=$('tm-list');if(!box)return;box.innerHTML=TM_TESTS.map(function(t){return '<div class="tm-item" id="tm-item-'+t.id+'"><div class="tm-row"><span class="tm-name">'+t.name+'</span><span class="tm-status" data-role="status">未実行</span><button class="btn small" data-act="tm-run" data-a1="'+t.id+'">実行</button></div><div class="tm-detail" data-role="detail"></div></div>'}).join('')}
@@ -4049,7 +4055,7 @@ function tmBuildLauncherResult(startedAt){var items=TM_TESTS.map(function(def,i)
  var perf=[];var ro=TM.results.outlook;if(ro&&typeof ro.ms==='number'&&ro.ms>0)perf.push({id:'outlook',label:'作戦の見通しの計算',ms:Math.round(ro.ms)});
  return {contract:'launcher-test/v1',moduleId:'kurogiri',version:APP_VERSION,startedAt:startedAt,items:items,perf:perf,untouched:{checked:true,same:!!(mainSame&&prevSame)},summary:'14件中'+passN+'件が「できた」'}}
 function tmWaitAllResults(timeoutMs){var t0=Date.now();return new Promise(function(resolve){(function poll(){var done=true;TM_TESTS.forEach(function(d){if(!TM.results[d.id])done=false});if(done||Date.now()-t0>timeoutMs){resolve();return}setTimeout(poll,250)})()})}
-function tmRunLauncherTest(){var startedAt=new Date().toISOString();enterTestMode();return tmRunAll().then(function(){return tmWaitAllResults(120000)}).then(function(){tmReportUpdate();var result=tmBuildLauncherResult(startedAt);try{window.parent.postMessage(result,'*')}catch(e){}return result})}
+function tmRunLauncherTest(){var startedAt=new Date().toISOString();enterTestMode();return tmRunAll().then(function(){return tmWaitAllResults(120000)}).then(function(){tmReportUpdate();var result=tmBuildLauncherResult(startedAt);try{window.parent.postMessage(result,'*')}catch(e){}tmDisposeStageRenderer();return result})}
 function tmReportText(){var lines=['クロギリ 試験モード結果','日時：'+tmNow(),'端末：'+(navigator.userAgent||'')+' ／ 論理コア '+(navigator.hardwareConcurrency||'不明')];
  var mainSame='未確認';try{mainSame=(localStorage.getItem(SAVE_KEY)===TM.saveSnapshot)?'はい（試験前と同一）':'いいえ'}catch(e){}
  lines.push('本編の保存：試験では触れていない（試験前後で同一：'+mainSame+'）');lines.push('');
@@ -4061,43 +4067,112 @@ function tmReportUpdate(){var ta=$('tm-report');if(ta)ta.value=tmReportText()}
 function tmCopyReport(){var ta=$('tm-report');if(!ta)return;ta.value=tmReportText();var done=function(){toast('試験結果をコピーした')};var fb=function(){ta.focus();ta.select();try{if(document.execCommand('copy'))done();else toast('コピーできなかった ― 欄の文字を選んでコピーしてほしい')}catch(e){toast('コピーできなかった ― 欄の文字を選んでコピーしてほしい')}};
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(done,fb);else fb()}
 /* ============ まとめて渡す (結果テキストとまとめ画像をチャットへ渡す) ============
-   まとめ画像の下部には結果テキスト全文を描き込んである (tmvBuildSummary の帯) ため、
-   保存した画像1枚の中に場面の絵とテキストの両方が残る。主の経路は共有シートに頼らない:
-   その画像を大きく表示する受け渡し画面を出し、本人は「画像を長押しで保存 → チャットへ
-   貼る」の1手で両方を渡せる。結果テキストのクリップボードへのコピーは副として残す。
+   まとめ画像は2枚 (1枚目=見た目のまとめ、2枚目=結果テキスト全文の画像) で渡す。
+   主の経路は共有シートに頼らない: 2枚を大きく表示する受け渡し画面を出し、本人は
+   各画像を「写真に保存 → チャットへ貼る」ことで1枚ずつ渡せる。結果テキストの
+   クリップボードへのコピーは主の受け渡しとして残す。
    このページは Muse アプリ内ブラウザで開かれることが多く、共有シートから Muse を
    選んでもチャットへ届かないため、シートは主経路にしない。副の経路として、端末の共有
-   (navigator.share) で送るボタンは残す (tmShareViaSheet)。
+   (navigator.share) で送るボタンは各画像に残す (tmShareOne)。
    テキストがコピー済みかどうかは、受け渡し画面と状態表示に明示する。 */
 function tmShareStatus(msg){var el=$('tm-share-status');if(el)el.textContent=msg||''}
 function tmDataUrlToFile(url,name){try{var parts=String(url).split(',');if(parts.length<2)return null;var mime=(parts[0].match(/data:([^;]+)/)||[])[1]||'image/jpeg';var bin=atob(parts.slice(1).join(','));var arr=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);var blob=new Blob([arr],{type:mime});try{return new File([blob],name,{type:mime})}catch(e){try{blob.name=name}catch(e2){}return blob}}catch(e){return null}}
-function tmShowHandover(note,copyState){var box=$('tm-handover');if(!box)return;var v=TM.visual;var img=$('tm-handover-img');if(img&&v&&v.summary)img.src=v.summary;var nt=$('tm-handover-note');if(nt)nt.textContent=note||'';var cp=$('tm-handover-copy');if(cp)cp.textContent=copyState||'';var how=$('tm-handover-how');if(how)how.textContent=(v&&v.summaryText)?'渡し方 ― この画像1枚に、場面の絵と結果テキスト全文の両方が入っています。画像を長押しして保存し、チャットへ貼れば両方渡ります。テキストだけを別に送りたい時は、結果欄からコピーもできます。':'渡し方 ― ①この画像を長押しして保存する　②チャットを開き、保存した画像と、コピー済みの結果テキストを貼る。それで渡せます。';box.classList.add('on');try{box.scrollIntoView({block:'nearest'})}catch(e){}}
+/* 受け渡し画面への画像の差し込みは、画像要素を作ってオブジェクトURLを載せる方式に統一する */
+function tmHandoverFillImage(which,url,alt){var wrap=$('tm-handover-img-'+which);var fail=$('tm-handover-fail-'+which);var acts=$('tm-handover-actions-'+which);
+ if(wrap){while(wrap.firstChild)wrap.removeChild(wrap.firstChild);
+  if(url&&String(url).indexOf('blob:')===0){var im=document.createElement('img');im.src=url;im.alt=alt;wrap.appendChild(im);
+   if(fail)fail.style.display='none';if(acts)acts.style.display=''}
+  else{if(fail)fail.style.display='';if(acts)acts.style.display='none'}}}
+function tmShowHandover(note,copyState){var box=$('tm-handover');if(!box)return;var v=TM.visual;
+ var nt=$('tm-handover-note');if(nt)nt.textContent=note||'';var cp=$('tm-handover-copy');if(cp)cp.textContent=copyState||'';
+ var hasScenes=!!(v&&v.summary&&String(v.summary).indexOf('blob:')===0),hasText=!!(v&&v.textSummary&&String(v.textSummary).indexOf('blob:')===0);
+ var how=$('tm-handover-how');if(how)how.textContent=(hasScenes&&hasText)?'渡し方 ― 画像は2枚あります。1枚目（見た目のまとめ）と2枚目（結果テキスト全文）を、それぞれ「写真に保存」で写真へ保存し、チャットへ貼ってください。保存は1枚ずつ行えます。テキストだけを別に送りたい時は、結果欄からコピーもできます。':(hasScenes?'渡し方 ― 見た目のまとめ画像を「写真に保存」で写真へ保存し、チャットへ貼ってください。結果テキストはコピー済みなので、あわせて貼れば渡せます。結果テキストの画像は作れなかったため、画像としては渡せません。':'渡し方 ― 結果テキスト全文の画像を「写真に保存」で写真へ保存し、チャットへ貼ってください。場面の絵は、下のギャラリーの個別画像から渡してください。');
+ tmHandoverFillImage('scenes',hasScenes?v.summary:null,'全場面のまとめ画像（見た目・受け渡し用）');
+ tmHandoverFillImage('text',hasText?v.textSummary:null,'結果テキスト全文の画像（受け渡し用）');
+ /* 保存の操作の時点で重い画像や描画を抱え込まないよう、受け渡し画面を開いたら
+    ギャラリーの個別画像はその場で手放し（閉じれば戻る）、試験用の描画基盤も破棄する。
+    前回の保存結果の表示は消し、保存ボタンは押せる状態に戻す */
+ tmvReleaseGalleryImages();tmDisposeStageRenderer();tmSaveReset();
+ box.classList.add('on');try{box.scrollIntoView({block:'nearest'})}catch(e){}}
+/* ============ 写真に保存 (受け渡し画面の各画像から、ランチャーの殻へ保存を頼む) ============
+   Web ページからは写真へ直接書けないため、ランチャー文脈では画像データを親 (殻) へ
+   渡して保存してもらう (launcher-media/v1)。文脈でない環境ではホスト側の保存は試みず、
+   共有への案内だけを出す。画像データの文字列化は保存操作の都度だけ行い、送ったら保持しない */
+function tmIsLauncherContext(){try{if(typeof window.__kuroLauncher==='boolean')return window.__kuroLauncher}catch(e){}
+ try{return location.hostname==='highlightyjp.github.io'&&location.pathname.indexOf('/launcher/')!==-1}catch(e){return false}}
+var TM_SAVE_SEQ=0;var TM_SAVE_PENDING={};
+function tmSaveSetStatus(which,msg){var el=$('tm-save-status-'+which);if(el)el.textContent=msg||''}
+function tmSaveSetBtn(which,disabled){var btn=$('tm-save-btn-'+which);if(btn)btn.disabled=!!disabled}
+function tmSaveReset(){tmSaveSetStatus('scenes','');tmSaveSetStatus('text','');tmSaveSetBtn('scenes',false);tmSaveSetBtn('text',false)}
+function tmBlobToBase64(blob){return new Promise(function(resolve,reject){try{var fr=new FileReader();
+ fr.onload=function(){var str=String(fr.result||'');var comma=str.indexOf(',');resolve(comma>=0?str.slice(comma+1):str)};
+ fr.onerror=function(){reject(fr.error||new Error('画像データを読み取れませんでした'))};
+ fr.readAsDataURL(blob)}catch(e){reject(e)}})}
+/* launcher-media/v1 凍結契約: 送り先はランチャーのオリジンに固定し、応答は2段階
+   (受領直後の stage:'accepted'、書き込み完了後の ok)。受領が約3秒以内に来なければ
+   ブリッジ不在とみなし、受領後は最終応答を約30秒まで待つ。エラーは固定コードで受け、
+   画面には短い日本語だけを出し、detail は表示に使わない */
+var TM_SAVE_ORIGIN='https://highlightyjp.github.io';
+var TM_SAVE_MAX_BYTES=20*1024*1024;
+function tmSaveErrorMessage(code){
+ if(code==='denied')return '写真への保存が許可されていません。許可してから、もう一度お試しください';
+ if(code==='too-large')return '画像が大きすぎて、保存できませんでした';
+ if(code==='unsupported-type')return '画像の形式が合わないため、保存できませんでした';
+ if(code==='busy')return 'ほかの保存を処理中です。少し待ってから、もう一度お試しください';
+ return '保存できませんでした'}
+function tmSaveClearTimers(pend){if(pend.timerAccepted){clearTimeout(pend.timerAccepted);pend.timerAccepted=null}if(pend.timerFinal){clearTimeout(pend.timerFinal);pend.timerFinal=null}}
+function tmSaveFinish(requestId,pend,msg){if(TM_SAVE_PENDING[requestId]!==pend)return;tmSaveClearTimers(pend);delete TM_SAVE_PENDING[requestId];delete TM_SAVE_PENDING['w_'+pend.which];tmSaveSetBtn(pend.which,false);if(msg!=null)tmSaveSetStatus(pend.which,msg)}
+function tmSavePhoto(which){var v=TM.visual;var isText=(which==='text');
+ if(!tmIsLauncherContext()){tmSaveSetStatus(which,'この環境では写真へ直接保存できません。共有から送ってください。画像の長押しでの保存は、アプリが落ちることがあります');return}
+ var blob=v?(isText?v.textSummaryBlob:v.summaryBlob):null;
+ if(!blob){tmSaveSetStatus(which,'この画像は作れていないため、保存できませんでした');return}
+ if(TM_SAVE_PENDING['w_'+which])return;
+ var mimeType=(blob.type&&blob.type!=='')?blob.type:'image/jpeg';
+ if(mimeType!=='image/jpeg'&&mimeType!=='image/png'){tmSaveSetStatus(which,tmSaveErrorMessage('unsupported-type'));return}
+ if(typeof blob.size==='number'&&blob.size>TM_SAVE_MAX_BYTES){tmSaveSetStatus(which,tmSaveErrorMessage('too-large'));return}
+ var requestId='kurogiri-save-'+(++TM_SAVE_SEQ)+'-'+Date.now();
+ var pend={which:which,accepted:false,timerAccepted:null,timerFinal:null};
+ TM_SAVE_PENDING[requestId]=pend;TM_SAVE_PENDING['w_'+which]=pend;
+ tmSaveSetBtn(which,true);tmSaveSetStatus(which,'保存しています…');
+ tmBlobToBase64(blob).then(function(b64){
+  if(TM_SAVE_PENDING[requestId]!==pend)return;
+  try{window.parent.postMessage({contract:'launcher-media/v1',action:'saveImage',moduleId:'kurogiri',requestId:requestId,filename:isText?('kurogiri-summary-2.'+(mimeType==='image/png'?'png':'jpg')):('kurogiri-summary-1.'+(mimeType==='image/png'?'png':'jpg')),mimeType:mimeType,dataBase64:b64},TM_SAVE_ORIGIN)}
+  catch(e){tmSaveFinish(requestId,pend,'保存できませんでした');return}
+  pend.timerAccepted=setTimeout(function(){tmSaveFinish(requestId,pend,'この環境では保存できません。共有から送ってください')},3000);
+ },function(){tmSaveFinish(requestId,pend,'保存できませんでした')})}
+window.addEventListener('message',function(ev){if(!ev||ev.origin!==TM_SAVE_ORIGIN)return;var d=ev.data;if(!d||d.contract!=='launcher-media/v1')return;
+ var pend=TM_SAVE_PENDING[d.requestId];if(!pend)return;
+ if(d.stage==='accepted'){if(pend.accepted)return;pend.accepted=true;if(pend.timerAccepted){clearTimeout(pend.timerAccepted);pend.timerAccepted=null}
+  pend.timerFinal=setTimeout(function(){tmSaveFinish(d.requestId,pend,'保存できませんでした。共有から送ってください')},30000);return}
+ if(typeof d.ok!=='boolean')return;
+ tmSaveFinish(d.requestId,pend,d.ok?'写真に保存しました':tmSaveErrorMessage(d.error))});
+/* 保存用: まとめ画像を1枚だけ大きく表示する (表示中の画像を長押しすると写真に保存できる) */
+function tmvViewSummary(which){var v=TM.visual;if(!v)return;var url=(which==='text')?v.textSummary:v.summary;if(!url||String(url).indexOf('blob:')!==0)return;
+ var im=$('tm-galview-img');if(im)im.src=url;var cap=$('tm-galview-cap');if(cap)cap.textContent=(which==='text')?'まとめ画像 2 ― 結果テキスト（全文）':'まとめ画像 1 ― 見た目のまとめ';
+ var g=$('tm-galview');if(g)g.classList.add('on')}
+/* 副の経路: まとめ画像を1枚だけ、端末の共有シートで送る */
+function tmShareOne(which){var v=TM.visual;if(!v)return;
+ var isText=(which==='text');var blob=isText?v.textSummaryBlob:v.summaryBlob;
+ var label=isText?'結果テキストの画像':'見た目のまとめ画像';
+ if(!blob){tmShareStatus(label+'は作れていないため、共有できませんでした');return}
+ var file=null;try{file=new File([blob],isText?'kurogiri-test-text.jpg':'kurogiri-test-scenes.jpg',{type:'image/jpeg'})}catch(e){file=blob}
+ var can=false;if(file&&navigator.share&&navigator.canShare){try{can=!!navigator.canShare({files:[file]})}catch(e){can=false}}
+ if(can){navigator.share({title:'クロギリ 試験モード結果',files:[file]}).then(function(){tmShareStatus(label+'を共有シートで送りました')},function(err){
+   if(err&&err.name==='AbortError')tmShareStatus('共有は取りやめになりました');
+   else tmShareStatus('共有シートがこの場面では使えませんでした ― 画像を長押しして保存し、チャットへ貼ってください')});return}
+ tmShareStatus('この端末・場面ではファイル共有が使えません ― 画像を長押しして保存し、チャットへ貼ってください')}
 function tmHandoverPrimary(text,lead){var ta=$('tm-report');if(ta)ta.value=text;
- var withText=!!(TM.visual&&TM.visual.summaryText);
- var show=function(){tmShowHandover(lead||'受け渡しの用意ができました', withText?'結果テキスト：コピー済みです。まとめ画像の中にも全文が入っています':'結果テキスト：コピー済みです');tmShareStatus(withText?'用意しました：結果テキスト全文入りのまとめ画像を大きく表示しました。この画像1枚を長押しで保存し、チャットへ貼れば、場面とテキストの両方が渡ります（テキストのコピーも済んでいます）':'用意しました：結果テキストはコピー済みです。表示中のまとめ画像を長押しで保存し、チャットへ画像とテキストを貼ってください')};
- var fail=function(){if(ta){ta.focus();ta.select()}tmShowHandover(lead||'受け渡しの用意ができました','結果テキスト：コピーできていません ― 下の結果欄の文字を選んでコピーしてください');tmShareStatus(withText?'用意しました：まとめ画像を大きく表示しました。画像の中に結果テキスト全文が入っているので、画像1枚を保存して貼れば両方渡ります。コピーはできていないため、テキストを別に送る場合は結果欄の文字を選んでコピーしてください':'用意しました：まとめ画像を大きく表示しました。結果テキストはコピーできていないため、結果欄の文字を選んでコピーしてください')};
+ var v=TM.visual;var hasScenes=!!(v&&v.summary),hasText=!!(v&&v.textSummary&&String(v.textSummary).indexOf('blob:')===0);
+ var show=function(){tmShowHandover(lead||'受け渡しの用意ができました', hasText?'結果テキスト：コピー済みです。結果テキスト全文の画像（2枚目）にも全文が入っています':'結果テキスト：コピー済みです');tmShareStatus((hasScenes&&hasText)?'用意しました：まとめ画像2枚を大きく表示しました。1枚ずつ「写真に保存」で保存し、チャットへ貼れば、場面とテキストの両方が渡ります（テキストのコピーも済んでいます）':'用意しました：結果テキストはコピー済みです。表示中のまとめ画像を「写真に保存」で保存し、チャットへ画像とテキストを貼ってください')};
+ var fail=function(){if(ta){ta.focus();ta.select()}tmShowHandover(lead||'受け渡しの用意ができました','結果テキスト：コピーできていません ― 下の結果欄の文字を選んでコピーしてください');tmShareStatus(hasText?'用意しました：まとめ画像を大きく表示しました。結果テキスト全文の画像（2枚目）があるので、画像を保存して貼ればテキストも渡ります。コピーはできていないため、テキストを別に送る場合は結果欄の文字を選んでコピーしてください':'用意しました：まとめ画像を大きく表示しました。結果テキストはコピーできていないため、結果欄の文字を選んでコピーしてください')};
  var legacy=function(){try{if(ta){ta.focus();ta.select();if(document.execCommand('copy')){show();return true}}}catch(e){}return false};
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(show,function(){if(!legacy())fail()});
  else if(!legacy())fail()}
 function tmShareAll(){if(TM.sharing)return;TM.sharing=true;tmShareStatus('用意しています ― まとめ画像がまだなければ、先に見た目を取得します');
  var prep=(TM.visual&&TM.visual.summary)?tmvEnsureTextSummary():tmvCaptureAll();
  prep.then(function(v){TM.sharing=false;tmReportUpdate();var text=tmReportText();
-  if(!v||!v.summary){tmShareStatus('まとめ画像が作れなかったため、結果テキストだけを用意しました。画像は、取れた場面の個別画像を下のギャラリーから渡してください');tmCopyReport();return}
+  if(!v||(!v.summary&&!v.textSummary)){tmShareStatus('まとめ画像が作れなかったため、結果テキストだけを用意しました。画像は、取れた場面の個別画像を下のギャラリーから渡してください');tmCopyReport();return}
   tmHandoverPrimary(text,'受け渡しの用意ができました')})
- .catch(function(e){TM.sharing=false;tmShareStatus('用意の途中で止まりました：'+((e&&e.message)?e.message:e))})}
-/* 副の経路: 端末の共有シートで送る。使える環境向けに残し、使えない・取りやめた場合は主の受け渡し画面へ戻す */
-function tmShareViaSheet(){if(TM.sharing)return;TM.sharing=true;tmShareStatus('用意しています ― まとめ画像がまだなければ、先に見た目を取得します');
- var prep=(TM.visual&&TM.visual.summary)?tmvEnsureTextSummary():tmvCaptureAll();
- prep.then(function(v){TM.sharing=false;tmReportUpdate();var text=tmReportText();
-  if(!v||!v.summary){tmShareStatus('まとめ画像が作れなかったため、共有シートは開きませんでした。結果テキストだけをコピーしました');tmCopyReport();return}
-  var file=tmDataUrlToFile(v.summary,'kurogiri-test-summary.jpg');
-  var canFiles=false;if(file&&navigator.share&&navigator.canShare){try{canFiles=!!navigator.canShare({files:[file]})}catch(e){canFiles=false}}
-  if(canFiles){tmShareStatus('共有シートを開いています（結果テキストとまとめ画像）。なお、Museアプリの中で開いている場合、シートからMuseを選んでもチャットへ届かないことがあります。その時は「まとめて渡す」の受け渡し画面を使ってください');
-   navigator.share({title:'クロギリ 試験モード結果',text:text,files:[file]}).then(function(){tmShareStatus('共有シートで送りました ― 結果テキストとまとめ画像を一緒に送りました')},function(err){
-    if(err&&err.name==='AbortError'){tmShareStatus('共有は取りやめになりました ― 受け渡し画面を出しました');tmHandoverPrimary(text,'共有が取りやめになったため、受け渡し画面に切り替えました')}
-    else tmHandoverPrimary(text,'共有シートがこの場面では使えなかったため、受け渡し画面に切り替えました')});
-   return}
-  tmHandoverPrimary(text,'この端末・場面ではファイル共有が使えないため、受け渡し画面です')})
  .catch(function(e){TM.sharing=false;tmShareStatus('用意の途中で止まりました：'+((e&&e.message)?e.message:e))})}
 /* 試験用の描画基盤: 母港・図鑑・作戦とは別の1台だけを持ち、試験モードを出る時に破棄する (描画コンテキストの作りすぎを防ぐ) */
 function tmEnsureStage(){if(TM.renderer)return true;if(typeof THREE==='undefined')return false;var wrap=$('tm-stage');if(!wrap)return false;
@@ -4597,7 +4672,7 @@ function tvShotClose(){var s=$('tv-shot');if(s)s.classList.remove('on')}
    文と部品でできた画面は要素を複製してスタイルを埋め込み、SVG経由で画像化する。
    どの方式でも、画素のばらつきで自己点検し、白紙に近いものは「できた」と報告しない。
    取れなかった場面は理由つきで記録し、見た目の確認（手動撮影）で代替できる旨を添える。本編の保存には触れない。 */
-var TMV={running:false};
+var TMV={running:false,objUrl:null,textObjUrl:null};
 function tmvDelay(ms){return new Promise(function(r){setTimeout(r,ms)})}
 function tmvEsc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function tmvCheckCanvas(cv){var w=cv.width,h=cv.height;if(!w||!h)return {ok:false,reason:'画像の寸法が取れなかった'};
@@ -4735,48 +4810,123 @@ function tmvCaptureDOM(sc){
   setTimeout(function(){fail('要素の画像化が時間切れになった')},8000);
   img.src=url})}
 function tmvLoadImg(url){return new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im)};im.onerror=function(){rej(new Error('画像を読み戻せなかった'))};im.src=url})}
-function tmvBuildSummary(items,reportText){var okItems=items.filter(function(x){return x.ok&&x.url});if(!okItems.length)return Promise.resolve(null);
- return Promise.all(okItems.map(function(it){return tmvLoadImg(it.url).then(function(im){return {it:it,im:im}}).catch(function(){return null})})).then(function(loaded){
-  loaded=loaded.filter(function(x){return !!x});if(!loaded.length)return null;
-  var cols=2,cellW=412,cellH=276,labelH=36,gap=10,pad=10,headH=40;var rows=Math.ceil(loaded.length/cols);
-  var W=pad*2+cols*cellW+(cols-1)*gap;var gridH=pad*2+headH+rows*(cellH+labelH)+(rows-1)*gap;
-  /* 結果テキストの帯: reportText が渡された時だけ、場面グリッドの下にテキスト全文を描き込む。
-     これで、保存した1枚の画像の中に場面の絵と結果テキストの両方が残る。
-     テキストがまだ無い (取得だけ先行した) 場合は帯なしで従来どおり作り、壊れないようにする。
-     文字は判読できる大きさ (16px・行間25px) を基本とし、画像全体が端末の描画上限を
-     超えそうな時だけ段階的に小さくする。テキストが長ければ画像は縦に伸びてよい */
-  var band=null;
-  if(typeof reportText==='string'&&reportText.replace(/\s/g,'').length){
-   var sizes=[[16,25],[15,23],[14,21]];
-   for(var si=0;si<sizes.length;si++){
-    var mctx=document.createElement('canvas').getContext('2d');mctx.font=sizes[si][0]+'px sans-serif';
-    var blines=tmvLines(mctx,reportText,W-pad*2);
-    band={fs:sizes[si][0],lh:sizes[si][1],lines:blines,h:72+Math.max(0,blines.length-1)*sizes[si][1]+34};
-    if(gridH+band.h<=8000)break}}
-  var H=gridH+(band?band.h:0);
-  var cv=document.createElement('canvas');cv.width=W;cv.height=H;var ctx=cv.getContext('2d');
-  ctx.fillStyle='#0a1524';ctx.fillRect(0,0,W,H);ctx.fillStyle='#dbe5ef';ctx.font='bold 19px sans-serif';ctx.textAlign='left';
-  ctx.fillText('クロギリ 試験モード ― 見た目のまとめ（'+loaded.length+'/'+items.length+'場面）',pad,pad+24);
-  loaded.forEach(function(L,i){var cx=pad+(i%cols)*(cellW+gap),cy=pad+headH+Math.floor(i/cols)*(cellH+labelH+gap);
-   ctx.fillStyle='#060d17';ctx.fillRect(cx,cy,cellW,cellH);
-   var im=L.im;
-   /* 縦長の場面 (母港・作戦・図鑑の3D取得) は、横長のセルへ縮小して収めると船が小さく埋もれるため、
-      上下 (空と海) を切り取ってセル幅いっぱいに描く。横長の場面は従来どおり全体を収める。
-      個別画像 (ギャラリー) は切り取らず、そのままの画角で残す */
-   if(im.width/im.height<cellW/cellH){var sH=im.width*cellH/cellW;var sY=(im.height-sH)/2;ctx.drawImage(im,0,sY,im.width,sH,cx,cy,cellW,cellH)}
-   else{var sc2=Math.min(cellW/im.width,cellH/im.height);var dw=im.width*sc2,dh=im.height*sc2;ctx.drawImage(im,cx+(cellW-dw)/2,cy+(cellH-dh)/2,dw,dh)}
-   ctx.fillStyle='#dbe5ef';ctx.font='14px sans-serif';var nm=(i+1)+'. '+L.it.name;while(ctx.measureText(nm).width>cellW&&nm.length>4)nm=nm.slice(0,-2);ctx.fillText(nm,cx+2,cy+cellH+24)});
-  if(band){var by=gridH;
-   ctx.fillStyle='#0d1c30';ctx.fillRect(0,by,W,band.h);
-   ctx.fillStyle='#c2a15e';ctx.fillRect(pad,by+2,W-pad*2,3);
-   ctx.fillStyle='#f0d9a0';ctx.font='bold 17px sans-serif';ctx.textAlign='left';
-   var bt='結果テキスト（全文） ― この画像1枚に、場面の絵と結果テキストの両方が入っています';
-   while(ctx.measureText(bt).width>W-pad*2&&bt.length>4)bt=bt.slice(0,-2);
-   ctx.fillText(bt,pad,by+36);
-   ctx.fillStyle='#dbe5ef';ctx.font=band.fs+'px sans-serif';
-   for(var li=0;li<band.lines.length;li++)ctx.fillText(band.lines[li],pad,by+72+li*band.lh)}
-  var chk=tmvCheckCanvas(cv);if(!chk.ok)return null;
-  return {url:cv.toDataURL('image/jpeg',0.85),withText:!!band}}).catch(function(){return null})}
+/* まとめ画像の大きさの上限 (CR-19): 1枚の画像が端末のメモリ上限に当たって
+   アプリごと落ちる事象への対策。まとめは2枚に分ける (1枚目=見た目のまとめ、
+   2枚目=結果テキスト全文の画像)。各画像ごとに個別の上限を設け、合成前に
+   総寸法を見積もり、上限を超える場合はその画像の内容へ一様な縮小率を
+   掛けてから合成する (縮小率は画像ごとに独立に決める)。
+   上限を超える寸法のキャンバスは最初から作らない */
+var TMV_SUM_MAX_W=800,TMV_SUM_MAX_H=3700,TMV_SUM_MAX_PX=2150000;
+function tmvSummaryFit(W,H){return W<=TMV_SUM_MAX_W&&H<=TMV_SUM_MAX_H&&W*H<=TMV_SUM_MAX_PX}
+function tmvSummaryShrink(W,H){var f=Math.min(TMV_SUM_MAX_W/W,TMV_SUM_MAX_H/H,Math.sqrt(TMV_SUM_MAX_PX/(W*H)));if(!(f<1))f=0.99;return f*0.995}
+/* 1枚目 (見た目のまとめ) の寸法見積もり: 場面のグリッドと場面見出しだけを置く */
+function tmvScenesLayout(count,scaleCap){
+ var cellW0=412,cellH0=276,labelH0=36,gap0=10,pad0=10,headH0=40,cols=2;
+ var rows=Math.ceil(count/cols);
+ var s=scaleCap||1,L=null;
+ for(var it=0;it<8;it++){
+  L={s:s,cols:cols,pad:Math.max(1,Math.round(pad0*s)),gap:Math.round(gap0*s),headH:Math.round(headH0*s),
+     cellW:Math.round(cellW0*s),cellH:Math.round(cellH0*s),labelH:Math.round(labelH0*s)};
+  L.W=L.pad*2+L.cols*L.cellW+(L.cols-1)*L.gap;
+  L.H=L.pad*2+L.headH+rows*(L.cellH+L.labelH)+(rows-1)*L.gap;
+  if(tmvSummaryFit(L.W,L.H))break;
+  s*=tmvSummaryShrink(L.W,L.H)}
+ return L}
+/* 2枚目 (結果テキスト全文) の寸法見積もり: 見出し行つきで、テキスト全文だけを描く。
+   文字は判読できる大きさ (16px・行間25px) を基本とし、全体が長くなる時だけ段階的に小さくする */
+function tmvTextLayout(reportText,scaleCap){
+ var W0=760,pad0=28,headH0=92,mc=document.createElement('canvas').getContext('2d');
+ var sizes=[[16,25],[15,23],[14,21]],bandFs=16,bandLh=25;
+ for(var si=0;si<sizes.length;si++){mc.font=sizes[si][0]+'px sans-serif';
+  var bl=tmvLines(mc,reportText,W0-pad0*2);bandFs=sizes[si][0];bandLh=sizes[si][1];
+  if(headH0+bl.length*bandLh+24<=TMV_SUM_MAX_H)break}
+ var s=scaleCap||1,L=null;
+ for(var it=0;it<8;it++){
+  L={s:s,pad:Math.max(1,Math.round(pad0*s)),headH:Math.round(headH0*s),fs:bandFs*s,lh:bandLh*s};
+  L.W=Math.round(W0*s);
+  mc.font=L.fs+'px sans-serif';
+  L.lines=tmvLines(mc,reportText,L.W-L.pad*2);
+  L.H=L.headH+L.lines.length*L.lh+Math.round(24*s);
+  if(tmvSummaryFit(L.W,L.H))break;
+  s*=tmvSummaryShrink(L.W,L.H)}
+ return L}
+/* 画像への変換は Blob の非同期経路に統一する (文字列化はしない) */
+function tmvCanvasToBlobJpeg(cv){return new Promise(function(res){var done=false;
+ var finish=function(b){if(done)return;done=true;res(b||null)};
+ try{if(cv.toBlob)cv.toBlob(function(b){finish(b)},'image/jpeg',0.85);else finish(null)}
+ catch(e){finish(null)}
+ setTimeout(function(){finish(null)},20000)})}
+function tmvScenesAttempt(okItems,totalCount,scaleCap){
+ var L=tmvScenesLayout(okItems.length,scaleCap);
+ var cv=document.createElement('canvas');cv.width=L.W;cv.height=L.H;var ctx=cv.getContext('2d');
+ /* 背景は不透明で塗る (JPEGには透過がないため) */
+ ctx.fillStyle='#0a1524';ctx.fillRect(0,0,L.W,L.H);
+ ctx.fillStyle='#dbe5ef';ctx.font='bold '+(19*L.s)+'px sans-serif';ctx.textAlign='left';
+ ctx.fillText('クロギリ 試験モード ― 見た目のまとめ（'+okItems.length+'/'+totalCount+'場面）',L.pad,L.pad+Math.round(24*L.s));
+ /* 場面は1件ずつ読み込んで最終キャンバスへ直接描き込み、描き終えた場面は都度手放す。
+    場面全件ぶんの画像を同時に保持しない */
+ var chain=Promise.resolve();
+ okItems.forEach(function(it,i){
+  var cx=L.pad+(i%L.cols)*(L.cellW+L.gap),cy=L.pad+L.headH+Math.floor(i/L.cols)*(L.cellH+L.labelH+L.gap);
+  chain=chain.then(function(){
+   ctx.fillStyle='#060d17';ctx.fillRect(cx,cy,L.cellW,L.cellH);
+   return tmvLoadImg(it.url).then(function(im){
+    /* 縦長の場面 (母港・作戦・図鑑の3D取得) は、横長のセルへ縮小して収めると船が小さく埋もれるため、
+       上下 (空と海) を切り取ってセル幅いっぱいに描く。横長の場面は従来どおり全体を収める。
+       個別画像 (ギャラリー) は切り取らず、そのままの画角で残す */
+    if(im.width/im.height<L.cellW/L.cellH){var sH=im.width*L.cellH/L.cellW;var sY=(im.height-sH)/2;ctx.drawImage(im,0,sY,im.width,sH,cx,cy,L.cellW,L.cellH)}
+    else{var sc2=Math.min(L.cellW/im.width,L.cellH/im.height);var dw=im.width*sc2,dh=im.height*sc2;ctx.drawImage(im,cx+(L.cellW-dw)/2,cy+(L.cellH-dh)/2,dw,dh)}
+    try{im.src=''}catch(e){}
+   }).catch(function(){})}).then(function(){
+   ctx.fillStyle='#dbe5ef';ctx.font=(14*L.s)+'px sans-serif';var nm=(i+1)+'. '+it.name;while(ctx.measureText(nm).width>L.cellW&&nm.length>4)nm=nm.slice(0,-2);ctx.fillText(nm,cx+2,cy+L.cellH+Math.round(24*L.s))})});
+ return chain.then(function(){
+  var chk=tmvCheckCanvas(cv);
+  if(!chk.ok){try{cv.width=0;cv.height=0}catch(e){}return {ok:false,scale:L.s}}
+  return tmvCanvasToBlobJpeg(cv).then(function(blob){try{cv.width=0;cv.height=0}catch(e){}
+   if(blob)return {ok:true,blob:blob,w:L.W,h:L.H,scale:L.s};
+   return {ok:false,blobFail:true,scale:L.s}})}).catch(function(){try{cv.width=0;cv.height=0}catch(e){}return {ok:false,blobFail:true,scale:L.s}})}
+function tmvTextAttempt(reportText,scaleCap){
+ var L=tmvTextLayout(reportText,scaleCap);
+ var cv=document.createElement('canvas');cv.width=L.W;cv.height=L.H;var ctx=cv.getContext('2d');
+ /* 背景は不透明で塗る (JPEGには透過がないため) */
+ ctx.fillStyle='#0a1524';ctx.fillRect(0,0,L.W,L.H);
+ ctx.fillStyle='#f0d9a0';ctx.font='bold '+(19*L.s)+'px sans-serif';ctx.textAlign='left';
+ var bt='クロギリ 試験モード結果 ― 結果テキスト（全文）';
+ while(ctx.measureText(bt).width>L.W-L.pad*2&&bt.length>4)bt=bt.slice(0,-2);
+ ctx.fillText(bt,L.pad,Math.round(42*L.s));
+ ctx.fillStyle='#c2a15e';ctx.fillRect(L.pad,Math.round(60*L.s),L.W-L.pad*2,3);
+ ctx.fillStyle='#dbe5ef';ctx.font=L.fs+'px sans-serif';
+ for(var li=0;li<L.lines.length;li++)ctx.fillText(L.lines[li],L.pad,L.headH+Math.round(L.fs*0.9)+li*L.lh);
+ var chk=tmvCheckCanvas(cv);
+ if(!chk.ok){try{cv.width=0;cv.height=0}catch(e){}return Promise.resolve({ok:false,scale:L.s})}
+ return tmvCanvasToBlobJpeg(cv).then(function(blob){try{cv.width=0;cv.height=0}catch(e){}
+  if(blob)return {ok:true,blob:blob,w:L.W,h:L.H,scale:L.s};
+  return {ok:false,blobFail:true,scale:L.s}}).catch(function(){try{cv.width=0;cv.height=0}catch(e){}return {ok:false,blobFail:true,scale:L.s}})}
+/* 変換に失敗した場合は、その画像だけ縮小率をさらに下げて1回だけ作り直す。
+   それでも作れなければ null を返し、呼び出し側はその画像だけを「作れなかった」扱いにする */
+function tmvRetryBuild(attempt){return attempt(1).then(function(r){
+  if(r&&r.ok)return r;
+  if(r&&r.blobFail)return attempt(Math.max(0.2,(r.scale||1)*0.7)).then(function(r2){return (r2&&r2.ok)?r2:null});
+  return null}).catch(function(){return null})}
+function tmvBuildScenes(items){var okItems=items.filter(function(x){return x.ok&&x.url});if(!okItems.length)return Promise.resolve(null);
+ return tmvRetryBuild(function(cap){return tmvScenesAttempt(okItems,items.length,cap)}).then(function(r){return r?{blob:r.blob,w:r.w,h:r.h}:null})}
+function tmvBuildTextImage(reportText){var text=(typeof reportText==='string'&&reportText.replace(/\s/g,'').length)?reportText:null;if(!text)return Promise.resolve(null);
+ return tmvRetryBuild(function(cap){return tmvTextAttempt(text,cap)}).then(function(r){return r?{blob:r.blob,w:r.w,h:r.h}:null})}
+/* まとめ画像の表示と受け渡しは Blob のオブジェクトURLで行う。
+   新しいまとめ画像に差し替える時は、前のオブジェクトURLを破棄する (画像ごとに個別に行う) */
+function tmvSetScenesSummary(v,built){
+ if(TMV.objUrl){try{URL.revokeObjectURL(TMV.objUrl)}catch(e){}TMV.objUrl=null}
+ if(built&&built.blob){TMV.objUrl=URL.createObjectURL(built.blob);v.summary=TMV.objUrl;v.summaryBlob=built.blob}
+ else{v.summary=null;v.summaryBlob=null}}
+function tmvSetTextSummary(v,built){
+ if(TMV.textObjUrl){try{URL.revokeObjectURL(TMV.textObjUrl)}catch(e){}TMV.textObjUrl=null}
+ if(built&&built.blob){TMV.textObjUrl=URL.createObjectURL(built.blob);v.textSummary=TMV.textObjUrl;v.textSummaryBlob=built.blob}
+ else{v.textSummary=null;v.textSummaryBlob=null}}
+/* ギャラリーの個別画像の保持を落とす／戻す: 受け渡し画面を開いている間は、ギャラリー側の
+   画像要素から画像データを外し、保存の操作の時点で大きな画像を同時に抱え込まない形にする。
+   画像データそのものは取得結果 (TM.visual.items) に残るので、戻す時はそこから載せ直す */
+function tmvReleaseGalleryImages(){var box=$('tm-gallery');if(!box)return;box.querySelectorAll('.tmv-cell img').forEach(function(im){im.removeAttribute('src')})}
+function tmvRestoreGalleryImages(){var v=TM.visual;if(!v||!v.items)return;var box=$('tm-gallery');if(!box)return;box.querySelectorAll('button.tmv-cell').forEach(function(btn){var i=parseInt(btn.dataset.a1,10);var it=v.items[i];if(!it||!it.ok||!it.url)return;var im=btn.querySelector('img');if(im&&!im.getAttribute('src'))im.src=it.url})}
 function tmvRenderGallery(v){var box=$('tm-gallery');if(!box)return;if(!v||!v.items){box.innerHTML='';return}
  var okN=v.items.filter(function(x){return x.ok}).length;
  var h='<p class="tmv-head">見た目の取得結果（'+tmvEsc(v.at)+'）</p>';
@@ -4785,34 +4935,37 @@ function tmvRenderGallery(v){var box=$('tm-gallery');if(!box)return;if(!v||!v.it
  v.items.forEach(function(it,i){if(it.ok&&it.url)h+='<button type="button" class="tmv-cell" data-act="tmv-view" data-a1="'+i+'"><img src="'+it.url+'" alt="'+tmvEsc(it.name)+'"><figcaption>'+tmvEsc(it.name)+'<span class="rsn">'+it.w+'×'+it.h+(it.via==='redraw'?' ・ 要素の直接画像化が制限されたため、同じ内容を描き直して取得（自己点検済み）':' ・ 自己点検で白紙でないことを確認')+'</span></figcaption></button>';
   else h+='<figure class="tmv-cell"><div class="tmv-miss">取得できなかった</div><figcaption><span class="ng">'+tmvEsc(it.name)+'</span><span class="rsn">'+tmvEsc(it.reason||'')+'</span></figcaption></figure>'});
  h+='</div>';
- if(v.summary)h+='<p class="tmv-head">まとめ画像（全場面を1枚に'+(v.summaryText?'・結果テキスト入り':'')+'）</p><p class="tmv-note">'+(v.summaryText?'この画像の下部には、結果テキスト全文も描き込んであります。上の「まとめて渡す」でこの画像が大きく表示されるので、長押しで保存してチャットへ貼れば、場面とテキストの両方が渡ります。':'上の「まとめて渡す」を押すと、結果テキスト全文を描き込んだ版が作られて大きく表示されます。その画像を長押しで保存してチャットへ貼れば、場面とテキストの両方が渡ります。結果テキストのコピーも副として行われます。')+'縦長の場面は、艦や機体が大きく読めるよう、まとめ画像の中では上下を切り取って幅いっぱいに並べています（個別画像はそのままの画角です）。</p><img class="tmv-summary" src="'+v.summary+'" alt="全場面のまとめ画像">';
- else h+='<p class="tmv-note">まとめ画像は作れませんでした（取れた場面がないか、合成の自己点検を通りませんでした）。取れた場面の個別画像を使ってください。</p>';
- box.innerHTML=h}
+ box.innerHTML=h;
+ /* まとめ画像は受け渡し画面にだけ表示する。同じ画像をギャラリーや拡大表示と同時に
+    置くと、そのぶん端末に抱え込む量が増えるため、表示する場所は1つに絞る。
+    拡大表示は受け渡し画面の表示を使い回し、閉じる時に画像を外す (tmvViewSummary / tmvClose) */
+ var sn=document.createElement('p');sn.className='tmv-note';sn.textContent='まとめ画像（見た目のまとめ／結果テキスト全文の2枚）は、「まとめて渡す」の受け渡し画面にだけ表示します。';box.appendChild(sn)}
 function tmvView(i){var v=TM.visual;if(!v||!v.items[i]||!v.items[i].ok||!v.items[i].url)return;$('tm-galview-img').src=v.items[i].url;$('tm-galview-cap').textContent=v.items[i].name;$('tm-galview').classList.add('on')}
-function tmvClose(){var g=$('tm-galview');if(g)g.classList.remove('on')}
+function tmvClose(){var g=$('tm-galview');if(g)g.classList.remove('on');var gi=$('tm-galview-img');if(gi)gi.removeAttribute('src')}
 function tmVisualReportLines(){var L=['― 見た目の取得 ―'];var v=TM.visual;
  if(!v){L.push('見た目：まだ取得していない（試験モードの「見た目も含めて実行」か「見た目を取得」で、試験と同時に全場面の画像を取れます）');return L}
  var okN=v.items.filter(function(x){return x.ok}).length;
  L.push('取得日時：'+v.at+' ／ 全'+v.items.length+'場面のうち '+okN+'場面の画像が取れた');
  v.items.forEach(function(it,i){if(it.ok)L.push((i+1)+'. '+it.name+'：画像が取れた（'+it.w+'×'+it.h+(it.via==='redraw'?' ・ 要素の直接画像化がこの端末で制限されたため、同じ内容を描き直して取得 ・ 自己点検済み':' ・ 自己点検で白紙でないことを確認')+'）');else L.push((i+1)+'. '+it.name+'：取れなかった ― '+(it.reason||'理由は取れなかった')+'。見た目の確認（手動撮影）で代替できる')});
- if(v.summary&&v.summaryText)L.push('まとめ画像：作れた ― 場面の絵の下に、この結果テキスト全文も描き込んである。試験モードの「まとめて渡す」でこの画像が大きく表示されるので、画像1枚を長押しで保存してチャットへ貼れば、場面とテキストの両方が渡ります');
- else if(v.summary)L.push('まとめ画像：作れた ― ただし、この画像には結果テキストはまだ入っていない。試験モードの「まとめて渡す」を押すと、テキスト全文を描き込んだ版が作られて大きく表示されるので、その画像1枚を保存して貼れば両方渡ります');
+ if(v.summary&&v.textSummary)L.push('まとめ画像：2枚とも作れた ― 1枚目が見た目のまとめ（場面の絵と見出し）、2枚目が結果テキスト全文の画像。試験モードの「まとめて渡す」で2枚が大きく表示されるので、1枚ずつ長押しで保存してチャットへ貼れば、場面とテキストの両方が渡ります');
+ else if(v.summary)L.push('まとめ画像：見た目のまとめ（1枚目）は作れたが、結果テキストの画像（2枚目）は作れなかった ― 場面の絵は1枚目を保存して貼り、結果テキストは試験モードの結果欄からコピーして渡してください');
+ else if(v.textSummary)L.push('まとめ画像：結果テキストの画像（2枚目）は作れたが、見た目のまとめ（1枚目）は作れなかった ― 結果テキスト全文は2枚目を保存して貼り、場面の絵は取れた場面の個別画像をギャラリーから長押しで保存して貼ってください');
  else L.push('まとめ画像：作れなかった ― 取れた場面の個別画像をギャラリーから長押しで保存して貼ってください');
  return L}
 function tmvHasReport(){try{return Object.keys(TM.results||{}).length>0||!!TM.perf}catch(e){return false}}
-/* まとめ画像がテキスト帯なしで作られている場合に、結果テキスト全文を描き込んだ版へ作り直す (受け渡しの時に使う) */
+/* 結果テキストの画像 (2枚目) の版管理: 1枚目はテキストを持たないため対象にしない。
+   2枚目へ焼き込む結果テキストは、見た目の取得 (項目11) を実行した時点のものになる。
+   全項目実行ではその後に項目12が走るため、焼き込んだテキストが古いまま残ってしまう。
+   記録済みの版 (bakedText) と現在の結果テキストが食い違う場合に限り、2枚目だけを作り直す */
 function tmvEnsureTextSummary(){var v=TM.visual;
- if(!v||!v.summary||!tmvHasReport())return Promise.resolve(v);
+ if(!v||!tmvHasReport())return Promise.resolve(v);
  var text=tmReportText();
- /* まとめ画像の帯は、見た目の取得 (項目11) を実行した時点の結果テキストを焼き込んで作られる。
-    全項目実行ではその後に項目12が走るため、帯の中身 (項目12の結果) が古いまま残ってしまう。
-    焼き込んだテキストと現在の結果テキストが食い違う時は、渡す前に現在の結果で作り直す */
- if(v.summaryText&&v.bakedText===text)return Promise.resolve(v);
- v.summaryText=true;
- return tmvBuildSummary(v.items,text).then(function(built){
-  if(built&&built.withText){v.summary=built.url;v.bakedText=text;tmvRenderGallery(v)}else{v.summaryText=false;v.bakedText=null}
-  tmReportUpdate();return v}).catch(function(){v.summaryText=false;v.bakedText=null;return v})}
-function tmvCaptureAll(){if(TMV.running)return Promise.resolve(TM.visual||{at:'',items:[],summary:null,summaryText:false});TMV.running=true;
+ if(v.textSummary&&v.bakedText===text)return Promise.resolve(v);
+ return tmvBuildTextImage(text).then(function(built){
+  if(built){tmvSetTextSummary(v,built);v.summaryText=true;v.bakedText=text;v.textFailed=false}
+  else{tmvSetTextSummary(v,null);v.summaryText=false;v.bakedText=null;v.textFailed=true}
+  tmvRenderGallery(v);tmReportUpdate();return v}).catch(function(){tmvSetTextSummary(v,null);v.summaryText=false;v.bakedText=null;v.textFailed=true;return v})}
+function tmvCaptureAll(){if(TMV.running)return Promise.resolve(TM.visual||{at:'',items:[],summary:null,summaryText:false,textSummary:null});TMV.running=true;
  var items=[];var chain=Promise.resolve();
  if(!TV.on)tvOpen();
  chain=chain.then(function(){return tmvDelay(150)});
@@ -4823,25 +4976,30 @@ function tmvCaptureAll(){if(TMV.running)return Promise.resolve(TM.visual||{at:''
     return cap.then(function(r){var it={id:sc.id,name:tvSceneName(sc),ok:!!r.ok};if(r.ok){it.url=r.url;it.w=r.w;it.h=r.h;if(r.via)it.via=r.via}else it.reason=r.reason||'理由は取れなかった';items.push(it)});
    })})});
  return chain.then(function(){if(TV.on)tvExit();
-  var v={at:tmNow(),items:items,summary:null,summaryText:false};TM.visual=v;
-  /* まとめ画像へ描き込む結果テキストが、見た目の取得結果まで含めて正しくなるよう、先に置く。
-     結果がまだ無い (取得だけ先行した) 場合は帯なしで従来どおり作る */
+  var v={at:tmNow(),items:items,summary:null,summaryText:false,textSummary:null,bakedText:null,textFailed:false};TM.visual=v;
+  /* 2枚目の画像へ描き込む結果テキストが、見た目の取得結果まで含めて正しくなるよう、先に置く */
   var okN2=items.filter(function(x){return x.ok}).length;
   TM.results.visual={ok:okN2===items.length,detail:'全'+items.length+'場面のうち '+okN2+'場面の画像が取れた。取れた場面はギャラリーとまとめ画像にまとめ、結果テキストの末尾にも一覧を残した。取れなかった場面は理由つきで記録し、見た目の確認（手動撮影）で代替できる'};
-  var withText=tmvHasReport();v.summary='作成中';v.summaryText=withText;v.bakedText=null;
-  var text=withText?tmReportText():null;
-  return tmvBuildSummary(items,text).then(function(built){TMV.running=false;
-   if(built){v.summary=built.url;v.summaryText=built.withText;v.bakedText=built.withText?text:null}else{v.summary=null;v.summaryText=false}
-   TM.visual=v;tmvRenderGallery(v);tmReportUpdate();return v});
+  var withText=tmvHasReport();
+  /* 1枚目 (見た目のまとめ) を先に作り、その成否を結果テキストへ反映させてから2枚目を作る。
+     片方の失敗が、もう片方を作ることを止めない */
+  return tmvBuildScenes(items).then(function(scenesBuilt){
+   tmvSetScenesSummary(v,scenesBuilt);
+   if(!withText){TMV.running=false;TM.visual=v;tmvRenderGallery(v);tmReportUpdate();return v}
+   v.textSummary='作成中';v.summaryText=true;
+   var text=tmReportText();
+   return tmvBuildTextImage(text).then(function(textBuilt){TMV.running=false;
+    tmvSetTextSummary(v,textBuilt);v.summaryText=!!textBuilt;v.bakedText=textBuilt?text:null;v.textFailed=!textBuilt;
+    TM.visual=v;tmvRenderGallery(v);tmReportUpdate();return v})});
  }).catch(function(e){if(TV.on)tvExit();TMV.running=false;
-  var v={at:tmNow(),items:items.length?items:TV_SCENES.map(function(sc){return {id:sc.id,name:tvSceneName(sc),ok:false,reason:'取得の途中で止まった（'+((e&&e.message)?e.message:e)+')'}}),summary:null,summaryText:false};
-  TM.visual=v;tmvRenderGallery(v);tmReportUpdate();return v})}
+  var v={at:tmNow(),items:items.length?items:TV_SCENES.map(function(sc){return {id:sc.id,name:tvSceneName(sc),ok:false,reason:'取得の途中で止まった（'+((e&&e.message)?e.message:e)+')'}}),summary:null,summaryText:false,textSummary:null,bakedText:null,textFailed:false};
+  tmvSetScenesSummary(v,null);tmvSetTextSummary(v,null);TM.visual=v;tmvRenderGallery(v);tmReportUpdate();return v})}
 /* ============ GUIDE + ACTION DELEGATION ============ */
 function renderGuide(){/* 次の一手は見出しと主ボタンの文言自体で示す（案内帯は置かない） */}
 document.addEventListener('click',function(e){var t=e.target;if(!t||!t.closest)return;var el=t.closest('[data-act]');if(!el||el.disabled)return;var a=el.dataset.act;
  if(a==='start')startChapter(parseInt(el.dataset.a1,10));else if(a==='review')chooseReview(el.dataset.a1);else if(a==='reviewDone')finishReviewStep();else if(a==='research')openResearchDetail(el.dataset.a1);else if(a==='policy')togglePolicy(el.dataset.a1);else if(a==='confirmPolicy')confirmPolicy();
  else if(a==='decide')decide(parseInt(el.dataset.a1,10),el.dataset.a2==='1');else if(a==='resolve')resolveMonth();else if(a==='audit')openAudit();else if(a==='detail')openProposalDetail(parseInt(el.dataset.a1,10));else if(a==='trust')openTrustSheet();else if(a==='focus')focusProposal(parseInt(el.dataset.a1,10));else if(a==='queue')toggleQueue();
- else if(a==='beginReview'){S.phase='proposals';runDelegation();renderOrg();save()}else if(a==='focusSheet'){$('modal').classList.remove('on');focusProposal(parseInt(el.dataset.a1,10))}else if(a==='ovFocus'){S.focusIdx=parseInt(el.dataset.a1,10);S.phase='proposals';runDelegation();qCenterNext=true;renderOrg();save()}else if(a==='hold')holdProposal(parseInt(el.dataset.a1,10));else if(a==='settings')openSettings();else if(a==='testmode')enterTestMode();else if(a==='tm-exit')exitTestMode();else if(a==='tm-run')tmRunOne(el.dataset.a1);else if(a==='tm-runall')tmRunAll();else if(a==='tm-copy')tmCopyReport();else if(a==='tm-share')tmShareAll();else if(a==='tm-share-sheet')tmShareViaSheet();else if(a==='tm-handover-close'){var hb2=$('tm-handover');if(hb2)hb2.classList.remove('on')}else if(a==='tm-visual')tvOpen();else if(a==='tm-runall-visual')tmRunAllWithVisual();else if(a==='tm-visual-auto')tmRunOne('visual');else if(a==='tmv-view')tmvView(parseInt(el.dataset.a1,10));else if(a==='tmv-close')tmvClose();else if(a==='tv-exit')tvExit();else if(a==='tv-prev')tvGo(TV.idx-1);else if(a==='tv-next')tvGo(TV.idx+1);else if(a==='tv-name')tvToggleName();else if(a==='tv-chrome')tvToggleChrome();else if(a==='tv-shot')tvCapture();else if(a==='tv-shotclose')tvShotClose();else if(a==='sp-run'){spStartExperiment();openSettings()}else if(a==='sp-cancel'){SP_RUN.cancel=true}else if(a==='sp-rollback'){if(rollbackPromotion()){save();openSettings();toast('黒霧の学びを元に戻した')}}else if(a==='setopt')setSetting(el.dataset.a1,el.dataset.a2);else if(a==='exp-copy')copySettingsExport();else if(a==='imp-check')checkSettingsImport();else if(a==='imp-do')doSettingsImport();else if(a==='imp-cancel')cancelSettingsImport();else if(a==='relmatrix')openRelMatrix();else if(a==='confirmDecide'){$('modal').classList.remove('on');if(pendingConfirm>=0){var ci=pendingConfirm;pendingConfirm=-1;startDecide(ci,true)}}else if(a==='closeModal'){$('modal').classList.remove('on');pendingConfirm=-1}
+ else if(a==='beginReview'){S.phase='proposals';runDelegation();renderOrg();save()}else if(a==='focusSheet'){$('modal').classList.remove('on');focusProposal(parseInt(el.dataset.a1,10))}else if(a==='ovFocus'){S.focusIdx=parseInt(el.dataset.a1,10);S.phase='proposals';runDelegation();qCenterNext=true;renderOrg();save()}else if(a==='hold')holdProposal(parseInt(el.dataset.a1,10));else if(a==='settings')openSettings();else if(a==='testmode')enterTestMode();else if(a==='tm-exit')exitTestMode();else if(a==='tm-run')tmRunOne(el.dataset.a1);else if(a==='tm-runall')tmRunAll();else if(a==='tm-copy')tmCopyReport();else if(a==='tm-share')tmShareAll();else if(a==='tm-share-one')tmShareOne(el.dataset.a1);else if(a==='tm-save-photo')tmSavePhoto(el.dataset.a1);else if(a==='tm-view-one')tmvViewSummary(el.dataset.a1);else if(a==='tm-handover-close'){var hb2=$('tm-handover');if(hb2)hb2.classList.remove('on');tmvRestoreGalleryImages()}else if(a==='tm-visual')tvOpen();else if(a==='tm-runall-visual')tmRunAllWithVisual();else if(a==='tm-visual-auto')tmRunOne('visual');else if(a==='tmv-view')tmvView(parseInt(el.dataset.a1,10));else if(a==='tmv-close')tmvClose();else if(a==='tv-exit')tvExit();else if(a==='tv-prev')tvGo(TV.idx-1);else if(a==='tv-next')tvGo(TV.idx+1);else if(a==='tv-name')tvToggleName();else if(a==='tv-chrome')tvToggleChrome();else if(a==='tv-shot')tvCapture();else if(a==='tv-shotclose')tvShotClose();else if(a==='sp-run'){spStartExperiment();openSettings()}else if(a==='sp-cancel'){SP_RUN.cancel=true}else if(a==='sp-rollback'){if(rollbackPromotion()){save();openSettings();toast('黒霧の学びを元に戻した')}}else if(a==='setopt')setSetting(el.dataset.a1,el.dataset.a2);else if(a==='exp-copy')copySettingsExport();else if(a==='imp-check')checkSettingsImport();else if(a==='imp-do')doSettingsImport();else if(a==='imp-cancel')cancelSettingsImport();else if(a==='relmatrix')openRelMatrix();else if(a==='confirmDecide'){$('modal').classList.remove('on');if(pendingConfirm>=0){var ci=pendingConfirm;pendingConfirm=-1;startDecide(ci,true)}}else if(a==='closeModal'){$('modal').classList.remove('on');pendingConfirm=-1}
  else if(a==='nextChapter')continueNextChapter();else if(a==='arbitrate')arbitrate(el.dataset.a1);else if(a==='conflictDetail')openConflictDetail();else if(a==='fate')showFate();else if(a==='iv')openIntervention();else if(a==='adv')advanceOp();
  else if(a==='chooseIv')chooseIv(el.dataset.a1,parseInt(el.dataset.a2,10));else if(a==='resp')doResponsibility(el.dataset.a1,el.dataset.a2,el.dataset.a3);else if(a==='restart')restart();else if(a==='ngplus')startNgPlus()
  else if(a==='shipdex')openShipDex(el.dataset.a1);else if(a==='flagship')setFlagship(el.dataset.a1);
