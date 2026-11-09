@@ -1,6 +1,6 @@
 {
   "contract": "launcher-modules/v1",
-  "generated_at": "2026-11-09T06:32:29Z",
+  "generated_at": "2026-11-09T06:51:18Z",
   "modules": [
     {
       "desc": "曲の一覧・検索・歌詞。タップで Suno を開きます",
@@ -39,6 +39,13 @@
       "desc": "アプリ本体の中で llama.cpp を動かす経路の検証（期間限定）",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm-native.html",
       "status": "ready"
+    },
+    {
+      "id": "kurogiri",
+      "name": "クロギリ",
+      "desc": "黒霧に抗う鎮守府の月次運営ゲーム",
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/kurogiri/",
+      "status": "preparing"
     }
   ]
 }
