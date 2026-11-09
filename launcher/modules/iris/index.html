@@ -1417,7 +1417,7 @@ $("viewToggle").addEventListener("click", () => {
           for(const st of EXPR_STATES){
             nowEl.textContent = "表情「" + st.label + "」を出してみてる…";
             setEmotion(st.emo, 30);
-            const okSettle = await waitSettled(2600);
+            const okSettle = await waitSettled(10000);
             if(okSettle) settled++;
             await sleep(200);
             captures.push({ label: st.label, img: snapshotCanvas("face") });
@@ -1506,7 +1506,6 @@ $("viewToggle").addEventListener("click", () => {
               if(performance.now() - start < 3000) requestAnimationFrame(tick);
               else resolve(n);
             })();
-            requestAnimationFrame(tick);
           });
           clearInterval(cycler);
           fps = frames / 3;
