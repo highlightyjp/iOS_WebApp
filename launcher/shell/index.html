@@ -129,7 +129,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.7';
-const SHELL_BUILD = '2026-11-09-2258';
+const SHELL_BUILD = '2026-11-09-2312';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -367,6 +367,9 @@ window.addEventListener('message', (e) => {
   }
   bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '受けた', detail: 'action=' + (d.action || '?') });
   const reply = (obj) => {
+    // launcher-media/v1 の最終応答には ok（真偽値）も併記する（受信側の実装が ok を必須で読むため。2026-11-09 の突き合わせで判明）
+    if (d.contract === 'launcher-media/v1' && obj.status === 'ok') obj = Object.assign({ ok: true }, obj);
+    if (d.contract === 'launcher-media/v1' && obj.status === 'error') obj = Object.assign({ ok: false }, obj);
     try { e.source.postMessage(Object.assign({ contract: d.contract, requestId: d.requestId, moduleId: d.moduleId }, obj), location.origin); } catch (_) {}
     if (obj.status && obj.status !== 'accepted') {
       bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '応答 ' + obj.status + (obj.code ? '/' + obj.code : ''), detail: '自オリジン ' + location.origin });
