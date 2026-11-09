@@ -98,27 +98,29 @@ async function checkEnv(){
 
 async function buildModelButtons(){
   const wrap = document.getElementById('models');
+  const out = document.getElementById('out');
+  out.textContent = 'LLMの道具を読み込んでいます…（数MBの読み込みがあります）';
   try{
     webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.87');
   }catch(e){
-    document.getElementById('out').textContent = 'LLMの道具（WebLLM）を読み込めませんでした：' + (e && e.message || e);
+    out.textContent = 'LLMの道具（WebLLM）を読み込めませんでした：' + (e && e.message || e);
     results.error = 'WebLLM の読み込み失敗';
     return;
   }
-  for (const m of MODELS){
-    let cached = null;
-    try{ cached = await webllm.hasModelInCache(m.id); }catch(e){ cached = null; }
+  out.textContent = '結果はここに出ます。';
+  // ボタンは先に全部出す。キャッシュの確認は後から並行で行い、表示だけ差し替える
+  // （確認は保存領域を走査するので大きく遅い。ボタンの表示を待たせない）
+  const entries = MODELS.map(m => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'model';
-    b.innerHTML = '';
     const strong = document.createElement('strong'); strong.textContent = m.label;
     const small = document.createElement('small');
-    small.textContent = m.note + '／キャッシュ：' + (cached === true ? 'あり（ダウンロード不要）' : cached === false ? 'なし' : '不明');
+    small.textContent = m.note + '／キャッシュ：確認中…';
     b.append(strong, small);
     b.addEventListener('click', () => {
       selected = m;
       results.model = m.id;
-      results.cache = cached === true ? 'あり' : cached === false ? 'なし' : '不明';
+      results.cache = m._cached === true ? 'あり' : m._cached === false ? 'なし' : '不明';
       document.querySelectorAll('button.model').forEach(x => x.classList.remove('sel'));
       b.classList.add('sel');
       const run = document.getElementById('runBtn');
@@ -126,7 +128,14 @@ async function buildModelButtons(){
       run.textContent = m.label + ' を読み込んで測る';
     });
     wrap.appendChild(b);
-  }
+    return { m, small };
+  });
+  await Promise.all(entries.map(async ({ m, small }) => {
+    let cached = null;
+    try{ cached = await webllm.hasModelInCache(m.id); }catch(e){ cached = null; }
+    m._cached = cached;
+    small.textContent = m.note + '／キャッシュ：' + (cached === true ? 'あり（ダウンロード不要）' : cached === false ? 'なし' : '不明');
+  }));
 }
 
 // 落ちた時の痕跡：読み込み開始前に印を残し、成功したら消す。印が残っていたら前回は途中で落ちた
