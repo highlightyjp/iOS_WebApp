@@ -1660,7 +1660,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v54';
+var APP_VERSION='v56';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -4026,7 +4026,8 @@ var TM_TESTS=[
  {id:'visual',name:'11. 見た目の取得（全場面の画像）',fn:function(){return tmTestVisual()}},
  {id:'flaghero',name:'12. 旗艦切替とヒーロー表示の確認',fn:function(){return tmTestFlagHero()}},
  {id:'enemy',name:'13. 敵の学習と自己対戦の確認',fn:function(){return tmTestEnemyLearning()}},
- {id:'savegen',name:'14. 保存の世代と書き出しの確認',fn:function(){return tmTestSaveGenerations()}}];
+ {id:'savegen',name:'14. 保存の世代と書き出しの確認',fn:function(){return tmTestSaveGenerations()}},
+ {id:'playthrough',name:'15. 通しプレイの自動検証',fn:function(){return tmTestPlaythrough()}}];
 function tmNow(){var d=new Date();function z(n){return (n<10?'0':'')+n}return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+z(d.getHours())+':'+z(d.getMinutes())}
 function enterTestMode(){if(TM.active)return;closeDrawer();
  TM.savedS=S;TM.savedSteps=STEPS;try{TM.saveSnapshot=localStorage.getItem(SAVE_KEY)}catch(e){TM.saveSnapshot=null}
@@ -4055,7 +4056,7 @@ function tmBuildLauncherResult(startedAt){var items=TM_TESTS.map(function(def,i)
  var passN=0;items.forEach(function(it){if(it.result==='pass')passN++});
  var mainSame=false,prevSame=false;try{mainSame=(localStorage.getItem(SAVE_KEY)===TM.saveSnapshot)}catch(e){}try{prevSame=(localStorage.getItem(SAVE_PREV_KEY)===TM.savePrevSnapshot)}catch(e){}
  var perf=[];var ro=TM.results.outlook;if(ro&&typeof ro.ms==='number'&&ro.ms>0)perf.push({id:'outlook',label:'作戦の見通しの計算',ms:Math.round(ro.ms)});
- return {contract:'launcher-test/v1',moduleId:'kurogiri',version:APP_VERSION,startedAt:startedAt,items:items,perf:perf,untouched:{checked:true,same:!!(mainSame&&prevSame)},summary:'14件中'+passN+'件が「できた」'}}
+ return {contract:'launcher-test/v1',moduleId:'kurogiri',version:APP_VERSION,startedAt:startedAt,items:items,perf:perf,untouched:{checked:true,same:!!(mainSame&&prevSame)},summary:TM_TESTS.length+'件中'+passN+'件が「できた」'}}
 function tmWaitAllResults(timeoutMs){var t0=Date.now();return new Promise(function(resolve){(function poll(){var done=true;TM_TESTS.forEach(function(d){if(!TM.results[d.id])done=false});if(done||Date.now()-t0>timeoutMs){resolve();return}setTimeout(poll,250)})()})}
 function tmRunLauncherTest(){var startedAt=new Date().toISOString();enterTestMode();return tmRunAll().then(function(){return tmWaitAllResults(120000)}).then(function(){tmReportUpdate();var result=tmBuildLauncherResult(startedAt);try{window.parent.postMessage(result,'*')}catch(e){}tmDisposeStageRenderer();return result})}
 function tmReportText(){var lines=['クロギリ 試験モード結果','日時：'+tmNow(),'端末：'+(navigator.userAgent||'')+' ／ 論理コア '+(navigator.hardwareConcurrency||'不明')];
@@ -4116,9 +4117,11 @@ function tmBlobToBase64(blob){return new Promise(function(resolve,reject){try{va
  fr.onerror=function(){reject(fr.error||new Error('画像データを読み取れませんでした'))};
  fr.readAsDataURL(blob)}catch(e){reject(e)}})}
 /* launcher-media/v1 凍結契約: 送り先はランチャーのオリジンに固定し、応答は2段階
-   (受領直後の stage:'accepted'、書き込み完了後の ok)。受領が約3秒以内に来なければ
-   ブリッジ不在とみなし、受領後は最終応答を約30秒まで待つ。エラーは固定コードで受け、
-   画面には短い日本語だけを出し、detail は表示に使わない */
+   (受領直後の status:'accepted'、書き込み完了後の status:'ok'/'error' と ok)。
+   受領が約3秒以内に来なければブリッジ不在とみなし、受領後は最終応答を約30秒まで待つ。
+   受領は status:'accepted' を正とし、stage:'accepted' は互換として扱う。
+   エラーは code を正とし (error は互換)、固定コードで受け、画面には短い日本語だけを出し、
+   detail は表示に使わない */
 var TM_SAVE_ORIGIN='https://highlightyjp.github.io';
 var TM_SAVE_MAX_BYTES=20*1024*1024;
 function tmSaveErrorMessage(code){
@@ -4149,10 +4152,10 @@ function tmSavePhoto(which){var v=TM.visual;var isText=(which==='text');
  },function(){tmSaveFinish(requestId,pend,'保存できませんでした')})}
 window.addEventListener('message',function(ev){if(!ev||ev.origin!==TM_SAVE_ORIGIN)return;var d=ev.data;if(!d||d.contract!=='launcher-media/v1')return;
  var pend=TM_SAVE_PENDING[d.requestId];if(!pend)return;
- if(d.stage==='accepted'){if(pend.accepted)return;pend.accepted=true;if(pend.timerAccepted){clearTimeout(pend.timerAccepted);pend.timerAccepted=null}
+ if(d.status==='accepted'||d.stage==='accepted'){if(pend.accepted)return;pend.accepted=true;if(pend.timerAccepted){clearTimeout(pend.timerAccepted);pend.timerAccepted=null}
   pend.timerFinal=setTimeout(function(){tmSaveFinish(d.requestId,pend,'保存できませんでした。共有から送ってください')},30000);return}
  if(typeof d.ok!=='boolean')return;
- tmSaveFinish(d.requestId,pend,d.ok?'写真に保存しました':tmSaveErrorMessage(d.error))});
+ tmSaveFinish(d.requestId,pend,d.ok?'写真に保存しました':tmSaveErrorMessage(d.code||d.error))});
 /* 保存用: まとめ画像を1枚だけ大きく表示する (表示中の画像を長押しすると写真に保存できる) */
 function tmvViewSummary(which){var v=TM.visual;if(!v)return;var url=(which==='text')?v.textSummary:v.summary;if(!url||String(url).indexOf('blob:')!==0)return;
  var im=$('tm-galview-img');if(im)im.src=url;var cap=$('tm-galview-cap');if(cap)cap.textContent=(which==='text')?'まとめ画像 2 ― 結果テキスト（全文）':'まとめ画像 1 ― 見た目のまとめ';
@@ -4438,6 +4441,122 @@ function tmTestEnemyLearning(){
  finally{
   S.adaptLedger=snap.ledger;S.enemyCore=snap.core;S.adapt=snap.adapt;S.tactics=snap.tactics;S.tacticLast=snap.tacticLast;S.eff=snap.eff;S.enemyChoice=snap.choice;S.enemyFormUses=snap.fu;S.enemyThreatPrev=snap.threatPrev;S.selfplay=snap.sp;S.w=snap.w;S.approvedByOrg=snap.appr;S.lastMonth=snap.lastMonth;S.absMonth=snap.absMonth;S.learnAccum=snap.learnAccum;S.learnMonth=snap.learnMonth;S.op=snap.op;S.started=snap.started;S.finished=snap.finished}
  return {ok:ng.length===0,detail:lines.join('\n')}}
+
+/* 通しプレイの自動検証: 試験用の箱の中で、第1章から第8章までを固定の方針で自動で進め、
+   統合 (敵の月次判断・適応台帳・戦闘の減点・学習の記録) が本編の流れの中で効いているかを
+   数値で確かめる。決裁の方針は固定 (資源が足りる上申は承認、足りない上申は却下。対立は
+   分割で仲裁。審査は実績で臨む。作戦の介入は先頭の選択肢)。本編の保存には触れず
+   (save() は試験中ガードで止まっている)、終わったら試験モード入場時の状態へ戻す */
+function tmTestPlaythrough(){
+ var entryS=S,entrySteps=STEPS;
+ var lines=[],ng=[];
+ function chk(name,ok,detail){lines.push(name+'：'+(ok?'できた':'できなかった')+(detail?' ― '+detail:''));if(!ok)ng.push(name)}
+ var R={steps:0,ops:0,grades:{},carry:0,judge:0,chosen:{},cand:0,sign:0,est:0,pens:[],penNZ:0,
+  maxSpec:0,thru:false,seen08:{},maxGen:0,genThru:false,seen04:false,err:null,
+  midSave:false,midRestore:false,nan:0,learnBoth:0,learnTotal:0,reached:0,ended:false};
+ var auditSeen=0,opCounter=false,guard=0;
+ function yieldFrame(){return new Promise(function(res){setTimeout(res,0)})}
+ function fmtV(v){return Math.round(v*100)/100}
+ /* 作戦に入った時点で、敵の対策 (特化・汎用のいずれか) が成立していたか */
+ function counterActive(){var L=S&&S.adaptLedger;if(!L)return false;if((L.generic||0)>0)return true;var ks=Object.keys(L.activeF||{});for(var i=0;i<ks.length;i++){if((L.activeF[ks[i]]||0)>0)return true}return false}
+ /* 監査を前回見た所から先だけ走査し、検証に使う件数を積む (章が替わると記録は作り直されるため、呼び出し側で auditSeen を戻す) */
+ function harvest(){if(!S||!S.auditLog)return;
+  while(auditSeen<S.auditLog.length){var e=S.auditLog[auditSeen++],d=e.data||{};
+   if(e.type==='敵の判断'){R.judge++;if(d.chosen)R.chosen[d.chosen]=(R.chosen[d.chosen]||0)+1;
+    if(d.candidates&&d.candidates.length&&d.candidates[0].top_factors&&d.candidates[0].top_factors.length)R.cand++}
+   else if(e.type==='敵適応兆候')R.sign++;
+   else if(e.type==='敵適応')R.est++;
+   else if(e.type==='作戦結果'){var p=(typeof d.adaptPenalty==='number'&&isFinite(d.adaptPenalty))?d.adaptPenalty:0;R.pens.push(p);if(opCounter&&p!==0)R.penNZ++}}}
+ /* 適応台帳の到達水準を観測する (特化は activeF と手筋ごとの特化水準、汎用は generic) */
+ function observe(){var L=S&&S.adaptLedger;if(!L)return;
+  Object.keys(L.activeF||{}).forEach(function(f){var v=L.activeF[f]||0;
+   if(v>=0.999&&R.seen08[f])R.thru=true; /* 0.8 を経て 1.0 へ (先に 0.8 を見た特徴だけを数える) */
+   if(v>=0.8)R.seen08[f]=true;
+   if(v>R.maxSpec)R.maxSpec=v});
+  var names={};Object.keys(TAC_FEATURES).forEach(function(t){names[t]=1});Object.keys(S.tactics||{}).forEach(function(t){names[t]=1});
+  Object.keys(names).forEach(function(t){var v=ledSpecLevel(L,t);if(v>R.maxSpec)R.maxSpec=v});
+  var g=L.generic||0;if(g>=0.55&&R.seen04)R.genThru=true;if(g>=0.4)R.seen04=true;if(g>R.maxGen)R.maxGen=g}
+ /* 状態の中の数値に NaN や無限大が無いかを深く走査する */
+ function scanBad(){var ws=(typeof WeakSet!=='undefined')?new WeakSet():null,arr=[];
+  function seen(o){if(ws){if(ws.has(o))return true;ws.add(o);return false}if(arr.indexOf(o)>=0)return true;arr.push(o);return false}
+  (function walk(o){if(!o||typeof o!=='object'||seen(o))return;Object.keys(o).forEach(function(k){var v=o[k];
+   if(typeof v==='number'){if(!isFinite(v))R.nan++}else if(v&&typeof v==='object')walk(v)})})(S)}
+ function progress(){if(!S)return;var st=(STEPS&&STEPS.length)?STEPS[Math.min(S.stepIdx||0,STEPS.length-1)]:null;
+  tmSetStatus('playthrough','run','実行中…','第'+(S.chapter||0)+'章 ― '+(S.finished?'章の終わり':(st?st.label:''))+' ／ 進んだステップ '+R.steps+' ／ 作戦 '+R.ops+' 件')}
+ function doPolicy(){
+  for(var i=0;i<S.proposals.length;i++){if(S.decided[i])continue;decideApply(i,eligible(S.proposals[i]).length===0)}
+  if(S.phase==='conflict')arbitrate('split');
+  else{resolveMonth();if(S.phase==='conflict')arbitrate('split')}
+  R.steps++}
+ function doReview(){if(!S.reviewResult)chooseReview('real');finishReviewStep();R.steps++}
+ function doOp(){
+  opCounter=counterActive();
+  var g2=0;
+  while(S.op&&!S.op.done&&g2++<80){
+   var ivs=opInterventions(),pend=null;
+   for(var k=0;k<ivs.length;k++){if(ivs[k].at===S.op.step&&!S.op.ivDone[ivs[k].key]){pend=ivs[k];break}}
+   if(pend){
+    try{chooseIv(pend.key,0)}
+    catch(e){ /* chooseIv がそのまま使えない場合は、同じ効果 (fx の適用・ivDone の記録・noteTactic) を DOM を介さずに当てる */
+     var o=pend.opts[0],outcome=o.fx();
+     var TACMAP={chase:'索敵',search:'索敵',rush:'雷撃',bombard:'共同',guard:'補給',night:'補給',push:'共同',pull:'補給'};
+     if(TACMAP[o.id])noteTactic(TACMAP[o.id],'作戦介入');
+     S.op.ivDone[pend.key]=true;S.interventions.push({op:S.op.id,key:pend.key,choice:o.label,outcome:outcome});
+     S.opLog.push({t:'介入：'+pend.title,x:o.label+' ― '+outcome});
+     audit('作戦介入',{op:S.op.id,key:pend.key,choice:o.label,outcome:outcome});renderAll()}}
+   else advanceOp();
+   harvest()}
+  if(S.op&&S.op.done){var gr=(S.op.result&&S.op.result.grade)||'不明';R.ops++;R.grades[gr]=(R.grades[gr]||0)+1;doResponsibility(S.op.def.name,gr,'support')}
+  opCounter=false;R.steps++}
+ function loop(){
+  if(R.err)return;
+  if(guard++>600){R.err='進める回数の上限に達した';return}
+  harvest();observe();
+  if(S.warEnded){R.ended=true;R.reached=Math.max(R.reached,S.chapter||0);return}
+  if(S.finished){
+   R.reached=Math.max(R.reached,S.chapter||0);scanBad();
+   if((S.chapter||0)===5&&!R.midSave){
+    /* 第5章の終了時点で、試験用の箱の中だけの保存・復元 (ゲームの保存形式の文字列化と読み戻し) */
+    R.midSave=true;
+    try{var raw=JSON.stringify({S:S,rngCalls:rngState.calls});var parsed=parseSaveString(raw);
+     if(parsed){S=parsed.S;normalizeState();resetRng();for(var ri=0;ri<parsed.rngCalls;ri++){rngState.fn()}rngState.calls=parsed.rngCalls;
+      R.midRestore=!!(S&&S.finished&&(S.chapter||0)===5)}}
+    catch(e){R.midRestore=false}
+    auditSeen=(S&&S.auditLog)?S.auditLog.length:0;
+    return yieldFrame().then(loop)}
+   if((S.chapter||0)>=8)return;
+   var before=S.chapter||0,bufN=(typeof auditBuf!=='undefined'&&auditBuf)?auditBuf.length:0;
+   continueNextChapter();
+   if((S.chapter||0)===before+1)R.carry++;
+   /* 新しい章の記録の先頭には、章が始まる前から溜まっていた分 (bufN 件) だけが入る。
+      章の開始と同時に起きた最初の月次判断も数えるため、読み飛ばすのはその分だけにする */
+   auditSeen=(S&&S.auditLog)?Math.min(bufN,S.auditLog.length):0;
+   progress();return yieldFrame().then(loop)}
+  var ph=S.phase;
+  if(ph==='conflict'){arbitrate('split');R.steps++}
+  else if(ph==='policy'||ph==='proposals'||ph==='overview')doPolicy();
+  else if(ph==='review'||ph==='reviewResult')doReview();
+  else if(ph==='op')doOp();
+  else{R.err='想定外の局面（'+ph+'）で止まった';return}
+  progress();return yieldFrame().then(loop)}
+ function finalize(){
+  try{harvest();observe();scanBad();
+   if(S&&S.learnLog){R.learnTotal=S.learnLog.length;R.learnBoth=S.learnLog.filter(function(x){return !!(x&&x.attribution&&x.attribution_applied)}).length}}
+  catch(e){}
+  var gradeTxt=['勝利','辛勝','敗北','大敗'].map(function(g){return g+' '+(R.grades[g]||0)+' 件'}).join(' ・ ');
+  chk('完走',R.ended&&!R.err,'例外なく第8章まで到達し、終戦まで進んだ：'+(R.ended?'はい':'いいえ')+(R.err?'（'+R.err+'）':'')+'。進んだステップは '+R.steps+'（月数として数える）、到達した章は第'+R.reached+'章。作戦は '+R.ops+' 件（'+gradeTxt+'）');
+  var dist=Object.keys(R.chosen).map(function(k){return (ENEMY_ACTION_NAME[k]||k)+' '+R.chosen[k]+'回'}).join('・');
+  chk('敵の月次判断',R.judge>0&&R.cand===R.judge,'特徴ベクトルを使う効用採点の経路で判断が起きた。監査「敵の判断」は '+R.judge+' 件、選ばれた手は '+(dist||'なし')+'。候補と寄与を含む記録は '+R.cand+' 件');
+  chk('適応台帳',R.thru&&R.genThru,'研究の着手（敵適応兆候）は '+R.sign+' 件、成立（敵適応）は '+R.est+' 件。特化対策の到達した最大の水準は '+fmtV(R.maxSpec)+'（0.8 を経て 1.0 まで到達した事例：'+(R.thru?'あり':'なし')+'）。汎用対策の到達した最大の水準は '+fmtV(R.maxGen)+'（二段目 0.55 まで到達した事例：'+(R.genThru?'あり':'なし')+'）');
+  var uniq=[];R.pens.forEach(function(p){if(uniq.indexOf(p)<0)uniq.push(p)});uniq.sort(function(a,b){return a-b});
+  chk('戦闘の減点',uniq.length>=2&&R.penNZ>0,'作戦ごとの適応ペナルティは最小 '+(R.pens.length?Math.min.apply(null,R.pens):'―')+' ・ 最大 '+(R.pens.length?Math.max.apply(null,R.pens):'―')+' ・ 異なる値 '+uniq.length+' 種類（'+(uniq.join('／')||'なし')+'）。敵の対策が成立した状態で臨んだ作戦で、ペナルティが 0 でなかった事例は '+R.penNZ+' 件');
+  chk('学習の記録',R.learnBoth>0,'作戦の学習の記録は '+R.learnTotal+' 件、そのうち生の帰属と適用した帰属の両方を持つ記録は '+R.learnBoth+' 件');
+  chk('引き継ぎと保存・復元',R.carry===7&&R.midRestore&&R.nan===0,'章間引き継ぎは '+R.carry+' 回進んだ（全章をつなぐには 7 回）。第5章の終了時点での保存と復元：'+(R.midRestore?'できた（復元後も崩れずに進んだ）':'できなかった')+'。状態の中の異常な数値（NaN・無限大）の検出は '+R.nan+' 件')}
+ return Promise.resolve()
+  .then(function(){var bufN0=(typeof auditBuf!=='undefined'&&auditBuf)?auditBuf.length:0;startChapter(1);auditSeen=(S&&S.auditLog)?Math.min(bufN0,S.auditLog.length):0;progress();return loop()})
+  .then(function(){finalize()},function(e){R.err='例外：'+((e&&e.message)?e.message:String(e));finalize()})
+  .then(function(){S=entryS;STEPS=entrySteps;try{renderAll()}catch(e){}
+   return {ok:ng.length===0,detail:lines.join('\n')}})}
 
 /* 旗艦級3隻のヒーロー画像の表示確認: 試験用の状態の中で旗艦を順に切り替え、母港のパネル (syncFlagHero) と
    図鑑の要目シート (openShipDex) の両方で、その艦の絵が出て実際に読み込まれたかまで見る。
