@@ -549,6 +549,8 @@ header .hset{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid var
 .tm-handover-block{margin-top:10px;border-top:1px solid rgba(194,161,94,.25);padding-top:9px}
 .tm-save-status{font-size:11.5px;color:#f0d9a0;line-height:1.6;margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .tm-save-status:empty{display:none}
+.tm-save-sent{font-size:11.5px;color:#9db8c8;line-height:1.6;margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.tm-save-sent:empty{display:none}
 .tm-handover-block .tm-actions{margin:8px 0 2px}
 /* 見た目の自動取得: ギャラリーとまとめ画像 */
 #tm-gallery:empty{display:none}
@@ -688,7 +690,7 @@ button.tmv-cell{font-family:inherit;text-align:left;padding:0;cursor:pointer;wid
     <div class="tm-actions"><button class="btn primary" data-act="tm-share">まとめて渡す（まとめ画像2枚を表示）</button></div>
     <p class="tm-share-status" id="tm-share-status" aria-live="polite"></p>
     <textarea id="tm-report" readonly placeholder="実行すると、ここに報告用の結果テキストがまとまります"></textarea>
-    <div id="tm-handover"><div class="tm-row"><span class="tm-name">受け渡し用 ― まとめ画像（2枚）</span><button class="btn small" data-act="tm-handover-close">閉じる</button></div><p class="tm-detail" id="tm-handover-note"></p><p class="tm-detail" id="tm-handover-copy"></p><p class="tm-detail" id="tm-handover-how">渡し方 ― 画像は2枚あります。1枚目（見た目のまとめ）と2枚目（結果テキスト全文）を、それぞれ「写真に保存」で写真へ保存し、チャットへ貼ってください。</p><div class="tm-handover-block" id="tm-handover-block-scenes"><div class="tm-row"><span class="tm-name">1枚目 ― 見た目のまとめ</span></div><div id="tm-handover-img-scenes"></div><p class="tm-detail" id="tm-handover-fail-scenes" style="display:none">この画像は作れませんでした。場面の絵は、下のギャラリーの個別画像から渡してください。</p><div class="tm-actions" id="tm-handover-actions-scenes"><button class="btn small" data-act="tm-view-one" data-a1="scenes">大きく表示して保存</button><button class="btn small" id="tm-save-btn-scenes" data-act="tm-save-photo" data-a1="scenes">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="scenes">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-scenes" aria-live="polite"></p></div><div class="tm-handover-block" id="tm-handover-block-text"><div class="tm-row"><span class="tm-name">2枚目 ― 結果テキスト（全文）</span></div><div id="tm-handover-img-text"></div><p class="tm-detail" id="tm-handover-fail-text" style="display:none">この画像は作れませんでした。結果テキストは、上の結果欄からコピーして渡してください。</p><div class="tm-actions" id="tm-handover-actions-text"><button class="btn small" data-act="tm-view-one" data-a1="text">大きく表示して保存</button><button class="btn small" id="tm-save-btn-text" data-act="tm-save-photo" data-a1="text">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="text">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-text" aria-live="polite"></p></div></div>
+    <div id="tm-handover"><div class="tm-row"><span class="tm-name">受け渡し用 ― まとめ画像（2枚）</span><button class="btn small" data-act="tm-handover-close">閉じる</button></div><p class="tm-detail" id="tm-handover-note"></p><p class="tm-detail" id="tm-handover-copy"></p><p class="tm-detail" id="tm-handover-how">渡し方 ― 画像は2枚あります。1枚目（見た目のまとめ）と2枚目（結果テキスト全文）を、それぞれ「写真に保存」で写真へ保存し、チャットへ貼ってください。</p><div class="tm-handover-block" id="tm-handover-block-scenes"><div class="tm-row"><span class="tm-name">1枚目 ― 見た目のまとめ</span></div><div id="tm-handover-img-scenes"></div><p class="tm-detail" id="tm-handover-fail-scenes" style="display:none">この画像は作れませんでした。場面の絵は、下のギャラリーの個別画像から渡してください。</p><div class="tm-actions" id="tm-handover-actions-scenes"><button class="btn small" data-act="tm-view-one" data-a1="scenes">大きく表示して保存</button><button class="btn small" id="tm-save-btn-scenes" data-act="tm-save-photo" data-a1="scenes">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="scenes">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-scenes" aria-live="polite"></p><p class="tm-save-sent" id="tm-save-sent-scenes"></p></div><div class="tm-handover-block" id="tm-handover-block-text"><div class="tm-row"><span class="tm-name">2枚目 ― 結果テキスト（全文）</span></div><div id="tm-handover-img-text"></div><p class="tm-detail" id="tm-handover-fail-text" style="display:none">この画像は作れませんでした。結果テキストは、上の結果欄からコピーして渡してください。</p><div class="tm-actions" id="tm-handover-actions-text"><button class="btn small" data-act="tm-view-one" data-a1="text">大きく表示して保存</button><button class="btn small" id="tm-save-btn-text" data-act="tm-save-photo" data-a1="text">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="text">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-text" aria-live="polite"></p><p class="tm-save-sent" id="tm-save-sent-text"></p></div></div>
     <div class="tm-visualbox"><div class="tm-row"><span class="tm-name">見た目の確認（撮影用）</span><button class="btn small" data-act="tm-visual">開く</button></div><div class="tm-detail">各場面を全面で1つずつ表示します。場面はタップか前後のボタンで順に進めます。場面名は小さく出すだけで、消すこともできます。3Dの場面では、その場で画像にして、長押しで写真に保存できます。</div><div class="tm-detail">場面：タイトル扉 ／ 章の扉（第5章・第8章）／ 母港（長門・赤城）／ 作戦の航空戦 ／ 図鑑の零戦（塗装2種）／ 作戦の見通し ／ 運命の対比報告 ／ 研究の添付図面</div><div class="tm-detail">上の「見た目を取得」では、この顔ぶれを自動で順に組み立てて画像にし、ギャラリーとまとめ画像を作ります。取れた場面と取れなかった場面（理由つき）は、結果テキストの末尾にも残ります。</div></div>
     <div id="tm-gallery"></div>
     <div id="tm-probes" style="position:absolute;visibility:hidden;pointer-events:none;left:0;top:0"></div>
@@ -1658,7 +1660,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v53';
+var APP_VERSION='v54';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -4102,6 +4104,11 @@ function tmIsLauncherContext(){try{if(typeof window.__kuroLauncher==='boolean')r
  try{return location.hostname==='highlightyjp.github.io'&&location.pathname.indexOf('/launcher/')!==-1}catch(e){return false}}
 var TM_SAVE_SEQ=0;var TM_SAVE_PENDING={};
 function tmSaveSetStatus(which,msg){var el=$('tm-save-status-'+which);if(el)el.textContent=msg||''}
+/* 送信記録: 実際に殻へ送れた時だけ、その画像の近くに1行残す。結果行とは別要素で持ち、
+   結果行がその後どう変わっても消さない。再送信では行を増やさず時刻だけを更新する。
+   画面表示のみで、保存はしない (再読み込みで消える) */
+function tmSaveMarkSent(which){var el=$('tm-save-sent-'+which);if(!el)return;var d=new Date();var p2=function(n){return (n<10?'0':'')+n};
+ el.textContent='送信した '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds())+'（画像'+(which==='text'?2:1)+'）'}
 function tmSaveSetBtn(which,disabled){var btn=$('tm-save-btn-'+which);if(btn)btn.disabled=!!disabled}
 function tmSaveReset(){tmSaveSetStatus('scenes','');tmSaveSetStatus('text','');tmSaveSetBtn('scenes',false);tmSaveSetBtn('text',false)}
 function tmBlobToBase64(blob){return new Promise(function(resolve,reject){try{var fr=new FileReader();
@@ -4136,7 +4143,7 @@ function tmSavePhoto(which){var v=TM.visual;var isText=(which==='text');
  tmSaveSetBtn(which,true);tmSaveSetStatus(which,'保存しています…');
  tmBlobToBase64(blob).then(function(b64){
   if(TM_SAVE_PENDING[requestId]!==pend)return;
-  try{window.parent.postMessage({contract:'launcher-media/v1',action:'saveImage',moduleId:'kurogiri',requestId:requestId,filename:isText?('kurogiri-summary-2.'+(mimeType==='image/png'?'png':'jpg')):('kurogiri-summary-1.'+(mimeType==='image/png'?'png':'jpg')),mimeType:mimeType,dataBase64:b64},TM_SAVE_ORIGIN)}
+  try{window.parent.postMessage({contract:'launcher-media/v1',action:'saveImage',moduleId:'kurogiri',requestId:requestId,filename:isText?('kurogiri-summary-2.'+(mimeType==='image/png'?'png':'jpg')):('kurogiri-summary-1.'+(mimeType==='image/png'?'png':'jpg')),mimeType:mimeType,dataBase64:b64},TM_SAVE_ORIGIN);tmSaveMarkSent(which)}
   catch(e){tmSaveFinish(requestId,pend,'保存できませんでした');return}
   pend.timerAccepted=setTimeout(function(){tmSaveFinish(requestId,pend,'この環境では保存できません。共有から送ってください')},3000);
  },function(){tmSaveFinish(requestId,pend,'保存できませんでした')})}
