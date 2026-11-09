@@ -1,6 +1,6 @@
 {
   "contract": "launcher-modules/v1",
-  "generated_at": "2026-11-09T06:51:18Z",
+  "generated_at": "2026-11-09T07:04:12Z",
   "modules": [
     {
       "desc": "曲の一覧・検索・歌詞。タップで Suno を開きます",
@@ -45,7 +45,7 @@
       "name": "クロギリ",
       "desc": "黒霧に抗う鎮守府の月次運営ゲーム",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/kurogiri/",
-      "status": "preparing"
+      "status": "ready"
     }
   ]
 }
