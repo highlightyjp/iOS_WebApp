@@ -127,7 +127,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.3';
-const SHELL_BUILD = '2026-11-09-1455';
+const SHELL_BUILD = '2026-11-09-1605';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -636,11 +636,17 @@ function checkProbeResume(){
     box.style.display = 'none';
     let url = REMOTE_BASE + 'diag-llm.html';
     let name = 'LLM検証';
-    try{
-      const stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null');
-      const found = stored && (stored.modules || []).find(m => m.id === 'llmprobe');
-      if (found && found.url){ url = found.url; name = found.name || name; }
-    }catch(e){ /* 予備の住所で開く */ }
+    if (beat.url){
+      // 合図に開く先が書いてあれば、それを優先する（ネイティブ検証など）
+      url = beat.url;
+      name = beat.name || name;
+    }else{
+      try{
+        const stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null');
+        const found = stored && (stored.modules || []).find(m => m.id === 'llmprobe');
+        if (found && found.url){ url = found.url; name = found.name || name; }
+      }catch(e){ /* 予備の住所で開く */ }
+    }
     openModule({ id: 'llmprobe', name, url });
   }, 3000);
   document.getElementById('resumeCancelBtn').addEventListener('click', () => {
