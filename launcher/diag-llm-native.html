@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>LLM検証（ネイティブ）</title>
+<style>
+  body{ font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; margin:0; padding:calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); background:#0d1117; color:#eef2f7; }
+  h1{ font-size:19px; margin:0 0 6px; }
+  p.note{ color:#93a1b3; font-size:13.5px; line-height:1.7; }
+  .rowline{ font-size:15px; line-height:1.8; border-bottom:1px solid #26303f; padding:8px 0; }
+  .ok{ color:#6ee7a0; font-weight:700; } .ng{ color:#fda4af; font-weight:700; } .warn{ color:#fcd34d; font-weight:700; }
+  .modelrow{ padding:12px 14px; margin-top:10px; border-radius:12px; border:1px solid #26303f; background:#161c26; font-size:15.5px; }
+  .modelrow small{ display:block; color:#93a1b3; font-size:12.5px; margin-top:3px; }
+  .modelrow .st{ font-size:13.5px; margin-top:6px; }
+  .modelrow.active{ border-color:#7dd3fc; }
+  button.big{ width:100%; padding:15px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-top:16px; cursor:pointer; }
+  button.big[disabled]{ opacity:.5; }
+  button.sub{ width:100%; padding:12px; border-radius:12px; border:1px solid #26303f; background:#161c26; color:#eef2f7; font-size:14.5px; margin-top:10px; cursor:pointer; }
+  #copyBtn{ width:100%; padding:14px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-bottom:10px; cursor:pointer; }
+  pre#out{ white-space:pre-wrap; word-break:break-word; font-size:13.5px; line-height:1.75; background:#161c26; border:1px solid #26303f; border-radius:12px; padding:12px; min-height:60px; }
+  pre#log{ white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.7; background:#0a0e14; border:1px solid #26303f; border-radius:12px; padding:12px; max-height:320px; overflow-y:auto; }
+  .bar{ height:10px; border-radius:6px; background:#26303f; overflow:hidden; margin-top:8px; }
+  .bar > div{ height:100%; width:0%; background:#7dd3fc; transition:width .2s; }
+  h2{ font-size:15px; margin:20px 0 4px; color:#93a1b3; }
+</style>
+<style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
+</head>
+<body>
+<h1>LLM検証（ネイティブ：アプリ本体で動かす）</h1>
+<button id="copyBtn" type="button">結果とログをコピー</button>
+<div id="copyMsg" style="font-size:13px;color:#7dd3fc;min-height:18px;"></div>
+<div class="rowline" id="bridgeState">ネイティブの口：確認中…</div>
+<p class="note">WebView ではなく、アプリ本体の中で llama.cpp を直接動かす経路の検証です。ボタンを1つ押すと、4B → 8B の順に「ダウンロード（初回のみ）→ 読み込み → 測定」を自動で試します。アプリごと落ちても、開き直せば殻がこのページを自動で開き、落ちた所から続きを始めます。記録（ログ）は端末に残ります。</p>
+
+<div id="board"></div>
+<button id="startBtn" class="big" type="button">測定をはじめる（4B → 8B の順に自動）</button>
+<button id="stopBtn" class="sub" type="button" style="display:none;">止める</button>
+<div class="bar"><div id="barFill"></div></div>
+<div class="rowline" id="progress">進み具合: —</div>
+<pre id="out">結果はここに出ます。</pre>
+<h2>記録（ログ）</h2>
+<button id="logCopyBtn" class="sub" type="button" style="margin:0 0 8px;">ログをコピー</button>
+<pre id="log">（まだありません）</pre>
+
+<script>
+const MODELS = [
+  { id: 'qwen3-4b-q4km', label: 'Qwen3-4B（Q4_K_M）', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '約2.5GB。まずこれが余裕で動くか' },
+  { id: 'qwen3-8b-q4km', label: 'Qwen3-8B（Q4_K_M）', file: 'Qwen3-8B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf', note: '約4.9GB。4B で余裕なら上も目指せるか' },
+];
+const LOG_KEY = 'llmnative.log.v1';
+const RUN_KEY = 'llmnative.run.v1';
+const RESUME_KEY = 'llmprobe.resume.v1'; // 殻と共通の合図（url で開く先を伝える）
+const PAGE_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm-native.html';
+const BENCH_PROMPT = '次の文から、日付・場所・金額を取り出して、項目ごとに1行で答えてください。\n文：来週の火曜日、つまり11月17日に、板橋区の高島平で開催される説明会に参加する。参加費は3,500円で、当日現金で払う。帰りに駅前の店で2,980円の本を買う予定。\n/no_think';
+let stopRequested = false;
+let chainRunning = false;
+
+// ---------- ネイティブの口 ----------
+function nativePlugin(){
+  const caps = [window.Capacitor, window.parent && window.parent.Capacitor, window.top && window.top.Capacitor];
+  for (const c of caps){
+    if (c && c.Plugins && c.Plugins.LlamaCore) return c.Plugins.LlamaCore;
+  }
+  return null;
+}
+
+// ---------- 記録（ログ） ----------
+function loadLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); }catch(e){ return []; } }
+function renderLog(){
+  const lines = loadLog();
+  const el = document.getElementById('log');
+  el.textContent = lines.length ? lines.join('\n') : '（まだありません）';
+  el.scrollTop = el.scrollHeight;
+}
+function log(msg){
+  const now = new Date();
+  const stamp = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+  const lines = loadLog();
+  lines.push('[' + stamp + '] ' + msg);
+  while (lines.length > 400) lines.shift();
+  try{ localStorage.setItem(LOG_KEY, JSON.stringify(lines)); }catch(e){ /* 保存できなくても本流は続ける */ }
+  renderLog();
+}
+
+// ---------- 実行の状態 ----------
+function freshRun(){
+  const states = {};
+  MODELS.forEach(m => { states[m.id] = { st: 'wait', detail: '' }; });
+  return { idx: 0, phase: 'idle', states, done: false, stopped: false };
+}
+function loadRun(){ try{ return JSON.parse(localStorage.getItem(RUN_KEY) || 'null'); }catch(e){ return null; } }
+function saveRun(run){
+  try{ localStorage.setItem(RUN_KEY, JSON.stringify(run)); }catch(e){ /* 同上 */ }
+  try{
+    if (run && !run.done && !run.stopped) localStorage.setItem(RESUME_KEY, JSON.stringify({ at: Date.now(), url: PAGE_URL, name: 'LLM検証（ネイティブ）' }));
+    else localStorage.removeItem(RESUME_KEY);
+  }catch(e){ /* 同上 */ }
+}
+
+// ---------- 盤面 ----------
+const rowRefs = {};
+function renderBoard(run){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (const m of MODELS){
+    const row = document.createElement('div');
+    row.className = 'modelrow';
+    const strong = document.createElement('strong'); strong.textContent = m.label;
+    const small = document.createElement('small'); small.textContent = m.note;
+    const st = document.createElement('div'); st.className = 'st';
+    row.append(strong, small, st);
+    board.appendChild(row);
+    rowRefs[m.id] = { row, st };
+    updateRow(m, run);
+  }
+}
+const ST_LABEL = { wait: 'まだ', active: '試しています…', passed: '動きました', failed: '失敗', crashed: '落ちました' };
+function updateRow(m, run){
+  const ref = rowRefs[m.id]; if (!ref) return;
+  const s = run && run.states[m.id] ? run.states[m.id] : { st: 'wait', detail: '' };
+  ref.row.classList.toggle('active', s.st === 'active');
+  ref.st.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = '状態：' + (ST_LABEL[s.st] || s.st) + (s.detail ? '（' + s.detail + '）' : '');
+  if (s.st === 'passed') span.className = 'ok';
+  else if (s.st === 'failed' || s.st === 'crashed') span.className = 'ng';
+  else if (s.st === 'active') span.className = 'warn';
+  ref.st.appendChild(span);
+}
+
+// ---------- コピー ----------
+function summaryText(run){
+  const lines = ['端末内LLM（ネイティブ）検証結果', '日時：' + new Date().toLocaleString('ja-JP'), '端末：' + navigator.userAgent, ''];
+  for (const m of MODELS){
+    const s = run && run.states[m.id] ? run.states[m.id] : { st: 'wait', detail: '' };
+    lines.push(m.label + '：' + (ST_LABEL[s.st] || s.st) + (s.detail ? '（' + s.detail + '）' : ''));
+  }
+  lines.push('', '--- 記録（ログ） ---');
+  return lines.concat(loadLog()).join('\n');
+}
+async function copyTextRobust(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e2){ /* 予備も失敗 */ }
+    ta.remove(); return ok;
+  }
+}
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('copyMsg');
+  const text = summaryText(loadRun());
+  if (await copyTextRobust(text)) msg.textContent = 'コピーしました。そのままチャットに貼れます。';
+  else { msg.textContent = 'コピーできませんでした。結果欄に全文を出します。'; document.getElementById('out').textContent = text; }
+  setTimeout(() => { msg.textContent = ''; }, 4000);
+});
+document.getElementById('logCopyBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('copyMsg');
+  const lines = loadLog();
+  if (!lines.length){ msg.textContent = '記録はまだありません。'; setTimeout(() => { msg.textContent = ''; }, 3000); return; }
+  msg.textContent = (await copyTextRobust(lines.join('\n'))) ? '記録（ログ）をコピーしました。' : 'コピーできませんでした。';
+  setTimeout(() => { msg.textContent = ''; }, 4000);
+});
+
+// ---------- 1つのモデルを試す ----------
+async function attempt(run, m, plugin){
+  const prog = document.getElementById('progress');
+  const fill = document.getElementById('barFill');
+  const out = document.getElementById('out');
+  run.states[m.id] = { st: 'active', detail: '' };
+  run.phase = 'checking';
+  saveRun(run); updateRow(m, run);
+  log(m.label + ' を試す');
+
+  // 置き場所の確認と、無ければダウンロード
+  let info;
+  try{ info = await plugin.modelInfo({ name: m.file }); }
+  catch(e){ info = { exists: false }; }
+  if (!info || !info.exists){
+    run.phase = 'downloading'; saveRun(run);
+    log(m.label + '：モデルがないのでダウンロードする（' + m.note.split('。')[0] + '）');
+    let milestones = {};
+    let listener = null;
+    try{
+      if (plugin.addListener) listener = await plugin.addListener('downloadProgress', (d) => {
+        if (!d || d.name !== m.file) return;
+        const pct = Math.round(d.percent || 0);
+        fill.style.width = pct + '%';
+        prog.textContent = 'ダウンロード: ' + pct + '%';
+        for (const ms of [25, 50, 75, 100]){
+          if (pct >= ms && !milestones[ms]){ milestones[ms] = true; log(m.label + '：ダウンロード ' + ms + '%'); }
+        }
+      });
+    }catch(e){ /* 進捗が取れなくてもダウンロード自体は続ける */ }
+    try{
+      const r = await plugin.downloadModel({ url: m.url, name: m.file });
+      log(m.label + '：ダウンロード完了（' + Math.round((r.bytes || 0) / 1e6) + 'MB）');
+    }catch(e){
+      const detail = String(e && e.message || e).slice(0, 120);
+      run.states[m.id] = { st: 'failed', detail: 'ダウンロード失敗：' + detail };
+      run.phase = 'idle'; saveRun(run); updateRow(m, run);
+      log(m.label + '：ダウンロードで失敗（' + detail + '）。次のモデルへ進む');
+      if (listener && listener.remove) listener.remove();
+      return 'failed';
+    }
+    if (listener && listener.remove) listener.remove();
+  }else{
+    log(m.label + '：モデルは端末の中にある（' + Math.round((info.bytes || 0) / 1e6) + 'MB）。ダウンロード不要');
+  }
+
+  // 測定（ここでアプリごと落ちる可能性がある。印は保存済み）
+  run.phase = 'measuring'; saveRun(run);
+  prog.textContent = '読み込み＋測定中…（この間、画面は止まって見えます）';
+  log(m.label + '：読み込みと測定をはじめる');
+  const t0 = performance.now();
+  try{
+    const r = await plugin.measure({ name: m.file, prompt: BENCH_PROMPT, maxTokens: 160, nCtx: 2048 });
+    const detail = '速度 ' + (r.tokPerSec || 0).toFixed(1) + ' tok/s、最初の文字まで ' + Math.round(r.ttftMs || 0) + 'ms、読み込み ' + ((r.loadMs || 0) / 1000).toFixed(1) + '秒、生成 ' + (r.genTokens || 0) + ' トークン';
+    run.states[m.id] = { st: 'passed', detail };
+    run.phase = 'idle'; saveRun(run); updateRow(m, run);
+    log(m.label + '：測定できた。' + detail + '（呼び出し全体 ' + ((performance.now() - t0) / 1000).toFixed(1) + '秒）');
+    out.textContent = summaryText(run) + '\n\n--- モデルの答え ---\n' + (r.text || '');
+    return 'passed';
+  }catch(e){
+    const detail = String(e && e.message || e).slice(0, 120);
+    run.states[m.id] = { st: 'failed', detail };
+    run.phase = 'idle'; saveRun(run); updateRow(m, run);
+    log(m.label + '：測定で失敗（' + detail + '）。次のモデルへ進む');
+    return 'failed';
+  }
+}
+
+// ---------- 順に繰り返す ----------
+async function runChain(){
+  if (chainRunning) return;
+  const plugin = nativePlugin();
+  if (!plugin){
+    document.getElementById('out').textContent = 'ネイティブの口（LlamaCore）が見つかりません。殻が v1.4 以降かを確認してください。';
+    log('ネイティブの口が見つからない（Capacitor.Plugins.LlamaCore なし）');
+    return;
+  }
+  chainRunning = true;
+  stopRequested = false;
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  startBtn.disabled = true; stopBtn.style.display = 'block';
+  const beatIv = setInterval(() => { const r = loadRun(); if (r) saveRun(r); }, 20000);
+  let run = loadRun() || freshRun();
+  while (run.idx < MODELS.length){
+    if (stopRequested){ run.stopped = true; saveRun(run); log('止めるが押されたので、ここで止める'); break; }
+    const m = MODELS[run.idx];
+    await attempt(run, m, plugin);
+    run = loadRun() || run;
+    run.idx += 1; saveRun(run);
+  }
+  run = loadRun() || run;
+  if (!run.stopped && run.idx >= MODELS.length){
+    run.done = true; saveRun(run);
+    const passed = MODELS.filter(m => run.states[m.id] && run.states[m.id].st === 'passed').map(m => m.label);
+    log(passed.length ? '結論：' + passed.join(' と ') + ' がネイティブで動く' : '結論：ネイティブでも動かなかった');
+    document.getElementById('out').textContent = summaryText(run);
+  }
+  clearInterval(beatIv);
+  startBtn.disabled = false; stopBtn.style.display = 'none';
+  chainRunning = false;
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  const run = freshRun();
+  saveRun(run);
+  MODELS.forEach(m => updateRow(m, run));
+  log('=== 測定をはじめる（4B → 8B の順に自動） ===');
+  runChain();
+});
+document.getElementById('stopBtn').addEventListener('click', () => {
+  stopRequested = true;
+  const run = loadRun();
+  if (run){ run.stopped = true; saveRun(run); }
+  log('止めるが押された');
+});
+
+// ---------- 開いた時 ----------
+(async () => {
+  renderLog();
+  let run = loadRun();
+  renderBoard(run);
+  const plugin = nativePlugin();
+  const bs = document.getElementById('bridgeState');
+  if (plugin){
+    bs.innerHTML = 'ネイティブの口：<span class="ok">つながっている</span>';
+  }else{
+    bs.innerHTML = 'ネイティブの口：<span class="ng">見つからない</span>（殻 v1.4 以降で開いてください）';
+    document.getElementById('startBtn').disabled = true;
+    return;
+  }
+  if (run && !run.done && !run.stopped && run.idx < MODELS.length){
+    const active = MODELS[run.idx];
+    if (run.phase === 'measuring'){
+      run.states[active.id] = { st: 'crashed', detail: '読み込み／測定中にアプリごと落ちた' };
+      log(active.label + '：読み込み／測定中にアプリごと落ちた形跡。次のモデルへ進む');
+      run.idx += 1; run.phase = 'idle'; saveRun(run);
+    }else if (run.phase === 'downloading'){
+      log(active.label + '：ダウンロードの途中で落ちた形跡。同じモデルからやり直す（ダウンロードは最初から）');
+      run.phase = 'idle'; saveRun(run);
+    }
+    renderBoard(run);
+    if (run.idx < MODELS.length){
+      log('前回の続きから自動ではじめる（次は ' + MODELS[run.idx].label + '）');
+      document.getElementById('out').textContent = '前回は途中で落ちていました。続きを自動ではじめます。止めたい時は「止める」を押してください。';
+      setTimeout(() => { runChain(); }, 1500);
+    }else{
+      run.done = true; saveRun(run);
+    }
+  }
+})();
+</script>
+</body>
+</html>
