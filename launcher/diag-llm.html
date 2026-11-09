@@ -9,75 +9,147 @@
   h1{ font-size:19px; margin:0 0 6px; }
   p.note{ color:#93a1b3; font-size:13.5px; line-height:1.7; }
   .rowline{ font-size:15px; line-height:1.8; border-bottom:1px solid #26303f; padding:8px 0; }
-  .ok{ color:#6ee7a0; font-weight:700; } .ng{ color:#fda4af; font-weight:700; }
-  button.model{ display:block; width:100%; text-align:left; padding:14px; margin-top:10px; border-radius:12px; border:1px solid #26303f; background:#161c26; color:#eef2f7; font-size:15.5px; cursor:pointer; }
-  button.model small{ display:block; color:#93a1b3; font-size:12.5px; margin-top:3px; }
-  button.model.sel{ border-color:#7dd3fc; }
-  #runBtn{ width:100%; padding:15px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-top:16px; cursor:pointer; }
-  #runBtn[disabled]{ opacity:.5; }
+  .ok{ color:#6ee7a0; font-weight:700; } .ng{ color:#fda4af; font-weight:700; } .warn{ color:#fcd34d; font-weight:700; }
+  .modelrow{ padding:12px 14px; margin-top:10px; border-radius:12px; border:1px solid #26303f; background:#161c26; font-size:15.5px; }
+  .modelrow small{ display:block; color:#93a1b3; font-size:12.5px; margin-top:3px; }
+  .modelrow .st{ font-size:13.5px; margin-top:6px; }
+  .modelrow.active{ border-color:#7dd3fc; }
+  button.big{ width:100%; padding:15px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-top:16px; cursor:pointer; }
+  button.big[disabled]{ opacity:.5; }
+  button.sub{ width:100%; padding:12px; border-radius:12px; border:1px solid #26303f; background:#161c26; color:#eef2f7; font-size:14.5px; margin-top:10px; cursor:pointer; }
   #copyBtn{ width:100%; padding:14px; border-radius:12px; border:0; background:#7dd3fc; color:#082f49; font-size:16px; font-weight:700; margin-bottom:10px; cursor:pointer; }
   pre#out{ white-space:pre-wrap; word-break:break-word; font-size:13.5px; line-height:1.75; background:#161c26; border:1px solid #26303f; border-radius:12px; padding:12px; min-height:60px; }
+  pre#log{ white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.7; background:#0a0e14; border:1px solid #26303f; border-radius:12px; padding:12px; max-height:320px; overflow-y:auto; }
   .bar{ height:10px; border-radius:6px; background:#26303f; overflow:hidden; margin-top:8px; }
   .bar > div{ height:100%; width:0%; background:#7dd3fc; transition:width .2s; }
+  h2{ font-size:15px; margin:20px 0 4px; color:#93a1b3; }
 </style>
 <style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
 </head>
 <body>
 <h1>LLM検証（端末の中で動くか）</h1>
-<button id="copyBtn" type="button">結果テキストをコピー</button>
+<button id="copyBtn" type="button">結果とログをコピー</button>
 <div id="copyMsg" style="font-size:13px;color:#7dd3fc;min-height:18px;"></div>
 <div class="rowline" id="envGpu">WebGPU: 確認中…</div>
 <div class="rowline" id="envAdapter">アダプタ: —</div>
-<p class="note">モデルの読み込みは、初回だけ数GBのダウンロードがあります（Wi-Fi推奨）。読み込み中はこの画面を開いたままにしてください。結果は上のボタンでコピーして、チャットに貼れます。</p>
+<p class="note">ボタンを1つ押すと、大きいモデルから順に「ダウンロード→読み込み→測定」を自動で試します。失敗したり画面ごと落ちたら、次の小さいモデルへ自動で切り替えます。落ちて画面が閉じても、もう一度このページを開けば、落ちた所から自動で続きを始めます。記録（ログ）は端末に残るので、落ちた時も後から読めます。</p>
 
-<div id="models"></div>
-<button id="runBtn" type="button" disabled>モデルを選んでください</button>
+<div id="board"></div>
+<button id="startBtn" class="big" type="button">測定をはじめる（大きい順に自動）</button>
+<button id="stopBtn" class="sub" type="button" style="display:none;">止める</button>
 <div class="bar"><div id="barFill"></div></div>
 <div class="rowline" id="progress">進み具合: —</div>
 <pre id="out">結果はここに出ます。</pre>
+<h2>記録（ログ）</h2>
+<pre id="log">（まだありません）</pre>
 
 <script type="module">
 const MODELS = [
-  { id: 'Qwen3-8B-q4f16_1-MLC', label: 'Qwen3-8B（挑戦枠）', mb: 4700, note: '約4.7GB。性能は一番高い。端末の上限を探る' },
-  { id: 'Qwen3-4B-q4f16_1-MLC', label: 'Qwen3-4B（基準）', mb: 2560, note: '約2.5GB。自宅のディナと同じ系統' },
-  { id: 'Qwen3-1.7B-q4f16_1-MLC', label: 'Qwen3-1.7B', mb: 1230, note: '約1.2GB。受け皿' },
-  { id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', label: 'Qwen2.5-0.5B', mb: 290, note: '約0.3GB。Spaceでは52 tok/sの実績' },
+  { id: 'Qwen3-8B-q4f16_1-MLC', label: 'Qwen3-8B（挑戦枠）', note: '約4.7GB。性能は一番高い。端末の上限を探る' },
+  { id: 'Qwen3-4B-q4f16_1-MLC', label: 'Qwen3-4B（基準）', note: '約2.5GB。自宅のディナと同じ系統' },
+  { id: 'Qwen3-1.7B-q4f16_1-MLC', label: 'Qwen3-1.7B', note: '約1.2GB。受け皿' },
+  { id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', label: 'Qwen2.5-0.5B', note: '約0.3GB。Spaceでは52 tok/sの実績' },
 ];
-let selected = null;
+const LOG_KEY = 'llmprobe.log.v2';
+const RUN_KEY = 'llmprobe.run.v2';
 let webllm = null;
-const results = { env: '', model: '', cache: '', load: '', bench: '', error: '' };
+let envText = '';
+let stopRequested = false;
+let chainRunning = false;
 
-function resultText(){
+// ---------- 記録（ログ）：その都度 端末へ保存する。画面ごと落ちても最後の一歩まで残る ----------
+function loadLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); }catch(e){ return []; } }
+function renderLog(){
+  const lines = loadLog();
+  const el = document.getElementById('log');
+  el.textContent = lines.length ? lines.join('\n') : '（まだありません）';
+  el.scrollTop = el.scrollHeight;
+}
+function log(msg){
+  const now = new Date();
+  const stamp = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+  const lines = loadLog();
+  lines.push('[' + stamp + '] ' + msg);
+  while (lines.length > 400) lines.shift();
+  try{ localStorage.setItem(LOG_KEY, JSON.stringify(lines)); }catch(e){ /* 保存できなくても本流は続ける */ }
+  renderLog();
+}
+
+// ---------- 実行の状態：どのモデルを・どの段階まで試したか ----------
+function freshRun(){
+  const states = {};
+  MODELS.forEach(m => { states[m.id] = { st: 'wait', detail: '' }; });
+  return { idx: 0, phase: 'idle', sub: '', dlDeaths: 0, states, done: false, stopped: false };
+}
+function loadRun(){ try{ return JSON.parse(localStorage.getItem(RUN_KEY) || 'null'); }catch(e){ return null; } }
+function saveRun(run){ try{ localStorage.setItem(RUN_KEY, JSON.stringify(run)); }catch(e){ /* 同上 */ } }
+
+// ---------- 盤面（モデル一覧）：道具の読み込みなしで即時に出す ----------
+const rowRefs = {};
+function renderBoard(run){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (const m of MODELS){
+    const row = document.createElement('div');
+    row.className = 'modelrow';
+    const strong = document.createElement('strong'); strong.textContent = m.label;
+    const small = document.createElement('small');
+    small.textContent = m.note + '／キャッシュ：' + (m._cached === true ? 'あり（ダウンロード不要）' : m._cached === false ? 'なし' : '確認中…');
+    const st = document.createElement('div'); st.className = 'st';
+    row.append(strong, small, st);
+    board.appendChild(row);
+    rowRefs[m.id] = { row, small, st };
+    updateRow(m, run);
+  }
+}
+const ST_LABEL = { wait: 'まだ', active: '試しています…', passed: '動きました', failed: '失敗', crashed: '落ちました' };
+function updateRow(m, run){
+  const ref = rowRefs[m.id]; if (!ref) return;
+  const s = run && run.states[m.id] ? run.states[m.id] : { st: 'wait', detail: '' };
+  ref.row.classList.toggle('active', s.st === 'active');
+  ref.st.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = '状態：' + (ST_LABEL[s.st] || s.st) + (s.detail ? '（' + s.detail + '）' : '');
+  if (s.st === 'passed') span.className = 'ok';
+  else if (s.st === 'failed' || s.st === 'crashed') span.className = 'ng';
+  else if (s.st === 'active') span.className = 'warn';
+  ref.st.appendChild(span);
+  ref.small.textContent = m.note + '／キャッシュ：' + (m._cached === true ? 'あり（ダウンロード不要）' : m._cached === false ? 'なし' : '確認中…');
+}
+
+// ---------- 結果テキスト（コピー用：まとめ＋ログ全文） ----------
+function summaryText(run){
   const lines = ['端末内LLM 検証結果', '日時：' + new Date().toLocaleString('ja-JP'),
-    '端末：' + navigator.userAgent,
-    'WebGPU・環境：' + results.env,
-    'モデル：' + (results.model || '未選択'),
-    'キャッシュ：' + (results.cache || '—'),
-    '読み込み：' + (results.load || '—'),
-    '測定：' + (results.bench || '—')];
-  if (results.error) lines.push('失敗：' + results.error);
-  return lines.join('\n');
+    '端末：' + navigator.userAgent, 'WebGPU・環境：' + envText, ''];
+  for (const m of MODELS){
+    const s = run && run.states[m.id] ? run.states[m.id] : { st: 'wait', detail: '' };
+    lines.push(m.label + '：' + (ST_LABEL[s.st] || s.st) + (s.detail ? '（' + s.detail + '）' : ''));
+  }
+  lines.push('', '--- 記録（ログ） ---');
+  return lines.concat(loadLog()).join('\n');
 }
 document.getElementById('copyBtn').addEventListener('click', async () => {
   const msg = document.getElementById('copyMsg');
-  try{ await navigator.clipboard.writeText(resultText()); msg.textContent = 'コピーしました。そのままチャットに貼れます。'; }
-  catch(e){ msg.textContent = 'コピーできませんでした。結果欄を長押しで選んでください。'; document.getElementById('out').textContent = resultText(); }
+  const text = summaryText(loadRun());
+  try{ await navigator.clipboard.writeText(text); msg.textContent = 'コピーしました。そのままチャットに貼れます。'; }
+  catch(e){ msg.textContent = 'コピーできませんでした。結果欄に全文を出します。'; document.getElementById('out').textContent = text; }
   setTimeout(() => { msg.textContent = ''; }, 4000);
 });
 
+// ---------- 環境確認 ----------
 async function checkEnv(){
   const gpuEl = document.getElementById('envGpu');
   const adEl = document.getElementById('envAdapter');
   if (!('gpu' in navigator)){
     gpuEl.innerHTML = 'WebGPU: <span class="ng">使えない（navigator.gpu がない）</span>';
-    results.env = 'WebGPU なし';
+    envText = 'WebGPU なし';
     return false;
   }
   try{
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter){
       gpuEl.innerHTML = 'WebGPU: <span class="ng">アダプタが取れない</span>';
-      results.env = 'WebGPU アダプタなし';
+      envText = 'WebGPU アダプタなし';
       return false;
     }
     gpuEl.innerHTML = 'WebGPU: <span class="ok">使える</span>';
@@ -87,67 +159,32 @@ async function checkEnv(){
       if (i) info = [i.vendor, i.architecture, i.description].filter(Boolean).join(' / ');
     }catch(e){ /* 情報が取れなくても可否には影響しない */ }
     adEl.textContent = 'アダプタ: ' + (info || '（詳細は取れず）');
-    results.env = 'WebGPU 可。' + info;
+    envText = 'WebGPU 可。' + info;
     return true;
   }catch(e){
     gpuEl.innerHTML = 'WebGPU: <span class="ng">確認で失敗</span>';
-    results.env = 'WebGPU 確認失敗：' + (e && e.message || e);
+    envText = 'WebGPU 確認失敗：' + (e && e.message || e);
     return false;
   }
 }
 
-async function buildModelButtons(){
-  const wrap = document.getElementById('models');
-  const out = document.getElementById('out');
-  out.textContent = 'LLMの道具を読み込んでいます…（数MBの読み込みがあります）';
+// ---------- 道具の読み込み（初回だけ。時間がかかるので記録に残す） ----------
+async function ensureWebllm(){
+  if (webllm) return webllm;
+  const t0 = performance.now();
+  log('LLMの道具（WebLLM）を読み込む…');
+  webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.87');
+  log('道具の読み込み完了（' + Math.round(performance.now() - t0) + 'ms）');
+  return webllm;
+}
+async function checkCaches(run){
   try{
-    webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.87');
-  }catch(e){
-    out.textContent = 'LLMの道具（WebLLM）を読み込めませんでした：' + (e && e.message || e);
-    results.error = 'WebLLM の読み込み失敗';
-    return;
-  }
-  out.textContent = '結果はここに出ます。';
-  // ボタンは先に全部出す。キャッシュの確認は後から並行で行い、表示だけ差し替える
-  // （確認は保存領域を走査するので大きく遅い。ボタンの表示を待たせない）
-  const entries = MODELS.map(m => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'model';
-    const strong = document.createElement('strong'); strong.textContent = m.label;
-    const small = document.createElement('small');
-    small.textContent = m.note + '／キャッシュ：確認中…';
-    b.append(strong, small);
-    b.addEventListener('click', () => {
-      selected = m;
-      results.model = m.id;
-      results.cache = m._cached === true ? 'あり' : m._cached === false ? 'なし' : '不明';
-      document.querySelectorAll('button.model').forEach(x => x.classList.remove('sel'));
-      b.classList.add('sel');
-      const run = document.getElementById('runBtn');
-      run.disabled = false;
-      run.textContent = m.label + ' を読み込んで測る';
-    });
-    wrap.appendChild(b);
-    return { m, small };
-  });
-  await Promise.all(entries.map(async ({ m, small }) => {
-    let cached = null;
-    try{ cached = await webllm.hasModelInCache(m.id); }catch(e){ cached = null; }
-    m._cached = cached;
-    small.textContent = m.note + '／キャッシュ：' + (cached === true ? 'あり（ダウンロード不要）' : cached === false ? 'なし' : '不明');
-  }));
-}
-
-// 落ちた時の痕跡：読み込み開始前に印を残し、成功したら消す。印が残っていたら前回は途中で落ちた
-const ATTEMPT_KEY = 'llmprobe.attempt.v1';
-function markAttempt(modelId, stage){
-  try{ localStorage.setItem(ATTEMPT_KEY, JSON.stringify({ model: modelId, stage, at: Date.now() })); }catch(e){ /* 保存できなくても本流は続ける */ }
-}
-function readAttempt(){
-  try{ return JSON.parse(localStorage.getItem(ATTEMPT_KEY) || 'null'); }catch(e){ return null; }
-}
-function clearAttempt(){
-  try{ localStorage.removeItem(ATTEMPT_KEY); }catch(e){ /* 同上 */ }
+    await ensureWebllm();
+    await Promise.all(MODELS.map(async m => {
+      try{ m._cached = await webllm.hasModelInCache(m.id); }catch(e){ m._cached = null; }
+      updateRow(m, run);
+    }));
+  }catch(e){ /* キャッシュ表示は補助。失敗しても本流は続ける */ }
 }
 
 // 文脈（覚えていられる長さ）を短くして読み込む。抽出や要約の仕事には 2048 で十分で、
@@ -173,35 +210,42 @@ async function createEngine(modelId, onProgress){
 
 const BENCH_PROMPT = '次の文から、日付・場所・金額を取り出して、項目ごとに1行で答えてください。\n文：来週の火曜日、つまり11月17日に、板橋区の高島平で開催される説明会に参加する。参加費は3,500円で、当日現金で払う。帰りに駅前の店で2,980円の本を買う予定。\n/no_think';
 
-document.getElementById('runBtn').addEventListener('click', async () => {
-  if (!selected || !webllm) return;
-  const run = document.getElementById('runBtn');
+// ---------- 1つのモデルを試す。戻り値: 'passed' | 'failed' ----------
+async function attempt(run, m){
   const prog = document.getElementById('progress');
   const fill = document.getElementById('barFill');
   const out = document.getElementById('out');
-  run.disabled = true;
-  results.error = ''; results.load = ''; results.bench = '';
-  out.textContent = '読み込み中…';
-  markAttempt(selected.id, 'loading');
+  run.states[m.id] = { st: 'active', detail: '' };
+  run.phase = 'creating';
+  run.sub = m._cached === true ? 'loading' : 'downloading';
+  saveRun(run); updateRow(m, run);
+  log(m.label + ' を試す（キャッシュ：' + (m._cached === true ? 'あり' : m._cached === false ? 'なし' : '不明') + '）');
   const t0 = performance.now();
   let engine;
+  let milestones = {};
   try{
-    engine = await createEngine(selected.id, (r) => {
+    await ensureWebllm();
+    engine = await createEngine(m.id, (r) => {
       const pct = Math.round((r.progress || 0) * 100);
       fill.style.width = pct + '%';
       prog.textContent = '進み具合: ' + pct + '% ' + (r.text || '');
+      const txt = (r.text || '').toLowerCase();
+      const sub = /fetch|download/.test(txt) ? 'downloading' : (/load|compil|initializ|finish/.test(txt) ? 'loading' : run.sub);
+      if (sub !== run.sub){ run.sub = sub; saveRun(run); log(m.label + '：' + (sub === 'downloading' ? 'ダウンロード中' : '読み込み中')); }
+      for (const ms of [25, 50, 75, 100]){
+        if (pct >= ms && !milestones[ms]){ milestones[ms] = true; log(m.label + '：進み具合 ' + ms + '%'); }
+      }
     });
   }catch(e){
-    clearAttempt();
-    results.error = '読み込み失敗：' + (e && e.message || e);
-    out.textContent = resultText() + '\n\n大きいモデルで失敗した時は、下の小さいモデルで試してください（自動では落としません）。';
-    run.disabled = false;
-    return;
+    const detail = String(e && e.message || e).slice(0, 120);
+    run.states[m.id] = { st: 'failed', detail };
+    run.phase = 'idle'; saveRun(run); updateRow(m, run);
+    log(m.label + '：読み込みで失敗（' + detail + '）。次のモデルへ進む');
+    return 'failed';
   }
-  markAttempt(selected.id, 'loaded');
-  const loadMs = Math.round(performance.now() - t0);
-  results.load = (loadMs / 1000).toFixed(1) + '秒';
-  prog.textContent = '進み具合: 読み込み完了（' + results.load + '）。測っています…';
+  const loadSec = ((performance.now() - t0) / 1000).toFixed(1);
+  log(m.label + '：読み込み成功（' + loadSec + '秒）。測定する');
+  run.phase = 'generating'; saveRun(run);
   try{
     const stream = await engine.chat.completions.create({
       messages: [{ role: 'user', content: BENCH_PROMPT }],
@@ -222,35 +266,104 @@ document.getElementById('runBtn').addEventListener('click', async () => {
     let tps = tokens ? tokens / secs : 0;
     try{
       const s = await engine.runtimeStatsText();
-      const m = /([0-9]+(?:\.[0-9]+)?)\s*tok\/s/i.exec(s || '');
-      if (m) tps = parseFloat(m[1]);
+      const mm = /([0-9]+(?:\.[0-9]+)?)\s*tok\/s/i.exec(s || '');
+      if (mm) tps = parseFloat(mm[1]);
     }catch(e){ /* 速度は自前計算で代替済み */ }
-    results.bench = '速度 ' + tps.toFixed(1) + ' tok/s、最初の文字まで ' + ttft + 'ms、生成 ' + tokens + ' トークン／' + secs.toFixed(1) + '秒';
-    out.textContent = resultText() + '\n\n--- モデルの答え ---\n' + text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    const detail = '速度 ' + tps.toFixed(1) + ' tok/s、最初の文字まで ' + ttft + 'ms、読み込み ' + loadSec + '秒';
+    run.states[m.id] = { st: 'passed', detail };
+    run.phase = 'idle'; saveRun(run); updateRow(m, run);
+    log(m.label + '：測定できた。' + detail);
+    out.textContent = summaryText(run) + '\n\n--- モデルの答え ---\n' + text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
   }catch(e){
-    results.error = '生成失敗：' + (e && e.message || e);
-    out.textContent = resultText();
+    const detail = String(e && e.message || e).slice(0, 120);
+    run.states[m.id] = { st: 'failed', detail: '生成で失敗：' + detail };
+    run.phase = 'idle'; saveRun(run); updateRow(m, run);
+    log(m.label + '：生成で失敗（' + detail + '）。次のモデルへ進む');
+    try{ await engine.unload(); }catch(e2){ /* 後片付けは任意 */ }
+    return 'failed';
   }
   try{ await engine.unload(); }catch(e){ /* 後片付けは任意 */ }
-  clearAttempt();
-  run.disabled = false;
-  run.textContent = 'もう一度測る';
+  return 'passed';
+}
+
+// ---------- 大きい順に繰り返す ----------
+async function runChain(){
+  if (chainRunning) return;
+  chainRunning = true;
+  stopRequested = false;
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  startBtn.disabled = true; stopBtn.style.display = 'block';
+  let run = loadRun() || freshRun();
+  while (run.idx < MODELS.length){
+    if (stopRequested){ run.stopped = true; saveRun(run); log('止めるが押されたので、ここで止める'); break; }
+    const m = MODELS[run.idx];
+    const r = await attempt(run, m);
+    run = loadRun() || run;
+    if (r === 'passed'){ run.done = true; saveRun(run); log('結論：' + m.label + ' がこの端末で動く'); break; }
+    run.idx += 1; run.dlDeaths = 0; saveRun(run);
+  }
+  run = loadRun() || run;
+  if (!run.done && !run.stopped && run.idx >= MODELS.length){
+    run.done = true; saveRun(run);
+    log('結論：全部のモデルで動かなかった');
+    document.getElementById('out').textContent = summaryText(run);
+  }
+  startBtn.disabled = false; stopBtn.style.display = 'none';
+  chainRunning = false;
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  const run = freshRun();
+  saveRun(run);
+  MODELS.forEach(m => updateRow(m, run));
+  log('=== 測定をはじめる（大きい順に自動） ===');
+  runChain();
+});
+document.getElementById('stopBtn').addEventListener('click', () => {
+  stopRequested = true;
+  const run = loadRun();
+  if (run){ run.stopped = true; saveRun(run); }
+  log('止めるが押された');
 });
 
+// ---------- 開いた時の処理：前回落ちていたら、続きから自動で ----------
 (async () => {
-  const prev = readAttempt();
+  renderLog();
+  let run = loadRun();
+  renderBoard(run);
   const ok = await checkEnv();
-  if (ok) buildModelButtons();
-  else document.getElementById('out').textContent = resultText();
-  if (prev && prev.stage === 'loading'){
-    // 前回は読み込みの途中で画面ごと落ちた形跡。理由はメモリ不足が本命
-    results.error = '前回は ' + prev.model + ' の読み込み中に落ちました（画面ごと終了した形跡）';
-    document.getElementById('out').textContent =
-      '前回は、モデルの読み込み中に落ちた形跡があります。おそらくメモリ不足です。\n\n' +
-      '対策は入れてあります：覚える長さ（文脈）を短くして読み込むので、必要なメモリが大きく減ります。\n\n' +
-      '同じモデルでもう一度「読み込んで測る」を押してください（ダウンロード済みなら取り直しは不要です）。' +
-      'それでも落ちる時は、1つ小さいモデルで試してください。その結果が、この端末の天井になります。';
+  if (!ok){ document.getElementById('out').textContent = 'WebGPU が使えないため、測定はできません。'; return; }
+  // 旧い印（v1）が残っていたら記録に移して消す
+  try{
+    const old = JSON.parse(localStorage.getItem('llmprobe.attempt.v1') || 'null');
+    if (old){ log('前の版の印：' + old.model + ' の ' + old.stage + ' で止まっていた'); localStorage.removeItem('llmprobe.attempt.v1'); }
+  }catch(e){ /* 任意 */ }
+  let resume = false;
+  if (run && !run.done && !run.stopped && run.idx < MODELS.length){
+    const active = MODELS[run.idx];
+    if (run.phase === 'creating' || run.phase === 'generating'){
+      if (run.sub === 'downloading' && run.dlDeaths < 1){
+        run.dlDeaths += 1; run.phase = 'idle'; saveRun(run);
+        log(active.label + '：ダウンロードの途中で落ちた形跡。同じモデルでもう一度試す');
+      }else{
+        run.states[active.id] = { st: 'crashed', detail: run.phase === 'generating' ? '測定中に落ちた' : '読み込み中に落ちた' };
+        log(active.label + '：' + (run.phase === 'generating' ? '測定中' : '読み込み中') + 'に落ちた形跡。次のモデルへ進む');
+        run.idx += 1; run.dlDeaths = 0; run.phase = 'idle'; saveRun(run);
+      }
+      renderBoard(run);
+    }
+    if (run.idx < MODELS.length){
+      resume = true;
+      log('前回の続きから自動ではじめる（次は ' + MODELS[run.idx].label + '）');
+      document.getElementById('out').textContent = '前回は途中で落ちていました。続きを自動ではじめます。止めたい時は「止める」を押してください。';
+    }else{
+      run.done = true; saveRun(run);
+      log('結論：全部のモデルで動かなかった');
+    }
   }
+  checkCaches(run);
+  if (resume) setTimeout(() => { runChain(); }, 1500);
 })();
 </script>
 </body>
