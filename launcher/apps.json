@@ -3,21 +3,21 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.4.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.5.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4370357,
-      "version": "1.4",
-      "versionDate": "2026-11-09T07:11:56Z",
-      "versionDescription": "v1.4: 端末内LLMのネイティブ経路（llama.cpp）を内蔵。検証モジュール「LLM検証（ネイティブ）」で 4B / 8B の実機測定ができる。",
+      "size": 4370534,
+      "version": "1.5",
+      "versionDate": "2026-11-09T07:47:25Z",
+      "versionDescription": "v1.5: ネイティブLLM検証の失敗（生成の入口）を修正。モデルの読み込みは 4B / 8B とも成功済みで、生成まで通るかの再検証用。",
       "versions": [
         {
-          "date": "2026-11-09T07:11:56Z",
-          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.4.ipa",
-          "localizedDescription": "v1.4: 端末内LLMのネイティブ経路（llama.cpp）を内蔵。検証モジュール「LLM検証（ネイティブ）」で 4B / 8B の実機測定ができる。",
-          "size": 4370357,
-          "version": "1.4"
+          "date": "2026-11-09T07:47:25Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.5.ipa",
+          "localizedDescription": "v1.5: ネイティブLLM検証の失敗（生成の入口）を修正。モデルの読み込みは 4B / 8B とも成功済みで、生成まで通るかの再検証用。",
+          "size": 4370534,
+          "version": "1.5"
         }
       ]
     }
