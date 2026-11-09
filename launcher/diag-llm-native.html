@@ -45,8 +45,8 @@
 
 <script>
 const MODELS = [
-  { id: 'qwen3-4b-q4km', label: 'Qwen3-4B（Q4_K_M）', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '約2.5GB。まずこれが余裕で動くか' },
-  { id: 'qwen3-8b-q4km', label: 'Qwen3-8B（Q4_K_M）', file: 'Qwen3-8B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf', note: '約4.9GB。4B で余裕なら上も目指せるか' },
+  { id: 'qwen3-4b-q4km', label: 'Qwen3-4B（Q4_K_M）', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '約2.5GB。まずこれが余裕で動くか', nCtx: 2048, nBatch: 512 },
+  { id: 'qwen3-8b-q4km', label: 'Qwen3-8B（Q4_K_M）', file: 'Qwen3-8B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf', note: '約4.9GB。初期化のメモリを軽くして試す（文脈1024・バッチ128）', nCtx: 1024, nBatch: 128 },
 ];
 const LOG_KEY = 'llmnative.log.v1';
 const RUN_KEY = 'llmnative.run.v1';
@@ -214,10 +214,10 @@ async function attempt(run, m, plugin){
   // 測定（ここでアプリごと落ちる可能性がある。印は保存済み）
   run.phase = 'measuring'; saveRun(run);
   prog.textContent = '読み込み＋測定中…（この間、画面は止まって見えます）';
-  log(m.label + '：読み込みと測定をはじめる');
+  log(m.label + '：読み込みと測定をはじめる（文脈 ' + m.nCtx + '・バッチ ' + m.nBatch + '）');
   const t0 = performance.now();
   try{
-    const r = await plugin.measure({ name: m.file, prompt: BENCH_PROMPT, maxTokens: 160, nCtx: 2048 });
+    const r = await plugin.measure({ name: m.file, prompt: BENCH_PROMPT, maxTokens: 160, nCtx: m.nCtx, nBatch: m.nBatch });
     const detail = '速度 ' + (r.tokPerSec || 0).toFixed(1) + ' tok/s、最初の文字まで ' + Math.round(r.ttftMs || 0) + 'ms、読み込み ' + ((r.loadMs || 0) / 1000).toFixed(1) + '秒、生成 ' + (r.genTokens || 0) + ' トークン';
     run.states[m.id] = { st: 'passed', detail };
     run.phase = 'idle'; saveRun(run); updateRow(m, run);
