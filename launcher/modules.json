@@ -1,6 +1,6 @@
 {
   "contract": "launcher-modules/v1",
-  "generated_at": "2026-11-09T07:04:12Z",
+  "generated_at": "2026-11-09T13:08:56Z",
   "modules": [
     {
       "desc": "曲の一覧・検索・歌詞。タップで Suno を開きます",
@@ -25,13 +25,6 @@
       "name": "テストモード",
       "status": "ready",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/test.html"
-    },
-    {
-      "id": "llmprobe",
-      "name": "LLM検証",
-      "desc": "端末の中でLLMが動くかの実測（期間限定）",
-      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm.html",
-      "status": "ready"
     },
     {
       "id": "llmnative",
