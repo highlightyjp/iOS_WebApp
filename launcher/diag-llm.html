@@ -41,6 +41,7 @@
 <div class="rowline" id="progress">進み具合: —</div>
 <pre id="out">結果はここに出ます。</pre>
 <h2>記録（ログ）</h2>
+<button id="logCopyBtn" class="sub" type="button" style="margin:0 0 8px;">ログをコピー</button>
 <pre id="log">（まだありません）</pre>
 
 <script type="module">
@@ -82,7 +83,15 @@ function freshRun(){
   return { idx: 0, phase: 'idle', sub: '', dlDeaths: 0, states, done: false, stopped: false };
 }
 function loadRun(){ try{ return JSON.parse(localStorage.getItem(RUN_KEY) || 'null'); }catch(e){ return null; } }
-function saveRun(run){ try{ localStorage.setItem(RUN_KEY, JSON.stringify(run)); }catch(e){ /* 同上 */ } }
+// 殻への合図：未完の実行がある間は合図を出し続け、殻が落ちた後の自動復帰に使う
+const RESUME_KEY = 'llmprobe.resume.v1';
+function saveRun(run){
+  try{ localStorage.setItem(RUN_KEY, JSON.stringify(run)); }catch(e){ /* 同上 */ }
+  try{
+    if (run && !run.done && !run.stopped) localStorage.setItem(RESUME_KEY, JSON.stringify({ at: Date.now() }));
+    else localStorage.removeItem(RESUME_KEY);
+  }catch(e){ /* 同上 */ }
+}
 
 // ---------- 盤面（モデル一覧）：道具の読み込みなしで即時に出す ----------
 const rowRefs = {};
@@ -128,11 +137,33 @@ function summaryText(run){
   lines.push('', '--- 記録（ログ） ---');
   return lines.concat(loadLog()).join('\n');
 }
+async function copyTextRobust(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e2){ /* 予備も失敗 */ }
+    ta.remove();
+    return ok;
+  }
+}
 document.getElementById('copyBtn').addEventListener('click', async () => {
   const msg = document.getElementById('copyMsg');
   const text = summaryText(loadRun());
-  try{ await navigator.clipboard.writeText(text); msg.textContent = 'コピーしました。そのままチャットに貼れます。'; }
-  catch(e){ msg.textContent = 'コピーできませんでした。結果欄に全文を出します。'; document.getElementById('out').textContent = text; }
+  if (await copyTextRobust(text)) msg.textContent = 'コピーしました。そのままチャットに貼れます。';
+  else { msg.textContent = 'コピーできませんでした。結果欄に全文を出します。'; document.getElementById('out').textContent = text; }
+  setTimeout(() => { msg.textContent = ''; }, 4000);
+});
+document.getElementById('logCopyBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('copyMsg');
+  const lines = loadLog();
+  if (!lines.length){ msg.textContent = '記録はまだありません。'; setTimeout(() => { msg.textContent = ''; }, 3000); return; }
+  if (await copyTextRobust(lines.join('\n'))) msg.textContent = '記録（ログ）をコピーしました。';
+  else msg.textContent = 'コピーできませんでした。';
   setTimeout(() => { msg.textContent = ''; }, 4000);
 });
 
@@ -294,6 +325,8 @@ async function runChain(){
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
   startBtn.disabled = true; stopBtn.style.display = 'block';
+  // 長い読み込みの間も殻への合図を出し続ける（落ちた後の自動復帰のため）
+  const beatIv = setInterval(() => { const r = loadRun(); if (r) saveRun(r); }, 20000);
   let run = loadRun() || freshRun();
   while (run.idx < MODELS.length){
     if (stopRequested){ run.stopped = true; saveRun(run); log('止めるが押されたので、ここで止める'); break; }
@@ -309,6 +342,7 @@ async function runChain(){
     log('結論：全部のモデルで動かなかった');
     document.getElementById('out').textContent = summaryText(run);
   }
+  clearInterval(beatIv);
   startBtn.disabled = false; stopBtn.style.display = 'none';
   chainRunning = false;
 }
