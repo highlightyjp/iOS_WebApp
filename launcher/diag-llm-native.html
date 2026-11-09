@@ -43,6 +43,12 @@
 <button id="logCopyBtn" class="sub" type="button" style="margin:0 0 8px;">ログをコピー</button>
 <pre id="log">（まだありません）</pre>
 
+<h2>生成テスト（契約 launcher-llm/v1・殻経由）</h2>
+<p class="note">モジュールとして、殻に頼んで生成してもらう経路のテストです。上の測定はこのページが直接ネイティブを叩いていますが、こちらは本番のモジュールと同じ作法（postMessage で殻へ依頼、受け付け→結果の2段階）で試します。</p>
+<button id="genTestBtn" class="sub" type="button">生成テストをする（殻経由・4B）</button>
+<button id="llmStatusBtn" class="sub" type="button">状態を聞く（殻経由）</button>
+<pre id="genOut">まだ試していません。</pre>
+
 <script>
 const MODELS = [
   { id: 'qwen3-4b-q4km', label: 'Qwen3-4B（Q4_K_M）', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '約2.5GB。まずこれが余裕で動くか', nCtx: 2048, nBatch: 512 },
@@ -316,6 +322,64 @@ document.getElementById('stopBtn').addEventListener('click', () => {
     }
   }
 })();
+
+// ---------- 契約 launcher-llm/v1 のテスト（殻経由） ----------
+const MODULE_ID = 'llmnative';
+let reqSeq = 0;
+const pendingReqs = {};
+window.addEventListener('message', (e) => {
+  if (e.origin !== location.origin) return;
+  const d = e.data;
+  if (!d || d.contract !== 'launcher-llm/v1' || !d.requestId) return;
+  if (d.status !== 'accepted' && d.status !== 'ok' && d.status !== 'error') return;
+  const p = pendingReqs[d.requestId];
+  if (!p) return;
+  if (d.status === 'accepted') { p.onAccepted(); return; }
+  delete pendingReqs[d.requestId];
+  p.done(d);
+});
+function shellRequest(obj, timeoutMs){
+  return new Promise((resolve) => {
+    const requestId = 'req-' + Date.now() + '-' + (++reqSeq);
+    const t0 = performance.now();
+    let acceptedAt = null;
+    const timer = setTimeout(() => {
+      if (pendingReqs[requestId]) {
+        delete pendingReqs[requestId];
+        resolve({ status: 'error', code: 'failed', detail: '殻から返事がなかった（' + Math.round(timeoutMs / 1000) + '秒で見切り）', acceptedMs: acceptedAt === null ? null : Math.round(acceptedAt - t0), totalMs: Math.round(performance.now() - t0) });
+      }
+    }, timeoutMs);
+    pendingReqs[requestId] = {
+      onAccepted: () => { acceptedAt = performance.now(); },
+      done: (d) => { clearTimeout(timer); resolve(Object.assign({}, d, { acceptedMs: acceptedAt === null ? null : Math.round(acceptedAt - t0), totalMs: Math.round(performance.now() - t0) })); }
+    };
+    window.parent.postMessage(Object.assign({ contract: 'launcher-llm/v1', moduleId: MODULE_ID }, obj, { requestId }), location.origin);
+  });
+}
+document.getElementById('llmStatusBtn').addEventListener('click', async () => {
+  const out = document.getElementById('genOut');
+  out.textContent = '状態を聞いています…';
+  const r = await shellRequest({ action: 'status' }, 15000);
+  out.textContent = '状態の返事：' + JSON.stringify(r, null, 2);
+  log('契約テスト（状態）：state=' + (r.state || '?') + '、loaded=' + (r.loaded === undefined ? '?' : r.loaded));
+});
+document.getElementById('genTestBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('genTestBtn');
+  const out = document.getElementById('genOut');
+  btn.disabled = true;
+  out.textContent = '生成を頼んでいます…（受け付け→生成→結果の順に返ります）';
+  const r = await shellRequest({ action: 'generate', model: 'qwen3-4b', maxTokens: 128, temperature: 0.2,
+    system: 'あなたは抽出係です。指定された形式だけで答えてください。',
+    prompt: '次の文から日付と用事を抜き出して、「日付=…／用事=…」の形で1行で答えてください。\n文：明日の午後3時に、板橋の歯医者の予約が入っています。' }, 120000);
+  btn.disabled = false;
+  if (r.status === 'ok') {
+    out.textContent = '生成できました。\n受け付けまで：' + (r.acceptedMs === null ? '—' : r.acceptedMs + 'ms') + '／全体：' + (r.totalMs / 1000).toFixed(1) + '秒\n速度：' + (r.stats ? r.stats.tokPerSec : '?') + ' tok/s、生成 ' + (r.stats ? r.stats.genTokens : '?') + ' トークン、読み込み ' + (r.stats ? r.stats.loadMs : '?') + 'ms（モデルの再利用：' + (r.stats && r.stats.reused ? 'あり' : 'なし') + '）\n--- 答え ---\n' + (r.text || '');
+    log('契約テスト（生成）：できた。' + (r.stats ? r.stats.tokPerSec + ' tok/s、再利用 ' + (r.stats.reused ? 'あり' : 'なし') : ''));
+  } else {
+    out.textContent = '生成できませんでした。コード：' + (r.code || '?') + (r.detail ? '／詳細：' + r.detail : '') + '\n受け付けまで：' + (r.acceptedMs === null || r.acceptedMs === undefined ? 'なし' : r.acceptedMs + 'ms');
+    log('契約テスト（生成）：失敗（' + (r.code || '?') + (r.detail ? '／' + r.detail : '') + '）');
+  }
+});
 </script>
 </body>
 </html>
