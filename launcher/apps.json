@@ -3,21 +3,21 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.6.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.7.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4370643,
-      "version": "1.6",
-      "versionDate": "2026-11-09T09:31:08Z",
-      "versionDescription": "v1.6: 8B の初期化メモリを軽くする設定（文脈1024・バッチ128）を追加し、8B の再挑戦。4B は 18.3 tok/s で動作確認済み。",
+      "size": 4385658,
+      "version": "1.7",
+      "versionDate": "2026-11-09T13:31:25Z",
+      "versionDescription": "v1.7: 端末内LLMの共通口（launcher-llm/v1）と写真保存の受け口（launcher-media/v1）を殻に実装。モジュールから生成と写真保存が使えるようになった。",
       "versions": [
         {
-          "date": "2026-11-09T09:31:08Z",
-          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.6.ipa",
-          "localizedDescription": "v1.6: 8B の初期化メモリを軽くする設定（文脈1024・バッチ128）を追加し、8B の再挑戦。4B は 18.3 tok/s で動作確認済み。",
-          "size": 4370643,
-          "version": "1.6"
+          "date": "2026-11-09T13:31:25Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.7.ipa",
+          "localizedDescription": "v1.7: 端末内LLMの共通口（launcher-llm/v1）と写真保存の受け口（launcher-media/v1）を殻に実装。モジュールから生成と写真保存が使えるようになった。",
+          "size": 4385658,
+          "version": "1.7"
         }
       ]
     }
