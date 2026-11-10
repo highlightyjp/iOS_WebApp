@@ -3,21 +3,21 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.8.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.9.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4386791,
-      "version": "1.8",
-      "versionDate": "2026-11-10T03:35:00Z",
-      "versionDescription": "v1.8: 端末内LLMの高速化の測定（Flash Attention の比べ＋量子化バリエーション）と、文法で出力の形を固定する生成をプラグインに追加。",
+      "size": 4387014,
+      "version": "1.9",
+      "versionDate": "2026-11-10T04:41:00Z",
+      "versionDescription": "v1.9: 端末内LLMの性能測定を拡張（スレッド数の比較、KVキャッシュ量子化による文脈拡張、長文プロンプトの処理速度、他モデルとの速さ比べ）。",
       "versions": [
         {
-          "date": "2026-11-10T03:35:00Z",
-          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.8.ipa",
-          "localizedDescription": "v1.8: 端末内LLMの高速化の測定（Flash Attention の比べ＋量子化バリエーション）と、文法で出力の形を固定する生成をプラグインに追加。",
-          "size": 4386791,
-          "version": "1.8"
+          "date": "2026-11-10T04:41:00Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.9.ipa",
+          "localizedDescription": "v1.9: 端末内LLMの性能測定を拡張（スレッド数の比較、KVキャッシュ量子化による文脈拡張、長文プロンプトの処理速度、他モデルとの速さ比べ）。",
+          "size": 4387014,
+          "version": "1.9"
         }
       ]
     }
