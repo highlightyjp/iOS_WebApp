@@ -248,6 +248,14 @@
     border:1px solid var(--glass-line); background:transparent; color:var(--ink);
   }
   #testCopyTop{background:var(--accent) !important; border-color:transparent !important; color:#fff !important;}
+  #testBar{position:sticky; bottom:0; display:flex; gap:8px; flex-wrap:wrap; padding:10px 0 2px; background:var(--bg); z-index:5;}
+  #testBar button{
+    font-family:inherit; font-size:13.5px; padding:9px 16px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--glass-line); background:transparent; color:var(--ink);
+  }
+  #testBar button:disabled{opacity:0.45; cursor:default;}
+  #testCopyBar{background:var(--accent) !important; border-color:transparent !important; color:#fff !important;}
+  #testCopyBar:disabled{background:transparent !important; color:var(--sub) !important; border-color:var(--glass-line) !important;}
   #testMsg{font-size:12.5px; color:var(--sub); margin:10px 0 0; min-height:1.2em; line-height:1.5;}
   /* ---------- 画像保存用オーバーレイ（長押し保存） ---------- */
   #saveOverlay{
@@ -367,6 +375,10 @@
         <button id="testClose" type="button">閉じる</button>
       </div>
       <p id="testMsg" aria-live="polite"></p>
+    </div>
+    <div id="testBar">
+      <button id="testCopyBar" type="button" disabled>結果をコピーする</button>
+      <button id="testShareBar" type="button" disabled>結果を送る</button>
     </div>
   </div>
 </div>
@@ -579,7 +591,7 @@ function initGL(){
     gl.viewport(0, 0, canvas.width, canvas.height);
     const uv = new Float32Array(XS.length * YS.length * 2);
     let k = 0;
-    for(let j = 0; j < YS.length; j++) for(let i = 0; i < XS.length; i++){ uv[k++] = XS[i] / W; uv[k++] = 1 - YS[j] / H; }
+    for(let j = 0; j < YS.length; j++) for(let i = 0; i < XS.length; i++){ uv[k++] = XS[i] / W; uv[k++] = YS[j] / H; }
     const uvBuf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuf);
     gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
@@ -702,7 +714,7 @@ setInterval(() => {
   }
 }, 1200);
 
-const IRIS_BUILD = "2026-11-10-1530";
+const IRIS_BUILD = "2026-11-10-1550";
 (function checkBuild(){
   try{
     fetch("build.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
@@ -1456,6 +1468,8 @@ $("viewToggle").addEventListener("click", () => {
     $("connPanel").classList.remove("open");
     overlay.classList.add("open");
     resultEl.classList.remove("show");
+    $("testCopyBar").disabled = true;
+    $("testShareBar").disabled = true;
     msgEl.textContent = "";
     buildRows();
     setProgress(0, STEP_DEFS.length);
@@ -1678,6 +1692,8 @@ $("viewToggle").addEventListener("click", () => {
         ? "全部大丈夫だったよ。" + STEP_DEFS.length + "件ぜんぶ合格。動きは1秒あたり約 " + fps.toFixed(1) + " コマだったよ。"
         : okCount + "／" + STEP_DEFS.length + " 件が大丈夫だったよ。要確認の所は下に書いてあるよ。";
     textEl.value = resultText;
+    $("testCopyBar").disabled = false;
+    $("testShareBar").disabled = false;
     resultEl.classList.add("show");
     nowEl.textContent = "終わったよ。結果は下にまとめたよ。";
     setProgress(STEP_DEFS.length, STEP_DEFS.length);
@@ -1704,12 +1720,18 @@ $("viewToggle").addEventListener("click", () => {
   }
   $("testCopy").addEventListener("click", copyResultText);
   $("testCopyTop").addEventListener("click", copyResultText);
-  if(!navigator.share){ const sb = $("testShareTop"); if(sb) sb.style.display = "none"; }
-  $("testShareTop").addEventListener("click", async () => {
+  async function shareResultText(){
     if(!navigator.share){ msgEl.textContent = "この環境では送る画面が開けないから、コピーを使ってね。"; return; }
     try{ await navigator.share({ text: textEl.value }); }
     catch(e){ /* 送る画面を閉じた場合は何もしない */ }
-  });
+  }
+  if(!navigator.share){
+    const sb = $("testShareTop"); if(sb) sb.style.display = "none";
+    const sb2 = $("testShareBar"); if(sb2) sb2.style.display = "none";
+  }
+  $("testShareTop").addEventListener("click", shareResultText);
+  $("testShareBar").addEventListener("click", shareResultText);
+  $("testCopyBar").addEventListener("click", copyResultText);
   $("testSaveImg").addEventListener("click", () => {
     if(!compositeCanvas){ msgEl.textContent = "画像がまだ無いよ。"; return; }
     try{
