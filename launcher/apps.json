@@ -3,21 +3,21 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.7.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.8.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4385658,
-      "version": "1.7",
-      "versionDate": "2026-11-09T13:31:25Z",
-      "versionDescription": "v1.7: 端末内LLMの共通口（launcher-llm/v1）と写真保存の受け口（launcher-media/v1）を殻に実装。モジュールから生成と写真保存が使えるようになった。",
+      "size": 4386791,
+      "version": "1.8",
+      "versionDate": "2026-11-10T03:35:00Z",
+      "versionDescription": "v1.8: 端末内LLMの高速化の測定（Flash Attention の比べ＋量子化バリエーション）と、文法で出力の形を固定する生成をプラグインに追加。",
       "versions": [
         {
-          "date": "2026-11-09T13:31:25Z",
-          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.7.ipa",
-          "localizedDescription": "v1.7: 端末内LLMの共通口（launcher-llm/v1）と写真保存の受け口（launcher-media/v1）を殻に実装。モジュールから生成と写真保存が使えるようになった。",
-          "size": 4385658,
-          "version": "1.7"
+          "date": "2026-11-10T03:35:00Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.8.ipa",
+          "localizedDescription": "v1.8: 端末内LLMの高速化の測定（Flash Attention の比べ＋量子化バリエーション）と、文法で出力の形を固定する生成をプラグインに追加。",
+          "size": 4386791,
+          "version": "1.8"
         }
       ]
     }
