@@ -55,6 +55,7 @@
 <pre id="grammarOut">まだ試していません。</pre>
 
 <script>
+const LONG_PROMPT = '本日の会議では、来期の予算配分と人員計画について議論しました。まず営業部門から新規顧客の獲得状況について報告があり、続いて開発部門から製品の進捗と課題の共有がありました。'.repeat(18) + '\nこの議事録を3行で要約してください。';
 const MODELS = [
   { id: 'qwen3-4b-q4km', label: 'Qwen3-4B（Q4_K_M）', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '約2.5GB。まずこれが余裕で動くか', nCtx: 2048, nBatch: 512 },
   { id: 'qwen3-4b-q4km-faoff', label: 'Qwen3-4B（Q4_K_M）・高速注意なし', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '同じファイル。Flash Attention を切って測る（比べる用）', nCtx: 2048, nBatch: 512, flashAttn: 0 },
@@ -76,7 +77,6 @@ const RUN_KEY = 'llmnative.run.v1';
 const RESUME_KEY = 'llmprobe.resume.v1'; // 殻と共通の合図（url で開く先を伝える）
 const PAGE_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm-native.html';
 const BENCH_PROMPT = '次の文から、日付・場所・金額を取り出して、項目ごとに1行で答えてください。\n文：来週の火曜日、つまり11月17日に、板橋区の高島平で開催される説明会に参加する。参加費は3,500円で、当日現金で払う。帰りに駅前の店で2,980円の本を買う予定。\n/no_think';
-const LONG_PROMPT = '本日の会議では、来期の予算配分と人員計画について議論しました。まず営業部門から新規顧客の獲得状況について報告があり、続いて開発部門から製品の進捗と課題の共有がありました。'.repeat(18) + '\nこの議事録を3行で要約してください。';
 let stopRequested = false;
 let chainRunning = false;
 
