@@ -129,7 +129,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-10-1500';
+const SHELL_BUILD = '2026-11-10-1538';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -164,11 +164,15 @@ function savePrivate(list){ localStorage.setItem(LS_PRIVATE, JSON.stringify(list
 let currentModuleId = null;
 let currentFrameEl = null;
 
+function moduleURL(url){
+  /* 殻の版をクエリに付けて開く。モジュール側の古いキャッシュが残り続けるのを防ぐ */
+  return url + (url.includes('?') ? '&' : '?') + 'sv=' + SHELL_BUILD;
+}
 function openModule(mod){
   viewerTitle.textContent = mod.name;
   frameWrap.textContent = '';
   const iframe = document.createElement('iframe');
-  iframe.src = mod.url;
+  iframe.src = moduleURL(mod.url);
   iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
   iframe.setAttribute('allowfullscreen', '');
   iframe.setAttribute('referrerpolicy', 'origin');
@@ -485,7 +489,7 @@ function loadIntoStage(url, timeoutMs){
       if (done) return; done = true;
       resolve({ loaded: true, ms: Math.round(performance.now() - t0) });
     });
-    iframe.src = url;
+    iframe.src = moduleURL(url);
     stage.appendChild(iframe);
     setTimeout(() => { if (!done){ done = true; resolve({ loaded: false, ms: Math.round(performance.now() - t0) }); } }, timeoutMs);
   });
