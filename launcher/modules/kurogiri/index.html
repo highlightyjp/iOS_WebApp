@@ -522,7 +522,9 @@ header .hset{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid var
 .tm-head strong{font-size:17px;color:#fff}
 .tm-head span{font-size:11.5px;color:var(--mut)}
 .tm-head .btn{margin-left:auto;background:rgba(255,255,255,.08);color:#dbe5ef}
-.tm-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 16px calc(18px + env(safe-area-inset-bottom))}
+.tm-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 16px calc(84px + env(safe-area-inset-bottom))}
+#tm-fixedbar{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--navy);border-top:1px solid var(--hair)}
+#tm-fixedbar .btn{flex:1;min-height:48px}
 .tm-note{font-size:12.5px;color:#b9c7d6;line-height:1.65;margin:2px 0 10px}
 #tm-stage{height:190px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#24486c,#0d2138);position:relative;flex:0 0 auto}
 #tm-stage canvas{width:100%!important;height:100%!important;display:block}
@@ -689,12 +691,14 @@ button.tmv-cell{font-family:inherit;text-align:left;padding:0;cursor:pointer;wid
     <div class="tm-actions"><button class="btn primary" data-act="tm-runall-visual">見た目も含めて実行</button><button class="btn" data-act="tm-visual-auto">見た目を取得</button></div>
     <div class="tm-actions"><button class="btn primary" data-act="tm-share">まとめて渡す（まとめ画像2枚を表示）</button></div>
     <p class="tm-share-status" id="tm-share-status" aria-live="polite"></p>
+    <div class="tm-actions"><button class="btn" data-act="tm-copy">結果をコピーする</button><button class="btn primary" data-act="tm-share">まとめて渡す</button></div>
     <textarea id="tm-report" readonly placeholder="実行すると、ここに報告用の結果テキストがまとまります"></textarea>
     <div id="tm-handover"><div class="tm-row"><span class="tm-name">受け渡し用 ― まとめ画像（2枚）</span><button class="btn small" data-act="tm-handover-close">閉じる</button></div><p class="tm-detail" id="tm-handover-note"></p><p class="tm-detail" id="tm-handover-copy"></p><p class="tm-detail" id="tm-handover-how">渡し方 ― 画像は2枚あります。1枚目（見た目のまとめ）と2枚目（結果テキスト全文）を、それぞれ「写真に保存」で写真へ保存し、チャットへ貼ってください。</p><div class="tm-handover-block" id="tm-handover-block-scenes"><div class="tm-row"><span class="tm-name">1枚目 ― 見た目のまとめ</span></div><div id="tm-handover-img-scenes"></div><p class="tm-detail" id="tm-handover-fail-scenes" style="display:none">この画像は作れませんでした。場面の絵は、下のギャラリーの個別画像から渡してください。</p><div class="tm-actions" id="tm-handover-actions-scenes"><button class="btn small" data-act="tm-view-one" data-a1="scenes">大きく表示して保存</button><button class="btn small" id="tm-save-btn-scenes" data-act="tm-save-photo" data-a1="scenes">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="scenes">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-scenes" aria-live="polite"></p><p class="tm-save-sent" id="tm-save-sent-scenes"></p></div><div class="tm-handover-block" id="tm-handover-block-text"><div class="tm-row"><span class="tm-name">2枚目 ― 結果テキスト（全文）</span></div><div id="tm-handover-img-text"></div><p class="tm-detail" id="tm-handover-fail-text" style="display:none">この画像は作れませんでした。結果テキストは、上の結果欄からコピーして渡してください。</p><div class="tm-actions" id="tm-handover-actions-text"><button class="btn small" data-act="tm-view-one" data-a1="text">大きく表示して保存</button><button class="btn small" id="tm-save-btn-text" data-act="tm-save-photo" data-a1="text">写真に保存</button><button class="btn small ghost" data-act="tm-share-one" data-a1="text">この画像を共有シートで送る</button></div><p class="tm-save-status" id="tm-save-status-text" aria-live="polite"></p><p class="tm-save-sent" id="tm-save-sent-text"></p></div></div>
     <div class="tm-visualbox"><div class="tm-row"><span class="tm-name">見た目の確認（撮影用）</span><button class="btn small" data-act="tm-visual">開く</button></div><div class="tm-detail">各場面を全面で1つずつ表示します。場面はタップか前後のボタンで順に進めます。場面名は小さく出すだけで、消すこともできます。3Dの場面では、その場で画像にして、長押しで写真に保存できます。</div><div class="tm-detail">場面：タイトル扉 ／ 章の扉（第5章・第8章）／ 母港（長門・赤城）／ 作戦の航空戦 ／ 図鑑の零戦（塗装2種）／ 作戦の見通し ／ 運命の対比報告 ／ 研究の添付図面</div><div class="tm-detail">上の「見た目を取得」では、この顔ぶれを自動で順に組み立てて画像にし、ギャラリーとまとめ画像を作ります。取れた場面と取れなかった場面（理由つき）は、結果テキストの末尾にも残ります。</div></div>
     <div id="tm-gallery"></div>
     <div id="tm-probes" style="position:absolute;visibility:hidden;pointer-events:none;left:0;top:0"></div>
   </div>
+  <div id="tm-fixedbar"><button class="btn" data-act="tm-copy">結果をコピーする</button><button class="btn primary" data-act="tm-share">まとめて渡す</button></div>
 </div>
 <div id="tmvisual" role="dialog" aria-label="見た目の確認">
   <div id="tv-stage">
@@ -1676,7 +1680,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v59';
+var APP_VERSION='v60';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -4075,9 +4079,11 @@ function tmBuildLauncherResult(startedAt){var items=TM_TESTS.map(function(def,i)
  return {contract:'launcher-test/v1',moduleId:'kurogiri',version:APP_VERSION,startedAt:startedAt,items:items,perf:perf,untouched:{checked:true,same:!!(mainSame&&prevSame)},summary:TM_TESTS.length+'件中'+passN+'件が「できた」'}}
 function tmWaitAllResults(timeoutMs){var t0=Date.now();return new Promise(function(resolve){(function poll(){var done=true;TM_TESTS.forEach(function(d){if(!TM.results[d.id])done=false});if(done||Date.now()-t0>timeoutMs){resolve();return}setTimeout(poll,250)})()})}
 function tmRunLauncherTest(){var startedAt=new Date().toISOString();enterTestMode();return tmRunAll().then(function(){return tmWaitAllResults(120000)}).then(function(){tmReportUpdate();var result=tmBuildLauncherResult(startedAt);try{window.parent.postMessage(result,'*')}catch(e){}tmDisposeStageRenderer();return result})}
-function tmReportText(){var lines=['クロギリ 試験モード結果','日時：'+tmNow(),'端末：'+(navigator.userAgent||'')+' ／ 論理コア '+(navigator.hardwareConcurrency||'不明')];
+function tmReportText(){var lines=['クロギリ 試験モード結果','日時：'+tmNow(),'端末：'+(navigator.userAgent||'')+' ／ 論理コア '+(navigator.hardwareConcurrency||'不明'),'版：'+APP_VERSION];
  var mainSame='未確認';try{mainSame=(localStorage.getItem(SAVE_KEY)===TM.saveSnapshot)?'はい（試験前と同一）':'いいえ'}catch(e){}
- lines.push('本編の保存：試験では触れていない（試験前後で同一：'+mainSame+'）');lines.push('');
+ lines.push('本編の保存：試験では触れていない（試験前後で同一：'+mainSame+'）');
+ var tmOkN=0;TM_TESTS.forEach(function(d){var r=TM.results[d.id];if(r&&r.ok)tmOkN++});
+ lines.push('合計：できた '+tmOkN+'／'+TM_TESTS.length);lines.push('');
  TM_TESTS.forEach(function(def){var r=TM.results[def.id];if(def.id==='perf'||def.id==='visual'){lines.push(def.name+'：'+(r?(r.ok?'できた':'できなかった'):'未実行'));return}if(!r){lines.push(def.name+'：未実行')}else{lines.push(def.name+'：'+(r.ok?'できた':'できなかった'));if(r.detail)lines.push(r.detail)}});
  lines.push('');tmPerfReportLines().forEach(function(x){lines.push(x)});
  lines.push('');tmVisualReportLines().forEach(function(x){lines.push(x)});
