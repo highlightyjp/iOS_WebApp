@@ -83,6 +83,7 @@
     background:rgba(22,28,38,.92); border:1px solid var(--card-border); backdrop-filter:blur(14px);
   }
   #player.show{ display:flex; }
+  body.playing{ padding-bottom:calc(124px + env(safe-area-inset-bottom)); }
   #player img{ width:44px; height:44px; border-radius:8px; object-fit:cover; background:#222b38; }
   #player .pt{ flex:1 1 auto; min-width:0; font-size:14.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #player button{
@@ -309,6 +310,7 @@ function playItem(it, autoplay){
   document.getElementById('pCover').src = it.cover_image_url || '';
   document.getElementById('pTitle').textContent = it.title || '（無題）';
   document.getElementById('player').classList.add('show');
+  document.body.classList.add('playing');
   const sw = document.getElementById('seekWrap');
   sw.style.display = 'block';
   sw.style.bottom = 'calc(86px + env(safe-area-inset-bottom))';

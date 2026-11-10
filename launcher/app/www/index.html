@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>ランチャー</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:rgba(255,255,255,.08); --card-border:rgba(255,255,255,.14);
+    --text:#f2f4f8; --sub:#a7b0bf; --accent:#7dd3fc; --radius:20px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#eef1f6; --card:rgba(255,255,255,.75); --card-border:rgba(20,30,50,.08); --text:#141a24; --sub:#5b6575; }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; background:
+    radial-gradient(120% 60% at 10% 0%, rgba(125,211,252,.28), transparent 60%),
+    radial-gradient(120% 60% at 100% 10%, rgba(196,181,253,.24), transparent 60%),
+    radial-gradient(100% 50% at 50% 110%, rgba(52,211,153,.14), transparent 60%), var(--bg);
+    color:var(--text); min-height:100vh; }
+  header{ padding:calc(16px + env(safe-area-inset-top)) 20px 8px; }
+  h1{ font-size:22px; margin:0 0 4px; font-weight:700; letter-spacing:.02em; }
+  #status{ color:var(--sub); font-size:13px; min-height:18px; }
+  main{ padding:8px 16px calc(24px + env(safe-area-inset-bottom)); max-width:640px; margin:0 auto; }
+  #updateBox{ display:none; width:100%; margin:12px 0 4px; padding:18px; border-radius:var(--radius);
+    border:1px solid var(--card-border); background:var(--accent); color:#082f49; font-size:17px; font-weight:700; text-align:left; }
+  #updateBox small{ display:block; font-weight:500; font-size:13px; margin-top:4px; }
+  .grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
+  .card{ appearance:none; display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box;
+    border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(10,15,30,.06), 0 16px 32px rgba(10,15,30,.10);
+    border-radius:24px; padding:12px 16px; text-align:left; color:var(--text); cursor:pointer;
+    transition: transform .18s cubic-bezier(.34,1.35,.44,1); }
+  .card:active{ transform:scale(.98); }
+  .card .tile{ flex:none; width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
+    color:#fff; font-size:21px; font-weight:700; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+  .card .mainCol{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .card .name{ font-size:16px; font-weight:600; display:block; }
+  .card > .name{ flex:1; }
+  .card .desc{ font-size:12.5px; color:var(--sub); display:block; margin-top:2px; line-height:1.5; }
+  .card .note{ font-size:12.5px; color:var(--accent); display:block; margin-top:2px; font-weight:600; }
+  .card .chip{ flex:none; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px;
+    background:rgba(125,211,252,.16); color:var(--accent); }
+  .card .chip.warn{ background:rgba(251,191,36,.18); color:#d97706; }
+  .card[disabled]{ opacity:.55; cursor:default; }
+  .sectionTitle{ font-size:13px; color:var(--sub); margin:24px 2px 0; font-weight:600; }
+  #addForm{ margin-top:12px; border:1px solid var(--card-border); background:var(--card); border-radius:var(--radius); padding:16px; }
+  #addForm input{ width:100%; padding:12px; margin:6px 0; border-radius:12px; border:1px solid var(--card-border);
+    background:transparent; color:var(--text); font-size:16px; }
+  #addForm button{ width:100%; padding:13px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:15px; font-weight:700; }
+  .privRow{ display:flex; align-items:center; gap:8px; }
+  .privRow .grow{ flex:1; }
+  .del{ border:0; background:transparent; color:var(--sub); font-size:18px; padding:8px; cursor:pointer; }
+  #testOpenBtn{ width:100%; margin-top:12px; padding:14px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:15px; font-weight:600; text-align:left; cursor:pointer; }
+  #testView{ position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:11; }
+  #testBody{ flex:1; overflow-y:auto; padding:16px; max-width:640px; margin:0 auto; width:100%; }
+  #runTestBtn{ width:100%; padding:14px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:16px; font-weight:700; cursor:pointer; }
+  #runTestBtn[disabled]{ opacity:.5; }
+  .tItem{ border:1px solid var(--card-border); background:var(--card); border-radius:14px; padding:12px 14px; margin-top:10px; }
+  .tItem .tHead{ font-size:15px; font-weight:600; }
+  .tItem .tDetail{ font-size:13px; color:var(--sub); margin-top:4px; line-height:1.6; white-space:pre-wrap; }
+  .tPass{ color:#4ade80; } .tFail{ color:#f87171; } .tNa{ color:#fbbf24; }
+  #testStage{ height:280px; border:1px solid var(--card-border); border-radius:14px; overflow:hidden; margin-top:10px; background:#000; }
+  #testStage iframe{ width:100%; height:100%; border:0; display:block; }
+  #testText{ width:100%; min-height:180px; margin-top:12px; border-radius:12px; border:1px solid var(--card-border); background:transparent; color:var(--text); font-size:13px; padding:12px; }
+  .tBtnRow{ display:flex; gap:10px; margin-top:10px; }
+  .tBtnRow button{ flex:1; padding:12px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; }
+  #testImageWrap img{ width:100%; margin-top:12px; border-radius:12px; border:1px solid var(--card-border); }
+  #viewer{ position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:10; }
+  #viewerBar{ display:flex; align-items:center; gap:12px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+    border-bottom:1px solid var(--card-border); }
+  #backBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); border-radius:999px; padding:9px 16px; font-size:15px; }
+  #viewerTitle{ font-size:16px; font-weight:600; }
+  #frameWrap{ flex:1; }
+  #frameWrap iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
+  #testActionBar{ display:flex; gap:12px; padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--card-border); background:var(--bg); }
+  #testActionBar button{ flex:1; padding:14px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
+  #testActionBar button[disabled]{ opacity:.45; cursor:default; }
+  #barCopyBtn{ border:0; background:var(--accent); color:#082f49; }
+  #barShareBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); }
+  #freshPill{ display:flex; align-items:center; gap:8px; margin-top:12px; padding:6px 6px 6px 14px;
+    border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px); border-radius:999px; }
+  #freshDot{ flex:none; width:8px; height:8px; border-radius:999px; background:#4ade80; }
+  #freshPill #status{ flex:1; min-height:0; }
+  #reloadListBtn{ margin-top:0 !important; flex:none; }
+  #searchWrap{ margin-top:16px; }
+  #searchInput{ width:100%; box-sizing:border-box; padding:13px 18px; border-radius:999px; border:1px solid var(--card-border);
+    background:var(--card); backdrop-filter:blur(14px); color:var(--text); font-size:16px; outline:none; }
+  #recentRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .recentChip{ display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border-radius:999px;
+    border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; cursor:pointer; }
+  .recentChip .tile{ width:30px; height:30px; border-radius:999px; display:grid; place-items:center; color:#fff; font-size:14px; font-weight:700; }
+</style>
+<style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
+</head>
+<body>
+<header>
+  <h1>ホーム</h1>
+  <div id="freshPill"><span id="freshDot"></span><div id="status">一覧を読み込んでいます</div><button id="reloadListBtn" type="button" style="border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:8px 16px;font-size:14px;cursor:pointer;">↻ 更新</button></div>
+</header>
+<main>
+  <div id="searchWrap"><input id="searchInput" type="search" placeholder="アプリを探す" autocomplete="off" /></div>
+  <button id="updateBox"></button>
+  <div id="resumeBox" style="display:none;border:1px solid var(--card-border);background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+    <div style="font-size:14.5px;line-height:1.6;">LLM検証が途中で落ちています。<span id="resumeCount">3</span>秒後に続きを自動で開きます。</div>
+    <button id="resumeCancelBtn" type="button" style="margin-top:8px;padding:9px 16px;border-radius:999px;border:1px solid var(--card-border);background:transparent;color:var(--text);font-size:14px;">開かない</button>
+  </div>
+  <div class="sectionTitle" id="recentTitle" style="display:none;">最近開いたもの</div>
+  <div id="recentRow" style="display:none;"></div>
+  <div class="sectionTitle">アプリ</div>
+  <div class="grid" id="moduleGrid"></div>
+
+  <div class="sectionTitle">点検</div>
+  <button id="testOpenBtn" type="button">試験モード（本編の保存には触れません）</button>
+
+  <div class="sectionTitle">自分で足したもの（この端末だけ）</div>
+  <div class="grid" id="privateGrid"></div>
+  <form id="addForm">
+    <input id="addName" type="text" placeholder="名前" autocomplete="off" />
+    <input id="addUrl" type="url" placeholder="https://…" autocomplete="off" />
+    <button type="submit">足す</button>
+  </form>
+</main>
+
+<div id="testView">
+  <div id="testBar" style="display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--card-border);">
+    <button id="testBackBtn" type="button" style="border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:9px 16px;font-size:15px;">← 戻る</button>
+    <div style="font-size:16px;font-weight:600;">試験モード</div>
+  </div>
+  <div id="testBody">
+    <button id="runTestBtn" type="button">点検する</button>
+    <div style="font-size:13px;color:var(--sub);margin-top:8px;line-height:1.6;">試験は試験用の保存場所だけを使います。本編の保存（一覧と自分で足したもの）は、読んで照合するだけです。</div>
+    <div id="testResults"></div>
+    <div class="sectionTitle">橋の記録（モジュールからの依頼の受け取り）</div>
+    <pre id="bridgeLog" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.7;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:12px;">（まだありません）</pre>
+    <div id="testShareRow" style="display:none;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 6px;">
+      <button id="copyTestBtnTop" type="button" style="width:100%;padding:15px;border-radius:12px;border:0;background:var(--accent);color:#082f49;font-size:16px;font-weight:700;cursor:pointer;">結果テキストをコピー</button>
+      <button id="shareTestBtn" type="button" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--card-border);background:var(--card);color:var(--text);font-size:15px;margin-top:8px;cursor:pointer;">共有する</button>
+      <div id="copyDoneMsg" style="font-size:13px;color:var(--accent);margin-top:8px;min-height:18px;"></div>
+    </div>
+    <div class="sectionTitle">試験の場所（再生の応答はここで確かめます）</div>
+    <div id="testStage"></div>
+    <textarea id="testText" readonly placeholder="結果はここに出ます"></textarea>
+    <div class="tBtnRow">
+      <button id="copyTestBtn" type="button">結果をコピー</button>
+      <button id="imageTestBtn" type="button">まとめ画像を作る</button>
+    </div>
+    <div id="testImageWrap"></div>
+  </div>
+  <div id="testActionBar">
+    <button id="barCopyBtn" type="button" disabled>結果をコピーする</button>
+    <button id="barShareBtn" type="button" disabled>結果を送る</button>
+  </div>
+</div>
+
+<div id="viewer">
+  <div id="viewerBar">
+    <button id="backBtn">← 戻る</button>
+    <div id="viewerTitle"></div>
+  </div>
+  <div id="frameWrap"></div>
+</div>
+
+<script>
+'use strict';
+const APP_VERSION = '1.10';
+const SHELL_BUILD = '2026-11-10-2010';
+const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
+const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
+const MODULES_URL = REMOTE_BASE + 'modules.json';
+const APPS_URL = REMOTE_BASE + 'apps.json';
+const LS_MODULES = 'launcher.modules.v1';
+const LS_PRIVATE = 'launcher.privateModules.v1';
+
+// 同梱の予備一覧（通信できない時の最初の表示）。文言は画面用に人の言葉で書く。
+const FALLBACK_MODULES = {
+  contract: 'launcher-modules/v1',
+  generated_at: 'bundled',
+  modules: [
+    { id:'suno', name:'音楽', desc:'曲の一覧・検索・歌詞。タップで Suno を開きます', note:'979曲のライブラリ', color:['#f59e0b','#f97316'], url: REMOTE_BASE + 'modules/suno/index.html', status:'ready' },
+    { id:'streamhub', name:'動画と配信', desc:'YouTube と Twitch をまとめて見る', color:['#8b5cf6','#6366f1'], url: REMOTE_BASE + 'modules/streamhub/index.html', status:'preparing' },
+    { id:'check', name:'テストモード', desc:'再生まわりの一括点検（結果テキスト＋まとめ画像）', color:['#0ea5e9','#2563eb'], url: REMOTE_BASE + 'test.html', status:'ready' },
+    { id:'llmnative', name:'LLM検証（ネイティブ）', desc:'アプリ本体の中で llama.cpp を動かす経路の検証', tag:'期間限定', color:['#10b981','#0d9488'], url: REMOTE_BASE + 'diag-llm-native.html?v=20261110-2', status:'ready' },
+    { id:'kurogiri', name:'クロギリ', desc:'黒霧に抗う鎮守府の月次運営ゲーム', color:['#64748b','#1e293b'], url: REMOTE_BASE + 'modules/kurogiri/', status:'ready' }
+  ]
+};
+
+const TILE_COLORS = [ ['#f59e0b','#f97316'], ['#8b5cf6','#6366f1'], ['#0ea5e9','#2563eb'], ['#10b981','#0d9488'], ['#ec4899','#f43f5e'], ['#64748b','#334155'] ];
+function tileBg(mod){
+  if (Array.isArray(mod.color) && mod.color.length >= 2) return 'linear-gradient(135deg,' + mod.color[0] + ',' + mod.color[1] + ')';
+  let h = 0; const str = String((mod && (mod.id || mod.name)) || '?');
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  const c = TILE_COLORS[h % TILE_COLORS.length];
+  return 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ')';
+}
+function initialOf(mod){ return ((mod && mod.name) || '？').trim().charAt(0) || '？'; }
+
+const LS_RECENT = 'launcher.recent.v1';
+function loadRecent(){ try{ return JSON.parse(localStorage.getItem(LS_RECENT) || '[]'); }catch(e){ return []; } }
+function noteRecent(mod){
+  if (!mod || mod.status === 'preparing' || !mod.url) return;
+  let list = loadRecent().filter(r => r.id !== mod.id);
+  list.unshift({ id: mod.id, name: mod.name, url: mod.url, color: Array.isArray(mod.color) ? mod.color : null });
+  list = list.slice(0, 4);
+  try{ localStorage.setItem(LS_RECENT, JSON.stringify(list)); }catch(e){}
+  renderRecent();
+}
+function renderRecent(){
+  const row = document.getElementById('recentRow');
+  const title = document.getElementById('recentTitle');
+  if (!row || !title) return;
+  const list = loadRecent();
+  row.textContent = '';
+  if (!list.length){ row.style.display = 'none'; title.style.display = 'none'; return; }
+  title.style.display = ''; row.style.display = 'flex';
+  list.forEach(r => {
+    const b = document.createElement('button'); b.className = 'recentChip'; b.type = 'button';
+    const t = document.createElement('span'); t.className = 'tile'; t.textContent = initialOf(r); t.style.background = tileBg(r);
+    const n = document.createElement('span'); n.textContent = r.name;
+    b.append(t, n);
+    b.addEventListener('click', () => openModule({ id: r.id, name: r.name, url: r.url, status: 'ready' }));
+    row.appendChild(b);
+  });
+}
+
+const grid = document.getElementById('moduleGrid');
+const privateGrid = document.getElementById('privateGrid');
+const statusEl = document.getElementById('status');
+const viewer = document.getElementById('viewer');
+const frameWrap = document.getElementById('frameWrap');
+const viewerTitle = document.getElementById('viewerTitle');
+
+function loadPrivate(){
+  try{ return JSON.parse(localStorage.getItem(LS_PRIVATE) || '[]'); }catch(e){ return []; }
+}
+function savePrivate(list){ localStorage.setItem(LS_PRIVATE, JSON.stringify(list)); }
+
+// 殻の橋（launcher-llm/v1／launcher-media/v1）の宛先照合に使う、今開いているモジュール
+let currentModuleId = null;
+let currentFrameEl = null;
+
+function moduleURL(url){
+  /* 殻の版をクエリに付けて開く。モジュール側の古いキャッシュが残り続けるのを防ぐ */
+  return url + (url.includes('?') ? '&' : '?') + 'sv=' + SHELL_BUILD;
+}
+function openModule(mod){
+  viewerTitle.textContent = mod.name;
+  frameWrap.textContent = '';
+  const iframe = document.createElement('iframe');
+  iframe.src = moduleURL(mod.url);
+  iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.setAttribute('referrerpolicy', 'origin');
+  frameWrap.appendChild(iframe);
+  currentModuleId = mod.id;
+  currentFrameEl = iframe;
+  noteRecent(mod);
+  viewer.style.display = 'flex';
+}
+function closeViewer(){
+  viewer.style.display = 'none';
+  frameWrap.textContent = ''; // 閉じたら再生も止める
+  currentModuleId = null;
+  currentFrameEl = null;
+}
+document.getElementById('backBtn').addEventListener('click', closeViewer);
+
+function card(mod, extra){
+  const btn = document.createElement('button');
+  btn.className = 'card';
+  btn.dataset.name = mod.name || '';
+  btn.dataset.desc = mod.desc || '';
+  const icon = document.createElement('span'); icon.className = 'tile';
+  icon.textContent = initialOf(mod);
+  icon.style.background = tileBg(mod);
+  const main = document.createElement('span'); main.className = 'mainCol';
+  const name = document.createElement('span'); name.className = 'name'; name.textContent = mod.name;
+  const desc = document.createElement('span'); desc.className = 'desc'; desc.textContent = mod.desc || '';
+  main.append(name, desc);
+  if (mod.note){ const note = document.createElement('span'); note.className = 'note'; note.textContent = mod.note; main.appendChild(note); }
+  btn.append(icon, main);
+  const chipText = mod.status === 'preparing' ? '準備中' : (mod.tag || '');
+  if (chipText){
+    const chip = document.createElement('span');
+    chip.className = 'chip' + (mod.status === 'preparing' ? ' warn' : '');
+    chip.textContent = chipText;
+    btn.appendChild(chip);
+  }
+  if (mod.status === 'preparing'){ btn.disabled = true; }
+  else { btn.addEventListener('click', () => openModule(mod)); }
+  if (extra) extra(btn, mod);
+  return btn;
+}
+
+function render(modules){
+  grid.textContent = '';
+  modules.forEach(m => grid.appendChild(card(m)));
+  renderPrivate();
+  applySearch();
+}
+function renderPrivate(){
+  privateGrid.textContent = '';
+  loadPrivate().forEach((m, i) => {
+    const c = document.createElement('button');
+    c.className = 'card';
+    c.dataset.name = m.name || '';
+    c.dataset.desc = '';
+    const icon = document.createElement('span'); icon.className = 'tile'; icon.textContent = initialOf(m); icon.style.background = tileBg(m);
+    const name = document.createElement('span'); name.className = 'name'; name.textContent = m.name;
+    const del = document.createElement('span'); del.className = 'del'; del.textContent = '× おわりにする';
+    del.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const list = loadPrivate(); list.splice(i, 1); savePrivate(list); renderPrivate();
+    });
+    c.append(icon, name, del);
+    c.addEventListener('click', () => openModule(m));
+    privateGrid.appendChild(c);
+  });
+}
+
+document.getElementById('addForm').addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  const name = document.getElementById('addName').value.trim();
+  const url = document.getElementById('addUrl').value.trim();
+  if (!name || !/^https:\/\//.test(url)) { statusEl.textContent = '名前と https の住所を入れてください'; return; }
+  const list = loadPrivate();
+  list.push({ id:'priv-' + Date.now(), name, url, icon:'🔹', status:'ready' });
+  savePrivate(list);
+  document.getElementById('addName').value = '';
+  document.getElementById('addUrl').value = '';
+  statusEl.textContent = '足しました。この端末の中だけにあります';
+  renderPrivate();
+});
+
+const searchInput = document.getElementById('searchInput');
+function applySearch(){
+  if (!searchInput) return;
+  const q = (searchInput.value || '').trim();
+  [grid, privateGrid].forEach(g => {
+    if (!g) return;
+    Array.prototype.forEach.call(g.children, c => {
+      const hit = !q || ((c.dataset.name || '') + ' ' + (c.dataset.desc || '')).includes(q);
+      c.style.display = hit ? '' : 'none';
+    });
+  });
+}
+if (searchInput){
+  searchInput.addEventListener('input', applySearch);
+  searchInput.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    const all = [];
+    [grid, privateGrid].forEach(g => { if (g) Array.prototype.forEach.call(g.children, c => all.push(c)); });
+    const first = all.find(c => c.style.display !== 'none' && !c.disabled);
+    if (first) first.click();
+  });
+}
+
+function fetchWithTimeout(url, ms){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { cache:'no-store', signal: ctl.signal }).finally(() => clearTimeout(t));
+}
+
+async function refreshModules(){
+  let stored = null;
+  try{ stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null'); }catch(e){}
+  render((stored && stored.modules) || FALLBACK_MODULES.modules);
+  try{
+    const res = await fetchWithTimeout(MODULES_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    if (!data || !Array.isArray(data.modules)) throw new Error('bad shape');
+    // 変化の判定は中身そのもので行う（generated_at の付け忘れで凍らないように）
+    if (JSON.stringify(data.modules) !== JSON.stringify(stored && stored.modules)){
+      localStorage.setItem(LS_MODULES, JSON.stringify(data));
+      render(data.modules);
+    }
+    const now = new Date();
+    statusEl.textContent = '一覧は最新です（' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0') + ' 取得）';
+  }catch(e){
+    statusEl.textContent = stored ? '前回の一覧を表示しています' : '通信できないため、予備の一覧を表示しています';
+  }
+}
+
+function cmpVer(a, b){
+  const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++){ if ((pa[i]||0) !== (pb[i]||0)) return (pa[i]||0) - (pb[i]||0); }
+  return 0;
+}
+
+async function checkUpdate(){
+  try{
+    const res = await fetchWithTimeout(APPS_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) return;
+    const data = await res.json();
+    const app = (data.apps || [])[0];
+    if (!app || cmpVer(app.version, APP_VERSION) <= 0) return;
+    const box = document.getElementById('updateBox');
+    box.style.display = 'block';
+    box.innerHTML = '';
+    box.appendChild(document.createTextNode('新しい版があります（' + app.version + '）'));
+    const small = document.createElement('small');
+    small.textContent = 'タップすると SideStore で更新します';
+    box.appendChild(small);
+    box.addEventListener('click', () => {
+      const url = 'sidestore://install?url=' + encodeURIComponent(app.downloadURL);
+      window.location.href = url;
+    });
+  }catch(e){ /* 更新確認は静かに失敗してよい */ }
+}
+
+// ===== 試験モード（契約 launcher-test/v1） =====
+// 隔離: 書き込みは試験専用キーだけ。本編の保存（LS_MODULES／LS_PRIVATE）は読み取りと照合だけ。
+const LS_TEST_HIST = 'launcher.test.history.v1';
+const LS_TEST_SCRATCH = 'launcher.test.scratch.v1';
+const moduleTestResults = {};
+const moduleTestStarted = {};
+let testRunning = false;
+
+window.addEventListener('message', (e) => {
+  const d = e.data;
+  if (d && d.contract === 'launcher-test/v1' && d.moduleId){
+    if (d.status === 'started') moduleTestStarted[d.moduleId] = true;
+    else moduleTestResults[d.moduleId] = d;
+  }
+});
+
+// モジュールの結果を待つ。まず15秒（軽い点検用）、開始の合図（started）があった時だけ最大5分まで待つ。
+// 2026-11-10 の実機で判明した不具合の修正：以前は読み込み直後に見るだけで、実行に時間のかかるモジュールは常に「応答なし」になっていた。
+async function waitForModuleResult(id){
+  const graceEnd = Date.now() + 15000;
+  while (Date.now() < graceEnd){
+    if (moduleTestResults[id]) return true;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  if (!moduleTestStarted[id]) return false;
+  const longEnd = Date.now() + 285000;
+  while (Date.now() < longEnd){
+    if (moduleTestResults[id]) return true;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return !!moduleTestResults[id];
+}
+
+// ===== 殻の橋（契約 launcher-llm/v1 ／ launcher-media/v1） =====
+// 受け付けるのは「今開いているモジュール」の iframe からの依頼だけ（オリジン＋送り元＋moduleId の照合）。
+const LLM_MODELS = {
+  'qwen3-4b': { file: 'Qwen3-4B-Q4_K_M.gguf', nCtx: 4096, nBatch: 512 },
+  'qwen3-8b': { file: 'Qwen3-8B-Q4_K_M.gguf', nCtx: 2048, nBatch: 128, kvType: 8 }
+};
+const MEDIA_CODES = ['denied', 'too-large', 'unsupported-type', 'busy', 'failed'];
+let mediaBusy = false;
+let llmBusyMirror = false;
+
+function nativePlugin(name){
+  try { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null; }
+  catch (e) { return null; }
+}
+
+// 橋の受け取り記録（試験モードで読める。捨てた理由も残す＝取りこぼしの切り分け用）
+const LS_BRIDGE_LOG = 'launcher.bridge.log.v1';
+function bridgeLog(entry){
+  try {
+    const arr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]');
+    arr.push(Object.assign({ at: new Date().toLocaleTimeString('ja-JP') }, entry));
+    while (arr.length > 30) arr.shift();
+    localStorage.setItem(LS_BRIDGE_LOG, JSON.stringify(arr));
+  } catch (e) {}
+  renderBridgeLog();
+}
+function renderBridgeLog(){
+  const el = document.getElementById('bridgeLog');
+  if (!el) return;
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]'); } catch (e) {}
+  el.textContent = arr.length
+    ? arr.map(x => '[' + x.at + '] ' + x.contract + ' moduleId=' + (x.moduleId || '?') + ' → ' + x.result + (x.detail ? '（' + x.detail + '）' : '')).join('\n')
+    : '（まだありません）';
+}
+// 送り元が、今開いているモジュールの枠（その中に入れ子になった枠も含む）かどうか
+function isFrameInTree(win, root){
+  if (!win || !root) return false;
+  if (win === root) return true;
+  try {
+    for (let i = 0; i < root.frames.length; i++){
+      if (isFrameInTree(win, root.frames[i])) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+window.addEventListener('message', (e) => {
+  const d = e.data;
+  if (!d || typeof d !== 'object') return;
+  if (d.contract !== 'launcher-llm/v1' && d.contract !== 'launcher-media/v1') return;
+  if (e.origin !== location.origin) {
+    bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '捨てた', detail: 'オリジン違い: ' + e.origin });
+    return;
+  }
+  if (!currentFrameEl || !isFrameInTree(e.source, currentFrameEl.contentWindow)) {
+    bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '捨てた', detail: '送り元が今開いているモジュールの枠と一致しない' });
+    return;
+  }
+  if (!d.moduleId || d.moduleId !== currentModuleId) {
+    bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '捨てた', detail: 'moduleId が開いているもの（' + currentModuleId + '）と違う' });
+    return;
+  }
+  bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '受けた', detail: 'action=' + (d.action || '?') });
+  const reply = (obj) => {
+    // launcher-media/v1 の最終応答には ok（真偽値）も併記する（受信側の実装が ok を必須で読むため。2026-11-09 の突き合わせで判明）
+    if (d.contract === 'launcher-media/v1' && obj.status === 'ok') obj = Object.assign({ ok: true }, obj);
+    if (d.contract === 'launcher-media/v1' && obj.status === 'error') obj = Object.assign({ ok: false }, obj);
+    try { e.source.postMessage(Object.assign({ contract: d.contract, requestId: d.requestId, moduleId: d.moduleId }, obj), location.origin); } catch (_) {}
+    if (obj.status && obj.status !== 'accepted') {
+      bridgeLog({ contract: d.contract, moduleId: d.moduleId, result: '応答 ' + obj.status + (obj.code ? '/' + obj.code : ''), detail: '自オリジン ' + location.origin });
+    }
+  };
+  if (d.contract === 'launcher-media/v1') handleMediaSave(d, reply);
+  else handleLlm(d, reply);
+});
+
+async function handleMediaSave(d, reply){
+  if (d.action !== 'saveImage') { reply({ status: 'error', code: 'failed' }); return; }
+  if (mediaBusy) { reply({ status: 'error', code: 'busy' }); return; }
+  if (d.mimeType !== 'image/jpeg' && d.mimeType !== 'image/png') { reply({ status: 'error', code: 'unsupported-type' }); return; }
+  if (typeof d.dataBase64 !== 'string' || !d.dataBase64) { reply({ status: 'error', code: 'unsupported-type' }); return; }
+  if (d.dataBase64.length * 3 / 4 > 20 * 1024 * 1024) { reply({ status: 'error', code: 'too-large' }); return; }
+  const saver = nativePlugin('MediaSaver');
+  if (!saver) { reply({ status: 'error', code: 'failed' }); return; }
+  mediaBusy = true;
+  reply({ status: 'accepted' });
+  try {
+    await saver.saveImage({ dataBase64: d.dataBase64, mimeType: d.mimeType, filename: typeof d.filename === 'string' ? d.filename : '' });
+    reply({ status: 'ok' });
+  } catch (err) {
+    const msg = (err && err.message) || '';
+    reply({ status: 'error', code: MEDIA_CODES.includes(msg) ? msg : 'failed' });
+  } finally { mediaBusy = false; }
+}
+
+async function handleLlm(d, reply){
+  const llama = nativePlugin('LlamaCore');
+  if (!llama) { reply({ status: 'error', code: 'failed' }); return; }
+  const key = (typeof d.model === 'string' && LLM_MODELS[d.model]) ? d.model : 'qwen3-4b';
+  const spec = LLM_MODELS[key];
+  if (d.action === 'status') {
+    try {
+      const info = await llama.modelInfo({ name: spec.file });
+      const st = await llama.status({});
+      let state = 'ready';
+      if (!info || !info.exists) state = 'no-model';
+      else if (st && st.busy) state = 'busy';
+      reply({ status: 'ok', state, model: key, loaded: !!(st && st.loaded) });
+    } catch (err) { reply({ status: 'error', code: 'failed' }); }
+    return;
+  }
+  if (d.action !== 'generate') { reply({ status: 'error', code: 'failed' }); return; }
+  if (typeof d.prompt !== 'string' || !d.prompt.trim()) { reply({ status: 'error', code: 'failed' }); return; }
+  if (llmBusyMirror) { reply({ status: 'error', code: 'busy' }); return; }
+  let info = null;
+  try { info = await llama.modelInfo({ name: spec.file }); } catch (err) {}
+  if (!info || !info.exists) { reply({ status: 'error', code: 'no-model' }); return; }
+  reply({ status: 'accepted' });
+  llmBusyMirror = true;
+  const maxTokens = Math.max(1, Math.min(parseInt(d.maxTokens, 10) || 256, 1024));
+  let temperature = (typeof d.temperature === 'number') ? d.temperature : 0.2;
+  temperature = Math.max(0, Math.min(temperature, 1));
+  const args = { name: spec.file, prompt: d.prompt, maxTokens, temperature, nCtx: spec.nCtx, nBatch: spec.nBatch, flashAttn: 1 };
+  if (spec.kvType !== undefined) args.kvType = spec.kvType;
+  if (typeof d.system === 'string' && d.system) args.system = d.system;
+  if (typeof d.grammar === 'string' && d.grammar) args.grammar = d.grammar.slice(0, 8000);
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (!settled) { settled = true; reply({ status: 'error', code: 'failed', detail: 'timeout' }); }
+  }, 300000);
+  try {
+    const r = await llama.generate(args);
+    if (!settled) {
+      settled = true;
+      reply({ status: 'ok', text: r.text || '', stats: { genTokens: r.genTokens || 0, tokPerSec: Math.round((r.tokPerSec || 0) * 10) / 10, ttftMs: Math.round(r.ttftMs || 0), loadMs: Math.round(r.loadMs || 0), reused: !!r.reused } });
+    }
+  } catch (err) {
+    if (!settled) {
+      settled = true;
+      const msg = (err && err.message) || '';
+      let code = 'failed';
+      if (msg === 'busy') code = 'busy';
+      else if (msg.indexOf('prompt too long') === 0) code = 'too-long';
+      reply({ status: 'error', code, detail: msg.slice(0, 200) });
+    }
+  } finally {
+    clearTimeout(timer);
+    llmBusyMirror = false;
+  }
+}
+
+function fnv(str){
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+function dataSnapshot(){
+  return fnv((localStorage.getItem(LS_MODULES) || '') + '|' + (localStorage.getItem(LS_PRIVATE) || ''));
+}
+function resultWord(r){ return r === 'pass' ? 'できた' : (r === 'fail' ? 'できなかった' : '取得できない'); }
+
+document.getElementById('testOpenBtn').addEventListener('click', () => {
+  document.getElementById('testView').style.display = 'flex';
+  renderBridgeLog();
+});
+document.getElementById('testBackBtn').addEventListener('click', () => {
+  document.getElementById('testView').style.display = 'none';
+  document.getElementById('testStage').textContent = '';
+});
+
+function loadIntoStage(url, timeoutMs){
+  const stage = document.getElementById('testStage');
+  stage.textContent = '';
+  return new Promise((resolve) => {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+    let done = false;
+    const t0 = performance.now();
+    iframe.addEventListener('load', () => {
+      if (done) return; done = true;
+      resolve({ loaded: true, ms: Math.round(performance.now() - t0) });
+    });
+    iframe.src = moduleURL(url);
+    stage.appendChild(iframe);
+    setTimeout(() => { if (!done){ done = true; resolve({ loaded: false, ms: Math.round(performance.now() - t0) }); } }, timeoutMs);
+  });
+}
+
+function collectPlayerEvents(ms){
+  return new Promise((resolve) => {
+    const events = [];
+    const t0 = Date.now();
+    const fn = (e) => {
+      const d = e.data;
+      if (d && d.contract === 'streamhub-player/v1') events.push({ event: d.event, provider: d.provider || '', code: d.code || '', at: Date.now() - t0 });
+    };
+    window.addEventListener('message', fn);
+    setTimeout(() => { window.removeEventListener('message', fn); resolve(events); }, ms);
+  });
+}
+
+async function runTests(){
+  if (testRunning) return;
+  testRunning = true;
+  for (const k in moduleTestResults) delete moduleTestResults[k];
+  for (const k in moduleTestStarted) delete moduleTestStarted[k];
+  const runBtn = document.getElementById('runTestBtn');
+  runBtn.disabled = true; runBtn.textContent = '点検しています…';
+  const resultsEl = document.getElementById('testResults');
+  resultsEl.textContent = '';
+  const items = []; const perf = [];
+  const before = dataSnapshot();
+  const startedAt = new Date();
+  let modulesData = null;
+
+  // T1 一覧の取得と照合
+  let t0 = performance.now();
+  try{
+    const res = await fetchWithTimeout(MODULES_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    modulesData = await res.json();
+    perf.push({ id: 'fetch-modules', label: '一覧の取得', ms: Math.round(performance.now() - t0) });
+    const ok = modulesData.contract === 'launcher-modules/v1' && Array.isArray(modulesData.modules) && !!modulesData.generated_at;
+    items.push({ id: 'T1', label: '一覧の取得と照合', result: ok ? 'pass' : 'fail',
+      detail: ok ? ('契約は launcher-modules/v1／生成 ' + modulesData.generated_at + '／' + modulesData.modules.length + '件') : '中身の形が契約と違う' });
+  }catch(e){
+    items.push({ id: 'T1', label: '一覧の取得と照合', result: 'fail', detail: '取得できない（' + String(e.message || e) + '）' });
+  }
+
+  // T2 更新の判定
+  t0 = performance.now();
+  try{
+    const res = await fetchWithTimeout(APPS_URL + '?t=' + Date.now(), 6000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    perf.push({ id: 'fetch-apps', label: '更新の確認', ms: Math.round(performance.now() - t0) });
+    const app = (data.apps || [])[0];
+    if (app){
+      const newer = cmpVer(app.version, APP_VERSION) > 0;
+      items.push({ id: 'T2', label: '更新の判定', result: 'pass',
+        detail: '最新は ' + app.version + '／この端末は ' + APP_VERSION + (newer ? '（新しい版がある）' : '（最新）') + '。更新の実行そのものは SideStore 側の操作なので、ここでは判定まで' });
+    } else {
+      items.push({ id: 'T2', label: '更新の判定', result: 'fail', detail: '配布リストにアプリが無い' });
+    }
+  }catch(e){
+    items.push({ id: 'T2', label: '更新の判定', result: 'fail', detail: '取得できない（' + String(e.message || e) + '）' });
+  }
+
+  // T3 予備の一覧の表示（試験の場所へ描く）
+  {
+    const stage = document.getElementById('testStage');
+    stage.textContent = '';
+    const fb = document.createElement('div');
+    fb.style.cssText = 'padding:14px;color:#f2f4f8;font-size:15px;line-height:2;';
+    FALLBACK_MODULES.modules.forEach(m => {
+      const d = document.createElement('div'); d.textContent = (m.icon || '🔹') + ' ' + m.name; fb.appendChild(d);
+    });
+    stage.appendChild(fb);
+    items.push({ id: 'T3', label: '予備の一覧の表示', result: fb.childElementCount === FALLBACK_MODULES.modules.length ? 'pass' : 'fail',
+      detail: '予備の ' + FALLBACK_MODULES.modules.length + '件を試験の場所に描けた（通信が落ちた時の逃げ道）' });
+  }
+
+  // T4 使えるモジュールへの到達＋モジュール試験の受け取り
+  {
+    let stored = null;
+    try{ stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null'); }catch(e){}
+    const list = (modulesData && modulesData.modules) || (stored && stored.modules) || FALLBACK_MODULES.modules;
+    const ready = list.filter(m => m.status === 'ready');
+    const lines = []; let worst = 'pass'; let maxMs = 0;
+    for (const m of ready){
+      const sep = m.url.includes('?') ? '&' : '?';
+      const r = await loadIntoStage(m.url + sep + 'test=1', 6000);
+      maxMs = Math.max(maxMs, r.ms);
+      const hasTest = r.loaded ? await waitForModuleResult(m.id) : false;
+      const tail = hasTest ? '／試験の結果も届いた'
+        : (moduleTestStarted[m.id] ? '／試験が時間内に終わらなかった（開始の合図はあった）' : '／試験の応答なし（未実装として扱う）');
+      lines.push(m.name + '：' + (r.loaded ? '読み込みできた' : '読み込みが返らない') + tail);
+      if (!r.loaded) worst = 'fail';
+    }
+    if (ready.length) perf.push({ id: 'module-load', label: 'モジュールの読み込み（最長）', ms: maxMs });
+    items.push({ id: 'T4', label: 'モジュールへの到達', result: ready.length ? worst : 'na',
+      detail: ready.length ? lines.join('\n') : '取得できない：使える状態のモジュールが今は無い' });
+  }
+
+  // T5／T6 再生ブリッジの応答（YouTube／Twitch）
+  {
+    const eventsP = collectPlayerEvents(12000);
+    const bootT0 = performance.now();
+    await loadIntoStage(REMOTE_BASE + 'player.html?demo=2', 6000);
+    const events = await eventsP;
+    const boot = events.find(e => e.event === 'boot');
+    const yt = events.filter(e => e.provider === 'youtube');
+    const tw = events.filter(e => e.provider === 'twitch');
+    const firstReady = events.find(e => e.event === 'ready' || e.event === 'playing');
+    if (firstReady) perf.push({ id: 'bridge-ready', label: '再生の応答まで', ms: Math.round(performance.now() - bootT0) });
+    const ytErr = yt.find(e => e.event === 'error');
+    const ytOk = yt.some(e => e.event === 'ready' || e.event === 'playing');
+    items.push({ id: 'T5', gate: 'S1', label: '再生の応答（YouTube）', result: ytOk ? 'pass' : 'fail',
+      detail: !boot ? 'ブリッジからの返事自体が無い' : (ytOk ? '再生の準備まで届いた' : ('応答なし' + (ytErr ? '／エラー ' + ytErr.code : ''))) });
+    const twErr = tw.find(e => e.event === 'error');
+    const twOk = tw.some(e => e.event === 'ready' || e.event === 'online' || e.event === 'playing');
+    const twOff = tw.some(e => e.event === 'offline');
+    items.push({ id: 'T6', gate: 'S2', label: '再生の応答（Twitch）', result: twOk ? 'pass' : 'fail',
+      detail: !boot ? 'ブリッジからの返事自体が無い' : (twOk ? (twOff ? 'READYは届いた（配信は休止中）' : 'READYが届いた') : ('12秒待っても READY が来ない（枠だけ出て中身が応答していない）' + (twErr ? '／エラー ' + twErr.code : ''))) });
+  }
+
+  // T7 保存の往復（試験用の場所だけ）
+  try{
+    const v = 'test-' + Date.now();
+    localStorage.setItem(LS_TEST_SCRATCH, v);
+    const back = localStorage.getItem(LS_TEST_SCRATCH);
+    localStorage.removeItem(LS_TEST_SCRATCH);
+    items.push({ id: 'T7', label: '保存の往復', result: back === v ? 'pass' : 'fail',
+      detail: '試験用の場所へ書いて、読み戻して、消せた。本編の保存場所は使っていない' });
+  }catch(e){
+    items.push({ id: 'T7', label: '保存の往復', result: 'fail', detail: '保存できない（' + String(e.message || e) + '）' });
+  }
+
+  // T8 本編の保存の同一性
+  {
+    const after = dataSnapshot();
+    items.push({ id: 'T8', label: '本編の保存の同一性', result: before === after ? 'pass' : 'fail',
+      detail: before === after ? '試験の前後で同一' : '試験の前後で変わった（要確認）' });
+  }
+
+  // T9 圏外での表示（再現できないので na）
+  items.push({ id: 'T9', label: '圏外での表示', result: 'na',
+    detail: '取得できない：圏外そのものは端末の操作（機内モード）が要るため、試験の中では再現できない。逃げ道の表示は T3 で確認した' });
+
+  // 性能の前回比（履歴は試験専用キーに最大5件）
+  let hist = [];
+  try{ hist = JSON.parse(localStorage.getItem(LS_TEST_HIST) || '[]'); }catch(e){}
+  const prev = hist.length ? hist[hist.length - 1] : null;
+  const perfLines = perf.map(p => {
+    const pv = prev && prev.perf ? prev.perf[p.id] : null;
+    return p.label + ' ' + p.ms + 'ms' + (pv != null ? '（前回 ' + pv + 'ms、差 ' + (p.ms - pv >= 0 ? '+' : '') + (p.ms - pv) + 'ms）' : '（前回なし）');
+  });
+  const newEntry = { at: startedAt.toISOString(), perf: Object.fromEntries(perf.map(p => [p.id, p.ms])),
+    items: Object.fromEntries(items.map(i => [i.id, i.result])) };
+
+  // モジュールからの結果（launcher-test/v1 で届いた分）
+  const modResults = Object.values(moduleTestResults);
+  const modLines = modResults.map(r => {
+    const pass = (r.items || []).filter(i => i.result === 'pass').length;
+    const all = (r.items || []).length;
+    const same = r.untouched && r.untouched.checked ? (r.untouched.same ? '本編の保存は同一' : '本編の保存が変わった') : '保存の照合なし';
+    return (r.moduleId) + '：' + pass + '／' + all + '件が「できた」／' + same;
+  });
+  newEntry.mods = Object.fromEntries(modResults.map(r => [r.moduleId,
+    (r.items || []).filter(i => i.result === 'pass').length + '／' + (r.items || []).length]));
+  hist.push(newEntry);
+  if (hist.length > 5) hist = hist.slice(-5);
+  try{ localStorage.setItem(LS_TEST_HIST, JSON.stringify(hist)); }catch(e){}
+
+  // 前回からの変化（項目の結果が変わった分だけを挙げる）
+  const diffLines = [];
+  if (prev && prev.items){
+    items.forEach(it => {
+      const pv = prev.items[it.id];
+      if (pv && pv !== it.result) diffLines.push(it.id + ' ' + it.label + '：' + resultWord(pv) + ' → ' + resultWord(it.result));
+    });
+    modResults.forEach(r => {
+      const cur = newEntry.mods[r.moduleId];
+      const pv = prev.mods && prev.mods[r.moduleId];
+      if (pv && pv !== cur) diffLines.push(r.moduleId + '：' + pv + '件 → ' + cur + '件');
+    });
+  }
+
+  // 結果テキスト（クロギリの型に寄せる）
+  const lines = [];
+  lines.push('ランチャー 試験モード結果');
+  lines.push('日時：' + startedAt.toLocaleString('ja-JP'));
+  lines.push('端末：' + navigator.userAgent);
+  lines.push('殻の版：' + APP_VERSION);
+  lines.push('本編の保存：試験では触れていない（試験前後で同一：' + (before === dataSnapshot() ? 'はい' : 'いいえ') + '）');
+  lines.push('');
+  items.forEach((it, i) => {
+    lines.push((i + 1) + '. ' + it.label + '：' + resultWord(it.result));
+    lines.push(it.detail);
+  });
+  lines.push('');
+  if (!prev) lines.push('前回からの変化：前回は無い（比べるのは次回から）');
+  else if (!prev.items) lines.push('前回からの変化：前回の記録に項目別の結果が残っていない（比べられるのは次回から）');
+  else if (diffLines.length){ lines.push('前回からの変化：'); diffLines.forEach(l => lines.push('- ' + l)); }
+  else lines.push('前回からの変化：前回と同じ');
+  lines.push('');
+  lines.push('性能：');
+  perfLines.forEach(l => lines.push('- ' + l));
+  if (modLines.length){
+    lines.push('');
+    lines.push('モジュールからの結果：');
+    modLines.forEach(l => lines.push('- ' + l));
+  }
+  lines.push('');
+  lines.push('画像について：まとめ画像は結果画面を描き直したものです。再生画面とモジュールの実画面は、別オリジンの枠のため取得できません。');
+  const text = lines.join('\n');
+  document.getElementById('testText').value = text;
+
+  // 画面への表示
+  items.forEach(it => {
+    const div = document.createElement('div'); div.className = 'tItem';
+    const head = document.createElement('div'); head.className = 'tHead';
+    const mark = document.createElement('span');
+    mark.className = it.result === 'pass' ? 'tPass' : (it.result === 'fail' ? 'tFail' : 'tNa');
+    mark.textContent = it.result === 'pass' ? '● ' : (it.result === 'fail' ? '● ' : '● ');
+    const name = document.createElement('span'); name.textContent = it.id + ' ' + it.label + '：' + resultWord(it.result);
+    head.append(mark, name);
+    const det = document.createElement('div'); det.className = 'tDetail'; det.textContent = it.detail;
+    div.append(head, det);
+    resultsEl.appendChild(div);
+  });
+
+  runBtn.disabled = false; runBtn.textContent = 'もう一度 点検する';
+  testRunning = false;
+  // 結果の取得を簡単に：上部の大きなボタンを見せて、結果の先頭へ戻す
+  document.getElementById('testShareRow').style.display = 'block';
+  document.getElementById('barCopyBtn').disabled = false;
+  document.getElementById('barShareBtn').disabled = false;
+  resultsEl.scrollIntoView({ block: 'start' });
+}
+document.getElementById('runTestBtn').addEventListener('click', runTests);
+
+async function copyTestText(){
+  const ta = document.getElementById('testText');
+  if (!ta.value) return false;
+  try{ await navigator.clipboard.writeText(ta.value); return true; }
+  catch(e){
+    try{ ta.select(); document.execCommand('copy'); return true; }catch(_){ return false; }
+  }
+}
+function noteCopied(ok){
+  const m = document.getElementById('copyDoneMsg');
+  m.textContent = ok ? 'コピーしました。そのままチャットに貼れます。' : 'コピーできませんでした。下の結果欄を長押しで選んでください。';
+  setTimeout(() => { m.textContent = ''; }, 4000);
+}
+document.getElementById('copyTestBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('barCopyBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('barShareBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('testText');
+  if (!ta.value) return;
+  if (navigator.share){
+    try{ await navigator.share({ title: 'ランチャー 試験モード結果', text: ta.value }); }catch(e){ /* 閉じられただけ */ }
+  } else {
+    noteCopied(await copyTestText());
+  }
+});
+document.getElementById('copyTestBtnTop').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('shareTestBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('testText');
+  if (!ta.value) return;
+  if (navigator.share){
+    try{ await navigator.share({ title: 'ランチャー 試験モード結果', text: ta.value }); }catch(e){ /* 閉じられただけ */ }
+  } else {
+    noteCopied(await copyTestText());
+  }
+});
+if (!navigator.share) document.getElementById('shareTestBtn').style.display = 'none';
+
+document.getElementById('imageTestBtn').addEventListener('click', () => {
+  const text = document.getElementById('testText').value;
+  if (!text) return;
+  const wrap = document.getElementById('testImageWrap');
+  wrap.textContent = '';
+  // 結果画面の描き直し画像（実画面の撮影ではない）
+  const rawLines = text.split('\n');
+  const lines = [];
+  rawLines.forEach(l => {
+    let s = l;
+    while (s.length > 46){ lines.push(s.slice(0, 46)); s = '　' + s.slice(46); }
+    lines.push(s);
+  });
+  const W = 1200, LH = 42, PAD = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = PAD * 2 + lines.length * LH;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#11161d'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#f2f4f8'; ctx.font = '26px sans-serif'; ctx.textBaseline = 'top';
+  lines.forEach((l, i) => ctx.fillText(l, PAD, PAD + i * LH));
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(blob);
+    img.alt = '試験モード結果のまとめ画像（描き直し）';
+    wrap.appendChild(img);
+  }, 'image/png');
+});
+
+document.getElementById('reloadListBtn').addEventListener('click', () => {
+  document.getElementById('status').textContent = '一覧を読み込んでいます';
+  refreshModules();
+});
+
+// 前面に戻ったら、一覧を取り直す。殻ページ自体が古ければ、読み直して今の版にそろえる
+let shellCheckRunning = false;
+async function checkShellFresh(){
+  if (shellCheckRunning) return;
+  shellCheckRunning = true;
+  try{
+    const res = await fetch(SHELL_BUILD_URL + '?v=' + Date.now(), { cache: 'no-store' });
+    if (res.ok){
+      const stamp = (await res.text()).trim();
+      if (stamp && stamp !== SHELL_BUILD){ location.reload(); return; }
+    }
+  }catch(e){ /* 取れなければ今の版のまま続ける */ }
+  shellCheckRunning = false;
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible'){
+    checkShellFresh();
+    refreshModules();
+  }
+});
+
+// LLM検証が落ちた後の自動復帰：検証ページが残した合図（30分以内）を見たら、
+// 数秒後に検証ページを自動で開く。検証ページ側が落ちた所から続きを始める
+let resumeTimer = null;
+function checkProbeResume(){
+  let beat = null;
+  try{ beat = JSON.parse(localStorage.getItem('llmprobe.resume.v1') || 'null'); }catch(e){ /* 読めなければ復帰しない */ }
+  if (!beat || !beat.at || Date.now() - beat.at > 30 * 60 * 1000) return;
+  const box = document.getElementById('resumeBox');
+  const countEl = document.getElementById('resumeCount');
+  box.style.display = 'block';
+  let remain = 3;
+  countEl.textContent = String(remain);
+  const iv = setInterval(() => {
+    remain -= 1;
+    if (remain <= 0){ clearInterval(iv); return; }
+    countEl.textContent = String(remain);
+  }, 1000);
+  resumeTimer = setTimeout(() => {
+    clearInterval(iv);
+    box.style.display = 'none';
+    let url = REMOTE_BASE + 'diag-llm.html';
+    let name = 'LLM検証';
+    if (beat.url){
+      // 合図に開く先が書いてあれば、それを優先する（ネイティブ検証など）
+      url = beat.url;
+      name = beat.name || name;
+    }else{
+      try{
+        const stored = JSON.parse(localStorage.getItem(LS_MODULES) || 'null');
+        const found = stored && (stored.modules || []).find(m => m.id === 'llmprobe');
+        if (found && found.url){ url = found.url; name = found.name || name; }
+      }catch(e){ /* 予備の住所で開く */ }
+    }
+    openModule({ id: 'llmprobe', name, url });
+  }, 3000);
+  document.getElementById('resumeCancelBtn').addEventListener('click', () => {
+    if (resumeTimer) clearTimeout(resumeTimer);
+    clearInterval(iv);
+    box.style.display = 'none';
+  });
+}
+
+renderRecent();
+refreshModules();
+checkShellFresh();
+checkUpdate();
+checkProbeResume();
+</script>
+</body>
+</html>

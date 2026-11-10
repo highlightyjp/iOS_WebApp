@@ -26,11 +26,11 @@
   #updateBox{ display:none; width:100%; margin:12px 0 4px; padding:18px; border-radius:var(--radius);
     border:1px solid var(--card-border); background:var(--accent); color:#082f49; font-size:17px; font-weight:700; text-align:left; }
   #updateBox small{ display:block; font-weight:500; font-size:13px; margin-top:4px; }
-  .grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+  .grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
   .card{ appearance:none; display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box;
     border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 24px rgba(10,15,30,.08);
-    border-radius:24px; padding:14px 16px; text-align:left; color:var(--text); cursor:pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(10,15,30,.06), 0 16px 32px rgba(10,15,30,.10);
+    border-radius:24px; padding:12px 16px; text-align:left; color:var(--text); cursor:pointer;
     transition: transform .18s cubic-bezier(.34,1.35,.44,1); }
   .card:active{ transform:scale(.98); }
   .card .tile{ flex:none; width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
@@ -74,15 +74,21 @@
   #viewerTitle{ font-size:16px; font-weight:600; }
   #frameWrap{ flex:1; }
   #frameWrap iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
-  #freshPill{ display:flex; align-items:center; gap:8px; margin-top:10px; padding:6px 6px 6px 14px;
+  #testActionBar{ display:flex; gap:12px; padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--card-border); background:var(--bg); }
+  #testActionBar button{ flex:1; padding:14px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
+  #testActionBar button[disabled]{ opacity:.45; cursor:default; }
+  #barCopyBtn{ border:0; background:var(--accent); color:#082f49; }
+  #barShareBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); }
+  #freshPill{ display:flex; align-items:center; gap:8px; margin-top:12px; padding:6px 6px 6px 14px;
     border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px); border-radius:999px; }
   #freshDot{ flex:none; width:8px; height:8px; border-radius:999px; background:#4ade80; }
   #freshPill #status{ flex:1; min-height:0; }
   #reloadListBtn{ margin-top:0 !important; flex:none; }
-  #searchWrap{ margin-top:14px; }
+  #searchWrap{ margin-top:16px; }
   #searchInput{ width:100%; box-sizing:border-box; padding:13px 18px; border-radius:999px; border:1px solid var(--card-border);
     background:var(--card); backdrop-filter:blur(14px); color:var(--text); font-size:16px; outline:none; }
-  #recentRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  #recentRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
   .recentChip{ display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border-radius:999px;
     border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; cursor:pointer; }
   .recentChip .tile{ width:30px; height:30px; border-radius:999px; display:grid; place-items:center; color:#fff; font-size:14px; font-weight:700; }
@@ -143,6 +149,10 @@
     </div>
     <div id="testImageWrap"></div>
   </div>
+  <div id="testActionBar">
+    <button id="barCopyBtn" type="button" disabled>結果をコピーする</button>
+    <button id="barShareBtn" type="button" disabled>結果を送る</button>
+  </div>
 </div>
 
 <div id="viewer">
@@ -156,7 +166,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-10-1812';
+const SHELL_BUILD = '2026-11-10-2010';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -773,9 +783,8 @@ async function runTests(){
     const pv = prev && prev.perf ? prev.perf[p.id] : null;
     return p.label + ' ' + p.ms + 'ms' + (pv != null ? '（前回 ' + pv + 'ms、差 ' + (p.ms - pv >= 0 ? '+' : '') + (p.ms - pv) + 'ms）' : '（前回なし）');
   });
-  hist.push({ at: startedAt.toISOString(), perf: Object.fromEntries(perf.map(p => [p.id, p.ms])) });
-  if (hist.length > 5) hist = hist.slice(-5);
-  try{ localStorage.setItem(LS_TEST_HIST, JSON.stringify(hist)); }catch(e){}
+  const newEntry = { at: startedAt.toISOString(), perf: Object.fromEntries(perf.map(p => [p.id, p.ms])),
+    items: Object.fromEntries(items.map(i => [i.id, i.result])) };
 
   // モジュールからの結果（launcher-test/v1 で届いた分）
   const modResults = Object.values(moduleTestResults);
@@ -785,6 +794,25 @@ async function runTests(){
     const same = r.untouched && r.untouched.checked ? (r.untouched.same ? '本編の保存は同一' : '本編の保存が変わった') : '保存の照合なし';
     return (r.moduleId) + '：' + pass + '／' + all + '件が「できた」／' + same;
   });
+  newEntry.mods = Object.fromEntries(modResults.map(r => [r.moduleId,
+    (r.items || []).filter(i => i.result === 'pass').length + '／' + (r.items || []).length]));
+  hist.push(newEntry);
+  if (hist.length > 5) hist = hist.slice(-5);
+  try{ localStorage.setItem(LS_TEST_HIST, JSON.stringify(hist)); }catch(e){}
+
+  // 前回からの変化（項目の結果が変わった分だけを挙げる）
+  const diffLines = [];
+  if (prev && prev.items){
+    items.forEach(it => {
+      const pv = prev.items[it.id];
+      if (pv && pv !== it.result) diffLines.push(it.id + ' ' + it.label + '：' + resultWord(pv) + ' → ' + resultWord(it.result));
+    });
+    modResults.forEach(r => {
+      const cur = newEntry.mods[r.moduleId];
+      const pv = prev.mods && prev.mods[r.moduleId];
+      if (pv && pv !== cur) diffLines.push(r.moduleId + '：' + pv + '件 → ' + cur + '件');
+    });
+  }
 
   // 結果テキスト（クロギリの型に寄せる）
   const lines = [];
@@ -798,6 +826,11 @@ async function runTests(){
     lines.push((i + 1) + '. ' + it.label + '：' + resultWord(it.result));
     lines.push(it.detail);
   });
+  lines.push('');
+  if (!prev) lines.push('前回からの変化：前回は無い（比べるのは次回から）');
+  else if (!prev.items) lines.push('前回からの変化：前回の記録に項目別の結果が残っていない（比べられるのは次回から）');
+  else if (diffLines.length){ lines.push('前回からの変化：'); diffLines.forEach(l => lines.push('- ' + l)); }
+  else lines.push('前回からの変化：前回と同じ');
   lines.push('');
   lines.push('性能：');
   perfLines.forEach(l => lines.push('- ' + l));
@@ -829,6 +862,8 @@ async function runTests(){
   testRunning = false;
   // 結果の取得を簡単に：上部の大きなボタンを見せて、結果の先頭へ戻す
   document.getElementById('testShareRow').style.display = 'block';
+  document.getElementById('barCopyBtn').disabled = false;
+  document.getElementById('barShareBtn').disabled = false;
   resultsEl.scrollIntoView({ block: 'start' });
 }
 document.getElementById('runTestBtn').addEventListener('click', runTests);
@@ -847,6 +882,16 @@ function noteCopied(ok){
   setTimeout(() => { m.textContent = ''; }, 4000);
 }
 document.getElementById('copyTestBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('barCopyBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('barShareBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('testText');
+  if (!ta.value) return;
+  if (navigator.share){
+    try{ await navigator.share({ title: 'ランチャー 試験モード結果', text: ta.value }); }catch(e){ /* 閉じられただけ */ }
+  } else {
+    noteCopied(await copyTestText());
+  }
+});
 document.getElementById('copyTestBtnTop').addEventListener('click', async () => { noteCopied(await copyTestText()); });
 document.getElementById('shareTestBtn').addEventListener('click', async () => {
   const ta = document.getElementById('testText');
