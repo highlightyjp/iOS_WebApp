@@ -242,6 +242,12 @@
     border:1px solid var(--glass-line); background:transparent; color:var(--ink);
   }
   #testCopy{background:var(--accent) !important; border-color:transparent !important; color:#fff !important;}
+  #testQuickActions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  #testQuickActions button{
+    font-family:inherit; font-size:13.5px; padding:9px 16px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--glass-line); background:transparent; color:var(--ink);
+  }
+  #testCopyTop{background:var(--accent) !important; border-color:transparent !important; color:#fff !important;}
   #testMsg{font-size:12.5px; color:var(--sub); margin:10px 0 0; min-height:1.2em; line-height:1.5;}
   /* ---------- 画像保存用オーバーレイ（長押し保存） ---------- */
   #saveOverlay{
@@ -348,6 +354,10 @@
     <p id="testNow" aria-live="polite">準備中…</p>
     <div id="testList"></div>
     <div id="testResult">
+      <div id="testQuickActions">
+        <button id="testCopyTop" type="button">結果をコピーする</button>
+        <button id="testShareTop" type="button">結果を送る</button>
+      </div>
       <div id="testSummary"></div>
       <img id="testComposite" alt="点検のまとめ画像（表情と全身、会話サンプルの場面）">
       <textarea id="testText" readonly aria-label="点検結果の文章"></textarea>
@@ -1589,7 +1599,7 @@ $("viewToggle").addEventListener("click", () => {
     if(running) return;
     overlay.classList.remove("open");
   });
-  $("testCopy").addEventListener("click", async () => {
+  async function copyResultText(){
     const txt = textEl.value;
     try{
       await navigator.clipboard.writeText(txt);
@@ -1600,6 +1610,14 @@ $("viewToggle").addEventListener("click", () => {
       try{ okCopy = document.execCommand("copy"); }catch(e2){}
       msgEl.textContent = okCopy ? "コピーしたよ。" : "コピーできなかった。文章を選んでコピーしてね。";
     }
+  }
+  $("testCopy").addEventListener("click", copyResultText);
+  $("testCopyTop").addEventListener("click", copyResultText);
+  if(!navigator.share){ const sb = $("testShareTop"); if(sb) sb.style.display = "none"; }
+  $("testShareTop").addEventListener("click", async () => {
+    if(!navigator.share){ msgEl.textContent = "この環境では送る画面が開けないから、コピーを使ってね。"; return; }
+    try{ await navigator.share({ text: textEl.value }); }
+    catch(e){ /* 送る画面を閉じた場合は何もしない */ }
   });
   $("testSaveImg").addEventListener("click", () => {
     if(!compositeCanvas){ msgEl.textContent = "画像がまだ無いよ。"; return; }
