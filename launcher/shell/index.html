@@ -128,8 +128,8 @@
 
 <script>
 'use strict';
-const APP_VERSION = '1.8';
-const SHELL_BUILD = '2026-11-10-1255';
+const APP_VERSION = '1.10';
+const SHELL_BUILD = '2026-11-10-1440';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -306,7 +306,7 @@ window.addEventListener('message', (e) => {
 // 受け付けるのは「今開いているモジュール」の iframe からの依頼だけ（オリジン＋送り元＋moduleId の照合）。
 const LLM_MODELS = {
   'qwen3-4b': { file: 'Qwen3-4B-Q4_K_M.gguf', nCtx: 2048, nBatch: 512 },
-  'qwen3-8b': { file: 'Qwen3-8B-Q4_K_M.gguf', nCtx: 1024, nBatch: 128 }
+  'qwen3-8b': { file: 'Qwen3-8B-Q4_K_M.gguf', nCtx: 2048, nBatch: 128, kvType: 8 }
 };
 const MEDIA_CODES = ['denied', 'too-large', 'unsupported-type', 'busy', 'failed'];
 let mediaBusy = false;
@@ -426,6 +426,7 @@ async function handleLlm(d, reply){
   let temperature = (typeof d.temperature === 'number') ? d.temperature : 0.2;
   temperature = Math.max(0, Math.min(temperature, 1));
   const args = { name: spec.file, prompt: d.prompt, maxTokens, temperature, nCtx: spec.nCtx, nBatch: spec.nBatch, flashAttn: 1 };
+  if (spec.kvType !== undefined) args.kvType = spec.kvType;
   if (typeof d.system === 'string' && d.system) args.system = d.system;
   if (typeof d.grammar === 'string' && d.grammar) args.grammar = d.grammar.slice(0, 8000);
   let settled = false;
