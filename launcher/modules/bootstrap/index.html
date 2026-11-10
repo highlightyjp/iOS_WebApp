@@ -50,6 +50,15 @@
 (function(){
   document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
   var LS_BASE = 'suno.audioBase.v1', LS_KEY = 'suno.audioKey.v1';
+  // 版の自己照合：Pages の HTML は WebView にキャッシュされるため、build.txt と
+  // 照合して古ければ1回だけ読み直す（アイリスモジュールと同じ方式）
+  var BUILD = '2026-11-11-0110';
+  fetch('build.txt', { cache: 'no-store' }).then(function(r){ return r.text(); }).then(function(t){
+    if (t.trim() && t.trim() !== BUILD && !sessionStorage.getItem('bootstrap.reloaded')){
+      sessionStorage.setItem('bootstrap.reloaded', '1');
+      location.reload();
+    }
+  }).catch(function(){});
   var q = new URLSearchParams(location.search);
   var ab = q.get('ab') || '', ak = q.get('ak') || '';
   var startedAt = new Date();
