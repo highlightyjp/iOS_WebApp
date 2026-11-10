@@ -28,6 +28,7 @@
   #actionBar button{ flex:1; padding:14px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
   #actionBar button[disabled]{ opacity:.45; cursor:default; }
   #copyBtn{ border:0; background:var(--accent); color:#082f49; }
+  #tapBtn{ margin-top:12px; width:100%; padding:14px; border:0; border-radius:12px; background:var(--accent); color:#082f49; font-size:15px; font-weight:700; cursor:pointer; }
   #shareBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); }
   #copyMsg{ font-size:13px; color:var(--sub); min-height:18px; margin-top:8px; }
 </style>
@@ -38,7 +39,7 @@
 <div class="row"><div class="name">1. 設定の保存</div><div class="state" id="st1">確認中</div></div>
 <div class="row"><div class="name">2. 自宅への到達（health）</div><div class="state" id="st2">確認中</div></div>
 <div class="row"><div class="name">3. 認証つき取得（音楽の索引）</div><div class="state" id="st3">確認中</div></div>
-<div class="row"><div class="name">4. 音源の再生確認</div><div class="state" id="st4">確認中</div></div>
+<div class="row"><div class="name">4. 音源の再生確認</div><div class="state" id="st4">確認中</div><div id="tapSlot"></div></div>
 <textarea id="logText" readonly></textarea>
 <div id="copyMsg"></div>
 <div id="actionBar">
@@ -52,7 +53,7 @@
   var LS_BASE = 'suno.audioBase.v1', LS_KEY = 'suno.audioKey.v1';
   // 版の自己照合：Pages の HTML は WebView にキャッシュされるため、build.txt と
   // 照合して古ければ1回だけ読み直す（アイリスモジュールと同じ方式）
-  var BUILD = '2026-11-11-0110';
+  var BUILD = '2026-11-11-0145';
   fetch('build.txt', { cache: 'no-store' }).then(function(r){ return r.text(); }).then(function(t){
     if (t.trim() && t.trim() !== BUILD && !sessionStorage.getItem('bootstrap.reloaded')){
       sessionStorage.setItem('bootstrap.reloaded', '1');
@@ -151,21 +152,24 @@
     });
   }
 
-  // 4. 音源の再生確認（イベントとエラーコードまで記録する）
+  // 4. 音源の再生確認（自動で読みに行き、止まったらタップ＝利用者の操作を起点に切り替える）
   function step4(){
-    var probe = document.getElementById('probe');
     var SAMPLE = '081db6f4-5e28-4f90-9be0-94445f89c117.mp3';
+    var src = ab + 'audio/' + SAMPLE + (ak ? '?k=' + encodeURIComponent(ak) : '');
     var events = [];
-    var done = false;
+    var settled = false;
     var t4 = performance.now();
+    var probe = document.getElementById('probe');
     function fin(ok, text){
-      if (done) return; done = true; clearTimeout(timer);
+      if (settled) return; settled = true; clearTimeout(timer);
       var ms = Math.round(performance.now() - t4);
       set('st4', text + '（' + ms + 'ms）', ok ? 'ok' : 'ng');
       log('4. 再生確認', text + '（' + ms + 'ms）イベント：' + (events.join(' → ') || 'なし'));
       finish();
     }
-    var timer = setTimeout(function(){ fin(false, '時間内に応答がありませんでした'); }, 15000);
+    var timer = setTimeout(function(){
+      fin(false, '自動の読み込みでは応答がありませんでした（ネットワーク状態 ' + probe.networkState + '／準備状態 ' + probe.readyState + '）');
+    }, 15000);
     ['loadstart', 'loadedmetadata', 'canplay', 'stalled', 'suspend'].forEach(function(ev){
       probe.addEventListener(ev, function(){
         events.push(ev);
@@ -178,7 +182,50 @@
       events.push('error');
       fin(false, '音源に届きませんでした（エラーコード ' + code + '＝' + (names[code] || '不明') + '）');
     });
-    probe.src = ab + 'audio/' + SAMPLE + (ak ? '?k=' + encodeURIComponent(ak) : '');
+    // 自動の読み込みが5秒で進まなければ、タップ確認のボタンを出す（実際のモジュール再生はタップが起点のため、その経路も測る）
+    setTimeout(function(){
+      if (settled || events.indexOf('loadedmetadata') >= 0) return;
+      var slot = document.getElementById('tapSlot');
+      if (!slot || slot.firstChild) return;
+      var btn = document.createElement('button');
+      btn.id = 'tapBtn'; btn.type = 'button'; btn.textContent = 'タップして再生確認する';
+      btn.addEventListener('click', function(){
+        btn.disabled = true; btn.textContent = '確認中…';
+        var a2 = new Audio();
+        var ev2 = [];
+        var t5 = performance.now();
+        var done2 = false;
+        function fin2(ok, text){
+          if (done2) return; done2 = true; clearTimeout(tm2);
+          try{ a2.pause(); }catch(e){}
+          var ms = Math.round(performance.now() - t5);
+          if (!settled){
+            settled = true; clearTimeout(timer);
+            set('st4', text + '（タップから ' + ms + 'ms）', ok ? 'ok' : 'ng');
+            log('4. 再生確認', text + '（タップから ' + ms + 'ms）イベント：' + (ev2.join(' → ') || 'なし') + '／自動分：' + (events.join(' → ') || 'なし'));
+            finish();
+          }
+        }
+        var tm2 = setTimeout(function(){ fin2(false, 'タップしても応答がありませんでした'); }, 12000);
+        ['loadstart', 'loadedmetadata', 'playing', 'canplay'].forEach(function(ev){
+          a2.addEventListener(ev, function(){
+            ev2.push(ev);
+            if (ev === 'playing') fin2(true, 'タップで再生できました');
+          });
+        });
+        a2.addEventListener('error', function(){
+          var code = a2.error ? a2.error.code : null;
+          ev2.push('error');
+          fin2(false, 'タップでも届きませんでした（エラーコード ' + code + '）');
+        });
+        a2.src = src;
+        var pr = a2.play();
+        if (pr && pr.catch) pr.catch(function(e){ ev2.push('play拒否:' + (e && e.name || '')); });
+      });
+      slot.appendChild(btn);
+    }, 5000);
+    probe.src = src;
+    if (probe.load) probe.load();
   }
 
   // 結果の受け渡し（ST-01 の形：下端の固定バー）
