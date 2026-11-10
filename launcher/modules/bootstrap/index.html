@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>自宅配信の設定</title>
+<style>
+  :root{ --bg:#0e1116; --card:rgba(255,255,255,.08); --card-border:rgba(255,255,255,.14);
+    --text:#f2f4f8; --sub:#a7b0bf; --accent:#7dd3fc; --ok:#34d399; --ng:#f87171; }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#eef1f6; --card:rgba(255,255,255,.75); --card-border:rgba(20,30,50,.08); --text:#141a24; --sub:#5b6575; }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg); color:var(--text); padding:calc(20px + env(safe-area-inset-top)) 20px 32px; }
+  h1{ font-size:20px; margin:0 0 8px; }
+  p{ color:var(--sub); font-size:14px; line-height:1.7; margin:0 0 16px; }
+  .row{ border:1px solid var(--card-border); background:var(--card); border-radius:16px; padding:16px; margin-top:12px; }
+  .row .name{ font-size:15px; font-weight:600; }
+  .row .state{ font-size:14px; margin-top:4px; color:var(--sub); }
+  .row .state.ok{ color:var(--ok); }
+  .row .state.ng{ color:var(--ng); }
+</style>
+</head>
+<body>
+<h1>自宅配信の設定</h1>
+<p>音楽モジュールが自宅（dynabook）から曲を取れるようにする設定を、この端末へ保存します。</p>
+<div class="row"><div class="name">設定の保存</div><div class="state" id="stSave">確認中</div></div>
+<div class="row"><div class="name">自宅への到達</div><div class="state" id="stReach">確認中</div></div>
+<div class="row"><div class="name">音源の再生確認</div><div class="state" id="stPlay">確認中</div></div>
+<audio id="probe" preload="metadata"></audio>
+<script>
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+  var LS_BASE = 'suno.audioBase.v1', LS_KEY = 'suno.audioKey.v1';
+  var q = new URLSearchParams(location.search);
+  var ab = q.get('ab') || '', ak = q.get('ak') || '';
+  var stSave = document.getElementById('stSave');
+  var stReach = document.getElementById('stReach');
+  var stPlay = document.getElementById('stPlay');
+  function set(el, text, cls){ el.textContent = text; el.className = 'state' + (cls ? ' ' + cls : ''); }
+
+  if (ab && ak){
+    if (ab.charAt(ab.length - 1) !== '/') ab += '/';
+    try{
+      localStorage.setItem(LS_BASE, ab);
+      localStorage.setItem(LS_KEY, ak);
+      set(stSave, '保存しました', 'ok');
+    }catch(e){
+      set(stSave, '保存できませんでした', 'ng');
+    }
+    if (history.replaceState) history.replaceState(null, '', location.pathname);
+  } else {
+    try{ ab = localStorage.getItem(LS_BASE) || ''; ak = localStorage.getItem(LS_KEY) || ''; }catch(e){}
+    set(stSave, ab ? '保存済みの設定を使います' : '設定がまだありません', ab ? 'ok' : 'ng');
+  }
+
+  if (!ab){ set(stReach, '設定がないため確認できません', 'ng'); set(stPlay, '設定がないため確認できません', 'ng'); return; }
+
+  // 到達確認：health は認証なし。CORS で読めない場合に備え、成否は音源プローブと合わせて判断する
+  var reachDone = false;
+  fetch(ab + 'health').then(function(r){
+    reachDone = true;
+    set(stReach, r.ok ? '届きました' : '応答がエラーでした（' + r.status + '）', r.ok ? 'ok' : 'ng');
+  }).catch(function(){
+    reachDone = true;
+    set(stReach, 'fetch では届きませんでした（再生確認で最終判断します）', 'ng');
+  });
+
+  // 再生確認：実在の音源で metadata が読めれば「到達＋キー＋配信」が一括で通ったことになる
+  var probe = document.getElementById('probe');
+  var SAMPLE = '081db6f4-5e28-4f90-9be0-94445f89c117.mp3';
+  var done = false;
+  var timer = setTimeout(function(){
+    if (!done){ done = true; set(stPlay, '時間内に応答がありませんでした', 'ng'); }
+  }, 15000);
+  probe.addEventListener('loadedmetadata', function(){
+    if (done) return; done = true; clearTimeout(timer);
+    set(stPlay, '再生できます（長さ ' + Math.round(probe.duration) + '秒の音源を読みました）', 'ok');
+    if (!reachDone || stReach.className.indexOf('ng') >= 0) set(stReach, '届きました（音源経由で確認）', 'ok');
+  });
+  probe.addEventListener('error', function(){
+    if (done) return; done = true; clearTimeout(timer);
+    set(stPlay, '音源に届きませんでした', 'ng');
+  });
+  probe.src = ab + 'audio/' + SAMPLE + (ak ? '?k=' + encodeURIComponent(ak) : '');
+})();
+</script>
+</body>
+</html>
