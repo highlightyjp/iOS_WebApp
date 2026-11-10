@@ -843,6 +843,12 @@ var ENEMY_ACTIONS=[
 /* ---------- 特徴ベース適応台帳 (engine の AdaptationLedger の直列化形) ---------- */
 function emptyLedger(){return {F:{},G:{},monthAdded:{},month:-999,research:{},activeF:{},generic:0,counts:{},conf:{},history:[],lastTactic:null,switches:0,featureSources:{},opLog:[]}}
 function ledgerState(){if(!S.adaptLedger)S.adaptLedger=emptyLedger();return S.adaptLedger}
+/* NG+ 引き継ぎ用: 台帳の月参照を前の周の最終月 (baseMonth) だけ手前へずらし、
+   進行中の研究の残り時間を次の周でも保つ。baseMonth が無い旧データでは呼ばない */
+function shiftLedgerMonths(L,base){if(!L||!base)return;
+ Object.keys(L.research||{}).forEach(function(f){var r=L.research[f];if(!r)return;if(typeof r.startMonth==='number')r.startMonth-=base;if(typeof r.activeFrom==='number')r.activeFrom-=base});
+ (L.history||[]).forEach(function(h){if(h&&typeof h.month==='number')h.month-=base});
+ (L.opLog||[]).forEach(function(o){if(o&&typeof o.month==='number')o.month-=base})}
 function ledFamiliarity(L){return L.switches/(L.switches+3)}
 function ledRecord(L,tactic,month,q,damage,phi,confidence){
  if(month!==L.month){L.month=month;L.monthAdded={}}
@@ -1670,7 +1676,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v58';
+var APP_VERSION='v59';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -1728,10 +1734,10 @@ function renderChapters(){var playable=CHAPTERS.filter(function(c){return !c.loc
 function startChapter(n,carry){n=(typeof n==='number'&&CHAPTER_STEPS[n])?n:5;var prevSettings=(typeof S!=='undefined'&&S&&S.settings)?S.settings:null;var __pend=(typeof S!=='undefined'&&S&&S.selfplay&&S.selfplay.pending)?S.selfplay.pending:null;S=freshState();if(prevSettings)S.settings=prevSettings;S.chapter=n;STEPS=CHAPTER_STEPS[n];S.started=true;S.auditLog=auditBuf.splice(0);resetRng();
  S.modernStock=(S.settings&&S.settings.modern==='open')?6:3;
  if(carry&&carry.ngPlus){ /* ニューゲーム+: 世界はまっさら。学びだけを持ち越す (設定で持ち越す場合) */
-   if(carry.settings)S.settings=carry.settings;S.cycle=carry.cycle||2;if(carry.learn){S.w=carry.learn.w||S.w;S.enemyLedger=JSON.parse(JSON.stringify(carry.learn.enemyLedger||{}));S.adapt={pending:null,active:JSON.parse(JSON.stringify(carry.learn.adaptActive||{}))};S.familiarity=carry.learn.familiarity||0;S.tacSwitches=carry.learn.tacSwitches||0;S.adaptCount=carry.learn.adaptCount||0;S.adaptBonusUsed=carry.learn.adaptBonusUsed||0;S.tactics=JSON.parse(JSON.stringify(carry.learn.tactics||{}));S.tacticLast=JSON.parse(JSON.stringify(carry.learn.tacticLast||{}));S.lastTactic=carry.learn.lastTactic||null;if(carry.learn.enemyWeights)S.enemyCore={weights:JSON.parse(JSON.stringify(carry.learn.enemyWeights)),baseline:defaultEnemyWeights()};if(carry.learn.adaptLedger)S.adaptLedger=JSON.parse(JSON.stringify(carry.learn.adaptLedger));S.selfplay={version:carry.learn.spVersion||0,pending:null,records:[]};S.ngCarried=true;audit('新しい世界線',{cycle:S.cycle,note:'黒霧は前周に覚えた対策を持ち越した'})}else{audit('新しい世界線',{cycle:S.cycle,note:'まっさらな組織と、まだ何も覚えていない黒霧で始める'})}}
+   if(carry.settings)S.settings=carry.settings;S.cycle=carry.cycle||2;if(carry.learn){S.w=carry.learn.w||S.w;S.enemyLedger=JSON.parse(JSON.stringify(carry.learn.enemyLedger||{}));S.adapt={pending:null,active:JSON.parse(JSON.stringify(carry.learn.adaptActive||{}))};S.familiarity=carry.learn.familiarity||0;S.tacSwitches=carry.learn.tacSwitches||0;S.adaptCount=carry.learn.adaptCount||0;S.adaptBonusUsed=carry.learn.adaptBonusUsed||0;S.tactics=JSON.parse(JSON.stringify(carry.learn.tactics||{}));S.tacticLast=JSON.parse(JSON.stringify(carry.learn.tacticLast||{}));S.lastTactic=carry.learn.lastTactic||null;if(carry.learn.enemyWeights)S.enemyCore={weights:JSON.parse(JSON.stringify(carry.learn.enemyWeights)),baseline:defaultEnemyWeights()};if(carry.learn.adaptLedger)S.adaptLedger=JSON.parse(JSON.stringify(carry.learn.adaptLedger));if(carry.learn.adaptLedger&&carry.learn.baseMonth)shiftLedgerMonths(S.adaptLedger,carry.learn.baseMonth);S.selfplay={version:carry.learn.spVersion||0,pending:null,records:[]};S.ngCarried=true;audit('新しい世界線',{cycle:S.cycle,note:'黒霧は前周に覚えた対策を持ち越した'})}else{audit('新しい世界線',{cycle:S.cycle,note:'まっさらな組織と、まだ何も覚えていない黒霧で始める'})}}
   else if(carry){ /* 通しプレイの引き継ぎ: 生存・喪失・将校・熟練・研究・信任関係を次の章へ */
   if(carry.settings)S.settings=carry.settings;S.lostShips=(carry.lostShips||[]).slice();S.shipExp=JSON.parse(JSON.stringify(carry.shipExp||{}));S.roster=JSON.parse(JSON.stringify(carry.roster||PERSONNEL));S.researchDone=(carry.researchDone||[]).slice();S.personnelLog=(carry.personnelLog||[]).slice();if(carry.trust)S.trust=Object.assign({},carry.trust);if(carry.relations)S.relations=Object.assign({},carry.relations);if(carry.w)S.w=carry.w;if(carry.learnLog)S.learnLog=carry.learnLog.slice();S.shipsUnlocked=!!carry.shipsUnlocked;if(carry.tactics)S.tactics=carry.tactics;if(carry.tacticLast)S.tacticLast=carry.tacticLast;if(carry.adapt){S.adapt=carry.adapt;if(S.adapt.pending)S.adapt.pending.readyStep=Math.max(0,(S.adapt.pending.readyStep||0)-5)}if(carry.enemyLedger)S.enemyLedger=carry.enemyLedger;if(carry.familiarity!=null)S.familiarity=carry.familiarity;if(carry.tacSwitches!=null)S.tacSwitches=carry.tacSwitches;if(carry.lastTactic!==undefined)S.lastTactic=carry.lastTactic;if(carry.adaptCount!=null)S.adaptCount=carry.adaptCount;if(carry.adaptBonusUsed!=null)S.adaptBonusUsed=carry.adaptBonusUsed;if(carry.calib)S.calib=carry.calib;if(carry.enemyWeights)S.enemyCore={weights:JSON.parse(JSON.stringify(carry.enemyWeights)),baseline:defaultEnemyWeights()};if(carry.adaptLedger)S.adaptLedger=JSON.parse(JSON.stringify(carry.adaptLedger));S.selfplay={version:carry.spVersion||0,pending:null,records:JSON.parse(JSON.stringify(carry.spRecords||[]))};if(carry.enemyChoice!==undefined)S.enemyChoice=carry.enemyChoice;if(carry.enemyFormUses)S.enemyFormUses=JSON.parse(JSON.stringify(carry.enemyFormUses));if(carry.opTacMark)S.opTacMark=JSON.parse(JSON.stringify(carry.opTacMark));if(carry.absMonth!=null)S.absMonth=carry.absMonth;if(carry.learnMonth!=null)S.learnMonth=carry.learnMonth;if(carry.learnAccum)S.learnAccum=JSON.parse(JSON.stringify(carry.learnAccum));if(carry.armyLog)S.armyLog=carry.armyLog;if(carry.cycle)S.cycle=carry.cycle;if(carry.ngCarried!=null)S.ngCarried=!!carry.ngCarried;S.through=true;syncSkill();audit('引き継ぎ',{chapter:n,survivors:activeShips().map(function(s){return s[0]}),lost:S.lostShips.slice(),note:'前の章の生存艦・喪失・将校・熟練を引き継いだ'})}
- else{try{var carryRaw=localStorage.getItem(CARRY_KEY);if(carryRaw){var carry2=JSON.parse(carryRaw);localStorage.removeItem(CARRY_KEY);if(carry2.settings)S.settings=carry2.settings;if(carry2.cycle)S.cycle=carry2.cycle;if(carry2.settings&&carry2.settings.ngplus==='carry'){if(carry2.w)S.w=carry2.w;if(carry2.enemy){S.enemyLedger=carry2.enemy.enemyLedger||{};S.adapt={pending:null,active:carry2.enemy.adaptActive||{}};S.familiarity=carry2.enemy.familiarity||0;S.tacSwitches=carry2.enemy.tacSwitches||0;S.adaptCount=carry2.enemy.adaptCount||0;S.adaptBonusUsed=carry2.enemy.adaptBonusUsed||0;S.tactics=carry2.enemy.tactics||{};S.tacticLast=carry2.enemy.tacticLast||{};if(carry2.enemy.adaptLedger)S.adaptLedger=carry2.enemy.adaptLedger;if(carry2.enemy.enemyWeights)S.enemyCore={weights:carry2.enemy.enemyWeights,baseline:defaultEnemyWeights()};S.selfplay={version:carry2.enemy.spVersion||0,pending:null,records:[]};S.ngCarried=true}audit('学習引き継ぎ',{note:'前の世界線の学びを持ち越した'})}}}catch(e){}}
+ else{try{var carryRaw=localStorage.getItem(CARRY_KEY);if(carryRaw){var carry2=JSON.parse(carryRaw);localStorage.removeItem(CARRY_KEY);if(carry2.settings)S.settings=carry2.settings;if(carry2.cycle)S.cycle=carry2.cycle;if(carry2.settings&&carry2.settings.ngplus==='carry'){if(carry2.w)S.w=carry2.w;if(carry2.enemy){S.enemyLedger=carry2.enemy.enemyLedger||{};S.adapt={pending:null,active:carry2.enemy.adaptActive||{}};S.familiarity=carry2.enemy.familiarity||0;S.tacSwitches=carry2.enemy.tacSwitches||0;S.adaptCount=carry2.enemy.adaptCount||0;S.adaptBonusUsed=carry2.enemy.adaptBonusUsed||0;S.tactics=carry2.enemy.tactics||{};S.tacticLast=carry2.enemy.tacticLast||{};if(carry2.enemy.adaptLedger)S.adaptLedger=carry2.enemy.adaptLedger;if(carry2.enemy.adaptLedger&&carry2.baseMonth)shiftLedgerMonths(S.adaptLedger,carry2.baseMonth);if(carry2.enemy.enemyWeights)S.enemyCore={weights:carry2.enemy.enemyWeights,baseline:defaultEnemyWeights()};S.selfplay={version:carry2.enemy.spVersion||0,pending:null,records:[]};S.ngCarried=true}audit('学習引き継ぎ',{note:'前の世界線の学びを持ち越した'})}}}catch(e){}}
  if(carry&&(!carry.ngPlus||carry.learn)&&__pend){S.selfplay.pending=__pend;applyPendingPromotion(n)}
  audit('章開始',{seed:SEED_STR,chapter:n});beginStep();save();var cc=CHAPTERS.find(function(c){return c.n===n});toast('第'+n+'章「'+(cc?cc.t:'')+'」を開始した');showChapterArt(n)}
 function continueNextChapter(){if(!S||!S.finished)return;var nx=(S.chapter||5)+1;if(nx>8||!CHAPTER_STEPS[nx])return;var carry={settings:S.settings,lostShips:S.lostShips.slice(),shipExp:JSON.parse(JSON.stringify(S.shipExp||{})),roster:JSON.parse(JSON.stringify(S.roster)),researchDone:S.researchDone.slice(),personnelLog:S.personnelLog.slice(),trust:Object.assign({},S.trust),relations:Object.assign({},S.relations),w:(S.settings&&S.settings.ngplus==='carry')?S.w:null,learnLog:S.learnLog.slice(),shipsUnlocked:S.shipsUnlocked,tactics:Object.assign({},S.tactics),tacticLast:Object.assign({},S.tacticLast),adapt:JSON.parse(JSON.stringify(S.adapt||{pending:null,active:{}})),enemyLedger:JSON.parse(JSON.stringify(S.enemyLedger||{})),familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,lastTactic:S.lastTactic||null,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,calib:JSON.parse(JSON.stringify(S.calib||{})),enemyWeights:JSON.parse(JSON.stringify(S.enemyCore?S.enemyCore.weights:defaultEnemyWeights())),adaptLedger:JSON.parse(JSON.stringify(S.adaptLedger||emptyLedger())),spVersion:S.selfplay?S.selfplay.version:0,spRecords:JSON.parse(JSON.stringify((S.selfplay&&S.selfplay.records)||[])),enemyChoice:S.enemyChoice||null,enemyFormUses:JSON.parse(JSON.stringify(S.enemyFormUses||{})),opTacMark:JSON.parse(JSON.stringify(S.opTacMark||{})),absMonth:S.absMonth||0,learnMonth:(S.learnMonth==null?-1:S.learnMonth),learnAccum:JSON.parse(JSON.stringify(S.learnAccum||{})),modernStock:S.modernStock,armyLog:S.armyLog.slice(),cycle:S.cycle||1,ngCarried:!!S.ngCarried};audit('章間引き継ぎ',{from:S.chapter||5,to:nx});startChapter(nx,carry);renderAll()}
@@ -2072,8 +2078,8 @@ function renderRecords(){var box=$('rec-body');if(!box)return;if(!S||!S.started)
  if(S.finished){var cc2=CHAPTERS.find(function(c){return c.n===(S.chapter||5)})||CHAPTERS[4];var revTxt=S.reviews&&S.reviews.length?S.reviews.map(function(r){return r.review+'：'+reviewGradeWord(r.grade)+'（'+r.stance+'）'}).join('／'):'年次審査なし';var resTxt=S.researchDone&&S.researchDone.length?S.researchDone.map(function(id){var ri=researchById(id);return ri?ri.name:id}).join('／'):'完了した研究線なし';var perTxt=S.personnelLog&&S.personnelLog.length?S.personnelLog.map(function(x){return orgById(x.org).name+'：'+x.from+' → '+x.to+'（前任は退任）'}).join('／'):'顔ぶれの変更なし';html+='<div class="card"><h3>章次報告 ― 第'+(S.chapter||5)+'章「'+cc2.t+'」</h3><p>決裁した上申書の束をめくるように、この章の歩みを残す。年次審査：'+revTxt+'。研究：'+resTxt+'。人事：'+perTxt+'。</p><table><tr><th>項目</th><th>章末</th></tr><tr><td>世界線</td><td>'+(S.cycle||1)+'周目'+(S.ngCarried?' ― 黒霧は前周に覚えた対策を引き継いだ':'')+'</td></tr><tr><td>残資源</td><td class="num">燃料'+S.res.fuel+'／資材'+S.res.mat+'／航空'+S.res.air+'／予算'+S.res.bud+'／人員'+S.res.crew+'／熟練'+S.res.skill+'</td></tr>'+(S.lostShips&&S.lostShips.length?'<tr><td>喪失</td><td>'+S.lostShips.join('、')+'（完全ロスト ― 復帰なし）</td></tr>':'')+'<tr><td>準備の蓄積</td><td class="num">'+Object.keys(S.eff).map(function(k){return (FACTOR_LABEL[k]||k)+' '+S.eff[k]}).join(' ・ ')+'</td></tr><tr><td>信任</td><td>'+visibleOrgs().map(function(o){return o.name+' '+S.trust[o.id]+'（'+personFor(o.id).name+'）'}).join('／')+'</td></tr><tr><td>戦果</td><td>'+S.fates.map(function(f){return f.op+'：'+f.grade}).join('／')+'</td></tr><tr><td>関係（要約）</td><td>'+tenseSummary()+'</td></tr><tr><td>学習</td><td>'+(S.learnLog.length?S.learnLog.map(function(e){return e.org+'の'+e.factor+(e.to>e.from?'への重みが増した':e.to<e.from?'への重みが減った':'の姿勢に変化なし')}).join('／'):'なし')+'</td></tr><tr><td>敵適応</td><td>'+adaptSummary()+'</td></tr></table><div class="btnrow">'+((S.chapter||5)>=8?'<span class="tag ok">終戦 ― 1919年から1945年までを通しで辿り終えた</span> <button class="btn small" data-act="finaleArt">終戦の記念絵</button>':'<button class="btn primary small" data-act="nextChapter">次の章へ進む（生存艦・喪失・将校・熟練を引き継ぐ）</button>')+'<button class="btn primary small" data-act="restart">新しい世界線で最初から</button></div></div>'}
  else{html+='<p class="note">進行中。作戦が終わるごとに、運命対比と責任選択がここに積み上がる。</p>'+S.fates.map(function(f){return '<div class="card" style="margin-bottom:7px"><h3>'+f.op+' ― '+f.grade+'</h3><p>'+f.now+'</p></div>'}).join('')}
  html+='<div class="card" style="margin-top:8px"><h3>年代の骨格と研究</h3>'+HISTORICAL_MASTER.filter(function(h){return h.chapter===(S.chapter||5)}).map(function(h){return '<p class="histline" style="color:var(--ink2)">'+h.date+' ― '+h.title+'（照合：'+h.verify+'）</p>'}).join('')+'<p>研究：'+(S.researchDone&&S.researchDone.length?S.researchDone.map(function(id){var ri=researchById(id);return ri?ri.name:id}).join('／'):'まだ実を結んだ線はない。技術本部の上申が種になる。')+'</p></div>';html+=boundDocsHTML();html+='<div class="card" style="margin-top:8px"><h3>組織の動き</h3><p>緊張している組：'+tenseSummary()+'</p><p>学習：'+(S.learnLog.length?S.learnLog.slice(-6).map(function(e){return e.org+'の'+e.factor+(e.to>e.from?'への重みが増した':e.to<e.from?'への重みが減った':'の姿勢に変化なし')+'（'+e.grade+'を受けて）'}).join('／'):'まだ作戦結果による学習はない。作戦が終わると、関与した組織の重みが緩やかに動き、ここに要約される。')+'</p><p>敵適応：'+adaptSummary()+'</p></div>';box.innerHTML=html}
-function restart(){try{if(S&&S.settings&&S.settings.ngplus==='carry'&&S.w)localStorage.setItem(CARRY_KEY,JSON.stringify({w:S.w,settings:S.settings,cycle:S.cycle||1,enemy:{enemyLedger:S.enemyLedger||{},adaptLedger:S.adaptLedger||emptyLedger(),enemyWeights:S.enemyCore?S.enemyCore.weights:defaultEnemyWeights(),spVersion:S.selfplay?S.selfplay.version:0,adaptActive:(S.adapt&&S.adapt.active)||{},familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,tactics:S.tactics||{},tacticLast:S.tacticLast||{}}}));else localStorage.removeItem(CARRY_KEY)}catch(e){}localStorage.removeItem(SAVE_KEY);try{localStorage.removeItem(SAVE_PREV_KEY)}catch(e){}location.reload()}
-function startNgPlus(){if(!S||!S.warEnded)return;var on=S.settings&&S.settings.ngplus==='carry';var learn=null;if(on){learn={w:S.w,enemyLedger:JSON.parse(JSON.stringify(S.enemyLedger||{})),adaptActive:JSON.parse(JSON.stringify((S.adapt&&S.adapt.active)||{})),familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,tactics:JSON.parse(JSON.stringify(S.tactics||{})),tacticLast:JSON.parse(JSON.stringify(S.tacticLast||{})),lastTactic:S.lastTactic||null,enemyWeights:JSON.parse(JSON.stringify(S.enemyCore?S.enemyCore.weights:defaultEnemyWeights())),adaptLedger:JSON.parse(JSON.stringify(S.adaptLedger||emptyLedger())),spVersion:S.selfplay?S.selfplay.version:0}}var cyc=(S.cycle||1)+1;var st=JSON.parse(JSON.stringify(S.settings));startChapter(1,{ngPlus:true,settings:st,cycle:cyc,learn:learn});renderAll();showView('org');toast('新しい世界線 ― '+cyc+'周目が始まった')}
+function restart(){try{if(S&&S.settings&&S.settings.ngplus==='carry'&&S.w)localStorage.setItem(CARRY_KEY,JSON.stringify({w:S.w,settings:S.settings,cycle:S.cycle||1,baseMonth:(S.absMonth||0),enemy:{enemyLedger:S.enemyLedger||{},adaptLedger:S.adaptLedger||emptyLedger(),enemyWeights:S.enemyCore?S.enemyCore.weights:defaultEnemyWeights(),spVersion:S.selfplay?S.selfplay.version:0,adaptActive:(S.adapt&&S.adapt.active)||{},familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,tactics:S.tactics||{},tacticLast:S.tacticLast||{}}}));else localStorage.removeItem(CARRY_KEY)}catch(e){}localStorage.removeItem(SAVE_KEY);try{localStorage.removeItem(SAVE_PREV_KEY)}catch(e){}location.reload()}
+function startNgPlus(){if(!S||!S.warEnded)return;var on=S.settings&&S.settings.ngplus==='carry';var learn=null;if(on){learn={w:S.w,enemyLedger:JSON.parse(JSON.stringify(S.enemyLedger||{})),adaptActive:JSON.parse(JSON.stringify((S.adapt&&S.adapt.active)||{})),familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,tactics:JSON.parse(JSON.stringify(S.tactics||{})),tacticLast:JSON.parse(JSON.stringify(S.tacticLast||{})),lastTactic:S.lastTactic||null,enemyWeights:JSON.parse(JSON.stringify(S.enemyCore?S.enemyCore.weights:defaultEnemyWeights())),adaptLedger:JSON.parse(JSON.stringify(S.adaptLedger||emptyLedger())),spVersion:S.selfplay?S.selfplay.version:0,baseMonth:(S.absMonth||0)}}var cyc=(S.cycle||1)+1;var st=JSON.parse(JSON.stringify(S.settings));startChapter(1,{ngPlus:true,settings:st,cycle:cyc,learn:learn});renderAll();showView('org');toast('新しい世界線 ― '+cyc+'周目が始まった')}
 
 /* ============ AUDIT DRAWER ============ */
 function auditSummaryHTML(list){var counts={};list.forEach(function(e){counts[e.type]=(counts[e.type]||0)+1});var keys=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]}).slice(0,6);return '<p class="sheet-h" style="margin-top:2px">要約（種別ごとの件数）</p>'+keys.map(function(k){return '<div class="rrow"><span>'+k+'</span><span class="rnum">'+counts[k]+' 件</span></div>'}).join('')+'<p class="sheet-h">詳細（全件）</p>'}
@@ -4455,7 +4461,10 @@ function tmTestEnemyLearning(){
 /* 通しプレイの自動検証: 試験用の箱の中で、第1章から第8章までを固定の方針で自動で進め、
    統合 (敵の月次判断・適応台帳・戦闘の減点・学習の記録) が本編の流れの中で効いているかを
    数値で確かめる。決裁の方針は固定 (資源が足りる上申は承認、足りない上申は却下。対立は
-   分割で仲裁。審査は実績で臨む。作戦の介入は先頭の選択肢)。本編の保存には触れず
+   分割で仲裁。審査は実績で臨む。作戦の介入は先頭の選択肢)。1周目の終戦に達したら、
+   設定を複製して ngplus='carry' にした上で本編の startNgPlus を通して2周目へ入り、
+   引き継がれた特化研究が成立して深度 1.0 に届くまで回す (完走・章間引き継ぎの回数は
+   1周目の範囲で数え、学習の記録は1周目と2周目の合計で数える)。本編の保存には触れず
    (save() は試験中ガードで止まっている)、終わったら試験モード入場時の状態へ戻す */
 function tmTestPlaythrough(){
  var entryS=S,entrySteps=STEPS;
@@ -4463,7 +4472,8 @@ function tmTestPlaythrough(){
  function chk(name,ok,detail){lines.push(name+'：'+(ok?'できた':'できなかった')+(detail?' ― '+detail:''));if(!ok)ng.push(name)}
  var R={steps:0,ops:0,grades:{},carry:0,judge:0,chosen:{},cand:0,sign:0,est:0,pens:[],penNZ:0,
   maxSpec:0,thru:false,seen08:{},maxGen:0,genThru:false,seen04:false,err:null,
-  midSave:false,midRestore:false,nan:0,learnBoth:0,learnTotal:0,reached:0,ended:false};
+  midSave:false,midRestore:false,nan:0,learnBoth:0,learnTotal:0,reached:0,ended:false,
+  ngEntered:false,ended2:false,err1:null,steps1:0,ops1:0,grades1:null,learn1:0,learnBoth1:0,specCycle:0,specMonth:0};
  var auditSeen=0,opCounter=false,guard=0;
  function yieldFrame(){return new Promise(function(res){setTimeout(res,0)})}
  function fmtV(v){return Math.round(v*100)/100}
@@ -4480,7 +4490,7 @@ function tmTestPlaythrough(){
  /* 適応台帳の到達水準を観測する (特化は activeF と手筋ごとの特化水準、汎用は generic) */
  function observe(){var L=S&&S.adaptLedger;if(!L)return;
   Object.keys(L.activeF||{}).forEach(function(f){var v=L.activeF[f]||0;
-   if(v>=0.999&&R.seen08[f])R.thru=true; /* 0.8 を経て 1.0 へ (先に 0.8 を見た特徴だけを数える) */
+   if(v>=0.999&&R.seen08[f]&&!R.thru){R.thru=true;R.specCycle=(S&&S.cycle)||1;R.specMonth=(S&&S.absMonth)||0} /* 0.8 を経て 1.0 へ (先に 0.8 を見た特徴だけを数える)。到達した周と月も残す */
    if(v>=0.8)R.seen08[f]=true;
    if(v>R.maxSpec)R.maxSpec=v});
   var names={};Object.keys(TAC_FEATURES).forEach(function(t){names[t]=1});Object.keys(S.tactics||{}).forEach(function(t){names[t]=1});
@@ -4492,7 +4502,7 @@ function tmTestPlaythrough(){
   (function walk(o){if(!o||typeof o!=='object'||seen(o))return;Object.keys(o).forEach(function(k){var v=o[k];
    if(typeof v==='number'){if(!isFinite(v))R.nan++}else if(v&&typeof v==='object')walk(v)})})(S)}
  function progress(){if(!S)return;var st=(STEPS&&STEPS.length)?STEPS[Math.min(S.stepIdx||0,STEPS.length-1)]:null;
-  tmSetStatus('playthrough','run','実行中…','第'+(S.chapter||0)+'章 ― '+(S.finished?'章の終わり':(st?st.label:''))+' ／ 進んだステップ '+R.steps+' ／ 作戦 '+R.ops+' 件')}
+  tmSetStatus('playthrough','run','実行中…',((S.cycle||1)>1?((S.cycle||1)+'周目 ／ '):'')+'第'+(S.chapter||0)+'章 ― '+(S.finished?'章の終わり':(st?st.label:''))+' ／ 進んだステップ '+R.steps+' ／ 作戦 '+R.ops+' 件')}
  function doPolicy(){
   for(var i=0;i<S.proposals.length;i++){if(S.decided[i])continue;decideApply(i,eligible(S.proposals[i]).length===0)}
   if(S.phase==='conflict')arbitrate('split');
@@ -4522,7 +4532,21 @@ function tmTestPlaythrough(){
   if(R.err)return;
   if(guard++>600){R.err='進める回数の上限に達した';return}
   harvest();observe();
-  if(S.warEnded){R.ended=true;R.reached=Math.max(R.reached,S.chapter||0);return}
+  if(R.ngEntered&&R.thru)return; /* 2周目で引き継がれた特化研究が成立し、深度 1.0 に届いた時点で完了 */
+  if(S.warEnded){R.reached=Math.max(R.reached,S.chapter||0);
+   if(R.ngEntered){R.ended2=true;return} /* 2周目も終戦まで行った (1.0 未達なら finalize が理由を出す) */
+   R.ended=true;R.err1=R.err;
+   /* 完走・作戦の内訳・学習の記録は、1周目終了時点の値をここで固定する */
+   R.steps1=R.steps;R.ops1=R.ops;R.grades1=JSON.parse(JSON.stringify(R.grades));
+   if(S.learnLog){R.learn1=S.learnLog.length;R.learnBoth1=S.learnLog.filter(function(x){return !!(x&&x.attribution&&x.attribution_applied)}).length}
+   R.ngEntered=true;
+   /* 2周目へ入る: 設定は試験用の箱の中で複製して ngplus='carry' にし (本編の設定オブジェクトは書き換えない)、
+      本編の実経路 startNgPlus を通す */
+   var stNg=JSON.parse(JSON.stringify(S.settings||{}));stNg.ngplus='carry';S.settings=stNg;
+   var bufNg=(typeof auditBuf!=='undefined'&&auditBuf)?auditBuf.length:0;
+   startNgPlus();
+   auditSeen=(S&&S.auditLog)?Math.min(bufNg,S.auditLog.length):0;
+   progress();return yieldFrame().then(loop)}
   if(S.finished){
    R.reached=Math.max(R.reached,S.chapter||0);scanBad();
    if((S.chapter||0)===5&&!R.midSave){
@@ -4537,7 +4561,7 @@ function tmTestPlaythrough(){
    if((S.chapter||0)>=8)return;
    var before=S.chapter||0,bufN=(typeof auditBuf!=='undefined'&&auditBuf)?auditBuf.length:0;
    continueNextChapter();
-   if((S.chapter||0)===before+1)R.carry++;
+   if((S.chapter||0)===before+1&&!R.ngEntered)R.carry++; /* 章間引き継ぎの回数は1周目の分だけ数える */
    /* 新しい章の記録の先頭には、章が始まる前から溜まっていた分 (bufN 件) だけが入る。
       章の開始と同時に起きた最初の月次判断も数えるため、読み飛ばすのはその分だけにする */
    auditSeen=(S&&S.auditLog)?Math.min(bufN,S.auditLog.length):0;
@@ -4551,13 +4575,14 @@ function tmTestPlaythrough(){
   progress();return yieldFrame().then(loop)}
  function finalize(){
   try{harvest();observe();scanBad();
-   if(S&&S.learnLog){R.learnTotal=S.learnLog.length;R.learnBoth=S.learnLog.filter(function(x){return !!(x&&x.attribution&&x.attribution_applied)}).length}}
+   if(S&&S.learnLog){R.learnTotal=R.learn1+S.learnLog.length;R.learnBoth=R.learnBoth1+S.learnLog.filter(function(x){return !!(x&&x.attribution&&x.attribution_applied)}).length}} /* 学習の記録は1周目と2周目の合計 (NG+ で learnLog は作り直されるため、1周目分は遷移時に固定済み) */
   catch(e){}
-  var gradeTxt=['勝利','辛勝','敗北','大敗'].map(function(g){return g+' '+(R.grades[g]||0)+' 件'}).join(' ・ ');
-  chk('完走',R.ended&&!R.err,'例外なく第8章まで到達し、終戦まで進んだ：'+(R.ended?'はい':'いいえ')+(R.err?'（'+R.err+'）':'')+'。進んだステップは '+R.steps+'（月数として数える）、到達した章は第'+R.reached+'章。作戦は '+R.ops+' 件（'+gradeTxt+'）');
+  var stepsUse=R.ngEntered?R.steps1:R.steps,opsUse=R.ngEntered?R.ops1:R.ops,gradesUse=R.ngEntered?(R.grades1||{}):R.grades,errUse=R.ngEntered?R.err1:R.err;
+  var gradeTxt=['勝利','辛勝','敗北','大敗'].map(function(g){return g+' '+(gradesUse[g]||0)+' 件'}).join(' ・ ');
+  chk('完走',R.ended&&!errUse,'例外なく第8章まで到達し、終戦まで進んだ：'+(R.ended?'はい':'いいえ')+(errUse?'（'+errUse+'）':'')+'。進んだステップは '+stepsUse+'（月数として数える）、到達した章は第'+R.reached+'章。作戦は '+opsUse+' 件（'+gradeTxt+'）');
   var dist=Object.keys(R.chosen).map(function(k){return (ENEMY_ACTION_NAME[k]||k)+' '+R.chosen[k]+'回'}).join('・');
   chk('敵の月次判断',R.judge>0&&R.cand===R.judge,'特徴ベクトルを使う効用採点の経路で判断が起きた。監査「敵の判断」は '+R.judge+' 件、選ばれた手は '+(dist||'なし')+'。候補と寄与を含む記録は '+R.cand+' 件');
-  chk('適応台帳',R.thru&&R.genThru,'研究の着手（敵適応兆候）は '+R.sign+' 件、成立（敵適応）は '+R.est+' 件。特化対策の到達した最大の水準は '+fmtV(R.maxSpec)+'（0.8 を経て 1.0 まで到達した事例：'+(R.thru?'あり':'なし')+'）。汎用対策の到達した最大の水準は '+fmtV(R.maxGen)+'（二段目 0.55 まで到達した事例：'+(R.genThru?'あり':'なし')+'）');
+  chk('適応台帳',R.thru&&R.genThru,'研究の着手（敵適応兆候）は '+R.sign+' 件、成立（敵適応）は '+R.est+' 件。特化対策の到達した最大の水準は '+fmtV(R.maxSpec)+'（0.8 を経て 1.0 まで到達した事例：'+(R.thru?('あり ― 特化 1.0 へは '+R.specCycle+' 周目の '+R.specMonth+' か月目に到達した'):'なし')+'）。汎用対策の到達した最大の水準は '+fmtV(R.maxGen)+'（二段目 0.55 まで到達した事例：'+(R.genThru?'あり':'なし')+'）'+(R.ngEntered&&!R.thru?('。2周目へは入ったが、'+(R.ended2?'2周目の終戦まで進んでも':'2周目の途中で止まり')+'特化 1.0 には届かなかった'):''));
   var uniq=[];R.pens.forEach(function(p){if(uniq.indexOf(p)<0)uniq.push(p)});uniq.sort(function(a,b){return a-b});
   chk('戦闘の減点',uniq.length>=2&&R.penNZ>0,'作戦ごとの適応ペナルティは最小 '+(R.pens.length?Math.min.apply(null,R.pens):'―')+' ・ 最大 '+(R.pens.length?Math.max.apply(null,R.pens):'―')+' ・ 異なる値 '+uniq.length+' 種類（'+(uniq.join('／')||'なし')+'）。敵の対策が成立した状態で臨んだ作戦で、ペナルティが 0 でなかった事例は '+R.penNZ+' 件');
   chk('学習の記録',R.learnBoth>0,'作戦の学習の記録は '+R.learnTotal+' 件、そのうち生の帰属と適用した帰属の両方を持つ記録は '+R.learnBoth+' 件');
