@@ -3,21 +3,21 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.9.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.10.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4387014,
-      "version": "1.9",
-      "versionDate": "2026-11-10T04:41:00Z",
-      "versionDescription": "v1.9: 端末内LLMの性能測定を拡張（スレッド数の比較、KVキャッシュ量子化による文脈拡張、長文プロンプトの処理速度、他モデルとの速さ比べ）。",
+      "size": 4387154,
+      "version": "1.10",
+      "versionDate": "2026-11-10T05:33:00Z",
+      "versionDescription": "v1.10: 端末内LLMの堅牢化（長文プロンプトの分割投入で落ちないように）と、8Bモデルの文脈を2048へ拡張。",
       "versions": [
         {
-          "date": "2026-11-10T04:41:00Z",
-          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.9.ipa",
+          "date": "2026-11-10T05:33:00Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.10.ipa",
           "localizedDescription": "v1.9: 端末内LLMの性能測定を拡張（スレッド数の比較、KVキャッシュ量子化による文脈拡張、長文プロンプトの処理速度、他モデルとの速さ比べ）。",
-          "size": 4387014,
-          "version": "1.9"
+          "size": 4387154,
+          "version": "1.10"
         }
       ]
     }
