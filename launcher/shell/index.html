@@ -129,7 +129,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-10-1440';
+const SHELL_BUILD = '2026-11-10-1500';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -305,7 +305,7 @@ window.addEventListener('message', (e) => {
 // ===== 殻の橋（契約 launcher-llm/v1 ／ launcher-media/v1） =====
 // 受け付けるのは「今開いているモジュール」の iframe からの依頼だけ（オリジン＋送り元＋moduleId の照合）。
 const LLM_MODELS = {
-  'qwen3-4b': { file: 'Qwen3-4B-Q4_K_M.gguf', nCtx: 2048, nBatch: 512 },
+  'qwen3-4b': { file: 'Qwen3-4B-Q4_K_M.gguf', nCtx: 4096, nBatch: 512 },
   'qwen3-8b': { file: 'Qwen3-8B-Q4_K_M.gguf', nCtx: 2048, nBatch: 128, kvType: 8 }
 };
 const MEDIA_CODES = ['denied', 'too-large', 'unsupported-type', 'busy', 'failed'];
