@@ -514,6 +514,7 @@ body.dbg-on #dbgbar{display:block}
 #dbgbar label{font-size:11.5px;display:flex;align-items:center;gap:5px}
 #dbgbar select{background:#171106;color:#f3e2b8;border:1px solid rgba(200,145,42,.55);border-radius:8px;padding:6px;font-size:13px;min-height:34px;max-width:44vw}
 #dbgbar .dbg-status{font-size:11.5px;color:#e8cf96;margin-top:3px;min-height:1.2em}
+#dbg-log-text{width:100%;min-height:240px;background:#0a1524;color:#dbe5ef;border:1px solid #c8b98a;border-radius:10px;padding:10px;font-size:11.5px;line-height:1.6;font-family:ui-monospace,Menlo,monospace;resize:vertical;box-sizing:border-box}
 /* デバッグ中だけ、月の進行に関わる演出を即時化する (本編の見た目・挙動には触れない) */
 body.dbg-on .opline{animation-delay:0s!important;animation-duration:.01s}
 body.dbg-on #door .door-lines div{animation-delay:0s!important;animation-duration:.01s}
@@ -639,7 +640,7 @@ button.tmv-cell{font-family:inherit;text-align:left;padding:0;cursor:pointer;wid
   <button class="hset" data-act="settings">設定</button>
 </header>
 <div id="dbgbar" role="region" aria-label="高速デバッグプレイモード">
-  <div class="dbg-row"><span class="dbg-badge">高速デバッグ中</span><span class="dbg-note">専用の下書きで進行中 ― 本編の保存には触れていません</span><button class="btn small" data-act="dbg-exit" style="margin-left:auto">本編に戻る</button></div>
+  <div class="dbg-row"><span class="dbg-badge">高速デバッグ中</span><span class="dbg-note">専用の下書きで進行中 ― 本編の保存には触れていません</span><button class="btn small" data-act="dbg-log" style="margin-left:auto">実行ログ</button><button class="btn small" data-act="dbg-exit">本編に戻る</button></div>
   <div class="dbg-row"><label>章へ移動 <select id="dbg-chapter"></select></label><button class="btn small" data-act="dbg-jump">移動</button><label>自動 <select id="dbg-months"><option value="1">1か月</option><option value="3">3か月</option><option value="6" selected>6か月</option><option value="12">12か月</option><option value="end">章の終わりまで</option></select></label><button class="btn small primary" id="dbg-autobtn" data-act="dbg-auto">自動で進める</button><button class="btn small" id="dbg-stopbtn" data-act="dbg-stop" style="display:none">止める</button></div>
   <div class="dbg-status" id="dbg-status"></div>
 </div>
@@ -1704,7 +1705,8 @@ var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
 var DBG_SAVE_KEY='kurogiri.debug.save';
 var DBG_SAVE_PREV_KEY='kurogiri.debug.save_prev';
-var APP_VERSION='v64';
+var DBG_LOG_KEY='kurogiri.debug.log';
+var APP_VERSION='v66';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -4018,7 +4020,7 @@ function openRelMatrix(){var vo=visibleOrgs();var h='<p>全組織の関係を、
  h+='</table></div><p class="sheet-h">読み方</p><p>65以上は良好、52以上は安定、40以上はやや緊張、40未満は緊張。仲裁と共同提案が、この数字を動かす。</p>';openSheet('組織の関係 ― 一覧',h)}
 var SET_DEFS=[{key:'delegate',label:'委任の度合い',opts:[['all','全件を自分で決める','すべての上申を長官が決裁する'],['minor','重要案件のみ決める','軽微な上申は委任で自動処理し、記録に残す']]},{key:'ngplus',label:'学習の引き継ぎ',opts:[['carry','持ち越す','組織の学びと、黒霧が覚えた手筋への対策を、次の世界線へ引き継ぐ'],['fresh','持ち越さない','次の世界線は、まっさらな組織と、まだ何も覚えていない黒霧から始める']]},{key:'modern',label:'現代勢力の扱い',opts:[['sealed','封印','現代勢力は一切登場しない（組織・提案・記録のどこにも出ない）'],['limited','限定（既定）','第8章のみ登場。空母1隻＋護衛数隻の任務部隊と陸上1個大隊まで。補給は有限で、在庫が尽きれば戦闘参加は終わる。技術供与はない'],['open','解禁','第7章から登場。艦隊＋一個旅団規模。技術供与があり、研究の加速として効く']]},{key:'crew',label:'甲板員の表示',opts:[['on','表示する','母港では甲板に、作戦では機銃座と艦橋に、顔のない乗員が常時出る'],['off','表示しない','乗員の人影を出さない']]}];
 function openSettings(){var st=(S&&S.settings)||{delegate:'all',ngplus:'carry',modern:'limited',crew:'on'};var h='<p>決め方はここでいつでも変えられる。選んだ内容は保存され、続きから再開しても残る。</p>';if(S&&S.cycle>1)h+='<p>'+S.cycle+'周目の世界線。'+(S.ngCarried?'黒霧は前周の学びを引き継いでいる。':'')+'</p>';
- h+='<p class="sheet-h">高速デバッグプレイモード</p>'+(window.__DBG_ACTIVE?'<p>いま高速デバッグの中にいる。本編へは、画面上の帯の「本編に戻る」から戻れる。</p>':'<p>専用の下書きで動き、本編の保存には触れません。月の送りは速くなり、方針に沿って自動で進められます。</p><div class="btnrow"><button class="btn small" data-act="debugmode">高速デバッグに入る</button>'+(dbgDraftExists()?' <button class="btn small" data-act="dbg-wipe">下書きを消す</button>':'')+'</div>');
+ h+='<p class="sheet-h">高速デバッグプレイモード</p>'+(window.__DBG_ACTIVE?'<p>いま高速デバッグの中にいる。本編へは、画面上の帯の「本編に戻る」から戻れる。</p><div class="btnrow"><button class="btn small" data-act="dbg-log">実行ログを見る</button></div>':'<p>専用の下書きで動き、本編の保存には触れません。月の送りは速くなり、方針に沿って自動で進められます。</p><div class="btnrow"><button class="btn small" data-act="debugmode">高速デバッグに入る</button>'+(dbgDraftExists()?' <button class="btn small" data-act="dbg-wipe">下書きを消す</button>':'')+(dbgLogExists()?' <button class="btn small" data-act="dbg-log">実行ログを見る</button>':'')+'</div>');
  SET_DEFS.forEach(function(d){h+='<p class="sheet-h">'+d.label+'</p>'+d.opts.map(function(o){var on=st[d.key]===o[0];return '<button class="setrow'+(on?' on':'')+'" data-act="setopt" data-a1="'+d.key+'" data-a2="'+o[0]+'"><span class="sm"><span class="st1">'+o[1]+'</span><span class="st2">'+o[2]+'</span></span><span class="sc">'+(on?'✓':'')+'</span></button>'}).join('')});
  h+='<p class="sheet-h">黒霧の学習実験（実験機能）</p>';
  if(SP_RUN.active){h+='<p id="sp-status">実験中 ― '+Math.floor(100*SP_RUN.done/Math.max(1,SP_RUN.total))+'%</p><p><button class="btn" data-act="sp-cancel">実験を取り消す</button></p>'}
@@ -4064,53 +4066,83 @@ function doSettingsImport(){if(window.__TM_ACTIVE||window.__DBG_ACTIVE){SET_IMPO
 var DBG={active:false,savedS:null,savedSteps:null,running:false,left:0,done:0,toChapterEnd:false,timer:null};
 function dbgDraftExists(){try{return !!localStorage.getItem(DBG_SAVE_KEY)}catch(e){return false}}
 function dbgDraftLine(){try{var raw=localStorage.getItem(DBG_SAVE_KEY);if(!raw)return '下書きはまだない。入ると第1章から始まる。';var d=JSON.parse(raw);if(d&&d.S){var ch=d.S.chapter||5;var steps=CHAPTER_STEPS[ch]||[];var st=steps.length?steps[Math.min(d.S.stepIdx||0,steps.length-1)]:null;return '下書きあり ― 第'+ch+'章'+(d.S.warEnded?' ・ 終戦':d.S.finished?' ・ 章の終わり':(st?(' ・ '+st.ym+' ・ '+st.label):''))+'。入ると続きから再開する。'}}catch(e){}return '下書きあり。入ると続きから再開する。'}
-function dbgWipeDraft(){if(DBG.active)return;try{localStorage.removeItem(DBG_SAVE_KEY);localStorage.removeItem(DBG_SAVE_PREV_KEY)}catch(e){}openSettings();toast('デバッグの下書きを消した')}
+function dbgWipeDraft(){if(DBG.active)return;try{localStorage.removeItem(DBG_SAVE_KEY);localStorage.removeItem(DBG_SAVE_PREV_KEY);localStorage.removeItem(DBG_LOG_KEY)}catch(e){}DBG_LOG=[];openSettings();toast('デバッグの下書きを消した')}
+/* ---- 実行ログ (KG-CR-26 追補, v66): デバッグ中に行ったことを時系列で残す。
+   記録先は下書き側 (kurogiri.debug.log) だけ。本編の保存には触れず、下書きを消すと一緒に消える。
+   記録するのはデバッグ中だけ (dbgLog は DBG.active の時だけ書き込む) ---- */
+var DBG_LOG=[];
+function dbgLogExists(){try{return !!localStorage.getItem(DBG_LOG_KEY)}catch(e){return false}}
+function dbgLogLoad(){DBG_LOG=[];try{var raw=localStorage.getItem(DBG_LOG_KEY);if(raw){var a=JSON.parse(raw);if(a&&a.length)DBG_LOG=a.filter(function(x){return x&&typeof x.text==='string'})}}catch(e){DBG_LOG=[]}return DBG_LOG}
+function dbgLogSave(){try{localStorage.setItem(DBG_LOG_KEY,JSON.stringify(DBG_LOG.slice(-800)))}catch(e){}}
+function dbgLog(text){if(!DBG.active)return;if(!DBG_LOG.length)dbgLogLoad();DBG_LOG.push({at:new Date().toISOString(),text:String(text)});if(DBG_LOG.length>800)DBG_LOG=DBG_LOG.slice(-800);dbgLogSave()}
+function dbgLogStamp(iso){var d=new Date(iso);if(isNaN(d))return '--:--:--';function z(n){return (n<10?'0':'')+n}return z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())}
+function dbgLogText(){if(!DBG_LOG.length)dbgLogLoad();var lines=['クロギリ 高速デバッグ実行ログ','日時：'+tmNow(),'版：'+APP_VERSION,'件数：'+DBG_LOG.length+'件'];if(!DBG_LOG.length)lines.push('（まだ記録がない）');DBG_LOG.forEach(function(e,i){lines.push((i+1)+'. ['+dbgLogStamp(e.at)+'] '+e.text)});return lines.join('\n')}
+function dbgLogShow(){var h='<h3 style="margin-top:0">高速デバッグ ― 実行ログ</h3><p style="font-size:12.5px;line-height:1.6">デバッグ中に行ったことを時系列で残した記録です。本編の保存には含まれず、下書きを消すと一緒に消えます。</p><textarea id="dbg-log-text" readonly>'+tmvEsc(dbgLogText())+'</textarea><div class="btnrow"><button class="btn" data-act="closeModal">閉じる</button><button class="btn primary" data-act="dbg-log-copy">ログをコピーする</button></div>';$('modal-box').innerHTML=h;$('modal').classList.add('on')}
+function dbgLogCopy(){var ta=$('dbg-log-text');if(!ta)return;ta.value=dbgLogText();var done=function(){toast('実行ログをコピーした')};var fb=function(){ta.focus();ta.select();try{if(document.execCommand('copy'))done();else toast('コピーできなかった ― 欄の文字を選んでコピーしてほしい')}catch(e){toast('コピーできなかった ― 欄の文字を選んでコピーしてほしい')}};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(done,fb);else fb()}
+function dbgChapterLabel(n){var cc=CHAPTERS.find(function(c){return c.n===n});return '第'+n+'章'+(cc?('「'+cc.t+'」'):'')}
+function dbgStepLabel(){if(!S||!STEPS||!STEPS.length)return '';var st=STEPS[Math.min(S.stepIdx||0,STEPS.length-1)];return st?(st.ym+' ・ '+st.label):''}
+function dbgAuditSummary(auditFrom,researchFrom){var out=[];if(!S)return out;
+ if(S.researchDone&&researchFrom)S.researchDone.forEach(function(id){if(researchFrom.indexOf(id)<0){var r=researchById(id);out.push('研究が成立した ― '+(r?r.name:id))}});
+ if(S.auditLog)for(var i=auditFrom;i<S.auditLog.length;i++){var e=S.auditLog[i];if(!e)continue;var d=e.data||{};
+  if(e.type==='敵適応')out.push('敵の対策研究が成立した ― '+(d.featureLabel||d.feature||'')+(d.level!=null?('（水準 '+d.level+'）'):''));
+  else if(e.type==='敵適応兆候')out.push('敵が対策研究に着手した ― '+(d.featureLabel||d.feature||''));
+  else if(e.type==='艦の喪失')out.push('艦を喪失した ― '+(d.ship||''));
+  else if(e.type==='艦の合流')out.push('艦が合流した');
+  else if(e.type==='終戦')out.push('終戦を迎えた')}
+ return out}
 function openDbgConfirm(){if(DBG.active||TM.active)return;var h='<h3 style="margin-top:0">高速デバッグプレイモードに入る</h3><p style="font-size:13px;line-height:1.7">通しの確認を短時間で行うための進め方です。専用の下書き保存で動くので、<b>本編の保存（2世代とも）には一切触れません</b>。出る時は「本編に戻る」だけで、本編の進み具合は入る前と変わりません。月の演出は即時になり、方針に従う自動決裁で複数月を一気に進められます。資源や数値は通常どおりです。</p><p style="font-size:13px;line-height:1.7">'+dbgDraftLine()+'</p><div class="btnrow"><button class="btn" data-act="closeModal">やめる</button><button class="btn primary" data-act="dbg-enter-yes">デバッグに入る</button></div>';$('modal-box').innerHTML=h;$('modal').classList.add('on')}
 function dbgLoadDraft(){try{var res=readSaveFromKeys(DBG_SAVE_KEY,DBG_SAVE_PREV_KEY);if(!res)return false;S=res.parsed.S;normalizeState();auditBuf=[];resetRng();for(var i=0;i<res.parsed.rngCalls;i++){rngState.fn()}rngState.calls=res.parsed.rngCalls;return true}catch(e){return false}}
 function enterDebugMode(){if(DBG.active||TM.active)return;closeDrawer();var md=$('modal');if(md)md.classList.remove('on');
  DBG.savedS=S;DBG.savedSteps=STEPS;DBG.active=true;window.__DBG_ACTIVE=true;DBG.running=false;DBG.left=0;DBG.done=0;DBG.toChapterEnd=false;DBG.timer=null;
  var resumed=dbgLoadDraft();
  if(!resumed){S=freshState();STEPS=CHAPTER_STEPS[5];startChapter(1)}
+ dbgLogLoad();dbgLog('入室 ― '+(resumed?'下書きから再開した':'第1章から始めた')+'（'+dbgStatusText()+'）');
  document.body.classList.add('dbg-on');dbgBuildChapterOptions();dbgBarUpdate();renderAll();
  toast(resumed?'高速デバッグ ― 下書きから再開した':'高速デバッグ ― 第1章から始めた')}
-function exitDebugMode(){if(!DBG.active)return;dbgAutoStop(false);
+function exitDebugMode(){if(!DBG.active)return;dbgAutoStop(false);dbgLog('退出 ― 本編に戻った（'+dbgStatusText()+'）');
  S=DBG.savedS;STEPS=DBG.savedSteps||STEPS;DBG.active=false;window.__DBG_ACTIVE=false;DBG.savedS=null;DBG.savedSteps=null;
  document.body.classList.remove('dbg-on');renderAll();toast('本編に戻った ― デバッグの下書きは残してある')}
 function dbgBuildChapterOptions(){var sel=$('dbg-chapter');if(!sel)return;sel.innerHTML=CHAPTERS.filter(function(c){return !!CHAPTER_STEPS[c.n]}).map(function(c){return '<option value="'+c.n+'">第'+c.n+'章 '+c.t+'</option>'}).join('');if(S&&S.chapter)sel.value=String(S.chapter)}
 function dbgStatusText(){if(!S||!S.started)return '開始前';var ch=S.chapter||5;if(S.warEnded)return '第'+ch+'章 ― 終戦';if(S.finished)return '第'+ch+'章 ― 章の終わり';var st=STEPS[Math.min(S.stepIdx,STEPS.length-1)];return st?('第'+ch+'章 ・ '+st.ym+' ・ '+st.label):('第'+ch+'章')}
 function dbgBarUpdate(){var el=$('dbg-status');if(el)el.textContent=dbgStatusText()+(DBG.running?(' ― 自動で進行中（'+DBG.done+'か月進んだ）'):'');var ab=$('dbg-autobtn'),sb=$('dbg-stopbtn');if(ab)ab.style.display=DBG.running?'none':'';if(sb)sb.style.display=DBG.running?'':'none';var sel=$('dbg-chapter');if(sel&&S&&S.chapter&&document.activeElement!==sel)sel.value=String(S.chapter)}
-function dbgJumpChapter(){if(!DBG.active)return;dbgAutoStop(false);var sel=$('dbg-chapter');var n=sel?parseInt(sel.value,10):1;if(!CHAPTER_STEPS[n])return;startChapter(n);dbgBarUpdate();renderAll();toast('第'+n+'章の初期状態へ移った')}
+function dbgJumpChapter(){if(!DBG.active)return;dbgAutoStop(false);var sel=$('dbg-chapter');var n=sel?parseInt(sel.value,10):1;if(!CHAPTER_STEPS[n])return;startChapter(n);dbgLog('章の移動 ― '+dbgChapterLabel(n)+' の初期状態へ移った');dbgBarUpdate();renderAll();toast('第'+n+'章の初期状態へ移った')}
 /* 自動決裁 (簡易な自動方針): 今の方針に一致し、資源が足りる上申だけを承認し、それ以外は却下する。
    方針が未選択の月は先頭の2方針を採る。対立は分割で仲裁、審査は「実績で臨む」、
    作戦の介入は先頭の選択肢、作戦後の責任は「支える」を選ぶ (試験15の固定方針と同じ型) */
 function dbgAutoMonth(){
+ var ym0=dbgStepLabel();
  if(S.phase==='policy'){if(!S.policies||!S.policies.length)S.policies=POLICIES.slice(0,2).map(function(p){return p.id});confirmPolicy()}
  if(S.phase==='overview'){S.phase='proposals';runDelegation()}
  for(var i=0;i<S.proposals.length;i++){if(S.decided[i])continue;var p=S.proposals[i];var u=utility(p.org,p);decideApply(i,!!(u.aligned&&eligible(p).length===0))}
- if(S.phase==='conflict')arbitrate('split');else{resolveMonth();if(S.phase==='conflict')arbitrate('split')}}
-function dbgAutoOp(){var g=0;
+ var ap=[],rj=[],hd=[];(S.proposals||[]).forEach(function(p,i){var d=S.decided?S.decided[i]:null;if(d==='approve')ap.push(p.title);else if(d==='reject')rj.push(p.title);else if(d)hd.push(p.title)});
+ if(S.phase==='conflict')arbitrate('split');else{resolveMonth();if(S.phase==='conflict')arbitrate('split')}
+ var mres=(S.monthLines&&S.monthLines.length)?S.monthLines.map(function(x){return x.t+'：'+x.x}).join(' ／ '):(S.phase==='conflict'?'対立が発生し、仲裁待ちのまま止まった':'月の処理を終えた');
+ dbgLog('月の処理 ― '+ym0+'：自動決裁 承認 '+ap.length+'件・却下 '+rj.length+'件・保留 '+hd.length+'件'+(ap.length?('／主な承認：'+ap.slice(0,3).join('、')):'')+(rj.length?('／主な却下：'+rj.slice(0,3).join('、')):'')+(hd.length?('／主な保留：'+hd.slice(0,3).join('、')):'')+'。月の結果 ― '+mres)}
+function dbgAutoOp(){var opName=(S.op&&S.op.def)?S.op.def.name:'作戦';var auditFrom=S.auditLog?S.auditLog.length:0;var g=0;
  while(S.op&&!S.op.done&&g++<80){var ivs=opInterventions(),pend=null;
   for(var k=0;k<ivs.length;k++){if(ivs[k].at===S.op.step&&!S.op.ivDone[ivs[k].key]){pend=ivs[k];break}}
   if(pend){try{chooseIv(pend.key,0)}catch(e){var o=pend.opts[0],outcome=o.fx();var TACMAP={chase:'索敵',search:'索敵',rush:'雷撃',bombard:'共同',guard:'補給',night:'補給',push:'共同',pull:'補給'};if(TACMAP[o.id])noteTactic(TACMAP[o.id],'作戦介入');S.op.ivDone[pend.key]=true;S.interventions.push({op:S.op.id,key:pend.key,choice:o.label,outcome:outcome});S.opLog.push({t:'介入：'+pend.title,x:o.label+' ― '+outcome});audit('作戦介入',{op:S.op.id,key:pend.key,choice:o.label,outcome:outcome});renderAll()}}
   else advanceOp()}
- if(S.op&&S.op.done)doResponsibility(S.op.def.name,(S.op.result&&S.op.result.grade)||'不明','support')}
+ if(S.op&&S.op.done){var gr=(S.op.result&&S.op.result.grade)||'不明';var pen=null;if(S.auditLog)for(var ai=auditFrom;ai<S.auditLog.length;ai++){var ae=S.auditLog[ai];if(ae&&ae.type==='作戦結果'&&ae.data&&ae.data.adaptPenalty!=null)pen=ae.data.adaptPenalty}
+  doResponsibility(S.op.def.name,gr,'support');dbgLog('作戦の結果 ― '+opName+'：'+gr+(pen!=null?('（適応ペナルティ '+pen+'）'):'')+'。作戦後の責任は「支える」を選んだ')}}
 function dbgStepOnce(){if(!DBG.active||!S||!S.started)return false;
- if(S.warEnded)return false;
- if(S.finished){if((S.chapter||5)>=8)return false;continueNextChapter();return true}
- var ph=S.phase;
- if(ph==='conflict'){arbitrate('split');return true}
- if(ph==='policy'||ph==='overview'||ph==='proposals'){dbgAutoMonth();return true}
- if(ph==='review'||ph==='reviewResult'){if(!S.reviewResult)chooseReview('real');if(S.phase==='reviewResult')finishReviewStep();return true}
- if(ph==='op'||ph==='fate'){dbgAutoOp();return true}
- return false}
-function dbgAutoStart(){if(!DBG.active||DBG.running)return;var sel=$('dbg-months');var v=sel?sel.value:'1';DBG.toChapterEnd=(v==='end');DBG.left=DBG.toChapterEnd?999:Math.max(1,parseInt(v,10)||1);DBG.done=0;DBG.running=true;dbgBarUpdate();DBG.timer=setTimeout(dbgAutoTick,30)}
+ if(S.warEnded){dbgLog('自動進行を止めた ― 終戦に到達している');return false}
+ if(S.finished){if((S.chapter||5)>=8){dbgLog('自動進行を止めた ― 第8章の終わりに到達している');return false}var fromCh=S.chapter||5;continueNextChapter();dbgLog('章の移動 ― '+dbgChapterLabel(fromCh)+' から '+dbgChapterLabel(S.chapter||fromCh+1)+' へ進んだ');return true}
+ var ph=S.phase;var auditFrom=S.auditLog?S.auditLog.length:0;var researchFrom=(S.researchDone||[]).slice();
+ if(ph==='conflict'){arbitrate('split');dbgLog('対立の仲裁 ― '+dbgStepLabel()+'：分割で仲裁し、月を閉じた');dbgAuditSummary(auditFrom,researchFrom).forEach(function(x){dbgLog(x)});return true}
+ if(ph==='policy'||ph==='overview'||ph==='proposals'){dbgAutoMonth();dbgAuditSummary(auditFrom,researchFrom).forEach(function(x){dbgLog(x)});return true}
+ if(ph==='review'||ph==='reviewResult'){var rvName='';try{var stp=STEPS[Math.min(S.stepIdx,STEPS.length-1)];var rdef=stp?REVIEWS[stp.review]:null;rvName=rdef?rdef.name:''}catch(e){}
+  if(!S.reviewResult)chooseReview('real');var rr=S.reviewResult;if(S.phase==='reviewResult')finishReviewStep();dbgLog('年次審査 ― '+(rvName||dbgStepLabel())+'：'+(rr?('臨み方は「'+(rr.stance||'')+'」、結果は「'+reviewGradeWord(rr.grade)+'」'):'結果を記録した'));dbgAuditSummary(auditFrom,researchFrom).forEach(function(x){dbgLog(x)});return true}
+ if(ph==='op'||ph==='fate'){dbgAutoOp();dbgAuditSummary(auditFrom,researchFrom).forEach(function(x){dbgLog(x)});return true}
+ dbgLog('自動進行を止めた ― 進められない状態だった（段階：'+ph+' ・ '+dbgStatusText()+'）');return false}
+function dbgAutoStart(){if(!DBG.active||DBG.running)return;var sel=$('dbg-months');var v=sel?sel.value:'1';DBG.toChapterEnd=(v==='end');DBG.left=DBG.toChapterEnd?999:Math.max(1,parseInt(v,10)||1);DBG.done=0;DBG.running=true;dbgLog('自動進行を開始 ― '+(DBG.toChapterEnd?'章の終わりまで':(DBG.left+' か月'))+'（'+dbgStatusText()+'）');dbgBarUpdate();DBG.timer=setTimeout(dbgAutoTick,30)}
 function dbgAutoTick(){if(!DBG.running||!DBG.active){dbgAutoStop(false);return}
- if(DBG.toChapterEnd&&S&&S.finished){dbgAutoStop(false);dbgBarUpdate();toast('章の終わりまで進んだ');return}
- if(DBG.left<=0){dbgAutoStop(false);dbgBarUpdate();toast('自動で '+DBG.done+' か月進めた');return}
- var ok=false;try{ok=dbgStepOnce()}catch(e){ok=false}
- if(!ok){dbgAutoStop(false);dbgBarUpdate();toast('自動進行を止めた ― '+dbgStatusText());return}
+ if(DBG.toChapterEnd&&S&&S.finished){dbgAutoStop(false);dbgLog('自動進行の完了 ― 章の終わりまで進んだ（'+DBG.done+' か月）');dbgBarUpdate();toast('章の終わりまで進んだ');return}
+ if(DBG.left<=0){dbgAutoStop(false);dbgLog('自動進行の完了 ― 指定の '+DBG.done+' か月を進めた');dbgBarUpdate();toast('自動で '+DBG.done+' か月進めた');return}
+ var ok=false;try{ok=dbgStepOnce()}catch(e){ok=false;dbgLog('エラー ― 自動進行中に例外が出て止まった：'+((e&&e.message)?e.message:String(e)))}
+ if(!ok){dbgAutoStop(false);dbgLog('自動進行の停止 ― '+DBG.done+' か月進めた時点で止まった（'+dbgStatusText()+'）');dbgBarUpdate();toast('自動進行を止めた ― '+dbgStatusText());return}
  DBG.left--;DBG.done++;dbgBarUpdate();DBG.timer=setTimeout(dbgAutoTick,40)}
-function dbgAutoStop(manual){if(DBG.timer){clearTimeout(DBG.timer);DBG.timer=null}var was=DBG.running;DBG.running=false;if(was){dbgBarUpdate();if(manual)toast('自動進行を止めた')}}
+function dbgAutoStop(manual){if(DBG.timer){clearTimeout(DBG.timer);DBG.timer=null}var was=DBG.running;DBG.running=false;if(was){if(manual)dbgLog('自動進行を止めた ― 手動で停止した（'+DBG.done+' か月進めた）');dbgBarUpdate();if(manual)toast('自動進行を止めた')}}
 /* ============ TEST MODE (試験モード: 本編のセーブに触れず、機能ごとに切り分けて実行する) ============ */
 var TM={active:false,savedS:null,savedSteps:null,saveSnapshot:null,savePrevSnapshot:null,renderer:null,scene:null,cam:null,results:{},perf:null,perfPrev:null,visual:null};
 var TM_TESTS=[
@@ -4405,7 +4437,8 @@ function tmTestText(){var issues=[],lines=[];
  probes.forEach(function(pr){var d=document.createElement('div');d.style.cssText='width:min(358px,86vw);font-size:'+pr[2]+';line-height:1.65;overflow-wrap:anywhere';d.textContent=pr[1];host.appendChild(d);
  var cut=d.scrollHeight>d.clientHeight+1||d.scrollWidth>d.clientWidth+1;lines.push(pr[0]+'（最長ケース）：'+(cut?'途中で切れている':'全文が収まる'));if(cut)issues.push(pr[0])});
  var main=document.querySelector('main');var mb=main?main.getBoundingClientRect().bottom:window.innerHeight;
- var btn=document.querySelector('#v-org .actionbar .btn.primary')||document.querySelector('.view.on .actionbar .btn.primary');
+ var btnCands=[document.querySelector('#v-org .actionbar .btn.primary'),document.querySelector('.view.on .actionbar .btn.primary')];
+ var btn=null;for(var bi=0;bi<btnCands.length;bi++){var bc=btnCands[bi];if(bc&&bc.getClientRects().length>0){btn=bc;break}}
  if(btn){var r=btn.getBoundingClientRect();var vis=r.height>0&&r.bottom<=mb+1;lines.push('主要ボタン「'+btn.textContent.trim().slice(0,16)+'」：'+(vis?'下端まで見えている（押せる）':'画面の外に隠れている'));if(!vis)issues.push('主要ボタン')}
  else lines.push('主要ボタン：いまの画面には対象がない');
  return {ok:issues.length===0,detail:lines.join('\n')}}
@@ -5247,7 +5280,7 @@ function renderGuide(){/* 次の一手は見出しと主ボタンの文言自体
 document.addEventListener('click',function(e){var t=e.target;if(!t||!t.closest)return;var el=t.closest('[data-act]');if(!el||el.disabled)return;var a=el.dataset.act;
  if(a==='start')startChapter(parseInt(el.dataset.a1,10));else if(a==='review')chooseReview(el.dataset.a1);else if(a==='reviewDone')finishReviewStep();else if(a==='research')openResearchDetail(el.dataset.a1);else if(a==='policy')togglePolicy(el.dataset.a1);else if(a==='confirmPolicy')confirmPolicy();
  else if(a==='decide')decide(parseInt(el.dataset.a1,10),el.dataset.a2==='1');else if(a==='resolve')resolveMonth();else if(a==='audit')openAudit();else if(a==='detail')openProposalDetail(parseInt(el.dataset.a1,10));else if(a==='trust')openTrustSheet();else if(a==='focus')focusProposal(parseInt(el.dataset.a1,10));else if(a==='queue')toggleQueue();
- else if(a==='beginReview'){S.phase='proposals';runDelegation();renderOrg();save()}else if(a==='focusSheet'){$('modal').classList.remove('on');focusProposal(parseInt(el.dataset.a1,10))}else if(a==='ovFocus'){S.focusIdx=parseInt(el.dataset.a1,10);S.phase='proposals';runDelegation();qCenterNext=true;renderOrg();save()}else if(a==='hold')holdProposal(parseInt(el.dataset.a1,10));else if(a==='settings')openSettings();else if(a==='testmode')enterTestMode();else if(a==='debugmode')openDbgConfirm();else if(a==='dbg-enter-yes')enterDebugMode();else if(a==='dbg-exit')exitDebugMode();else if(a==='dbg-jump')dbgJumpChapter();else if(a==='dbg-auto')dbgAutoStart();else if(a==='dbg-stop')dbgAutoStop(true);else if(a==='dbg-wipe')dbgWipeDraft();else if(a==='tm-exit')exitTestMode();else if(a==='tm-run')tmRunOne(el.dataset.a1);else if(a==='tm-runall')tmRunAll();else if(a==='tm-copy')tmCopyReport();else if(a==='tm-share')tmShareAll();else if(a==='tm-share-one')tmShareOne(el.dataset.a1);else if(a==='tm-save-photo')tmSavePhoto(el.dataset.a1);else if(a==='tm-view-one')tmvViewSummary(el.dataset.a1);else if(a==='tm-handover-close'){var hb2=$('tm-handover');if(hb2)hb2.classList.remove('on');tmvRestoreGalleryImages()}else if(a==='tm-visual')tvOpen();else if(a==='tm-runall-visual')tmRunAllWithVisual();else if(a==='tm-visual-auto')tmRunOne('visual');else if(a==='tmv-view')tmvView(parseInt(el.dataset.a1,10));else if(a==='tmv-close')tmvClose();else if(a==='tv-exit')tvExit();else if(a==='tv-prev')tvGo(TV.idx-1);else if(a==='tv-next')tvGo(TV.idx+1);else if(a==='tv-name')tvToggleName();else if(a==='tv-chrome')tvToggleChrome();else if(a==='tv-shot')tvCapture();else if(a==='tv-shotclose')tvShotClose();else if(a==='sp-run'){spStartExperiment();openSettings()}else if(a==='sp-cancel'){SP_RUN.cancel=true}else if(a==='sp-rollback'){if(rollbackPromotion()){save();openSettings();toast('黒霧の学びを元に戻した')}}else if(a==='setopt')setSetting(el.dataset.a1,el.dataset.a2);else if(a==='exp-copy')copySettingsExport();else if(a==='imp-check')checkSettingsImport();else if(a==='imp-do')doSettingsImport();else if(a==='imp-cancel')cancelSettingsImport();else if(a==='relmatrix')openRelMatrix();else if(a==='confirmDecide'){$('modal').classList.remove('on');if(pendingConfirm>=0){var ci=pendingConfirm;pendingConfirm=-1;startDecide(ci,true)}}else if(a==='closeModal'){$('modal').classList.remove('on');pendingConfirm=-1}
+ else if(a==='beginReview'){S.phase='proposals';runDelegation();renderOrg();save()}else if(a==='focusSheet'){$('modal').classList.remove('on');focusProposal(parseInt(el.dataset.a1,10))}else if(a==='ovFocus'){S.focusIdx=parseInt(el.dataset.a1,10);S.phase='proposals';runDelegation();qCenterNext=true;renderOrg();save()}else if(a==='hold')holdProposal(parseInt(el.dataset.a1,10));else if(a==='settings')openSettings();else if(a==='testmode')enterTestMode();else if(a==='debugmode')openDbgConfirm();else if(a==='dbg-enter-yes')enterDebugMode();else if(a==='dbg-exit')exitDebugMode();else if(a==='dbg-jump')dbgJumpChapter();else if(a==='dbg-auto')dbgAutoStart();else if(a==='dbg-stop')dbgAutoStop(true);else if(a==='dbg-wipe')dbgWipeDraft();else if(a==='dbg-log')dbgLogShow();else if(a==='dbg-log-copy')dbgLogCopy();else if(a==='tm-exit')exitTestMode();else if(a==='tm-run')tmRunOne(el.dataset.a1);else if(a==='tm-runall')tmRunAll();else if(a==='tm-copy')tmCopyReport();else if(a==='tm-share')tmShareAll();else if(a==='tm-share-one')tmShareOne(el.dataset.a1);else if(a==='tm-save-photo')tmSavePhoto(el.dataset.a1);else if(a==='tm-view-one')tmvViewSummary(el.dataset.a1);else if(a==='tm-handover-close'){var hb2=$('tm-handover');if(hb2)hb2.classList.remove('on');tmvRestoreGalleryImages()}else if(a==='tm-visual')tvOpen();else if(a==='tm-runall-visual')tmRunAllWithVisual();else if(a==='tm-visual-auto')tmRunOne('visual');else if(a==='tmv-view')tmvView(parseInt(el.dataset.a1,10));else if(a==='tmv-close')tmvClose();else if(a==='tv-exit')tvExit();else if(a==='tv-prev')tvGo(TV.idx-1);else if(a==='tv-next')tvGo(TV.idx+1);else if(a==='tv-name')tvToggleName();else if(a==='tv-chrome')tvToggleChrome();else if(a==='tv-shot')tvCapture();else if(a==='tv-shotclose')tvShotClose();else if(a==='sp-run'){spStartExperiment();openSettings()}else if(a==='sp-cancel'){SP_RUN.cancel=true}else if(a==='sp-rollback'){if(rollbackPromotion()){save();openSettings();toast('黒霧の学びを元に戻した')}}else if(a==='setopt')setSetting(el.dataset.a1,el.dataset.a2);else if(a==='exp-copy')copySettingsExport();else if(a==='imp-check')checkSettingsImport();else if(a==='imp-do')doSettingsImport();else if(a==='imp-cancel')cancelSettingsImport();else if(a==='relmatrix')openRelMatrix();else if(a==='confirmDecide'){$('modal').classList.remove('on');if(pendingConfirm>=0){var ci=pendingConfirm;pendingConfirm=-1;startDecide(ci,true)}}else if(a==='closeModal'){$('modal').classList.remove('on');pendingConfirm=-1}
  else if(a==='nextChapter')continueNextChapter();else if(a==='arbitrate')arbitrate(el.dataset.a1);else if(a==='conflictDetail')openConflictDetail();else if(a==='fate')showFate();else if(a==='iv')openIntervention();else if(a==='adv')advanceOp();
  else if(a==='chooseIv')chooseIv(el.dataset.a1,parseInt(el.dataset.a2,10));else if(a==='resp')doResponsibility(el.dataset.a1,el.dataset.a2,el.dataset.a3);else if(a==='restart')restart();else if(a==='ngplus')startNgPlus()
  else if(a==='shipdex')openShipDex(el.dataset.a1);else if(a==='flagship')setFlagship(el.dataset.a1);
