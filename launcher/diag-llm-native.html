@@ -398,7 +398,7 @@ document.getElementById('grammarBtn').addEventListener('click', async () => {
   out.textContent = '文法つきで生成しています…';
   const grammar = [
     String.raw`root ::= "{" ws "\"date\"" ws ":" ws string "," ws "\"place\"" ws ":" ws string "," ws "\"amount\"" ws ":" ws number ws "}"`,
-    String.raw`string ::= "\"" ([^"\\] | "\\" ["\\/bfnrt])* "\""`,
+    String.raw`string ::= "\"" ([^"\\] | "\\" ["\\bfnrt])* "\""`,
     String.raw`number ::= [0-9]+`,
     String.raw`ws ::= [ \t\n]*`
   ].join('\n');
