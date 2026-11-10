@@ -1680,7 +1680,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v60';
+var APP_VERSION='v61';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -4078,7 +4078,7 @@ function tmBuildLauncherResult(startedAt){var items=TM_TESTS.map(function(def,i)
  var perf=[];var ro=TM.results.outlook;if(ro&&typeof ro.ms==='number'&&ro.ms>0)perf.push({id:'outlook',label:'作戦の見通しの計算',ms:Math.round(ro.ms)});
  return {contract:'launcher-test/v1',moduleId:'kurogiri',version:APP_VERSION,startedAt:startedAt,items:items,perf:perf,untouched:{checked:true,same:!!(mainSame&&prevSame)},summary:TM_TESTS.length+'件中'+passN+'件が「できた」'}}
 function tmWaitAllResults(timeoutMs){var t0=Date.now();return new Promise(function(resolve){(function poll(){var done=true;TM_TESTS.forEach(function(d){if(!TM.results[d.id])done=false});if(done||Date.now()-t0>timeoutMs){resolve();return}setTimeout(poll,250)})()})}
-function tmRunLauncherTest(){var startedAt=new Date().toISOString();enterTestMode();return tmRunAll().then(function(){return tmWaitAllResults(120000)}).then(function(){tmReportUpdate();var result=tmBuildLauncherResult(startedAt);try{window.parent.postMessage(result,'*')}catch(e){}tmDisposeStageRenderer();return result})}
+function tmRunLauncherTest(){var startedAt=new Date().toISOString();try{window.parent.postMessage({contract:'launcher-test/v1',moduleId:'kurogiri',status:'started'},'*')}catch(e){}enterTestMode();return tmRunAll().then(function(){return tmWaitAllResults(120000)}).then(function(){tmReportUpdate();var result=tmBuildLauncherResult(startedAt);try{window.parent.postMessage(result,'*')}catch(e){}tmDisposeStageRenderer();return result})}
 function tmReportText(){var lines=['クロギリ 試験モード結果','日時：'+tmNow(),'端末：'+(navigator.userAgent||'')+' ／ 論理コア '+(navigator.hardwareConcurrency||'不明'),'版：'+APP_VERSION];
  var mainSame='未確認';try{mainSame=(localStorage.getItem(SAVE_KEY)===TM.saveSnapshot)?'はい（試験前と同一）':'いいえ'}catch(e){}
  lines.push('本編の保存：試験では触れていない（試験前後で同一：'+mainSame+'）');
