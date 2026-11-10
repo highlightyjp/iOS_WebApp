@@ -639,12 +639,12 @@ button.tmv-cell{font-family:inherit;text-align:left;padding:0;cursor:pointer;wid
     </div>
     <div id="hs-ship" style="display:flex;flex-direction:column;flex:1;min-height:0">
       <div id="flaghero" style="display:none"><span class="flaghero-cap" id="flaghero-cap"></span></div>
-      <div id="glwrap"><div class="glchip"><b>航空母艦 赤城</b>（旗艦）<br><span id="glinfo">手続き3D ・ カメラ周回</span></div></div>
+      <div id="glwrap"><div class="glchip"><b>航空母艦 赤城（旗艦）</b><br><span id="glinfo">カメラ周回</span></div></div>
       <div id="harbor-changes"></div>
       <p class="note" id="harbor-spec" style="flex:0 0 auto">全長 260.7m ・ 基準排水量 約36,500t</p>
     </div>
     <div id="hs-fleet" class="scrollbox" style="display:none"><div class="grid2" id="fleetgrid"></div></div>
-    <div id="hs-air" class="scrollbox" style="display:none"><div id="airglwrap"><div class="glchip"><b id="airglname">零式艦上戦闘機</b><br><span id="airglinfo">手続き3D ― 部品データから生成</span></div></div><div id="airpaint"></div><p class="note" style="margin-top:0">航空機図鑑 ― 3Dは上のビューアで、塗装はその下のボタンで切り替える。二面図は設計図の資料として各カードに残す。役割だけを記し、数値の諸元は照合が済むまで載せない。</p><div class="platelist" id="airgrid"></div></div>
+    <div id="hs-air" class="scrollbox" style="display:none"><div id="airglwrap"><div class="glchip"><b id="airglname">零式艦上戦闘機</b><br><span id="airglinfo">動く姿</span></div></div><div id="airpaint"></div><p class="note" style="margin-top:0">航空機図鑑 ― 3Dは上のビューアで、塗装はその下のボタンで切り替える。二面図は設計図の資料として各カードに残す。役割だけを記し、数値の諸元は照合が済むまで載せない。</p><div class="platelist" id="airgrid"></div></div>
     <div id="hs-arms" class="scrollbox" style="display:none"><p class="note" style="margin-top:0">兵装図鑑 ― 側面図。役割だけを記し、数値の諸元は照合が済むまで載せない。</p><div class="platelist" id="armsgrid"></div></div>
     <div id="hs-research" class="scrollbox" style="display:none"><div id="researchlist"></div></div>
     <div id="hs-enemy" class="scrollbox" style="display:none"><div class="card"><h3>黒霧 ― 大型個体</h3><p>霧の向こうに現れる、ひときわ大きな影。公式画として残された姿は一枚だけで、個別の艦の同定には使わない。情景と規模の記録として、ここに置く。</p><div class="dexbtns"><button class="btn small" data-act="enemyArt">大型個体の公式画を見る</button></div></div><div class="card"><h3>記録の線引き</h3><p>個別の姿と内側の動きは、作戦が終わるまで伏せられる。ここに開くのは、誰の目にも触れた「大きな影がいる」という事実だけである。</p></div></div>
@@ -1680,7 +1680,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v61';
+var APP_VERSION='v62';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -2081,7 +2081,7 @@ function renderRecords(){var box=$('rec-body');if(!box)return;if(!S||!S.started)
  var html='<div class="kpi"><div><b>'+S.fates.filter(function(f){return f.grade==='勝利'||f.grade==='辛勝'}).length+' / '+S.fates.length+'</b><span>作戦 成功／実施</span></div><div><b>'+Math.round((ORGS.reduce(function(a,o){return a+S.trust[o.id]},0)/ORGS.length))+'</b><span>平均信任</span></div><div><b>'+visibleAuditLog().length+'</b><span>記録の数</span></div><div><b>'+S.fates.length+'</b><span>作戦の数</span></div></div>';
  if(S.finished){var cc2=CHAPTERS.find(function(c){return c.n===(S.chapter||5)})||CHAPTERS[4];var revTxt=S.reviews&&S.reviews.length?S.reviews.map(function(r){return r.review+'：'+reviewGradeWord(r.grade)+'（'+r.stance+'）'}).join('／'):'年次審査なし';var resTxt=S.researchDone&&S.researchDone.length?S.researchDone.map(function(id){var ri=researchById(id);return ri?ri.name:id}).join('／'):'完了した研究線なし';var perTxt=S.personnelLog&&S.personnelLog.length?S.personnelLog.map(function(x){return orgById(x.org).name+'：'+x.from+' → '+x.to+'（前任は退任）'}).join('／'):'顔ぶれの変更なし';html+='<div class="card"><h3>章次報告 ― 第'+(S.chapter||5)+'章「'+cc2.t+'」</h3><p>決裁した上申書の束をめくるように、この章の歩みを残す。年次審査：'+revTxt+'。研究：'+resTxt+'。人事：'+perTxt+'。</p><table><tr><th>項目</th><th>章末</th></tr><tr><td>世界線</td><td>'+(S.cycle||1)+'周目'+(S.ngCarried?' ― 黒霧は前周に覚えた対策を引き継いだ':'')+'</td></tr><tr><td>残資源</td><td class="num">燃料'+S.res.fuel+'／資材'+S.res.mat+'／航空'+S.res.air+'／予算'+S.res.bud+'／人員'+S.res.crew+'／熟練'+S.res.skill+'</td></tr>'+(S.lostShips&&S.lostShips.length?'<tr><td>喪失</td><td>'+S.lostShips.join('、')+'（完全ロスト ― 復帰なし）</td></tr>':'')+'<tr><td>準備の蓄積</td><td class="num">'+Object.keys(S.eff).map(function(k){return (FACTOR_LABEL[k]||k)+' '+S.eff[k]}).join(' ・ ')+'</td></tr><tr><td>信任</td><td>'+visibleOrgs().map(function(o){return o.name+' '+S.trust[o.id]+'（'+personFor(o.id).name+'）'}).join('／')+'</td></tr><tr><td>戦果</td><td>'+S.fates.map(function(f){return f.op+'：'+f.grade}).join('／')+'</td></tr><tr><td>関係（要約）</td><td>'+tenseSummary()+'</td></tr><tr><td>学習</td><td>'+(S.learnLog.length?S.learnLog.map(function(e){return e.org+'の'+e.factor+(e.to>e.from?'への重みが増した':e.to<e.from?'への重みが減った':'の姿勢に変化なし')}).join('／'):'なし')+'</td></tr><tr><td>敵適応</td><td>'+adaptSummary()+'</td></tr></table><div class="btnrow">'+((S.chapter||5)>=8?'<span class="tag ok">終戦 ― 1919年から1945年までを通しで辿り終えた</span> <button class="btn small" data-act="finaleArt">終戦の記念絵</button>':'<button class="btn primary small" data-act="nextChapter">次の章へ進む（生存艦・喪失・将校・熟練を引き継ぐ）</button>')+'<button class="btn primary small" data-act="restart">新しい世界線で最初から</button></div></div>'}
  else{html+='<p class="note">進行中。作戦が終わるごとに、運命対比と責任選択がここに積み上がる。</p>'+S.fates.map(function(f){return '<div class="card" style="margin-bottom:7px"><h3>'+f.op+' ― '+f.grade+'</h3><p>'+f.now+'</p></div>'}).join('')}
- html+='<div class="card" style="margin-top:8px"><h3>年代の骨格と研究</h3>'+HISTORICAL_MASTER.filter(function(h){return h.chapter===(S.chapter||5)}).map(function(h){return '<p class="histline" style="color:var(--ink2)">'+h.date+' ― '+h.title+'（照合：'+h.verify+'）</p>'}).join('')+'<p>研究：'+(S.researchDone&&S.researchDone.length?S.researchDone.map(function(id){var ri=researchById(id);return ri?ri.name:id}).join('／'):'まだ実を結んだ線はない。技術本部の上申が種になる。')+'</p></div>';html+=boundDocsHTML();html+='<div class="card" style="margin-top:8px"><h3>組織の動き</h3><p>緊張している組：'+tenseSummary()+'</p><p>学習：'+(S.learnLog.length?S.learnLog.slice(-6).map(function(e){return e.org+'の'+e.factor+(e.to>e.from?'への重みが増した':e.to<e.from?'への重みが減った':'の姿勢に変化なし')+'（'+e.grade+'を受けて）'}).join('／'):'まだ作戦結果による学習はない。作戦が終わると、関与した組織の重みが緩やかに動き、ここに要約される。')+'</p><p>敵適応：'+adaptSummary()+'</p></div>';box.innerHTML=html}
+ html+='<div class="card" style="margin-top:8px"><h3>年代の骨格と研究</h3>'+HISTORICAL_MASTER.filter(function(h){return h.chapter===(S.chapter||5)}).map(function(h){return '<p class="histline" style="color:var(--ink2)">'+h.date+' ― '+h.title+'</p>'}).join('')+'<p>研究：'+(S.researchDone&&S.researchDone.length?S.researchDone.map(function(id){var ri=researchById(id);return ri?ri.name:id}).join('／'):'まだ実を結んだ線はない。技術本部の上申が種になる。')+'</p></div>';html+=boundDocsHTML();html+='<div class="card" style="margin-top:8px"><h3>組織の動き</h3><p>緊張している組：'+tenseSummary()+'</p><p>学習：'+(S.learnLog.length?S.learnLog.slice(-6).map(function(e){return e.org+'の'+e.factor+(e.to>e.from?'を重んじる姿勢が強まった':e.to<e.from?'を重んじる姿勢が弱まった':'への姿勢に変化なし')+'（'+e.grade+'を受けて）'}).join('／'):'まだ作戦結果による学習はない。作戦が終わると、関与した組織の考え方が少しずつ移ろい、ここに要約される。')+'</p><p>敵適応：'+adaptSummary()+'</p></div>';box.innerHTML=html}
 function restart(){try{if(S&&S.settings&&S.settings.ngplus==='carry'&&S.w)localStorage.setItem(CARRY_KEY,JSON.stringify({w:S.w,settings:S.settings,cycle:S.cycle||1,baseMonth:(S.absMonth||0),enemy:{enemyLedger:S.enemyLedger||{},adaptLedger:S.adaptLedger||emptyLedger(),enemyWeights:S.enemyCore?S.enemyCore.weights:defaultEnemyWeights(),spVersion:S.selfplay?S.selfplay.version:0,adaptActive:(S.adapt&&S.adapt.active)||{},familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,tactics:S.tactics||{},tacticLast:S.tacticLast||{}}}));else localStorage.removeItem(CARRY_KEY)}catch(e){}localStorage.removeItem(SAVE_KEY);try{localStorage.removeItem(SAVE_PREV_KEY)}catch(e){}location.reload()}
 function startNgPlus(){if(!S||!S.warEnded)return;var on=S.settings&&S.settings.ngplus==='carry';var learn=null;if(on){learn={w:S.w,enemyLedger:JSON.parse(JSON.stringify(S.enemyLedger||{})),adaptActive:JSON.parse(JSON.stringify((S.adapt&&S.adapt.active)||{})),familiarity:S.familiarity||0,tacSwitches:S.tacSwitches||0,adaptCount:S.adaptCount||0,adaptBonusUsed:S.adaptBonusUsed||0,tactics:JSON.parse(JSON.stringify(S.tactics||{})),tacticLast:JSON.parse(JSON.stringify(S.tacticLast||{})),lastTactic:S.lastTactic||null,enemyWeights:JSON.parse(JSON.stringify(S.enemyCore?S.enemyCore.weights:defaultEnemyWeights())),adaptLedger:JSON.parse(JSON.stringify(S.adaptLedger||emptyLedger())),spVersion:S.selfplay?S.selfplay.version:0,baseMonth:(S.absMonth||0)}}var cyc=(S.cycle||1)+1;var st=JSON.parse(JSON.stringify(S.settings));startChapter(1,{ngPlus:true,settings:st,cycle:cyc,learn:learn});renderAll();showView('org');toast('新しい世界線 ― '+cyc+'周目が始まった')}
 
@@ -2148,7 +2148,7 @@ function openShipDex(name){var dex=SHIP_DEX[name];if(!dex)return;var lost=(S&&S.
  var st=isLost?'喪失 ― 記録にのみ残る':(isLocked?'未合流 ― '+(row?row[2]:''):'現役'+(effectiveFlagship()===name?' ・ 旗艦':'')+' ・ 熟練 '+shipSkill(name));
  var info=SHIP3D_INFO[name];
  var heroSrc=(!isLocked&&HERO_ART[name])?HERO_ART[name]:null;
- var pose=isLocked?'合流するまでは、図鑑では影としてのみ示す。':(isLost?(heroSrc?'沈んだ艦は現役の姿では出ない。記録と、図鑑に残る実写風の姿と文でのみ辿れる。':'沈んだ艦は現役の姿では出ない。記録と図鑑の文でのみ辿れる。'):('母港と作戦では部品データから組み立てた実時間の姿で、図鑑では'+(heroSrc?'この要目と文に加え、実写風に描いた姿も併せて示す。':'この要目と文で扱う。')+'手続き3D'+(info?'（部品 '+info.parts+'）':'')+'。'));
+ var pose=isLocked?'合流するまでは、図鑑では影としてのみ示す。':(isLost?(heroSrc?'沈んだ艦は現役の姿では出ない。記録と、図鑑に残る実写風の姿と文でのみ辿れる。':'沈んだ艦は現役の姿では出ない。記録と図鑑の文でのみ辿れる。'):('母港と作戦では動く立体の姿で現れ、図鑑では'+(heroSrc?'この要目と文に加え、実写風に描いた姿も併せて示す。':'この要目と文で扱う。')));
  var h=(heroSrc?'<div class="dex-hero" id="dex-hero"><p class="dex-hero-cap">'+HERO_CLASS[name]+' '+name+' ― 実写風の姿</p></div>':'')+'<p>'+dex.hist+'</p><p class="sheet-h">要目</p><p>'+(row?row[1]:'')+' ・ '+dex.spec+'</p><p class="sheet-h">状態</p><p>'+st+'</p><p class="sheet-h">姿の見せ方</p><p>'+pose+'</p>';
  if(!isLost&&!isLocked&&effectiveFlagship()!==name)h+='<div class="btnrow"><button class="btn primary small" data-act="flagship" data-a1="'+name+'">旗艦にして母港で見る</button></div>';
  openSheet((row?row[1]+' ':'')+name+' ― 要目',h);
@@ -3721,7 +3721,7 @@ function selectAir3D(idx){var a=AIRCRAFT[idx];if(!a)return;AIR_SEL=a[0];var nm=$
 function setAirPaint(i){AIR_PAINT_SEL[AIR_SEL]=i;renderAirPaint();airSetMesh()}
 function airSetMesh(){if(!AGL)return;var wfb=$('airglwrap');if(wfb){var old=wfb.querySelector('.airfallback');if(old)old.remove()}if(AGL.mesh)AGL.scene.remove(AGL.mesh);var m=buildAircraftMesh(AIR_SEL,airPaintIdx(AIR_SEL));AGL.scene.add(m);AGL.mesh=m;
  var sp=AC3D_SPEC[AIR_SEL];AGL.dist=Math.max(sp.span,sp.len)*1.55;
- var list=acPaintList(AIR_SEL);var inf=$('airglinfo');if(inf)inf.textContent='手続き3D ・ 塗装: '+list[airPaintIdx(AIR_SEL)].name}
+ var list=acPaintList(AIR_SEL);var inf=$('airglinfo');if(inf)inf.textContent='動く姿 ・ 塗装: '+list[airPaintIdx(AIR_SEL)].name}
 function airShowFallback(err){var wrap=$('airglwrap');var gi=$('airglinfo');if(gi)gi.textContent='3D初期化に失敗 ― 二面図で表示'+(err?'（理由：'+((err&&err.message)||err)+'）':'');if(!wrap)return;var old=wrap.querySelector('.airfallback');if(old)old.remove();var a=AIRCRAFT.find(function(x){return x[0]===AIR_SEL});var d=document.createElement('div');d.className='airfallback';d.innerHTML=plateFig(AC_FIG[(a&&a[2])||'fighter'],'0 0 320 118');wrap.appendChild(d)}
 function initAirGL(){if(AGL||typeof THREE==='undefined')return;var wrap=$('airglwrap');if(!wrap)return;
  try{var renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));wrap.appendChild(renderer.domElement);
@@ -3744,7 +3744,7 @@ function initAirGL(){if(AGL||typeof THREE==='undefined')return;var wrap=$('airgl
   AGL.distSm=(AGL.distSm==null)?D:AGL.distSm+(D-AGL.distSm)*0.08;
   cam.position.set(AGL.distSm*0.66,2.3+AGL.distSm*0.40,AGL.distSm*0.66);cam.lookAt(0,2.1,0);
   renderer.setSize(wrap.clientWidth,wrap.clientHeight);cam.aspect=wrap.clientWidth/Math.max(1,wrap.clientHeight);cam.updateProjectionMatrix();renderer.render(scene,cam);
-  if(!AGL.reported){AGL.reported=true;var inf2=renderer.info.render;var gi=$('airglinfo');if(gi)gi.textContent+='（DC '+inf2.calls+' ・ 三角形 '+inf2.triangles.toLocaleString()+'）'}}
+  if(!AGL.reported){AGL.reported=true}}
  frame();
  }catch(e){airShowFallback(e)}}
 /* ---- 作戦画面の航空戦: 銃撃 / 雷撃 / 爆撃 の3型 + 編隊 (複製描画) ----
@@ -3950,7 +3950,7 @@ function initGL(){if(HGL||typeof THREE==='undefined')return;var wrap=$('glwrap')
   HGL.Rsm=(HGL.Rsm==null)?Rt:HGL.Rsm+(Rt-HGL.Rsm)*0.04;
   cam.position.set(Math.cos(HGL.ang)*HGL.Rsm,HGL.Rsm*prof.hr,Math.sin(HGL.ang)*HGL.Rsm);cam.lookAt(0,prof.lookY,0);
   renderer.setSize(wrap.clientWidth,wrap.clientHeight);cam.aspect=wrap.clientWidth/Math.max(1,wrap.clientHeight);cam.updateProjectionMatrix();renderer.render(scene,cam);
-  if(!HGL.reported){HGL.reported=true;var inf=renderer.info.render;$('glinfo').textContent='手続き3D ・ カメラ周回（部品 '+HGL.handle.parts+' ・ DC '+inf.calls+' ・ 三角形 '+inf.triangles.toLocaleString()+'）'}}
+  if(!HGL.reported){HGL.reported=true;var inf=renderer.info.render;$('glinfo').textContent='カメラ周回'}}
  frame();
  }catch(e){$('glinfo').textContent='線画シルエット代替表示（3D初期化に失敗）';wrap.style.background='linear-gradient(180deg,#2a4a6b,#0e2238)'}}
 /* ---- 作戦ビューア（戦闘フェーズ） ---- */
@@ -3974,7 +3974,7 @@ function initOpGL(){if(OGL||typeof THREE==='undefined')return;var wrap=$('opglwr
   cam.position.set(((104*k+16)+Math.sin(t*0.05)*8)*os,(36*k+10)*os,(130*k+16)*os);cam.lookAt(-4,10,0);
   if(wrap.clientWidth){renderer.setSize(wrap.clientWidth,wrap.clientHeight);cam.aspect=wrap.clientWidth/Math.max(1,wrap.clientHeight);cam.updateProjectionMatrix()}
   renderer.render(scene,cam);
-  if(!OGL.reported){OGL.reported=true;var inf=renderer.info.render;var oi=$('opglinfo');if(oi)oi.textContent='航空戦 ― 攻撃隊の銃撃・雷撃・爆撃と、艦の対空戦闘（部品 '+OGL.handle.parts+' ・ DC '+inf.calls+' ・ 三角形 '+inf.triangles.toLocaleString()+'）'}}
+  if(!OGL.reported){OGL.reported=true;var inf=renderer.info.render;var oi=$('opglinfo');if(oi)oi.textContent='航空戦 ― 攻撃隊の銃撃・雷撃・爆撃と、艦の対空戦闘'}}
  frame();
  }catch(e){var oi2=$('opglinfo');if(oi2)oi2.textContent='海図のみで進行（3D初期化に失敗）'}}
 
