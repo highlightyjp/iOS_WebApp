@@ -502,11 +502,13 @@ function deform(x, y, P){
   return [x + dx * pin, y + dy * pin];
 }
 
-const canvas = document.createElement("canvas");
+let canvas = document.createElement("canvas");
 canvas.width = W * 2; canvas.height = H * 2;
 canvas.setAttribute("role","img");
 canvas.setAttribute("aria-label","アイリス");
-const ctx = canvas.getContext("2d");
+let gl = null;
+try{ gl = canvas.getContext("webgl", { preserveDrawingBuffer: true, antialias: true, alpha: false }); }catch(e){ gl = null; }
+let ctx = gl ? null : canvas.getContext("2d");
 let texImg = null, canvasLive = false;
 
 function drawTri(sx0, sy0, sx1, sy1, sx2, sy2, d0, d1, d2){
@@ -536,7 +538,7 @@ function drawTri(sx0, sy0, sx1, sy1, sx2, sy2, d0, d1, d2){
   ctx.drawImage(texImg, bx, by, bw, bh, bx, by, bw, bh);
   ctx.restore();
 }
-function render(P){
+function render2D(P){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W * 2, H * 2);
   ctx.fillStyle = "#ffffff";
@@ -555,6 +557,75 @@ function render(P){
     }
   }
 }
+
+/* ---- WebGL ワープ：変形の計算と解像度は 2D 版と同一で、描く所だけ GPU に任せる ---- */
+let glProg = null, glTex = null, glPosBuf = null;
+let glIdxCount = 0;
+const glPosData = new Float32Array(XS.length * YS.length * 2);
+function initGL(){
+  if(!gl || !texImg) return false;
+  try{
+    const vs = "attribute vec2 aPos; attribute vec2 aUv; varying vec2 vUv;" +
+      "void main(){ vUv = aUv; gl_Position = vec4(aPos.x / 1120.0 * 2.0 - 1.0, 1.0 - aPos.y / 2240.0 * 2.0, 0.0, 1.0); }";
+    const fs = "precision mediump float; varying vec2 vUv; uniform sampler2D uTex;" +
+      "void main(){ gl_FragColor = texture2D(uTex, vUv); }";
+    function sh(type, src){ const q = gl.createShader(type); gl.shaderSource(q, src); gl.compileShader(q); return q; }
+    const pr = gl.createProgram();
+    gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(pr);
+    if(!gl.getProgramParameter(pr, gl.LINK_STATUS)) return false;
+    gl.useProgram(pr);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    const uv = new Float32Array(XS.length * YS.length * 2);
+    let k = 0;
+    for(let j = 0; j < YS.length; j++) for(let i = 0; i < XS.length; i++){ uv[k++] = XS[i] / W; uv[k++] = 1 - YS[j] / H; }
+    const uvBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
+    const aUv = gl.getAttribLocation(pr, "aUv");
+    gl.enableVertexAttribArray(aUv);
+    gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
+    const idx = [];
+    for(let j = 0; j < NY; j++) for(let i = 0; i < NX; i++){
+      const a = j * XS.length + i, b = a + 1, c = a + XS.length, d = c + 1;
+      idx.push(a, b, c, b, d, c);
+    }
+    const ib = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+    glIdxCount = idx.length;
+    glPosBuf = gl.createBuffer();
+    const aPos = gl.getAttribLocation(pr, "aPos");
+    gl.enableVertexAttribArray(aPos);
+    gl.bindBuffer(gl.ARRAY_BUFFER, glPosBuf);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    glTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, glTex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texImg);
+    gl.clearColor(1, 1, 1, 1);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    glProg = pr;
+    return true;
+  }catch(e){ return false; }
+}
+function renderGL(P){
+  let k = 0;
+  for(let j = 0; j <= NY; j++) for(let i = 0; i <= NX; i++){
+    const d = deform(XS[i], YS[j], P);
+    glPosData[k++] = d[0] * 2; glPosData[k++] = d[1] * 2;
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, glPosBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, glPosData, gl.DYNAMIC_DRAW);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawElements(gl.TRIANGLES, glIdxCount, gl.UNSIGNED_SHORT, 0);
+}
+function render(P){ if(glProg) renderGL(P); else render2D(P); }
 
 let nextBlink = 1.6, blinkStart = -1;
 const BLINK_DUR = 0.17;
@@ -631,10 +702,30 @@ setInterval(() => {
   }
 }, 1200);
 
+const IRIS_BUILD = "2026-11-10-1530";
+(function checkBuild(){
+  try{
+    fetch("build.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
+      const b = (t || "").trim();
+      if(b && b !== IRIS_BUILD && sessionStorage.getItem("iris.buildReload") !== b){
+        sessionStorage.setItem("iris.buildReload", b);
+        location.reload();
+      }
+    }).catch(() => {});
+  }catch(e){}
+})();
+
 (function loadTex(){
   const im = new Image();
   im.onload = () => {
     texImg = im;
+    if(gl && !initGL()){
+      const nc = document.createElement("canvas");
+      nc.width = W * 2; nc.height = H * 2;
+      nc.setAttribute("role", "img");
+      nc.setAttribute("aria-label", "アイリス");
+      canvas = nc; ctx = canvas.getContext("2d"); gl = null;
+    }
     const st = document.getElementById("staticImg");
     if(st) st.replaceWith(canvas); else document.getElementById("stage").appendChild(canvas);
     canvasLive = true;
