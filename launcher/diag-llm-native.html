@@ -49,9 +49,18 @@
 <button id="llmStatusBtn" class="sub" type="button">状態を聞く（殻経由）</button>
 <pre id="genOut">まだ試していません。</pre>
 
+<h2>文法テスト（書式の固定・プラグイン直）</h2>
+<p class="note">出力の形を文法（GBNF）で固定して生成するテストです。このページが直接ネイティブを叩きます。答えが指定した JSON の形そのままになれば成功です。</p>
+<button id="grammarBtn" class="sub" type="button">文法テストをする（4B・JSON固定）</button>
+<pre id="grammarOut">まだ試していません。</pre>
+
 <script>
 const MODELS = [
   { id: 'qwen3-4b-q4km', label: 'Qwen3-4B（Q4_K_M）', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '約2.5GB。まずこれが余裕で動くか', nCtx: 2048, nBatch: 512 },
+  { id: 'qwen3-4b-q4km-faoff', label: 'Qwen3-4B（Q4_K_M）・高速注意なし', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '同じファイル。Flash Attention を切って測る（比べる用）', nCtx: 2048, nBatch: 512, flashAttn: 0 },
+  { id: 'qwen3-4b-q4km-faon', label: 'Qwen3-4B（Q4_K_M）・高速注意あり', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '同じファイル。Flash Attention を入れて測る', nCtx: 2048, nBatch: 512, flashAttn: 1 },
+  { id: 'qwen3-4b-q5km', label: 'Qwen3-4B（Q5_K_M）', file: 'Qwen3-4B-Q5_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q5_K_M.gguf', note: '約2.9GB。質を取りに行く量子化', nCtx: 2048, nBatch: 512 },
+  { id: 'qwen3-4b-iq4xs', label: 'Qwen3-4B（IQ4_XS）', file: 'Qwen3-4B-IQ4_XS.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-IQ4_XS.gguf', note: '約2.2GB。小さくて速い側の量子化', nCtx: 2048, nBatch: 512 },
   { id: 'qwen3-8b-q4km', label: 'Qwen3-8B（Q4_K_M）', file: 'Qwen3-8B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf', note: '約4.9GB。初期化のメモリを軽くして試す（文脈1024・バッチ128）', nCtx: 1024, nBatch: 128 },
 ];
 const LOG_KEY = 'llmnative.log.v1';
@@ -220,10 +229,10 @@ async function attempt(run, m, plugin){
   // 測定（ここでアプリごと落ちる可能性がある。印は保存済み）
   run.phase = 'measuring'; saveRun(run);
   prog.textContent = '読み込み＋測定中…（この間、画面は止まって見えます）';
-  log(m.label + '：読み込みと測定をはじめる（文脈 ' + m.nCtx + '・バッチ ' + m.nBatch + '）');
+  log(m.label + '：読み込みと測定をはじめる（文脈 ' + m.nCtx + '・バッチ ' + m.nBatch + (m.flashAttn === undefined ? '' : '・Flash Attention ' + (m.flashAttn === 1 ? 'あり' : m.flashAttn === 0 ? 'なし' : '自動')) + '）');
   const t0 = performance.now();
   try{
-    const r = await plugin.measure({ name: m.file, prompt: BENCH_PROMPT, maxTokens: 160, nCtx: m.nCtx, nBatch: m.nBatch });
+    const r = await plugin.measure({ name: m.file, prompt: BENCH_PROMPT, maxTokens: 160, nCtx: m.nCtx, nBatch: m.nBatch, flashAttn: (m.flashAttn === undefined ? -1 : m.flashAttn) });
     const detail = '速度 ' + (r.tokPerSec || 0).toFixed(1) + ' tok/s、最初の文字まで ' + Math.round(r.ttftMs || 0) + 'ms、読み込み ' + ((r.loadMs || 0) / 1000).toFixed(1) + '秒、生成 ' + (r.genTokens || 0) + ' トークン';
     run.states[m.id] = { st: 'passed', detail };
     run.phase = 'idle'; saveRun(run); updateRow(m, run);
@@ -379,6 +388,40 @@ document.getElementById('genTestBtn').addEventListener('click', async () => {
     out.textContent = '生成できませんでした。コード：' + (r.code || '?') + (r.detail ? '／詳細：' + r.detail : '') + '\n受け付けまで：' + (r.acceptedMs === null || r.acceptedMs === undefined ? 'なし' : r.acceptedMs + 'ms');
     log('契約テスト（生成）：失敗（' + (r.code || '?') + (r.detail ? '／' + r.detail : '') + '）');
   }
+});
+
+document.getElementById('grammarBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('grammarBtn');
+  const out = document.getElementById('grammarOut');
+  const plugin = nativePlugin();
+  if (!plugin){ out.textContent = 'ネイティブの口が見つかりません。'; return; }
+  btn.disabled = true;
+  out.textContent = '文法つきで生成しています…';
+  const grammar = [
+    'root ::= "{" ws "\"date\"" ws ":" ws string "," ws "\"place\"" ws ":" ws string "," ws "\"amount\"" ws ":" ws number ws "}"',
+    'string ::= "\"" ([^"\\] | "\\" .)* "\""',
+    'number ::= [0-9]+',
+    'ws ::= [ \\t\\n]*'
+  ].join('\n');
+  try{
+    const r = await plugin.generate({ name: 'Qwen3-4B-Q4_K_M.gguf',
+      system: 'あなたは抽出係です。',
+      prompt: '次の文から日付と場所と金額を抜き出してください。\n文：来週の火曜日、つまり11月17日に、板橋区の高島平で開催される説明会に参加する。参加費は3,500円です。\n/no_think',
+      maxTokens: 128, temperature: 0.2, nCtx: 2048, nBatch: 512, grammar });
+    const text = (r.text || '').trim();
+    let shape = '形が合いません';
+    try{
+      const j = JSON.parse(text);
+      if (typeof j.date === 'string' && typeof j.place === 'string' && typeof j.amount === 'number') shape = '指定した JSON の形そのまま（成功）';
+    }catch(e){ /* JSON として読めなければ形違い */ }
+    out.textContent = '判定：' + shape + '\n速度：' + (r.tokPerSec || 0).toFixed(1) + ' tok/s、生成 ' + (r.genTokens || 0) + ' トークン\n--- 答え ---\n' + text;
+    log('文法テスト：' + shape + '／' + (r.tokPerSec || 0).toFixed(1) + ' tok/s');
+  }catch(e){
+    const detail = String(e && e.message || e).slice(0, 200);
+    out.textContent = '失敗：' + detail;
+    log('文法テスト：失敗（' + detail + '）');
+  }
+  btn.disabled = false;
 });
 </script>
 </body>
