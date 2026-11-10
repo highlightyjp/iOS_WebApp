@@ -423,7 +423,7 @@ async function runModuleTest(snap){
     out.push({ id: 'M2', gate: null, label: 'ジャケット画像の表示', result: ok ? 'pass' : 'fail', detail: cover.title || '', ms: null });
   }
   const playable = items.filter(i => playableSrc(i));
-  out.push({ id: 'M3', gate: null, label: 'この中で再生できる曲', result: 'na', detail: playable.length + '曲（音源の置き場は未設定：' + (AUDIO_BASE ? AUDIO_BASE : 'なし') + '）', ms: null });
+  out.push({ id: 'M3', gate: null, label: 'この中で再生できる曲', result: playable.length ? 'pass' : 'na', detail: playable.length ? playable.length + '曲（置き場：' + audioBase() + '）' : '0曲（音源の置き場は未設定）', ms: null });
   reportTest(out, { fps: null, jankFrames: 0, longTasks: 0, memoryMB: null, dpr: window.devicePixelRatio || 1 });
 }
 
