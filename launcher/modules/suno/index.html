@@ -20,6 +20,14 @@
   header{ display:flex; align-items:baseline; gap:10px; }
   h1{ font-size:24px; margin:0; }
   #meta{ color:var(--sub); font-size:13px; }
+  #homeCfg{ margin-top:12px; border:1px solid var(--card-border); border-radius:12px; padding:10px 12px; }
+  #homeCfg summary{ font-size:14px; font-weight:600; cursor:pointer; }
+  #homeCfg input{ width:100%; box-sizing:border-box; padding:11px 12px; margin-top:10px; border-radius:10px;
+    border:1px solid var(--card-border); background:transparent; color:var(--text); font-size:16px; }
+  #homeCfg .hbRow{ display:flex; gap:8px; margin-top:10px; }
+  #homeCfg .hbRow button{ flex:1; padding:11px; border-radius:10px; border:1px solid var(--card-border);
+    background:var(--card); color:var(--text); font-size:14.5px; font-weight:600; cursor:pointer; }
+  #hbMsg{ font-size:13px; color:var(--accent); min-height:18px; margin-top:8px; }
   #search{
     width:100%; margin-top:14px; padding:13px 14px; border-radius:12px; border:1px solid var(--card-border);
     background:var(--card); color:var(--text); font-size:16px;
@@ -101,6 +109,16 @@
   <button class="chip" data-f="bundled" type="button">単体アプリで再生できた曲</button>
 </div>
 <div id="status"></div>
+<details id="homeCfg">
+  <summary>自宅から配信（dynabook）</summary>
+  <input id="hbUrl" type="url" placeholder="http://100.x.x.x:18787/" autocomplete="off">
+  <input id="hbKey" type="text" placeholder="キー" autocomplete="off">
+  <div class="hbRow">
+    <button id="hbSave" type="button">保存する</button>
+    <button id="hbTest" type="button">接続テスト</button>
+  </div>
+  <div id="hbMsg"></div>
+</details>
 <div id="list"></div>
 
 <div id="testBox">
@@ -124,10 +142,17 @@
 <script>
 'use strict';
 const SNAPSHOT_URL = 'https://highlightyjp.github.io/iOS_WebApp/suno/suno-snapshot-full.json';
-// 音源の配布方法が決まったら、ここに置き場の住所を入れる（末尾は / ）。
-// 例：公開の置き場に置く場合 'https://highlightyjp.github.io/iOS_WebApp/launcher/modules/suno/audio/'
-//     自宅から配信する場合 'http://<dynabookのTailnet名>:<port>/audio/'
+// 音源の置き場は「自宅から配信（dynabook）」に決まった（2026-11-10）。
+// 住所とキーは端末の中（localStorage）にだけ持ち、公開データには残さない。
 const AUDIO_BASE = '';
+const LS_AUDIO_BASE = 'suno.audioBase.v1';
+const LS_AUDIO_KEY = 'suno.audioKey.v1';
+function audioBase(){
+  try{ return localStorage.getItem(LS_AUDIO_BASE) || AUDIO_BASE; }catch(e){ return AUDIO_BASE; }
+}
+function audioKey(){
+  try{ return localStorage.getItem(LS_AUDIO_KEY) || ''; }catch(e){ return ''; }
+}
 
 let items = [], likedIds = new Set(), lyricsById = {}, filter = 'all', query = '';
 let queue = [], queueIdx = -1, currentId = null;
@@ -136,9 +161,47 @@ const audio = document.getElementById('audio');
 function playableSrc(it){
   const u = it.audio_url || '';
   if (u.startsWith('http')) return u;
-  if (u.startsWith('audio/') && AUDIO_BASE) return AUDIO_BASE + u.slice('audio/'.length);
+  if (u.startsWith('audio/')){
+    const b = audioBase();
+    if (!b) return null;
+    const key = audioKey();
+    return b + 'audio/' + u.slice('audio/'.length) + (key ? '?k=' + encodeURIComponent(key) : '');
+  }
   return null;
 }
+
+// ===== 自宅配信の設定 =====
+const hbUrlEl = document.getElementById('hbUrl');
+const hbKeyEl = document.getElementById('hbKey');
+const hbMsgEl = document.getElementById('hbMsg');
+if (hbUrlEl) hbUrlEl.value = audioBase();
+if (hbKeyEl) hbKeyEl.value = audioKey();
+const hbSaveBtn = document.getElementById('hbSave');
+if (hbSaveBtn) hbSaveBtn.addEventListener('click', () => {
+  let v = (hbUrlEl.value || '').trim();
+  if (v && !v.endsWith('/')) v += '/';
+  try{
+    if (v) localStorage.setItem(LS_AUDIO_BASE, v); else localStorage.removeItem(LS_AUDIO_BASE);
+    const k = (hbKeyEl.value || '').trim();
+    if (k) localStorage.setItem(LS_AUDIO_KEY, k); else localStorage.removeItem(LS_AUDIO_KEY);
+  }catch(e){}
+  hbMsgEl.textContent = v ? '保存しました。再生できる曲に ▶ が付きます' : '消しました';
+  render();
+});
+const hbTestBtn = document.getElementById('hbTest');
+if (hbTestBtn) hbTestBtn.addEventListener('click', async () => {
+  let v = (hbUrlEl.value || '').trim();
+  if (!v){ hbMsgEl.textContent = '先に住所を入れてください'; return; }
+  if (!v.endsWith('/')) v += '/';
+  hbMsgEl.textContent = '確認しています…';
+  try{
+    const res = await fetch(v + 'health');
+    const data = await res.json();
+    hbMsgEl.textContent = (data && data.ok) ? '届きました。自宅の配信が動いています' : '応答はありましたが、形が合いませんでした';
+  }catch(e){
+    hbMsgEl.textContent = '届きませんでした（自宅の電源・Tailscale・住所を確認してください）';
+  }
+});
 function fmtDur(sec){
   if (!sec && sec !== 0) return '';
   const s = Math.round(sec);
