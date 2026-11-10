@@ -397,10 +397,10 @@ document.getElementById('grammarBtn').addEventListener('click', async () => {
   btn.disabled = true;
   out.textContent = '文法つきで生成しています…';
   const grammar = [
-    'root ::= "{" ws "\"date\"" ws ":" ws string "," ws "\"place\"" ws ":" ws string "," ws "\"amount\"" ws ":" ws number ws "}"',
-    'string ::= "\"" ([^"\\] | "\\" .)* "\""',
-    'number ::= [0-9]+',
-    'ws ::= [ \\t\\n]*'
+    String.raw`root ::= "{" ws "\"date\"" ws ":" ws string "," ws "\"place\"" ws ":" ws string "," ws "\"amount\"" ws ":" ws number ws "}"`,
+    String.raw`string ::= "\"" ([^"\\] | "\\" ["\\/bfnrt])* "\""`,
+    String.raw`number ::= [0-9]+`,
+    String.raw`ws ::= [ \t\n]*`
   ].join('\n');
   try{
     const r = await plugin.generate({ name: 'Qwen3-4B-Q4_K_M.gguf',
