@@ -128,8 +128,8 @@
 
 <script>
 'use strict';
-const APP_VERSION = '1.7';
-const SHELL_BUILD = '2026-11-09-2312';
+const APP_VERSION = '1.8';
+const SHELL_BUILD = '2026-11-10-1245';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -425,7 +425,7 @@ async function handleLlm(d, reply){
   const maxTokens = Math.max(1, Math.min(parseInt(d.maxTokens, 10) || 256, 1024));
   let temperature = (typeof d.temperature === 'number') ? d.temperature : 0.2;
   temperature = Math.max(0, Math.min(temperature, 1));
-  const args = { name: spec.file, prompt: d.prompt, maxTokens, temperature, nCtx: spec.nCtx, nBatch: spec.nBatch };
+  const args = { name: spec.file, prompt: d.prompt, maxTokens, temperature, nCtx: spec.nCtx, nBatch: spec.nBatch, flashAttn: 1 };
   if (typeof d.system === 'string' && d.system) args.system = d.system;
   let settled = false;
   const timer = setTimeout(() => {
