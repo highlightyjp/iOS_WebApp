@@ -991,13 +991,13 @@ function enemyScoreAll(weights,L,ctx,rng){
   var noise=(rng()*2-1)*0.01;
   parts.sort(function(x,y){return Math.abs(y.contrib)-Math.abs(x.contrib)});
   return {action:a.id,score:ecRound3(norm+noise),parts:parts,top_factors:parts.slice(0,3)}})}
-/* 自律実行 (§5.2): softmax (温度 0.2、スコアは 1e-3 丸め済み) + ヒステリシス (§5.3、δ=0.05。
-   脅威推定が 0.25 以上動いた月は δ=0)。乱数は専用の種名前空間から作る独立系列で、本編の作戦用乱数を消費しない */
+/* 自律実行 (§5.2): softmax (温度 0.02、スコアは 1e-3 丸め済み) + ヒステリシス (§5.3、δ=0.01。
+   脅威推定が 0.25 以上動いた月は δ=0)。温度 0.02 と δ=0.01 はゲーム側の生スコア (0.27〜0.41 の帯に圧縮される加重平均) の尺度で再較正した値であり、UTILITY_AI §5 の正規化尺度 (−1..1) 前提の値 (温度 0.2／δ=0.05) とは別物 (KG-CR-23)。乱数は専用の種名前空間から作る独立系列で、本編の作戦用乱数を消費しない */
 function enemyDecide(weights,L,ctx,seedStr,month,prevChoice,prevThreats){
  var rng=mulberry32(hashSeed(seedStr+':'+month+':enemy_core'));
  var scored=enemyScoreAll(weights,L,ctx,rng);
  var sorted=scored.slice().sort(function(x,y){return y.score-x.score});
- var T=0.2,sum=0;
+ var T=0.02,sum=0;
  var exps=sorted.map(function(e){var v=Math.exp((e.score-sorted[0].score)/T);sum+=v;return v});
  var r=rng()*sum,chosen=sorted[0].action;
  for(var i=0;i<sorted.length;i++){r-=exps[i];if(r<=0){chosen=sorted[i].action;break}}
@@ -1008,7 +1008,7 @@ function enemyDecide(weights,L,ctx,seedStr,month,prevChoice,prevThreats){
   if(cur&&pick){
    var shock=false;
    if(prevThreats)['threat_air','threat_sea','threat_sub'].forEach(function(k){if(Math.abs((ctx[k]||0)-(prevThreats[k]||0))>=0.25)shock=true});
-   var delta=shock?0:0.05;
+   var delta=shock?0:0.01;
    if(cur.score>=pick.score-delta){chosen=prevChoice;kept=true}}}
  return {chosen:chosen,kept_by_hysteresis:kept,scored:sorted,
   candidates:sorted.slice(0,3).map(function(e){return {action:e.action,score:e.score,top_factors:e.top_factors}})}}
@@ -1660,7 +1660,7 @@ var CARRY_KEY='kurogiri_carry';
 var TEST_SAVE_KEY='kurogiri.test.save';
 var TEST_SAVE14_KEY='kurogiri.test.save14';
 var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
-var APP_VERSION='v56';
+var APP_VERSION='v57';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
