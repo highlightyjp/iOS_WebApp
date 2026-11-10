@@ -156,7 +156,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-10-1705';
+const SHELL_BUILD = '2026-11-10-1812';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -407,12 +407,33 @@ async function checkUpdate(){
 const LS_TEST_HIST = 'launcher.test.history.v1';
 const LS_TEST_SCRATCH = 'launcher.test.scratch.v1';
 const moduleTestResults = {};
+const moduleTestStarted = {};
 let testRunning = false;
 
 window.addEventListener('message', (e) => {
   const d = e.data;
-  if (d && d.contract === 'launcher-test/v1' && d.moduleId) moduleTestResults[d.moduleId] = d;
+  if (d && d.contract === 'launcher-test/v1' && d.moduleId){
+    if (d.status === 'started') moduleTestStarted[d.moduleId] = true;
+    else moduleTestResults[d.moduleId] = d;
+  }
 });
+
+// モジュールの結果を待つ。まず15秒（軽い点検用）、開始の合図（started）があった時だけ最大5分まで待つ。
+// 2026-11-10 の実機で判明した不具合の修正：以前は読み込み直後に見るだけで、実行に時間のかかるモジュールは常に「応答なし」になっていた。
+async function waitForModuleResult(id){
+  const graceEnd = Date.now() + 15000;
+  while (Date.now() < graceEnd){
+    if (moduleTestResults[id]) return true;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  if (!moduleTestStarted[id]) return false;
+  const longEnd = Date.now() + 285000;
+  while (Date.now() < longEnd){
+    if (moduleTestResults[id]) return true;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return !!moduleTestResults[id];
+}
 
 // ===== 殻の橋（契約 launcher-llm/v1 ／ launcher-media/v1） =====
 // 受け付けるのは「今開いているモジュール」の iframe からの依頼だけ（オリジン＋送り元＋moduleId の照合）。
@@ -619,6 +640,8 @@ function collectPlayerEvents(ms){
 async function runTests(){
   if (testRunning) return;
   testRunning = true;
+  for (const k in moduleTestResults) delete moduleTestResults[k];
+  for (const k in moduleTestStarted) delete moduleTestStarted[k];
   const runBtn = document.getElementById('runTestBtn');
   runBtn.disabled = true; runBtn.textContent = '点検しています…';
   const resultsEl = document.getElementById('testResults');
@@ -686,8 +709,10 @@ async function runTests(){
       const sep = m.url.includes('?') ? '&' : '?';
       const r = await loadIntoStage(m.url + sep + 'test=1', 6000);
       maxMs = Math.max(maxMs, r.ms);
-      const hasTest = !!moduleTestResults[m.id];
-      lines.push(m.name + '：' + (r.loaded ? '読み込みできた' : '読み込みが返らない') + (hasTest ? '／試験の結果も届いた' : '／試験の応答なし（未実装として扱う）'));
+      const hasTest = r.loaded ? await waitForModuleResult(m.id) : false;
+      const tail = hasTest ? '／試験の結果も届いた'
+        : (moduleTestStarted[m.id] ? '／試験が時間内に終わらなかった（開始の合図はあった）' : '／試験の応答なし（未実装として扱う）');
+      lines.push(m.name + '：' + (r.loaded ? '読み込みできた' : '読み込みが返らない') + tail);
       if (!r.loaded) worst = 'fail';
     }
     if (ready.length) perf.push({ id: 'module-load', label: 'モジュールの読み込み（最長）', ms: maxMs });
