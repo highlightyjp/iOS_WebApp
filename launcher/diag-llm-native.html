@@ -60,7 +60,6 @@ const MODELS = [
   { id: 'qwen3-4b-q4km-faoff', label: 'Qwen3-4B（Q4_K_M）・高速注意なし', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '同じファイル。Flash Attention を切って測る（比べる用）', nCtx: 2048, nBatch: 512, flashAttn: 0 },
   { id: 'qwen3-4b-q4km-faon', label: 'Qwen3-4B（Q4_K_M）・高速注意あり', file: 'Qwen3-4B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf', note: '同じファイル。Flash Attention を入れて測る', nCtx: 2048, nBatch: 512, flashAttn: 1 },
   { id: 'qwen3-4b-q5km', label: 'Qwen3-4B（Q5_K_M）', file: 'Qwen3-4B-Q5_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q5_K_M.gguf', note: '約2.9GB。質を取りに行く量子化', nCtx: 2048, nBatch: 512 },
-  { id: 'qwen3-4b-iq4xs', label: 'Qwen3-4B（IQ4_XS）', file: 'Qwen3-4B-IQ4_XS.gguf', url: 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-IQ4_XS.gguf', note: '約2.2GB。小さくて速い側の量子化', nCtx: 2048, nBatch: 512 },
   { id: 'qwen3-8b-q4km', label: 'Qwen3-8B（Q4_K_M）', file: 'Qwen3-8B-Q4_K_M.gguf', url: 'https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf', note: '約4.9GB。初期化のメモリを軽くして試す（文脈1024・バッチ128）', nCtx: 1024, nBatch: 128 },
 ];
 const LOG_KEY = 'llmnative.log.v1';
