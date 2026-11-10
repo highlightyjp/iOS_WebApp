@@ -714,7 +714,7 @@ setInterval(() => {
   }
 }, 1200);
 
-const IRIS_BUILD = "2026-11-10-1550";
+const IRIS_BUILD = "2026-11-10-1618";
 (function checkBuild(){
   try{
     fetch("build.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
@@ -1324,7 +1324,14 @@ $("viewToggle").addEventListener("click", () => {
     if(!canvasLive || !canvas) return { ok:false, ratio:0 };
     try{
       const w = canvas.width, h = canvas.height;
-      const img = ctx.getImageData(0, 0, w, h).data;
+      let img;
+      if(gl){
+        const buf = new Uint8Array(w * h * 4);
+        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+        img = buf;
+      }else{
+        img = ctx.getImageData(0, 0, w, h).data;
+      }
       let total = 0, colored = 0;
       const stepPx = 48;
       for(let y = stepPx; y < h; y += stepPx){
@@ -1679,26 +1686,32 @@ $("viewToggle").addEventListener("click", () => {
     }
     const resultText = lines.join("\n");
 
+    /* ---- 結果画面：文章とボタンを先に確定させる（まとめ画像で止まってもログは取れる） ---- */
+    textEl.value = resultText;
+    $("testCopyBar").disabled = false;
+    $("testShareBar").disabled = false;
+    summaryEl.textContent =
+      okCount === STEP_DEFS.length
+        ? "全部大丈夫だったよ。" + STEP_DEFS.length + "件ぜんぶ合格。動きは1秒あたり約 " + fps.toFixed(1) + " コマだったよ。"
+        : okCount + "／" + STEP_DEFS.length + " 件が大丈夫だったよ。要確認の所は下に書いてあるよ。";
+    resultEl.classList.add("show");
+    nowEl.textContent = "終わったよ。結果は下にまとめたよ。";
+    setProgress(STEP_DEFS.length, STEP_DEFS.length);
+    running = false;
+
     /* 前回比のために、試験専用領域へだけ残す */
     const rec = { at: new Date().toLocaleString("ja-JP"), fps: fps, steps: {} };
     STEP_DEFS.forEach(d => { if(results[d.id]) rec.steps[d.id] = Math.round(results[d.id].ms); });
     saveResult(rec);
 
-    /* ---- まとめ画像と結果画面 ---- */
-    compositeCanvas = buildComposite(captures, fullCap, sampleRows, resultText);
-    try{ compImg.src = compositeCanvas.toDataURL("image/png"); }catch(e){}
-    summaryEl.textContent =
-      okCount === STEP_DEFS.length
-        ? "全部大丈夫だったよ。" + STEP_DEFS.length + "件ぜんぶ合格。動きは1秒あたり約 " + fps.toFixed(1) + " コマだったよ。"
-        : okCount + "／" + STEP_DEFS.length + " 件が大丈夫だったよ。要確認の所は下に書いてあるよ。";
-    textEl.value = resultText;
-    $("testCopyBar").disabled = false;
-    $("testShareBar").disabled = false;
-    resultEl.classList.add("show");
-    nowEl.textContent = "終わったよ。結果は下にまとめたよ。";
-    setProgress(STEP_DEFS.length, STEP_DEFS.length);
+    /* まとめ画像（失敗しても結果表示とボタンは壊さない） */
+    try{
+      compositeCanvas = buildComposite(captures, fullCap, sampleRows, resultText);
+      compImg.src = compositeCanvas.toDataURL("image/png");
+    }catch(e){
+      msgEl.textContent = "まとめ画像は作れなかったけど、結果の文章はコピーできるよ。";
+    }
     resultEl.scrollIntoView({ behavior:"smooth", block:"start" });
-    running = false;
   }
 
   openBtn.addEventListener("click", () => { run(); });
