@@ -15,8 +15,9 @@
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; background:
-    radial-gradient(120% 60% at 10% 0%, rgba(125,211,252,.25), transparent 60%),
-    radial-gradient(120% 60% at 100% 10%, rgba(196,181,253,.22), transparent 60%), var(--bg);
+    radial-gradient(120% 60% at 10% 0%, rgba(125,211,252,.28), transparent 60%),
+    radial-gradient(120% 60% at 100% 10%, rgba(196,181,253,.24), transparent 60%),
+    radial-gradient(100% 50% at 50% 110%, rgba(52,211,153,.14), transparent 60%), var(--bg);
     color:var(--text); min-height:100vh; }
   header{ padding:calc(16px + env(safe-area-inset-top)) 20px 8px; }
   h1{ font-size:22px; margin:0 0 4px; font-weight:700; letter-spacing:.02em; }
@@ -25,17 +26,28 @@
   #updateBox{ display:none; width:100%; margin:12px 0 4px; padding:18px; border-radius:var(--radius);
     border:1px solid var(--card-border); background:var(--accent); color:#082f49; font-size:17px; font-weight:700; text-align:left; }
   #updateBox small{ display:block; font-weight:500; font-size:13px; margin-top:4px; }
-  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
-  .card{ appearance:none; border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
-    border-radius:var(--radius); padding:18px 16px; text-align:left; color:var(--text); min-height:104px; cursor:pointer; }
-  .card .icon{ font-size:28px; display:block; margin-bottom:8px; }
+  .grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+  .card{ appearance:none; display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box;
+    border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 24px rgba(10,15,30,.08);
+    border-radius:24px; padding:14px 16px; text-align:left; color:var(--text); cursor:pointer;
+    transition: transform .18s cubic-bezier(.34,1.35,.44,1); }
+  .card:active{ transform:scale(.98); }
+  .card .tile{ flex:none; width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
+    color:#fff; font-size:21px; font-weight:700; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+  .card .mainCol{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .card .name{ font-size:16px; font-weight:600; display:block; }
-  .card .desc{ font-size:12px; color:var(--sub); display:block; margin-top:4px; line-height:1.5; }
-  .card[disabled]{ opacity:.45; cursor:default; }
+  .card > .name{ flex:1; }
+  .card .desc{ font-size:12.5px; color:var(--sub); display:block; margin-top:2px; line-height:1.5; }
+  .card .note{ font-size:12.5px; color:var(--accent); display:block; margin-top:2px; font-weight:600; }
+  .card .chip{ flex:none; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px;
+    background:rgba(125,211,252,.16); color:var(--accent); }
+  .card .chip.warn{ background:rgba(251,191,36,.18); color:#d97706; }
+  .card[disabled]{ opacity:.55; cursor:default; }
   .sectionTitle{ font-size:13px; color:var(--sub); margin:24px 2px 0; font-weight:600; }
   #addForm{ margin-top:12px; border:1px solid var(--card-border); background:var(--card); border-radius:var(--radius); padding:16px; }
   #addForm input{ width:100%; padding:12px; margin:6px 0; border-radius:12px; border:1px solid var(--card-border);
-    background:transparent; color:var(--text); font-size:15px; }
+    background:transparent; color:var(--text); font-size:16px; }
   #addForm button{ width:100%; padding:13px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:15px; font-weight:700; }
   .privRow{ display:flex; align-items:center; gap:8px; }
   .privRow .grow{ flex:1; }
@@ -62,21 +74,36 @@
   #viewerTitle{ font-size:16px; font-weight:600; }
   #frameWrap{ flex:1; }
   #frameWrap iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
+  #freshPill{ display:flex; align-items:center; gap:8px; margin-top:10px; padding:6px 6px 6px 14px;
+    border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px); border-radius:999px; }
+  #freshDot{ flex:none; width:8px; height:8px; border-radius:999px; background:#4ade80; }
+  #freshPill #status{ flex:1; min-height:0; }
+  #reloadListBtn{ margin-top:0 !important; flex:none; }
+  #searchWrap{ margin-top:14px; }
+  #searchInput{ width:100%; box-sizing:border-box; padding:13px 18px; border-radius:999px; border:1px solid var(--card-border);
+    background:var(--card); backdrop-filter:blur(14px); color:var(--text); font-size:16px; outline:none; }
+  #recentRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .recentChip{ display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border-radius:999px;
+    border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; cursor:pointer; }
+  .recentChip .tile{ width:30px; height:30px; border-radius:999px; display:grid; place-items:center; color:#fff; font-size:14px; font-weight:700; }
 </style>
 <style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
 </head>
 <body>
 <header>
   <h1>ホーム</h1>
-  <div id="status">一覧を読み込んでいます</div>
-  <button id="reloadListBtn" type="button" style="margin-top:10px;border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:8px 16px;font-size:14px;cursor:pointer;">↻ 一覧を更新する</button>
+  <div id="freshPill"><span id="freshDot"></span><div id="status">一覧を読み込んでいます</div><button id="reloadListBtn" type="button" style="border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:8px 16px;font-size:14px;cursor:pointer;">↻ 更新</button></div>
 </header>
 <main>
+  <div id="searchWrap"><input id="searchInput" type="search" placeholder="アプリを探す" autocomplete="off" /></div>
   <button id="updateBox"></button>
   <div id="resumeBox" style="display:none;border:1px solid var(--card-border);background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
     <div style="font-size:14.5px;line-height:1.6;">LLM検証が途中で落ちています。<span id="resumeCount">3</span>秒後に続きを自動で開きます。</div>
     <button id="resumeCancelBtn" type="button" style="margin-top:8px;padding:9px 16px;border-radius:999px;border:1px solid var(--card-border);background:transparent;color:var(--text);font-size:14px;">開かない</button>
   </div>
+  <div class="sectionTitle" id="recentTitle" style="display:none;">最近開いたもの</div>
+  <div id="recentRow" style="display:none;"></div>
+  <div class="sectionTitle">アプリ</div>
   <div class="grid" id="moduleGrid"></div>
 
   <div class="sectionTitle">点検</div>
@@ -129,7 +156,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-10-1538';
+const SHELL_BUILD = '2026-11-10-1705';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -142,11 +169,51 @@ const FALLBACK_MODULES = {
   contract: 'launcher-modules/v1',
   generated_at: 'bundled',
   modules: [
-    { id:'suno', name:'音楽', icon:'🎵', desc:'自分の曲を聴く', url: REMOTE_BASE + 'modules/suno/index.html', status:'preparing' },
-    { id:'streamhub', name:'動画と配信', icon:'📺', desc:'YouTube と Twitch をまとめて見る', url: REMOTE_BASE + 'modules/streamhub/index.html', status:'preparing' },
-    { id:'check', name:'再生の確認', icon:'▶️', desc:'YouTube と Twitch が中で再生できるか確かめる', url: REMOTE_BASE + 'player.html?demo=1', status:'ready' }
+    { id:'suno', name:'音楽', desc:'曲の一覧・検索・歌詞。タップで Suno を開きます', note:'979曲のライブラリ', color:['#f59e0b','#f97316'], url: REMOTE_BASE + 'modules/suno/index.html', status:'ready' },
+    { id:'streamhub', name:'動画と配信', desc:'YouTube と Twitch をまとめて見る', color:['#8b5cf6','#6366f1'], url: REMOTE_BASE + 'modules/streamhub/index.html', status:'preparing' },
+    { id:'check', name:'テストモード', desc:'再生まわりの一括点検（結果テキスト＋まとめ画像）', color:['#0ea5e9','#2563eb'], url: REMOTE_BASE + 'test.html', status:'ready' },
+    { id:'llmnative', name:'LLM検証（ネイティブ）', desc:'アプリ本体の中で llama.cpp を動かす経路の検証', tag:'期間限定', color:['#10b981','#0d9488'], url: REMOTE_BASE + 'diag-llm-native.html?v=20261110-2', status:'ready' },
+    { id:'kurogiri', name:'クロギリ', desc:'黒霧に抗う鎮守府の月次運営ゲーム', color:['#64748b','#1e293b'], url: REMOTE_BASE + 'modules/kurogiri/', status:'ready' }
   ]
 };
+
+const TILE_COLORS = [ ['#f59e0b','#f97316'], ['#8b5cf6','#6366f1'], ['#0ea5e9','#2563eb'], ['#10b981','#0d9488'], ['#ec4899','#f43f5e'], ['#64748b','#334155'] ];
+function tileBg(mod){
+  if (Array.isArray(mod.color) && mod.color.length >= 2) return 'linear-gradient(135deg,' + mod.color[0] + ',' + mod.color[1] + ')';
+  let h = 0; const str = String((mod && (mod.id || mod.name)) || '?');
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  const c = TILE_COLORS[h % TILE_COLORS.length];
+  return 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ')';
+}
+function initialOf(mod){ return ((mod && mod.name) || '？').trim().charAt(0) || '？'; }
+
+const LS_RECENT = 'launcher.recent.v1';
+function loadRecent(){ try{ return JSON.parse(localStorage.getItem(LS_RECENT) || '[]'); }catch(e){ return []; } }
+function noteRecent(mod){
+  if (!mod || mod.status === 'preparing' || !mod.url) return;
+  let list = loadRecent().filter(r => r.id !== mod.id);
+  list.unshift({ id: mod.id, name: mod.name, url: mod.url, color: Array.isArray(mod.color) ? mod.color : null });
+  list = list.slice(0, 4);
+  try{ localStorage.setItem(LS_RECENT, JSON.stringify(list)); }catch(e){}
+  renderRecent();
+}
+function renderRecent(){
+  const row = document.getElementById('recentRow');
+  const title = document.getElementById('recentTitle');
+  if (!row || !title) return;
+  const list = loadRecent();
+  row.textContent = '';
+  if (!list.length){ row.style.display = 'none'; title.style.display = 'none'; return; }
+  title.style.display = ''; row.style.display = 'flex';
+  list.forEach(r => {
+    const b = document.createElement('button'); b.className = 'recentChip'; b.type = 'button';
+    const t = document.createElement('span'); t.className = 'tile'; t.textContent = initialOf(r); t.style.background = tileBg(r);
+    const n = document.createElement('span'); n.textContent = r.name;
+    b.append(t, n);
+    b.addEventListener('click', () => openModule({ id: r.id, name: r.name, url: r.url, status: 'ready' }));
+    row.appendChild(b);
+  });
+}
 
 const grid = document.getElementById('moduleGrid');
 const privateGrid = document.getElementById('privateGrid');
@@ -179,6 +246,7 @@ function openModule(mod){
   frameWrap.appendChild(iframe);
   currentModuleId = mod.id;
   currentFrameEl = iframe;
+  noteRecent(mod);
   viewer.style.display = 'flex';
 }
 function closeViewer(){
@@ -192,11 +260,24 @@ document.getElementById('backBtn').addEventListener('click', closeViewer);
 function card(mod, extra){
   const btn = document.createElement('button');
   btn.className = 'card';
-  const icon = document.createElement('span'); icon.className = 'icon'; icon.textContent = mod.icon || '🔹';
+  btn.dataset.name = mod.name || '';
+  btn.dataset.desc = mod.desc || '';
+  const icon = document.createElement('span'); icon.className = 'tile';
+  icon.textContent = initialOf(mod);
+  icon.style.background = tileBg(mod);
+  const main = document.createElement('span'); main.className = 'mainCol';
   const name = document.createElement('span'); name.className = 'name'; name.textContent = mod.name;
-  const desc = document.createElement('span'); desc.className = 'desc';
-  desc.textContent = mod.status === 'preparing' ? '準備中です' : (mod.desc || '');
-  btn.append(icon, name, desc);
+  const desc = document.createElement('span'); desc.className = 'desc'; desc.textContent = mod.desc || '';
+  main.append(name, desc);
+  if (mod.note){ const note = document.createElement('span'); note.className = 'note'; note.textContent = mod.note; main.appendChild(note); }
+  btn.append(icon, main);
+  const chipText = mod.status === 'preparing' ? '準備中' : (mod.tag || '');
+  if (chipText){
+    const chip = document.createElement('span');
+    chip.className = 'chip' + (mod.status === 'preparing' ? ' warn' : '');
+    chip.textContent = chipText;
+    btn.appendChild(chip);
+  }
   if (mod.status === 'preparing'){ btn.disabled = true; }
   else { btn.addEventListener('click', () => openModule(mod)); }
   if (extra) extra(btn, mod);
@@ -207,13 +288,16 @@ function render(modules){
   grid.textContent = '';
   modules.forEach(m => grid.appendChild(card(m)));
   renderPrivate();
+  applySearch();
 }
 function renderPrivate(){
   privateGrid.textContent = '';
   loadPrivate().forEach((m, i) => {
     const c = document.createElement('button');
     c.className = 'card';
-    const icon = document.createElement('span'); icon.className = 'icon'; icon.textContent = m.icon || '🔹';
+    c.dataset.name = m.name || '';
+    c.dataset.desc = '';
+    const icon = document.createElement('span'); icon.className = 'tile'; icon.textContent = initialOf(m); icon.style.background = tileBg(m);
     const name = document.createElement('span'); name.className = 'name'; name.textContent = m.name;
     const del = document.createElement('span'); del.className = 'del'; del.textContent = '× おわりにする';
     del.addEventListener('click', (ev) => {
@@ -239,6 +323,30 @@ document.getElementById('addForm').addEventListener('submit', (ev) => {
   statusEl.textContent = '足しました。この端末の中だけにあります';
   renderPrivate();
 });
+
+const searchInput = document.getElementById('searchInput');
+function applySearch(){
+  if (!searchInput) return;
+  const q = (searchInput.value || '').trim();
+  [grid, privateGrid].forEach(g => {
+    if (!g) return;
+    Array.prototype.forEach.call(g.children, c => {
+      const hit = !q || ((c.dataset.name || '') + ' ' + (c.dataset.desc || '')).includes(q);
+      c.style.display = hit ? '' : 'none';
+    });
+  });
+}
+if (searchInput){
+  searchInput.addEventListener('input', applySearch);
+  searchInput.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    const all = [];
+    [grid, privateGrid].forEach(g => { if (g) Array.prototype.forEach.call(g.children, c => all.push(c)); });
+    const first = all.find(c => c.style.display !== 'none' && !c.disabled);
+    if (first) first.click();
+  });
+}
 
 function fetchWithTimeout(url, ms){
   const ctl = new AbortController();
@@ -823,6 +931,7 @@ function checkProbeResume(){
   });
 }
 
+renderRecent();
 refreshModules();
 checkShellFresh();
 checkUpdate();

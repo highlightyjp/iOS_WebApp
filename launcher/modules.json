@@ -3,14 +3,23 @@
   "generated_at": "2026-11-09T13:08:56Z",
   "modules": [
     {
+      "color": [
+        "#f59e0b",
+        "#f97316"
+      ],
       "desc": "曲の一覧・検索・歌詞。タップで Suno を開きます",
       "icon": "🎵",
       "id": "suno",
       "name": "音楽",
+      "note": "979曲のライブラリ",
       "status": "ready",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/suno/index.html"
     },
     {
+      "color": [
+        "#8b5cf6",
+        "#6366f1"
+      ],
       "desc": "YouTube と Twitch をまとめて見る",
       "icon": "📺",
       "id": "streamhub",
@@ -19,6 +28,10 @@
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/streamhub/index.html"
     },
     {
+      "color": [
+        "#0ea5e9",
+        "#2563eb"
+      ],
       "desc": "再生まわりの一括点検（結果テキスト＋まとめ画像）",
       "icon": "▶️",
       "id": "check",
@@ -27,18 +40,27 @@
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/test.html"
     },
     {
+      "color": [
+        "#10b981",
+        "#0d9488"
+      ],
+      "desc": "アプリ本体の中で llama.cpp を動かす経路の検証",
       "id": "llmnative",
       "name": "LLM検証（ネイティブ）",
-      "desc": "アプリ本体の中で llama.cpp を動かす経路の検証（期間限定）",
-      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm-native.html?v=20261110-2",
-      "status": "ready"
+      "status": "ready",
+      "tag": "期間限定",
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/diag-llm-native.html?v=20261110-2"
     },
     {
+      "color": [
+        "#64748b",
+        "#1e293b"
+      ],
+      "desc": "黒霧に抗う鎮守府の月次運営ゲーム",
       "id": "kurogiri",
       "name": "クロギリ",
-      "desc": "黒霧に抗う鎮守府の月次運営ゲーム",
-      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/kurogiri/",
-      "status": "ready"
+      "status": "ready",
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/kurogiri/"
     }
   ]
 }
