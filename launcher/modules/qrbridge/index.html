@@ -60,6 +60,7 @@
   </div>
   <button class="big" id="btnScanTest">テストQRを読み取る（受取画面へ）</button>
   <div class="status" id="testStatus">未実行</div>
+  <textarea id="resultBox" readonly rows="11" class="hidden" style="user-select:text;-webkit-user-select:text"></textarea>
   <div id="testBar" class="hidden" style="position:sticky;bottom:0;background:#fff;padding:8px 0;display:flex;gap:8px">
     <button id="btnCopyResult" style="flex:1;padding:12px;font-size:16px">結果をコピーする</button>
     <button id="btnShareResult" style="flex:1;padding:12px;font-size:16px">結果を送る</button>
@@ -12862,16 +12863,56 @@ function renderReport() {
   if (prev) tail += "\n前回: " + prev.at + " 合格 " + prev.pass + " / 判定 " + prev.judged + " → 今回 合格 " + pass + " / 判定 " + judged;
   QB_REPORT.text = head + "\n" + lines.join("\n") + "\n" + tail;
   st.textContent = QB_REPORT.text;
+  $("resultBox").value = QB_REPORT.text;
+  $("resultBox").classList.remove("hidden");
   $("testBar").classList.remove("hidden");
   try { localStorage.setItem("qb-testlog-v1", JSON.stringify({ at: new Date().toLocaleString("ja-JP"), pass: pass, judged: judged })); } catch (e) {}
 }
+function qbCopy(text) {
+  function legacy() {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "0"; ta.style.left = "0"; ta.style.opacity = "0.01";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacy(); });
+  }
+  return Promise.resolve(legacy());
+}
+function flashBtn(btn, msg) {
+  var orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(function () { btn.textContent = orig; }, 2000);
+}
 $("btnCopyResult").onclick = function () {
-  if (QB_REPORT.text && navigator.clipboard) navigator.clipboard.writeText(QB_REPORT.text);
+  if (!QB_REPORT.text) return;
+  var btn = $("btnCopyResult");
+  qbCopy(QB_REPORT.text).then(function (ok) {
+    if (ok) flashBtn(btn, "コピーしました");
+    else {
+      var box = $("resultBox");
+      box.focus();
+      box.select();
+      box.setSelectionRange(0, box.value.length);
+      flashBtn(btn, "結果欄が選択されました（長押しでコピー）");
+    }
+  });
 };
 $("btnShareResult").onclick = function () {
   if (!QB_REPORT.text) return;
-  if (navigator.share) navigator.share({ text: QB_REPORT.text });
-  else if (navigator.clipboard) navigator.clipboard.writeText(QB_REPORT.text);
+  if (navigator.share) navigator.share({ text: QB_REPORT.text }).catch(function () {});
+  else qbCopy(QB_REPORT.text).then(function (ok) { flashBtn($("btnShareResult"), ok ? "コピーしました" : "結果欄を長押しでコピーしてください"); });
 };
 
 var FIXTURES = [
