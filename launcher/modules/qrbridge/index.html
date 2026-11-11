@@ -28,6 +28,7 @@
   <button id="tabSend">送る</button>
   <button id="tabRecv">受け取る</button>
   <button id="tabTest">自己テスト</button>
+  <button id="tabPrompt">Copilot用</button>
 </div>
 
 <section id="paneSend">
@@ -65,6 +66,22 @@
     <button id="btnCopyResult" style="flex:1;padding:12px;font-size:16px">結果をコピーする</button>
     <button id="btnShareResult" style="flex:1;padding:12px;font-size:16px">結果を送る</button>
   </div>
+</section>
+
+<section id="panePrompt" class="hidden">
+  <p>社内Copilotへ渡す3点セットです。各ブロックをコピーして、メールで社用端末へ送ってください。Copilotへは1→2→3の順に続けて貼ります。2と3は大きいので、メールは分けるのが安全です。</p>
+  <p>1つ目：指示文（約3.5KB）</p>
+  <textarea id="promptBox" readonly rows="10" style="user-select:text;-webkit-user-select:text"></textarea>
+  <div style="display:flex;gap:8px">
+    <button class="big" id="btnCopyPrompt" style="flex:1">1をコピーする</button>
+    <button class="big" id="btnMailPrompt" style="flex:1">1をメールで送る</button>
+  </div>
+  <p>2つ目：コーデック実装（約7KB）</p>
+  <textarea id="codecBox" readonly rows="6" style="user-select:text;-webkit-user-select:text"></textarea>
+  <button class="big" id="btnCopyCodec">2をコピーする</button>
+  <p>3つ目：モデル初期値JSON（約35KB）</p>
+  <textarea id="seedBox" readonly rows="6" style="user-select:text;-webkit-user-select:text"></textarea>
+  <button class="big" id="btnCopySeed">3をコピーする</button>
 </section>
 
 <script>
@@ -12679,11 +12696,22 @@ if (false) {
 "use strict";
 var $ = function (id) { return document.getElementById(id); };
 function show(pane) {
-  ["paneSend", "paneRecv", "paneTest"].forEach(function (p) { $(p).classList.toggle("hidden", p !== pane); });
+  ["paneSend", "paneRecv", "paneTest", "panePrompt"].forEach(function (p) { $(p).classList.toggle("hidden", p !== pane); });
 }
 $("tabSend").onclick = function () { show("paneSend"); };
 $("tabRecv").onclick = function () { show("paneRecv"); };
 $("tabTest").onclick = function () { show("paneTest"); };
+$("tabPrompt").onclick = function () { show("panePrompt"); };
+
+var QB_PROMPT_TEXT = "あなたは社内向け単一HTMLツールの実装担当です。以下の仕様で「QRブリッジ（送り側）」を1つのHTMLファイルで作成してください。外部リソース（CDN・外部フォント・外部画像）は一切使わず、全コードをファイル内に埋め込むこと。データの外部送信は行わないこと。localStorageへの保存もしないこと。\n\n\n入力したテキストを可逆圧縮し、QRコード1枚として表示する。受け側には同一仕様の復号ツールが既にあり、フレーム形式と圧縮方式は本仕様で完全一致させること。独自の変更は一切加えないこと。\n\n\n本指示文（1点目）の後に、2点目として「コーデック実装（JavaScriptソース）」、3点目として「モデル初期値（JSON）」を続けて渡す。2点目のソースは改変せず、そのままツールに組み込むこと。3点目のJSONは変数 QB_SEED として埋め込むこと。\n\n（数値はすべてビッグエンディアン）\n- バイト0-1：マジック 'Q','B'\n- バイト2：版 = 1\n- バイト3：コーデック（0=無圧縮、2=文脈モデル圧縮）\n- バイト4：モデル版（QB_SEED の v の値 = 1）\n- バイト5-8：原文のバイト長（uint32）\n- バイト9-12：原文バイト列の CRC32（IEEE、uint32）\n- バイト13以降：本体（コーデック0なら原文バイト列そのもの、2なら圧縮列）\n原文は UTF-8 バイト列とする。圧縮は2点目のソースの qbPack(text, QB_SEED) が上記フレームを丸ごと生成するので、フレーム組み立てを自作しないこと。\n\n\n1. テキスト入力欄と「QRを表示する」ボタン。\n2. qbPack でフレームを作り、バイトモード・誤り訂正レベルMのQRコードとして大きく1枚表示する。QR生成コードもファイル内に埋め込むこと。\n3. フレームが2,331バイトを超える場合はQR化せず、「上限超過：○○バイト（上限2,331）」と画面に明示すること。分割や切り捨てはしないこと。\n4. フレームのバイト数と、原文の文字数を表示すること。\n\n（画面内の専用ボタンから起動し、本データには触れないこと）\n1. 内蔵フィクスチャ3件で qbPack→復号（qbUnpack）の往復一致を確認する。\n2. 検収ベクタ：次の入力を qbPack した結果が、フレーム長84バイト／コーデック2／モデル版1／先頭16バイトhex「5142010201000000dbb4a43625de39aa」／フレーム全体のCRC32「3766012516」と全て一致することを確認する。一致しない場合は不合格として画面に明示すること。\n入力：「会議は午後二時から本会議室で開催する。出席者は事前に資料を確認し、質問事項があれば前日までに担当へ連絡すること。議事録は会議の翌営業日に共有する。」\n3. 結果は項目別（合否／バイト数／所要時間）に一覧表示し、結果テキストをコピーできるボタンを付けること。\n\n\n- 圧縮・復号をLLMの推測や要約で代替しないこと。\n- 2点目のコーデック実装とフレーム形式・プロトコル定数を変更しないこと。\n- 黙って切り捨てないこと。容量・形式のエラーは画面に明示すること。\n\nファイル冒頭のコメントと画面上に版番号（1.0）を表示すること。\n";
+var QB_CODEC_SRC = "\"use strict\";\n/* QRブリッジ codec v1: UTF-8バイト列 → 文脈モデル(PPM型,次数2,学習初期化+適応) → 算術符号化\n * Python参照実装(ppm.py)と量子化手順を一致させてある。符号化/復号は同一の確率計算を使うこと。\n * frame: 'Q','B', frameVer=1, codec(0=stored,2=ppm), seedVer, origLen(uint32BE), crc32(uint32BE), data\n */\nconst QB_BETA2 = 16.0, QB_BETA1 = 8.0, QB_BETA0 = 4.0, QB_TOTAL = 65536;\n\nfunction qbMakeModel(seed) {\n  const c0 = seed.c0.slice();\n  let n0 = 0;\n  for (const v of c0) n0 += v;\n  const c1 = new Map(); // prev -> Map(sym->count) + total\n  for (const k of Object.keys(seed.c1)) {\n    const m = new Map(); let tot = 0;\n    for (const [b, c] of seed.c1[k]) { m.set(b, c); tot += c; }\n    c1.set(Number(k), { m, tot });\n  }\n  const c2 = new Map();\n  for (const k of Object.keys(seed.c2)) {\n    const [a, b] = k.split(\",\").map(Number);\n    const m = new Map(); let tot = 0;\n    for (const [s, c] of seed.c2[k]) { m.set(s, c); tot += c; }\n    c2.set(a * 256 + b, { m, tot });\n  }\n  return { c0, n0, c1, c2, hist: [] };\n}\n\nfunction qbProbs(model) {\n  const p = new Array(256);\n  for (let b = 0; b < 256; b++) p[b] = (model.c0[b] + QB_BETA0 / 256.0) / (model.n0 + QB_BETA0);\n  const h = model.hist;\n  if (h.length >= 1) {\n    const d = model.c1.get(h[h.length - 1]);\n    if (d) {\n      for (let b = 0; b < 256; b++) {\n        const c = d.m.get(b) || 0;\n        p[b] = (c + QB_BETA1 * p[b]) / (d.tot + QB_BETA1);\n      }\n    }\n  }\n  if (h.length >= 2) {\n    const d = model.c2.get(h[h.length - 2] * 256 + h[h.length - 1]);\n    if (d) {\n      for (let b = 0; b < 256; b++) {\n        const c = d.m.get(b) || 0;\n        p[b] = (c + QB_BETA2 * p[b]) / (d.tot + QB_BETA2);\n      }\n    }\n  }\n  return p;\n}\n\nfunction qbCum(model) {\n  const p = qbProbs(model);\n  const cum = new Array(257);\n  cum[0] = 0;\n  for (let b = 0; b < 256; b++) {\n    const f = Math.max(1, Math.floor(p[b] * QB_TOTAL));\n    cum[b + 1] = cum[b] + f;\n  }\n  return cum;\n}\n\nfunction qbUpdate(model, sym) {\n  model.hist.push(sym);\n  const h = model.hist;\n  model.c0[sym] += 1;\n  model.n0 += 1;\n  if (h.length >= 2) {\n    const key = h[h.length - 2];\n    let d = model.c1.get(key);\n    if (!d) { d = { m: new Map(), tot: 0 }; model.c1.set(key, d); }\n    d.m.set(sym, (d.m.get(sym) || 0) + 1);\n    d.tot += 1;\n  }\n  if (h.length >= 3) {\n    const key = h[h.length - 3] * 256 + h[h.length - 2];\n    let d = model.c2.get(key);\n    if (!d) { d = { m: new Map(), tot: 0 }; model.c2.set(key, d); }\n    d.m.set(sym, (d.m.get(sym) || 0) + 1);\n    d.tot += 1;\n  }\n}\n\nconst QB_TOP = 4294967296, QB_HALF = QB_TOP / 2, QB_QRTR = QB_TOP / 4, QB_THREEQ = 3 * QB_QRTR;\n\nfunction qbEncode(data, seed) {\n  const model = qbMakeModel(seed);\n  const bits = [];\n  let follow = 0;\n  const emit = (bit) => { bits.push(bit); for (let i = 0; i < follow; i++) bits.push(1 - bit); follow = 0; };\n  let low = 0, high = QB_TOP;\n  for (const sym of data) {\n    const cum = qbCum(model);\n    const total = cum[256];\n    const rng = high - low;\n    high = low + Math.floor(rng * cum[sym + 1] / total);\n    low = low + Math.floor(rng * cum[sym] / total);\n    for (;;) {\n      if (high <= QB_HALF) { emit(0); }\n      else if (low >= QB_HALF) { emit(1); low -= QB_HALF; high -= QB_HALF; }\n      else if (low >= QB_QRTR && high <= QB_THREEQ) { follow += 1; low -= QB_QRTR; high -= QB_QRTR; }\n      else break;\n      low *= 2; high *= 2;\n    }\n    qbUpdate(model, sym);\n  }\n  follow += 1;\n  if (low < QB_QRTR) emit(0); else emit(1);\n  const out = new Uint8Array(Math.ceil(bits.length / 8));\n  bits.forEach((b, i) => { if (b) out[i >> 3] |= (1 << (7 - (i & 7))); });\n  return out;\n}\n\nfunction qbDecode(blob, seed, n) {\n  const model = qbMakeModel(seed);\n  let pos = 0;\n  const readBit = () => {\n    const bi = pos >> 3;\n    const bit = bi < blob.length ? (blob[bi] >> (7 - (pos & 7))) & 1 : 0;\n    pos += 1;\n    return bit;\n  };\n  let value = 0;\n  for (let i = 0; i < 32; i++) value = value * 2 + readBit();\n  let low = 0, high = QB_TOP;\n  const out = new Uint8Array(n);\n  for (let i = 0; i < n; i++) {\n    const cum = qbCum(model);\n    const total = cum[256];\n    const rng = high - low;\n    const scaled = Math.floor(((value - low + 1) * total - 1) / rng);\n    let sym = 0;\n    for (let s = 0; s < 256; s++) { if (cum[s + 1] > scaled) { sym = s; break; } }\n    out[i] = sym;\n    high = low + Math.floor(rng * cum[sym + 1] / total);\n    low = low + Math.floor(rng * cum[sym] / total);\n    for (;;) {\n      if (high <= QB_HALF) { /* nothing */ }\n      else if (low >= QB_HALF) { low -= QB_HALF; high -= QB_HALF; value -= QB_HALF; }\n      else if (low >= QB_QRTR && high <= QB_THREEQ) { low -= QB_QRTR; high -= QB_QRTR; value -= QB_QRTR; }\n      else break;\n      low *= 2; high *= 2;\n      value = value * 2 + readBit();\n    }\n    qbUpdate(model, sym);\n  }\n  return out;\n}\n\nconst QB_CRC_TABLE = (() => {\n  const t = new Int32Array(256);\n  for (let n = 0; n < 256; n++) {\n    let c = n;\n    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);\n    t[n] = c;\n  }\n  return t;\n})();\n\nfunction qbCrc32(data) {\n  let c = -1;\n  for (const b of data) c = QB_CRC_TABLE[(c ^ b) & 0xFF] ^ (c >>> 8);\n  return (c ^ -1) >>> 0;\n}\n\nfunction qbPack(text, seed) {\n  const data = new TextEncoder().encode(text);\n  const packed = qbEncode(data, seed);\n  const codec = packed.length < data.length ? 2 : 0;\n  const body = codec === 2 ? packed : data;\n  const frame = new Uint8Array(13 + body.length);\n  frame[0] = 0x51; frame[1] = 0x42; frame[2] = 1; frame[3] = codec; frame[4] = seed.v;\n  const dv = new DataView(frame.buffer);\n  dv.setUint32(5, data.length);\n  dv.setUint32(9, qbCrc32(data));\n  frame.set(body, 13);\n  return frame;\n}\n\nfunction qbUnpack(frame, seed) {\n  if (frame.length < 13 || frame[0] !== 0x51 || frame[1] !== 0x42) throw new Error(\"形式が違います(QBヘッダなし)\");\n  if (frame[2] !== 1) throw new Error(\"未対応の版です: \" + frame[2]);\n  const codec = frame[3];\n  if (codec === 2 && frame[4] !== seed.v) throw new Error(\"モデルの版が一致しません\");\n  const dv = new DataView(frame.buffer, frame.byteOffset, frame.byteLength);\n  const len = dv.getUint32(5);\n  const crc = dv.getUint32(9);\n  const body = frame.subarray(13);\n  let data;\n  if (codec === 0) data = body;\n  else if (codec === 2) data = qbDecode(body, seed, len);\n  else throw new Error(\"未対応のコーデックです: \" + codec);\n  if (data.length !== len) throw new Error(\"長さが一致しません\");\n  if (qbCrc32(data) !== crc) throw new Error(\"CRCが一致しません(データ破損)\");\n  return new TextDecoder().decode(data);\n}\n\nif (typeof module !== \"undefined\" && module.exports) {\n  module.exports = { qbPack, qbUnpack, qbEncode, qbDecode, qbCrc32 };\n}\n";
+$("promptBox").value = QB_PROMPT_TEXT;
+$("codecBox").value = QB_CODEC_SRC;
+$("seedBox").value = JSON.stringify(QB_SEED);
+$("btnMailPrompt").onclick = function () {
+  var href = "mailto:?subject=" + encodeURIComponent("QRブリッジ実装指示（1/3：指示文）") + "&body=" + encodeURIComponent(QB_PROMPT_TEXT);
+  location.href = href;
+};
 
 var LIMIT = 2331;
 $("btnMake").onclick = function () {
@@ -12914,6 +12942,19 @@ $("btnShareResult").onclick = function () {
   if (navigator.share) navigator.share({ text: QB_REPORT.text }).catch(function () {});
   else qbCopy(QB_REPORT.text).then(function (ok) { flashBtn($("btnShareResult"), ok ? "コピーしました" : "結果欄を長押しでコピーしてください"); });
 };
+[["btnCopyPrompt", "promptBox"], ["btnCopyCodec", "codecBox"], ["btnCopySeed", "seedBox"]].forEach(function (pair) {
+  $(pair[0]).onclick = function () {
+    var btn = $(pair[0]);
+    qbCopy($(pair[1]).value).then(function (ok) {
+      if (ok) flashBtn(btn, "コピーしました");
+      else {
+        var box = $(pair[1]);
+        box.focus(); box.select(); box.setSelectionRange(0, box.value.length);
+        flashBtn(btn, "欄が選択されました（長押しでコピー）");
+      }
+    });
+  };
+});
 
 var FIXTURES = [
   "会議は午後二時から本会議室で開催する。出席者は事前に資料を確認し、質問事項があれば前日までに担当へ連絡すること。議事録は会議の翌営業日に共有する。",
