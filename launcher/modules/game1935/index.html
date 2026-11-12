@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>1935年の世界</title>
+<style>
+  :root{
+    --ink:#1c2430; --sub:#5a6572; --line:#d8dde3; --bg:#f2f0eb; --card:#ffffff;
+    --accent:#2050a0; --warn:#a03024; --ok:#1e7a46; --glass:rgba(255,255,255,.82);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{touch-action:manipulation;}
+  body{margin:0; font-family:-apple-system,"Hiragino Sans",sans-serif; background:var(--bg); color:var(--ink); font-size:15px; line-height:1.6;}
+  header{position:sticky; top:0; z-index:5; background:var(--glass); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); padding:10px 16px;}
+  header .date{font-size:19px; font-weight:700;}
+  header .meta{font-size:12.5px; color:var(--sub);}
+  header .headline{font-size:14.5px; font-weight:600; margin-top:2px;}
+  nav.tabs{position:sticky; top:0; z-index:4; display:flex; gap:8px; padding:8px 16px; background:var(--glass); backdrop-filter:blur(14px); border-bottom:1px solid var(--line);}
+  nav.tabs button{flex:1; padding:9px 0; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:14px; color:var(--ink);}
+  nav.tabs button.on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  main{padding:12px 16px 96px; max-width:720px; margin:0 auto;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:12px;}
+  .card h3{margin:0 0 8px; font-size:14px; color:var(--sub); font-weight:600;}
+  .row{display:flex; justify-content:space-between; gap:8px; padding:3px 0;}
+  .row b{font-weight:600;}
+  .msg{margin-bottom:10px;}
+  .msg .who{font-size:12px; color:var(--sub); margin-bottom:2px;}
+  .msg .body{white-space:pre-wrap; word-break:break-word;}
+  .msg.gm .body{background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px;}
+  .msg.me .body{background:#e8eefb; border-radius:12px; padding:10px 12px;}
+  .msg .paper{font-weight:700; margin-bottom:4px;}
+  details.rsn{margin-top:6px;} details.rsn summary{font-size:12.5px; color:var(--accent);}
+  details.rsn .in{font-size:13px; color:var(--sub); white-space:pre-wrap; padding:6px 2px;}
+  .notice{border:1px solid var(--warn); color:var(--warn); border-radius:10px; padding:10px 12px; margin-bottom:12px; background:#fff;}
+  .oknote{border:1px solid var(--ok); color:var(--ok); border-radius:10px; padding:10px 12px; margin-bottom:12px; background:#fff;}
+  #composer{position:fixed; left:0; right:0; bottom:0; background:var(--glass); backdrop-filter:blur(14px); border-top:1px solid var(--line); padding:8px 12px calc(8px + env(safe-area-inset-bottom));}
+  #composer .line1{display:flex; gap:8px; margin-bottom:8px;}
+  #composer select{padding:8px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:14px;}
+  #composer .line2{display:flex; gap:8px;}
+  #composer textarea{flex:1; min-height:42px; max-height:110px; border:1px solid var(--line); border-radius:10px; padding:10px; font-size:15px; font-family:inherit; resize:vertical;}
+  #sendBtn{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:0 18px; font-size:15px; font-weight:600;}
+  #sendBtn:disabled{opacity:.45;}
+  .bar{height:8px; background:#e6e9ed; border-radius:4px; overflow:hidden; margin:4px 0 2px;}
+  .bar i{display:block; height:100%; background:var(--accent);}
+  .q{padding:8px 0; border-bottom:1px solid var(--line);} .q:last-child{border-bottom:none;}
+  .q .nm{font-weight:600;} .q .st{font-size:12.5px; color:var(--sub);}
+  .mini{font-size:12.5px; color:var(--sub);}
+  button.act{padding:10px 14px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:14px; margin-right:8px;}
+  button.danger{border-color:var(--warn); color:var(--warn);}
+  .ach{display:flex; gap:8px; padding:5px 0; border-bottom:1px solid var(--line);} .ach:last-child{border-bottom:none;}
+  .ach .mark{font-weight:700;} .ach.locked{color:var(--sub);}
+  input.cfg{width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:14px; margin-bottom:8px;}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<header>
+  <div class="date" id="hDate">1935年の世界</div>
+  <div class="meta" id="hMeta">読み込んでいます</div>
+  <div class="headline" id="hHead"></div>
+</header>
+<nav class="tabs">
+  <button id="tabBtnBoard" class="on">盤面</button>
+  <button id="tabBtnWorld">列強・地域</button>
+  <button id="tabBtnRes">資源・進行</button>
+</nav>
+<main>
+  <div id="notice"></div>
+
+  <section id="viewSetup" hidden>
+    <div class="card">
+      <h3>接続の設定</h3>
+      <p class="mini">自宅の基盤への接続先とキーが未設定です。「取り込み」で設定済みの場合は、この画面は出ません。手入力もできます。</p>
+      <input class="cfg" id="cfgBase" placeholder="接続先（https://…:8443）">
+      <input class="cfg" id="cfgKey" placeholder="キー" type="password">
+      <button class="act" id="cfgSave">保存して接続</button>
+    </div>
+  </section>
+
+  <section id="viewEmpty" hidden>
+    <div class="card">
+      <h3>盤面がありません</h3>
+      <p>まだ対局が始まっていません。1935年12月から始めるか、移行の段で既存の盤面を取り込みます。</p>
+      <button class="act" id="startBtn">新しい対局を始める</button>
+    </div>
+  </section>
+
+  <section id="viewBoard">
+    <div class="card" id="situationCard" hidden>
+      <h3>情勢</h3>
+      <div id="situation" style="white-space:pre-wrap"></div>
+    </div>
+    <div id="chat"></div>
+    <div class="card">
+      <h3>管理</h3>
+      <button class="act" id="rollbackBtn">1手戻す</button>
+      <button class="act danger" id="resetBtn">最初からやり直す</button>
+      <p class="mini">1手戻すともう一度で元に戻ります。やり直すと対局は初期状態に戻ります。</p>
+    </div>
+  </section>
+
+  <section id="viewWorld" hidden>
+    <div class="card"><h3>列強</h3><div id="powers"></div></div>
+    <div class="card"><h3>地域</h3><div id="regions"></div></div>
+    <div class="card"><h3>人物</h3><div id="officials"></div></div>
+  </section>
+
+  <section id="viewRes" hidden>
+    <div class="card"><h3>資源</h3><div id="resources"></div><div id="lastReport" class="mini" style="margin-top:8px"></div></div>
+    <div class="card"><h3>進行中の計画</h3><div id="queues"></div></div>
+    <div class="card"><h3>各国の反応の重み</h3><div id="adapt"></div></div>
+    <div class="card"><h3>実績</h3><div id="achievements"></div></div>
+    <div class="card"><h3>記録</h3><div id="logList"></div>
+      <button class="act" id="moreLogBtn">もっと見る</button></div>
+  </section>
+</main>
+
+<div id="composer">
+  <div class="line1">
+    <select id="kindSel">
+      <option value="order">命令</option>
+      <option value="diplomacy">外交</option>
+      <option value="consult">相談</option>
+    </select>
+    <select id="targetSel" hidden></select>
+  </div>
+  <div class="line2">
+    <textarea id="inputText" placeholder="命令・外交・相談の文面"></textarea>
+    <button id="sendBtn">送る</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const MODULE_BUILD = '2026-11-12-1540';
+const LS_BASE = 'suno.audioBase.v1';
+const LS_KEY = 'suno.audioKey.v1';
+const $ = id => document.getElementById(id);
+const testMode = new URLSearchParams(location.search).get('test') === '1';
+let state = null;       // state-lite の state
+let historical = null;  // 静的層
+let logOffset = 0;
+let sending = false;
+
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+function cfg(){ try{ return { base: (localStorage.getItem(LS_BASE) || '').replace(/\/+$/, ''), key: localStorage.getItem(LS_KEY) || '' }; }catch(e){ return { base:'', key:'' }; } }
+
+async function api(method, path, body){
+  const c = cfg();
+  if(!c.base || !c.key) throw new Error('no-config');
+  const opt = { method, headers: { 'X-API-Key': c.key } };
+  if(body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  const r = await fetch(c.base + '/v1/game1935/' + path, opt);
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok) throw Object.assign(new Error(d.error || ('http-' + r.status)), { code: d.error, status: r.status });
+  return d;
+}
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+
+function errText(e){
+  if(e.message === 'no-config') return '接続の設定がまだです。下の設定から保存してください。';
+  if(e.code === 'judge_unavailable') return '判定の準備ができていないため、行は未解決のまま残りました。';
+  if(e.code === 'api_monthly_cap_reached') return '今月の判定の上限に達しています。';
+  if(e.code === 'no_state') return '盤面がありません。';
+  return '通信に失敗しました（' + esc(e.code || e.message) + '）。';
+}
+
+function showNotice(text, ok){
+  const n = $('notice');
+  n.innerHTML = text ? '<div class="' + (ok ? 'oknote' : 'notice') + '">' + esc(text) + '</div>' : '';
+}
+
+function fmtDate(dstr){ return dstr || ''; }
+
+function render(){
+  if(!state){ return; }
+  const p = state.progress || {};
+  $('hDate').textContent = fmtDate(p.date) + '　第' + (p.turn || 0) + '手';
+  $('hMeta').textContent = '担当国：' + esc(p.player_nation || '') + '　スコア：' + (p.score == null ? '―' : p.score) + (p.ending ? '　結末：' + esc(p.ending) : '');
+  $('hHead').textContent = p.headline || '';
+  $('situationCard').hidden = !p.situation;
+  $('situation').textContent = p.situation || '';
+
+  // 会話（state-lite は新しい順。表示は古い順に直す）
+  const rows = (state.chat || []).slice().reverse();
+  $('chat').innerHTML = rows.map(r => {
+    if(r.role === 'gm'){
+      const paper = r.newspaper_headline ? '<div class="paper">📰 ' + esc(r.newspaper_headline) + '</div>' : '';
+      const lead = r.newspaper_lead ? '<div class="mini">' + esc(r.newspaper_lead) + '</div>' : '';
+      const rsn = r.rationale ? '<details class="rsn"><summary>根拠を見る</summary><div class="in">' + esc(r.rationale) + '</div></details>' : '';
+      const who = r.kind === 'diplomacy' ? ('外交返信（' + esc(r.nation || '') + '）') : '結果';
+      return '<div class="msg gm"><div class="who">' + who + '　' + esc(r.date || '') + (r.resolved === false ? '　● 未解決' : '') + '</div><div class="body">' + paper + lead + '<div>' + esc(r.text) + '</div>' + rsn + '</div></div>';
+    }
+    const kindLabel = { order: '命令', diplomacy: '外交', consult: '相談' }[r.kind] || r.kind || '';
+    return '<div class="msg me"><div class="who">' + esc(kindLabel) + (r.target ? '（宛先：' + esc(r.target) + '）' : '') + (r.resolved === false ? '　● 未解決（判定待ち）' : '') + '</div><div class="body">' + esc(r.text) + '</div></div>';
+  }).join('') || '<div class="card">まだ動きがありません。下の欄から最初の命令をどうぞ。</div>';
+
+  // 列強
+  $('powers').innerHTML = (state.powers || []).map(pw =>
+    '<div class="row"><span><b>' + esc(pw.name) + '</b>（' + esc(pw.stance || '―') + '）<br><span class="mini">' + esc(pw.leader || '') + '</span></span>' +
+    '<span>陸 ' + pw.army + '／海 ' + pw.navy + '<br>工 ' + pw.industry + '／外 ' + pw.diplomacy + '</span></div>').join('');
+  // 地域
+  $('regions').innerHTML = (state.regions || []).map(r =>
+    '<div class="row"><span>' + esc(r.name) + '</span><b>' + esc(r.controller || '') + '</b></div>' +
+    (r.note ? '<div class="mini" style="margin:-2px 0 4px">' + esc(r.note) + '</div>' : '')).join('');
+  // 人物
+  const off = state.officials || {};
+  $('officials').innerHTML = Object.keys(off).map(n => {
+    const o = off[n] || {};
+    const parts = [['首班', o.leader], ['外相', o.foreign], ['軍', o.military], ['駐日大使', o.ambassador]].filter(x => x[1]);
+    return '<div class="row"><span><b>' + esc(n) + '</b></span><span class="mini">' + parts.map(x => x[0] + '：' + esc(x[1])).join('／') + '</span></div>';
+  }).join('');
+  // 資源
+  const res = state.resources || {}, oil = res.oil || {}, steel = res.steel || {}, man = res.manpower || {};
+  $('resources').innerHTML =
+    '<div class="row"><span>石油</span><b>備蓄 ' + oil.stock + ' 万kL（流入 ' + oil.inflow + '／流出 ' + oil.outflow + '）</b></div>' +
+    '<div class="row"><span>鋼材</span><b>備蓄 ' + steel.stock + ' 万トン（生産 ' + steel.production + '／消費 ' + steel.consumption + '）</b></div>' +
+    '<div class="row"><span>人員</span><b>動員可能 ' + man.pool + ' 万人（動員中 ' + man.mobilized + ' 万人）</b></div>' +
+    '<div class="row"><span>状態</span><b>' + (res.at_war ? '● 戦争状態' : '○ 平時') + (res.oil_penalty_level ? '／石油枯渇 第' + res.oil_penalty_level + '段階' : '') + '</b></div>';
+  $('lastReport').innerHTML = (res.last_report || []).map(x => esc(x)).join('<br>');
+  // キュー
+  $('queues').innerHTML = (state.queues || []).filter(q => q.status === '進行中').map(q => {
+    const pct = q.total_months ? Math.min(100, Math.round(q.progress_months / q.total_months * 100)) : 0;
+    return '<div class="q"><div class="nm">' + esc(q.name) + '</div><div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="st">' + esc(q.category || '') + '　' + q.progress_months + '／' + q.total_months + ' か月　' + esc(q.stage || '') + '</div></div>';
+  }).join('') || '<div class="mini">進行中の計画はありません。</div>';
+  // 適応
+  const prof = (state.adaptation || {}).profiles || {};
+  const ax = [['vigilance', '警戒'], ['armament', '軍拡'], ['appeasement', '宥和'], ['other_focus', '他方面']];
+  $('adapt').innerHTML = Object.keys(prof).filter(n => n !== (state.progress || {}).player_nation).map(n =>
+    '<div class="row"><span>' + esc(n) + '</span><span class="mini">' + ax.map(a => a[1] + ' ' + Number(prof[n][a[0]] || 1).toFixed(2)).join('　') + '</span></div>').join('');
+  // 実績
+  const unlocked = {}; (state.achievements || []).forEach(a => { unlocked[a.id] = a; });
+  const defs = ((historical || {}).achievements) || [];
+  $('achievements').innerHTML = defs.map(d => {
+    const u = unlocked[d.id];
+    return '<div class="ach' + (u ? '' : ' locked') + '"><span class="mark">' + (u ? '●' : '○') + '</span><span><b>' + esc(d.name) + '</b><br><span class="mini">' + (u ? (u.date || '') + ' に解除' : esc(d.condition || '')) + '</span></span></div>';
+  }).join('') || '<div class="mini">実績の定義を読み込めませんでした。</div>';
+  // 外交の宛先
+  const sel = $('targetSel');
+  const cur = sel.value;
+  sel.innerHTML = (state.powers || []).filter(pw => pw.name !== (state.progress || {}).player_nation)
+    .map(pw => '<option value="' + esc(pw.name) + '">' + esc(pw.name) + '</option>').join('');
+  if(cur) sel.value = cur;
+}
+
+function renderLog(items){
+  $('logList').innerHTML = items.map(l =>
+    '<div class="q"><div class="nm">' + esc(l.headline || '') + '</div><div class="st">' + esc(l.date || '') + '</div><div>' + esc(l.text) + '</div></div>').join('')
+    || '<div class="mini">記録はまだありません。</div>';
+}
+
+async function loadAll(){
+  showNotice('');
+  try{
+    const d = await api('GET', 'state-lite');
+    state = d.state;
+    $('viewSetup').hidden = true; $('viewEmpty').hidden = true; $('viewBoard').hidden = false;
+    render();
+  }catch(e){
+    if(e.code === 'no_state' || e.status === 404){
+      state = null;
+      $('viewSetup').hidden = true; $('viewEmpty').hidden = false; $('viewBoard').hidden = true;
+      $('hMeta').textContent = '盤面がありません';
+      return;
+    }
+    if(e.message === 'no-config'){ $('viewSetup').hidden = false; $('viewBoard').hidden = true; return; }
+    showNotice(errText(e));
+    return;
+  }
+  try{
+    const h = await api('GET', 'historical');
+    historical = (h.historical || {}).historical || h.historical || {};
+    render();
+  }catch(e){ /* 静的層は無くても盤面は使える */ }
+  try{
+    const lg = await api('GET', 'history?kind=log&offset=0&limit=20');
+    logOffset = (lg.items || []).length;
+    renderLog(lg.items || []);
+    $('moreLogBtn').hidden = !lg.next_offset && lg.next_offset !== 0 ? true : false;
+  }catch(e){ /* 記録は後からでもよい */ }
+}
+
+async function send(){
+  if(sending) return;
+  const text = $('inputText').value.trim();
+  if(!text) return;
+  const kind = $('kindSel').value;
+  const body = { kind, text };
+  if(kind === 'diplomacy') body.target = $('targetSel').value || undefined;
+  sending = true; $('sendBtn').disabled = true;
+  try{
+    const d = await api('POST', 'messages', body);
+    $('inputText').value = '';
+    if(d.resolved === false){
+      showNotice('判定が完了しなかったため、行は未解決のまま残りました（理由：' + esc(d.reason || '不明') + '）。時間をおいて再度お試しください。');
+    }
+    await loadAll();
+  }catch(e){
+    showNotice(errText(e));
+  }finally{
+    sending = false; $('sendBtn').disabled = false;
+  }
+}
+
+function switchTab(name){
+  ['Board', 'World', 'Res'].forEach(t => {
+    $('view' + t).hidden = t !== name || !state;
+    $('tabBtn' + t).classList.toggle('on', t === name);
+  });
+}
+
+$('tabBtnBoard').onclick = () => switchTab('Board');
+$('tabBtnWorld').onclick = () => switchTab('World');
+$('tabBtnRes').onclick = () => switchTab('Res');
+$('kindSel').onchange = () => { $('targetSel').hidden = $('kindSel').value !== 'diplomacy'; };
+$('sendBtn').onclick = send;
+$('cfgSave').onclick = () => {
+  try{
+    localStorage.setItem(LS_BASE, $('cfgBase').value.trim());
+    localStorage.setItem(LS_KEY, $('cfgKey').value.trim());
+  }catch(e){}
+  loadAll();
+};
+$('startBtn').onclick = async () => {
+  try{ await api('POST', 'reset', {}); showNotice('新しい対局を始めました。', true); await loadAll(); }
+  catch(e){ showNotice(errText(e)); }
+};
+$('rollbackBtn').onclick = async () => {
+  if(!confirm('直前の1手を取り消しますか？')) return;
+  try{ await api('POST', 'rollback', {}); showNotice('1手戻しました。', true); await loadAll(); }
+  catch(e){ showNotice(errText(e)); }
+};
+$('resetBtn').onclick = async () => {
+  if(!confirm('対局を最初（1935年12月）からやり直しますか？今の盤面は前世代として1手分だけ残ります。')) return;
+  try{ await api('POST', 'reset', {}); showNotice('最初からやり直しました。', true); await loadAll(); }
+  catch(e){ showNotice(errText(e)); }
+};
+$('moreLogBtn').onclick = async () => {
+  try{
+    const lg = await api('GET', 'history?kind=log&offset=' + logOffset + '&limit=20');
+    const items = lg.items || [];
+    logOffset += items.length;
+    const cur = $('logList').innerHTML;
+    $('logList').innerHTML = cur + items.map(l =>
+      '<div class="q"><div class="nm">' + esc(l.headline || '') + '</div><div class="st">' + esc(l.date || '') + '</div><div>' + esc(l.text) + '</div></div>').join('');
+    if(!lg.next_offset && lg.next_offset !== 0) $('moreLogBtn').hidden = true;
+  }catch(e){ showNotice(errText(e)); }
+};
+
+// 版の自己更新（build.txt との不一致で1回だけ再読み込み）
+(async () => {
+  try{
+    const t = await (await fetch('build.txt', { cache: 'no-store' })).text();
+    const b = t.trim();
+    if(b && b !== MODULE_BUILD && sessionStorage.getItem('g35.buildReload') !== b){
+      sessionStorage.setItem('g35.buildReload', b);
+      location.reload();
+    }
+  }catch(e){}
+})();
+
+// 試験モード（launcher-test/v1）
+async function runTest(){
+  const items = [];
+  const t0 = performance.now();
+  const c = cfg();
+  items.push({ id: 'G1', gate: null, label: '接続の設定', result: (c.base && c.key) ? 'pass' : 'fail', detail: (c.base && c.key) ? '設定あり' : '未設定', ms: 0 });
+  try{
+    const h = await api('GET', 'historical');
+    const n = ((h.historical || {}).historical || h.historical || {}).events;
+    items.push({ id: 'G2', gate: null, label: '自宅の基盤への到達', result: 'pass', detail: '史実データ ' + (n ? n.length : 0) + '件の出来事', ms: Math.round(performance.now() - t0) });
+  }catch(e){
+    items.push({ id: 'G2', gate: null, label: '自宅の基盤への到達', result: 'fail', detail: errText(e), ms: Math.round(performance.now() - t0) });
+  }
+  try{
+    const d = await api('GET', 'state-lite');
+    items.push({ id: 'G3', gate: null, label: '盤面の取得', result: 'pass', detail: (d.state.progress || {}).date + ' 第' + (d.state.progress || {}).turn + '手', ms: Math.round(performance.now() - t0) });
+  }catch(e){
+    items.push({ id: 'G3', gate: null, label: '盤面の取得', result: (e.code === 'no_state' || e.status === 404) ? 'na' : 'fail', detail: errText(e), ms: Math.round(performance.now() - t0) });
+  }
+  items.push({ id: 'G4', gate: null, label: '送信の経路', result: 'na', detail: '盤面を変えるため試験では送らない（実プレイで確認）', ms: 0 });
+  const msg = { contract: 'launcher-test/v1', moduleId: 'game1935', version: MODULE_BUILD, items,
+    perf: { fps: null, jankFrames: 0, longTasks: 0, memoryMB: null, dpr: window.devicePixelRatio || 1 },
+    untouched: { checked: false, same: true },
+    summary: { pass: items.filter(i => i.result === 'pass').length, fail: items.filter(i => i.result === 'fail').length, na: items.filter(i => i.result === 'na').length } };
+  try{ window.parent.postMessage(msg, '*'); }catch(e){}
+}
+
+if(testMode){ runTest(); } else { loadAll(); }
+</script>
+</body>
+</html>
