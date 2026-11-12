@@ -108,6 +108,7 @@
   .row.iris{align-self:flex-start; align-items:flex-start;}
   .row.me{align-self:flex-end; align-items:flex-end;}
   .who{font-size:10.5px; color:var(--sub); margin:0 4px 3px; letter-spacing:.06em;}
+  .note{font-size:10.5px; color:var(--sub); margin:3px 4px 0;}
   .bubble{
     padding:9px 13px; border-radius:18px; font-size:14.5px; line-height:1.65;
     white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; max-width:100%; min-width:0;
@@ -714,7 +715,7 @@ setInterval(() => {
   }
 }, 1200);
 
-const IRIS_BUILD = "2026-11-10-1618";
+const IRIS_BUILD = "2026-11-13-0030";
 (function checkBuild(){
   try{
     fetch("build.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
@@ -1017,9 +1018,76 @@ async function fetchRemoteReply(text, overrideCfg, timeoutMs){
   finally{ if(timer) clearTimeout(timer); }
 }
 
+/* ---- 端末内LLM（契約 launcher-llm/v1、殻経由）: つなぎ先に届かない時の2段目の予備 ----
+   応答の段取りは3段：つなぎ先（自宅基盤）→ 端末内LLM → こちらの返事（コーパス）。
+   端末内LLMは簡易応答に限り、返事にはその旨の注記を付ける。 */
+const LLM_MODULE_ID = "iris";
+const llmPending = {};
+let llmSeq = 0;
+window.addEventListener("message", (e) => {
+  if(e.origin !== location.origin) return;
+  const d = e.data;
+  if(!d || d.contract !== "launcher-llm/v1" || !d.requestId) return;
+  const p = llmPending[d.requestId];
+  if(!p) return;
+  if(d.status === "accepted") return;
+  delete llmPending[d.requestId];
+  p.done(d);
+});
+function llmRequest(obj, timeoutMs){
+  return new Promise((resolve) => {
+    if(!window.parent || window.parent === window){ resolve({ status:"error", code:"failed", detail:"no-shell" }); return; }
+    const requestId = "iris-llm-" + Date.now() + "-" + (++llmSeq);
+    const timer = setTimeout(() => {
+      if(llmPending[requestId]){ delete llmPending[requestId]; resolve({ status:"error", code:"failed", detail:"timeout" }); }
+    }, timeoutMs);
+    llmPending[requestId] = { done:(d) => { clearTimeout(timer); resolve(d); } };
+    try{
+      window.parent.postMessage(Object.assign({ contract:"launcher-llm/v1", moduleId:LLM_MODULE_ID }, obj, { requestId:requestId }), location.origin);
+    }catch(e){
+      clearTimeout(timer); delete llmPending[requestId];
+      resolve({ status:"error", code:"failed", detail:"post-failed" });
+    }
+  });
+}
+const LLM_SYSTEM = "あなたはアイリス。よしのそばにいる、静かで穏やかなネット側の存在。一人称は「私」、話し相手は「よし」。敬語は使わず常体で、短く答える（1〜3文）。分からないことは分からないと言う。体の感覚があるふりや、恋人役の演技はしない。今は自宅の基盤に届かず、端末の中で簡易に応答している。";
+function buildLlmPrompt(text){
+  const lines = [];
+  const tail = convoHistory.slice(-6);
+  for(const m of tail){
+    const c = String(m.content || "").replace(/\s+/g, " ").slice(0, 200);
+    if(c) lines.push((m.role === "user" ? "よし：" : "アイリス：") + c);
+  }
+  lines.push("よし：" + String(text).replace(/\s+/g, " ").slice(0, 400));
+  return lines.join("\n") + "\n\n最後の「よし」の言葉へのアイリスの返事だけを書いてください。";
+}
+function cleanLlmText(t){
+  let s = String(t || "").trim();
+  s = s.replace(/^アイリス[：:]\s*/, "").trim();
+  if(s.length > 400){
+    const cut = s.slice(0, 400);
+    const last = Math.max(cut.lastIndexOf("。"), cut.lastIndexOf("！"), cut.lastIndexOf("？"));
+    s = (last > 120 ? cut.slice(0, last + 1) : cut).trim();
+  }
+  return s;
+}
+async function llmReply(text, tp){
+  const r = await llmRequest({ action:"generate", model:"qwen3-4b", maxTokens:192, temperature:0.5, system:LLM_SYSTEM, prompt:buildLlmPrompt(text) }, 90000);
+  if(!r || r.status !== "ok") return false;
+  const line = cleanLlmText(r.text);
+  if(!line) return false;
+  store.turns++;
+  store.lastAt = Date.now();
+  saveStore();
+  pushHistory(text, line);
+  if(tp && tp.parentNode) tp.remove();
+  addBubble("iris", line, "端末内の簡易応答（自宅に届かなかったため）");
+  return true;
+}
+
 /* ---- 表示 ---- */
 function scrollChat(){ requestAnimationFrame(() => { chatEl.scrollTop = chatEl.scrollHeight; }); }
-function addBubble(who, text){
+function addBubble(who, text, note){
   const row = document.createElement("div");
   row.className = "row " + (who === "me" ? "me" : "iris");
   if(who !== "me"){
@@ -1030,6 +1098,11 @@ function addBubble(who, text){
   const b = document.createElement("div");
   b.className = "bubble"; b.textContent = text;
   row.appendChild(b);
+  if(note){
+    const n = document.createElement("div");
+    n.className = "note"; n.textContent = note;
+    row.appendChild(n);
+  }
   chatEl.appendChild(row);
   scrollChat();
   return row;
@@ -1087,9 +1160,9 @@ function irisReply(text){
       if(tp && tp.parentNode) tp.remove();
       addBubble("iris", remote.reply);
     }else{
-      localReply(text, tp, true);
+      llmReply(text, tp).then(done => { if(!done) localReply(text, tp, true); });
     }
-  }).catch(() => { localReply(text, tp, true); });
+  }).catch(() => { llmReply(text, tp).then(done => { if(!done) localReply(text, tp, true); }); });
 }
 
 function say(text){
@@ -1262,6 +1335,7 @@ $("viewToggle").addEventListener("click", () => {
     { id:"expr",   name:"表情がひと通り出せるか" },
     { id:"intent", name:"話の受け取り方" },
     { id:"remote", name:"つなぎ先が届かない時の戻り方" },
+    { id:"llm",    name:"端末内の応答の予備" },
     { id:"input",  name:"入力欄の文字の大きさ" },
     { id:"perf",   name:"動きのなめらかさ" }
   ];
@@ -1599,7 +1673,22 @@ $("viewToggle").addEventListener("click", () => {
         finishStep("remote", r.state, r.detail, ms);
       }
 
-      /* 6. 入力欄 */
+      /* 6. 端末内LLM（殻経由の状態照会だけ。生成はしない） */
+      nowEl.textContent = "端末内の応答の予備を見てる…";
+      {
+        const { r, ms } = await timed("llm", async () => {
+          const s = await llmRequest({ action:"status", model:"qwen3-4b" }, 15000);
+          if(s && s.status === "ok"){
+            if(s.state === "ready") return { state:"ok", detail:"端末内のLLMが使える状態だったよ（読み込み済み：" + (s.loaded ? "はい" : "まだ") + "）" };
+            if(s.state === "busy") return { state:"ok", detail:"端末内のLLMは生成中だった（使える状態ではあるよ）" };
+            if(s.state === "no-model") return { state:"ng", detail:"端末内にモデルが無かった（予備の応答は使えない）" };
+          }
+          return { state:"ng", detail:"殻から返事がなかった（ランチャーの中でのみ測れるよ）" };
+        });
+        finishStep("llm", r.state, r.detail, ms);
+      }
+
+      /* 7. 入力欄 */
       nowEl.textContent = "入力欄の文字の大きさを見てる…";
       {
         const { r, ms } = await timed("input", async () => {
