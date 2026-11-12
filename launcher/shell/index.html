@@ -40,6 +40,8 @@
   #updateBox{ display:none; width:100%; margin:12px 0 4px; padding:18px; border-radius:var(--radius);
     border:1px solid var(--card-border); background:var(--accent); color:#082f49; font-size:17px; font-weight:700; text-align:left; }
   #updateBox small{ display:block; font-weight:500; font-size:13px; margin-top:4px; }
+  #updateBox .dismiss{ display:inline-block; margin-top:10px; padding:7px 14px; border-radius:999px;
+    background:rgba(8,47,73,.16); font-size:13px; font-weight:600; }
   .grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
   .card{ appearance:none; display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box;
     border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
@@ -182,13 +184,14 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-11-0110';
+const SHELL_BUILD = '2026-11-13-0010';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
 const APPS_URL = REMOTE_BASE + 'apps.json';
 const LS_MODULES = 'launcher.modules.v1';
 const LS_PRIVATE = 'launcher.privateModules.v1';
+const LS_UPDATE_DISMISSED = 'launcher.updateDismissed.v1';
 
 // 同梱の予備一覧（通信できない時の最初の表示）。文言は画面用に人の言葉で書く。
 const FALLBACK_MODULES = {
@@ -414,6 +417,11 @@ async function checkUpdate(){
     const data = await res.json();
     const app = (data.apps || [])[0];
     if (!app || cmpVer(app.version, APP_VERSION) <= 0) return;
+    // 殻は端末の実際の版数を読めない（版数を読む部品が IPA に入っていない）ため、
+    // 更新済みでも判定は変わらない。その版を確認済みにしたら消せる形にする（応急処置）。
+    let dismissed = null;
+    try { dismissed = localStorage.getItem(LS_UPDATE_DISMISSED); } catch(e) {}
+    if (dismissed === app.version) return;
     const box = document.getElementById('updateBox');
     box.style.display = 'block';
     box.innerHTML = '';
@@ -421,6 +429,15 @@ async function checkUpdate(){
     const small = document.createElement('small');
     small.textContent = 'タップすると SideStore で更新します';
     box.appendChild(small);
+    const dismiss = document.createElement('span');
+    dismiss.className = 'dismiss';
+    dismiss.textContent = '更新したので消す';
+    dismiss.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      try { localStorage.setItem(LS_UPDATE_DISMISSED, app.version); } catch(e) {}
+      box.style.display = 'none';
+    });
+    box.appendChild(dismiss);
     box.addEventListener('click', () => {
       const url = 'sidestore://install?url=' + encodeURIComponent(app.downloadURL);
       window.location.href = url;
@@ -702,7 +719,7 @@ async function runTests(){
     if (app){
       const newer = cmpVer(app.version, APP_VERSION) > 0;
       items.push({ id: 'T2', label: '更新の判定', result: 'pass',
-        detail: '最新は ' + app.version + '／この端末は ' + APP_VERSION + (newer ? '（新しい版がある）' : '（最新）') + '。更新の実行そのものは SideStore 側の操作なので、ここでは判定まで' });
+        detail: '最新は ' + app.version + '／殻の想定版は ' + APP_VERSION + (newer ? '（新しい版がある）' : '（想定版と同じ）') + '。端末の実際の版数は殻からは読めないため、更新済みでもこの判定は変わらない。更新の実行そのものは SideStore 側の操作なので、ここでは判定まで' });
     } else {
       items.push({ id: 'T2', label: '更新の判定', result: 'fail', detail: '配布リストにアプリが無い' });
     }
