@@ -1706,7 +1706,7 @@ var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
 var DBG_SAVE_KEY='kurogiri.debug.save';
 var DBG_SAVE_PREV_KEY='kurogiri.debug.save_prev';
 var DBG_LOG_KEY='kurogiri.debug.log';
-var APP_VERSION='v66';
+var APP_VERSION='v67';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
@@ -3954,7 +3954,16 @@ function shipCamProfile(name){var sp=SHIP3D_SPEC[name];var kind=sp?sp.kind:((nam
  if(kind==='dd')return {fill:0.84,hr:0.25,ang:0.95,lookY:6,ops:0.85};
  return {fill:0.86,hr:0.22,ang:1.02,lookY:9,ops:0.95}}
 function shipTypeOf(name){var r=SHIPS.concat(UNLOCK_SHIPS).find(function(s){return s[0]===name});return r?r[1]:''}
-function harborSetShip(name){if(!HGL)return;if(HGL.handle)HGL.scene.remove(HGL.handle.group);var h=buildShipByName(name,false);h.setCrew(crewSettingOn());HGL.scene.add(h.group);HGL.handle=h;HGL.name=name;HGL.reported=false;HGL.ang=shipCamProfile(name).ang;HGL.Rsm=null;AKAGI_H=(name==='赤城')?h:null;m3EnvSetShip(HGL.scene,name);
+/* KG-CR-29: 旗艦切替で外した旧艦グループの GPU リソース (ジオメトリ・マテリアル・テクスチャ) を解放する。
+   対象はそのグループの中だけに閉じ、共有物は uuid で一度だけ dispose する
+   (作戦版の艦は同じジオメトリを複数メッシュで共有することがある)。環境や他ビューアの物は触らない */
+function disposeShipGroup(grp){if(!grp)return;var seenG={},seenM={},seenT={};grp.traverse(function(o){
+ if(o.geometry&&!seenG[o.geometry.uuid]){seenG[o.geometry.uuid]=1;o.geometry.dispose()}
+ var mats=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];
+ for(var i=0;i<mats.length;i++){var m=mats[i];if(!m||seenM[m.uuid])continue;seenM[m.uuid]=1;
+  for(var k in m){var v=m[k];if(v&&v.isTexture&&!seenT[v.uuid]){seenT[v.uuid]=1;v.dispose()}}
+  m.dispose()}})}
+function harborSetShip(name){if(!HGL)return;if(HGL.handle){HGL.scene.remove(HGL.handle.group);disposeShipGroup(HGL.handle.group)}var h=buildShipByName(name,false);h.setCrew(crewSettingOn());HGL.scene.add(h.group);HGL.handle=h;HGL.name=name;HGL.reported=false;HGL.ang=shipCamProfile(name).ang;HGL.Rsm=null;AKAGI_H=(name==='赤城')?h:null;m3EnvSetShip(HGL.scene,name);
  var chipB=document.querySelector('#glwrap .glchip b');if(chipB)chipB.textContent=shipTypeOf(name)+' '+name+'（旗艦）';
  var sp=$('harbor-spec');if(sp&&SHIP_DEX[name])sp.textContent=SHIP_DEX[name].spec}
 function initGL(){if(HGL||typeof THREE==='undefined')return;var wrap=$('glwrap');if(!wrap||!wrap.clientWidth)return;
@@ -3964,7 +3973,7 @@ function initGL(){if(HGL||typeof THREE==='undefined')return;var wrap=$('glwrap')
  m3Sea(scene,'harbor');
  HGL={scene:scene,renderer:renderer,cam:cam,wrap:wrap,handle:null,name:null,reported:false,ang:0.7,Rsm:null,clock:new THREE.Clock()};
  harborSetShip(effectiveFlagship());
- function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!HGL.handle)return;var t=HGL.clock.getElapsedTime();m3Animate(HGL.handle,t,false);
+ function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!HGL.handle)return;var vis=wrap.clientWidth>0&&wrap.offsetParent!==null;if(!vis)return;var t=HGL.clock.getElapsedTime();m3Animate(HGL.handle,t,false);
   if(!RM3D)HGL.ang+=0.0016;
   /* F2: 船体が画面幅の約7〜8割を占めるよう、周回角度と画面の横縦比と艦の全長から距離を毎フレーム合わせる */
   var asp=wrap.clientWidth/Math.max(1,wrap.clientHeight);
@@ -3980,7 +3989,7 @@ function initGL(){if(HGL||typeof THREE==='undefined')return;var wrap=$('glwrap')
  frame();
  }catch(e){$('glinfo').textContent='線画シルエット代替表示（3D初期化に失敗）';wrap.style.background='linear-gradient(180deg,#2a4a6b,#0e2238)'}}
 /* ---- 作戦ビューア（戦闘フェーズ） ---- */
-function opSetShip(name){if(!OGL)return;if(OGL.handle)OGL.scene.remove(OGL.handle.group);var h=buildShipByName(name,true);h.setCrew(crewSettingOn());OGL.scene.add(h.group);OGL.handle=h;OGL.name=name;OGL.reported=false;AKAGI_O=(name==='赤城')?h:null;m3EnvSetShip(OGL.scene,name);
+function opSetShip(name){if(!OGL)return;if(OGL.handle){OGL.scene.remove(OGL.handle.group);disposeShipGroup(OGL.handle.group)}var h=buildShipByName(name,true);h.setCrew(crewSettingOn());OGL.scene.add(h.group);OGL.handle=h;OGL.name=name;OGL.reported=false;AKAGI_O=(name==='赤城')?h:null;m3EnvSetShip(OGL.scene,name);
  var on2=$('opglname');if(on2)on2.textContent=shipTypeOf(name)+' '+name+' ― 甲板'}
 function syncOpGL(){var w=$('opglwrap');if(!w)return;var on=!!(typeof S!=='undefined'&&S&&S.started&&S.op);w.style.display=on?'block':'none';if(on){initOpGL();if(OGL&&OGL.name!==effectiveFlagship())opSetShip(effectiveFlagship())}}
 function initOpGL(){if(OGL||typeof THREE==='undefined')return;var wrap=$('opglwrap');if(!wrap||!wrap.clientWidth||wrap.style.display==='none')return;
@@ -3992,7 +4001,7 @@ function initOpGL(){if(OGL||typeof THREE==='undefined')return;var wrap=$('opglwr
  opSetShip(effectiveFlagship());buildAirWar(scene,effectiveFlagship());
  /* 背景の僚艦: 画面の主役ではないため簡易形で置く (輪郭と艦種の読みだけを残す) */
  var esc=buildShipByName('雪風',false,true);esc.setCrew(false);esc.group.position.set(-285,0,-215);esc.group.rotation.y=0.55;scene.add(esc.group);OGL.escort=esc;
- function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!OGL.handle)return;var t=OGL.clock.getElapsedTime();m3Animate(OGL.handle,t,true);updateAirWar(t);
+ function frame(){requestAnimationFrame(frame);if(window.__TM_ACTIVE)return;if(!OGL.handle)return;var vis=wrap.clientWidth>0&&wrap.offsetParent!==null;if(!vis)return;var t=OGL.clock.getElapsedTime();m3Animate(OGL.handle,t,true);updateAirWar(t);
   if(OGL.escort){OGL.escort.group.position.y=Math.sin(t*0.5+1.3)*0.12;m3Animate(OGL.escort,t,false)}
   OGL.handle.group.position.y=Math.sin(t*0.5)*0.14;OGL.handle.group.rotation.z=Math.sin(t*0.37)*0.004;
   var k=((SHIP3D_SPEC[OGL.name]?SHIP3D_SPEC[OGL.name].L:250)/250);
