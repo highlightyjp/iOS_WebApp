@@ -715,7 +715,7 @@ setInterval(() => {
   }
 }, 1200);
 
-const IRIS_BUILD = "2026-11-13-0030";
+const IRIS_BUILD = "2026-11-13-0145";
 (function checkBuild(){
   try{
     fetch("build.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
@@ -1021,7 +1021,28 @@ async function fetchRemoteReply(text, overrideCfg, timeoutMs){
 /* ---- 端末内LLM（契約 launcher-llm/v1、殻経由）: つなぎ先に届かない時の2段目の予備 ----
    応答の段取りは3段：つなぎ先（自宅基盤）→ 端末内LLM → こちらの返事（コーパス）。
    端末内LLMは簡易応答に限り、返事にはその旨の注記を付ける。 */
-const LLM_MODULE_ID = "iris";
+/* 殻の橋は「今開いているモジュールの登録ID」と一致する依頼だけを受ける。
+   このモジュールは端末側で足す層の登録（IDは priv-<時刻>）なので、自分の登録IDを
+   殻の一覧（同一オリジンで共有される保存）から URL で引いて使う。 */
+const LLM_MODULE_ID = (function discoverModuleId(){
+  try{
+    const raw = localStorage.getItem("launcher.privateModules.v1");
+    if(raw){
+      const list = JSON.parse(raw);
+      const me = location.href.split(/[?#]/)[0];
+      let best = null;
+      for(const m of (Array.isArray(list) ? list : [])){
+        if(!m || typeof m.url !== "string" || typeof m.id !== "string") continue;
+        const u = m.url.split(/[?#]/)[0];
+        if(me === u || me === u.replace(/\/?$/, "/") + "index.html" || me.indexOf(u) === 0){
+          if(!best || u.length > best.len) best = { id:m.id, len:u.length };
+        }
+      }
+      if(best) return best.id;
+    }
+  }catch(e){}
+  return "iris";
+})();
 const llmPending = {};
 let llmSeq = 0;
 window.addEventListener("message", (e) => {
