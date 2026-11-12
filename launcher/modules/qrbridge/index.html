@@ -71,12 +71,16 @@
 <section id="panePrompt" class="hidden">
   <p>社内Copilotへ渡すセットです。各ブロックをコピーして、メールで社用端末へ送ってください。Copilotへは番号順に貼ります。貼り付け経路のブロックは7,500字以下に分割してあります（従来画面の入力上限は公式未公表のため、報告されている最厳の値に合わせた保守設定）。</p>
   <p>メールで送る時の注意：添付ファイルにせず、本文へそのまま貼ること（.jsや.jsonの添付は止められやすい）。メールはプレーンテキスト形式にすること。3つ目は誤検知と行折り返しの破損を避けるため、1行ずつに整形済みです（中身の数値は元のJSONと同一）。</p>
-  <p>1つ目：指示文（約3.5KB）</p>
-  <textarea id="promptBox" readonly rows="10" style="user-select:text;-webkit-user-select:text"></textarea>
+  <p>■ 全部を1通にまとめた版（ファイル経路用）</p>
+  <p>4ファイル分を区切り付きで1通にまとめてあります。社用端末に着いたら、===== の区切りごとに切り分けて、指定のファイル名で保存してください。「メールで送る」は共有シートからメールアプリを開く方式です（開かない環境ではコピーして本文へ貼ってください）。入口で止められた場合は、下のブロック単位に分けて送り直してください。</p>
+  <textarea id="allMailBox" readonly rows="8" style="user-select:text;-webkit-user-select:text"></textarea>
   <div style="display:flex;gap:8px">
-    <button class="big" id="btnCopyPrompt" style="flex:1">1をコピーする</button>
-    <button class="big" id="btnMailPrompt" style="flex:1">1をメールで送る</button>
+    <button class="big" id="btnCopyAll" style="flex:1">全部をコピーする</button>
+    <button class="big" id="btnShareAll" style="flex:1">メールで送る</button>
   </div>
+  <p>1つ目：指示文（約5.8KB）</p>
+  <textarea id="promptBox" readonly rows="10" style="user-select:text;-webkit-user-select:text"></textarea>
+  <button class="big" id="btnCopyPrompt">1をコピーする</button>
   <p>2つ目：コーデック実装（約7KB）。貼る時は、冒頭に「（2/3 コーデック実装。まだ生成しない）」と1行添えること</p>
   <textarea id="codecBox" readonly rows="6" style="user-select:text;-webkit-user-select:text"></textarea>
   <button class="big" id="btnCopyCodec">2をコピーする</button>
@@ -12801,9 +12805,41 @@ $("codecBox").value = QB_CODEC_SRC;
     wrap.appendChild(p); wrap.appendChild(ta); wrap.appendChild(btn);
   });
 })();
-$("btnMailPrompt").onclick = function () {
-  var href = "mailto:?subject=" + encodeURIComponent("QRブリッジ実装指示（1/3：指示文）") + "&body=" + encodeURIComponent(QB_PROMPT_TEXT);
-  location.href = href;
+function qbAllMailText() {
+  var halves = qbSeedHalves(QB_SEED);
+  var parts = [];
+  parts.push("QRブリッジ渡しセット（1通分）");
+  parts.push("このメールは運搬用です。Copilotへはこのまま貼らず、社用端末で下の区切りごとに切り分けて、指定のファイル名で保存してください。");
+  parts.push("===== QB 1/4 qb-instructions.txt ここから =====");
+  parts.push(QB_PROMPT_TEXT);
+  parts.push("===== QB 1/4 ここまで =====");
+  parts.push("===== QB 2/4 qb-codec.txt ここから =====");
+  parts.push(QB_CODEC_SRC);
+  parts.push("===== QB 2/4 ここまで =====");
+  parts.push("===== QB 3/4 qb-seed-1.txt ここから =====");
+  parts.push(halves[0]);
+  parts.push("===== QB 3/4 ここまで =====");
+  parts.push("===== QB 4/4 qb-seed-2.txt ここから =====");
+  parts.push(halves[1]);
+  parts.push("===== QB 4/4 ここまで =====");
+  return parts.join("\n");
+}
+$("allMailBox").value = qbAllMailText();
+$("btnCopyAll").onclick = function () {
+  var btn = $("btnCopyAll");
+  qbCopy($("allMailBox").value).then(function (ok) {
+    if (ok) flashBtn(btn, "コピーしました");
+    else { var box = $("allMailBox"); box.focus(); box.select(); box.setSelectionRange(0, box.value.length); flashBtn(btn, "欄が選択されました（長押しでコピー）"); }
+  });
+};
+$("btnShareAll").onclick = function () {
+  var btn = $("btnShareAll");
+  var text = $("allMailBox").value;
+  if (navigator.share) {
+    navigator.share({ title: "QRブリッジ渡しセット（1通分）", text: text }).catch(function () { flashBtn(btn, "共有が開きませんでした（コピーをお使いください）"); });
+  } else {
+    flashBtn(btn, "この環境では共有が使えません（コピーをお使いください）");
+  }
 };
 
 var LIMIT = 2331;
