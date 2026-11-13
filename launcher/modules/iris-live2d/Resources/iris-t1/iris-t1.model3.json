@@ -1,0 +1,68 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "iris-t1.moc3",
+		"Textures": [
+			"iris-t1.4096/texture_00.png"
+		],
+		"Physics": "iris-t1.physics3.json",
+		"DisplayInfo": "iris-t1.cdi3.json",
+		"Expressions": [
+			{
+				"Name": "笑顔",
+				"File": "iris-t1.smile.exp3.json"
+			},
+			{
+				"Name": "悲しみ",
+				"File": "iris-t1.sad.exp3.json"
+			},
+			{
+				"Name": "怒り",
+				"File": "iris-t1.angry.exp3.json"
+			},
+			{
+				"Name": "驚き",
+				"File": "iris-t1.surprised.exp3.json"
+			}
+		],
+		"Motions": {
+			"Idle": [
+				{
+					"File": "iris-t1.idle.motion3.json"
+				}
+			],
+			"Blink": [
+				{
+					"File": "iris-t1.blink.motion3.json"
+				}
+			],
+			"Nod": [
+				{
+					"File": "iris-t1.nod.motion3.json"
+				}
+			],
+			"Shake": [
+				{
+					"File": "iris-t1.shake.motion3.json"
+				}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": [
+				"ParamMouthOpenY"
+			]
+		}
+	]
+}
