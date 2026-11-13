@@ -193,11 +193,27 @@
 		},
 		{
 			"Id": "ArtMeshLayerL",
-			"Name": "side hair-l"
+			"Name": "side hair-l 3"
+		},
+		{
+			"Id": "ArtMeshLayerL2",
+			"Name": "side hair-l 2"
+		},
+		{
+			"Id": "ArtMeshLayerL3",
+			"Name": "side hair-l 1"
 		},
 		{
 			"Id": "ArtMeshLayerR",
-			"Name": "side hair-r"
+			"Name": "side hair-r 3"
+		},
+		{
+			"Id": "ArtMeshLayerR2",
+			"Name": "side hair-r 2"
+		},
+		{
+			"Id": "ArtMeshLayerR3",
+			"Name": "side hair-r 1"
 		},
 		{
 			"Id": "ArtMeshEyebrowL",
@@ -281,7 +297,11 @@
 		},
 		{
 			"Id": "ArtMeshBackHair",
-			"Name": "back hair"
+			"Name": "back hair 2"
+		},
+		{
+			"Id": "ArtMeshBackHair2",
+			"Name": "back hair 1"
 		},
 		{
 			"Id": "ArtMeshEyebrowL_SeeThrough",
