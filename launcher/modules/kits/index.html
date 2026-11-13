@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ショートカット登録</title>
+<style>
+  :root{ color-scheme: light dark; }
+  *{ box-sizing:border-box; }
+  body{ font-family:-apple-system, "Hiragino Sans", sans-serif; margin:0; padding:16px;
+        line-height:1.65; touch-action:manipulation; }
+  h1{ font-size:19px; margin:4px 0 2px; }
+  .sub{ font-size:13px; opacity:.75; margin:0 0 14px; }
+  .card{ border:1px solid rgba(128,128,128,.45); border-radius:14px; padding:14px; margin:0 0 12px; }
+  .card h2{ font-size:16px; margin:0 0 4px; }
+  .state{ font-size:14px; }
+  .state .row{ display:flex; gap:8px; padding:2px 0; }
+  .state .lb{ min-width:6.5em; opacity:.75; }
+  button{ font-size:15px; padding:10px 16px; border-radius:10px; border:1px solid rgba(128,128,128,.6);
+          background:transparent; color:inherit; }
+  button.primary{ background:#0a5cff; border-color:#0a5cff; color:#fff; font-weight:600; }
+  button:active{ opacity:.7; }
+  .txt{ white-space:pre-wrap; font-size:13.5px; border:1px solid rgba(128,128,128,.35); border-radius:10px;
+        padding:10px; margin:6px 0; }
+  .small{ font-size:13px; opacity:.8; }
+  .ok{ color:#0a7d2c; font-weight:600; }
+  .warn{ color:#b25e00; font-weight:600; }
+  .hidden{ display:none; }
+  .back{ margin-bottom:10px; }
+  input[type=text], input[type=password]{ width:100%; padding:10px; font-size:15px; border-radius:8px;
+        border:1px solid rgba(128,128,128,.6); margin:2px 0 10px; background:transparent; color:inherit; }
+  ol, ul{ padding-left:20px; margin:6px 0; }
+  li{ font-size:14px; }
+</style>
+</head>
+<body>
+<h1>ショートカット登録</h1>
+<p class="sub">自宅の基盤と iPhone のショートカットをつなぐキットの目録です。状態は基盤からその場で読みます。<span id="build"></span></p>
+
+<div id="cfg-missing" class="card hidden">
+  <h2>基盤への接続設定がありません</h2>
+  <p class="small">取り込みページ（dynabook-3）で設定を入れるか、ここに基盤のアドレスと合言葉を入れてください（アイリスのモジュールと同じ保存場所を使います）。</p>
+  <label class="small">アドレス（例：https://…ts.net:8443/v1/chat）</label>
+  <input type="text" id="cfg-endpoint" autocomplete="off">
+  <label class="small">合言葉</label>
+  <input type="password" id="cfg-token" autocomplete="off">
+  <button id="cfg-save" class="primary">保存して読み直す</button>
+</div>
+
+<div id="conn" class="sub"></div>
+<div id="list"></div>
+<div id="detail" class="hidden"></div>
+
+<script>
+"use strict";
+document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+const MODULE_BUILD = "2026-11-14-0110";
+document.getElementById("build").textContent = "（版 " + MODULE_BUILD + "）";
+const API_LS_KEY = "iris-api-config-v1";
+const PAGE_BASE = "https://100.126.74.92:18787";
+const ORDER = ["relay-base", "refresh-beacon", "liveness-charge", "presence-home", "otp-relay", "demo-greeting"];
+
+function loadConfig(){
+  try{
+    const raw = localStorage.getItem(API_LS_KEY);
+    if(!raw) return null;
+    const p = JSON.parse(raw);
+    if(!p || typeof p.endpoint !== "string" || typeof p.token !== "string") return null;
+    const u = new URL(p.endpoint.trim());
+    return { origin: u.origin, token: p.token.trim() };
+  }catch(e){ return null; }
+}
+let cfg = loadConfig();
+
+async function api(path){
+  const res = await fetch(cfg.origin + path, { headers: { "X-API-Key": cfg.token }, cache: "no-store" });
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+function el(tag, cls, text){
+  const n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(text != null) n.textContent = text;
+  return n;
+}
+function stateBox(items){
+  const box = el("div", "state");
+  if(!items || !items.length){ box.appendChild(el("div", null, "状態の項目はありません")); return box; }
+  for(const it of items){
+    const row = el("div", "row");
+    row.appendChild(el("span", "lb", it.label));
+    row.appendChild(el("span", null, it.value));
+    box.appendChild(row);
+  }
+  return box;
+}
+async function copyText(t, btn){
+  try{ await navigator.clipboard.writeText(t); btn.textContent = "コピーしました"; }
+  catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); btn.textContent = "コピーしました"; }catch(e2){ btn.textContent = "コピーできませんでした"; }
+    ta.remove();
+  }
+  setTimeout(() => { btn.textContent = "コピー"; }, 1600);
+}
+
+let kitsCache = [];
+async function showList(){
+  document.getElementById("detail").classList.add("hidden");
+  const list = document.getElementById("list");
+  list.classList.remove("hidden");
+  list.textContent = "";
+  const conn = document.getElementById("conn");
+  if(!cfg){
+    document.getElementById("cfg-missing").classList.remove("hidden");
+    conn.textContent = "";
+    return;
+  }
+  document.getElementById("cfg-missing").classList.add("hidden");
+  conn.textContent = "基盤へ接続中…";
+  let data;
+  try{ data = await api("/v1/kits"); }
+  catch(e){ conn.innerHTML = ""; conn.appendChild(el("span", "warn", "基盤へ届きませんでした（" + e.message + "）")); return; }
+  conn.textContent = "基盤へ接続できています";
+  kitsCache = (data.kits || []).slice().sort((a, b) => {
+    const ia = ORDER.indexOf(a.id), ib = ORDER.indexOf(b.id);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  for(const k of kitsCache){
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, k.title || k.id));
+    const st = el("div", null, "状態を読み中…");
+    card.appendChild(st);
+    const btn = el("button", null, "開く");
+    btn.addEventListener("click", () => showDetail(k.id));
+    card.appendChild(btn);
+    list.appendChild(card);
+    if(k.has_state){
+      api("/v1/kits/" + k.id + "/state").then(j => {
+        st.textContent = "";
+        st.appendChild(stateBox(j.items));
+      }).catch(() => { st.textContent = "状態を読めませんでした"; });
+    } else {
+      st.textContent = "";
+    }
+  }
+}
+
+let pollTimer = null;
+async function showDetail(id){
+  const kitInfo = kitsCache.find(k => k.id === id) || { id, title: id };
+  const list = document.getElementById("list");
+  list.classList.add("hidden");
+  const d = document.getElementById("detail");
+  d.classList.remove("hidden");
+  d.textContent = "";
+  const back = el("button", "back", "← 目録へ戻る");
+  back.addEventListener("click", () => { if(pollTimer) clearInterval(pollTimer); showList(); });
+  d.appendChild(back);
+  d.appendChild(el("h2", null, kitInfo.title || id));
+  const stCard = el("div", "card");
+  stCard.appendChild(el("h2", null, "状態"));
+  const stBox = el("div", null, "読み中…");
+  stCard.appendChild(stBox);
+  d.appendChild(stCard);
+  const loadState = async () => {
+    try{
+      const j = await api("/v1/kits/" + id + "/state");
+      stBox.textContent = ""; stBox.appendChild(stateBox(j.items));
+      return j.items;
+    }catch(e){ stBox.textContent = "状態を読めませんでした"; return null; }
+  };
+  if(pollTimer) clearInterval(pollTimer);
+  await loadState();
+  pollTimer = setInterval(loadState, 5000);
+
+  if(id === "relay-base"){
+    const tCard = el("div", "card");
+    tCard.appendChild(el("h2", null, "疎通テスト"));
+    tCard.appendChild(el("p", "small", "土台「基盤へ送る」にテストを送らせ、基盤へ届いたかをここで読み戻します。"));
+    const res = el("p", "state");
+    const btn = el("button", "primary", "テストを送る");
+    btn.addEventListener("click", async () => {
+      const before = await loadState();
+      const beforeTest = before ? (before.find(i => i.label === "テストの到達") || {}).value : null;
+      res.textContent = "ショートカットを開きます…";
+      const url = "shortcuts://run-shortcut?name=" + encodeURIComponent("基盤へ送る") + "&input=" + encodeURIComponent("relay-test");
+      try{ location.href = url; }catch(e){}
+      res.textContent = "送信を確認中…（届くまで数秒かかります）";
+      let tries = 0;
+      const iv = setInterval(async () => {
+        tries++;
+        const items = await loadState();
+        const nowTest = items ? (items.find(i => i.label === "テストの到達") || {}).value : null;
+        if(nowTest && nowTest !== beforeTest && nowTest !== "まだ届いていません"){
+          clearInterval(iv);
+          res.textContent = "";
+          res.appendChild(el("span", "ok", "届きました：" + nowTest));
+        } else if(tries >= 10){
+          clearInterval(iv);
+          res.textContent = "";
+          res.appendChild(el("span", "warn", "まだ届いていません。ショートカット アプリで「基盤へ送る」を開き、入力に relay-test と入れて手で実行してから、この画面に戻って確かめてください。"));
+        }
+      }, 2000);
+    });
+    tCard.appendChild(btn);
+    tCard.appendChild(res);
+    d.appendChild(tCard);
+  }
+
+  let render;
+  try{ render = await api("/v1/kits/" + id + "/render"); }
+  catch(e){
+    d.appendChild(el("p", "warn", "生成文を読めませんでした（" + e.message + "）"));
+    return;
+  }
+  for(const t of (render.texts || [])){
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, t.label));
+    if(t.lead) card.appendChild(el("p", "small", t.lead));
+    card.appendChild(el("div", "txt", t.text));
+    const b = el("button", null, "コピー");
+    b.addEventListener("click", () => copyText(t.text, b));
+    card.appendChild(b);
+    d.appendChild(card);
+  }
+  if(render.fallback && render.fallback.body){
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, render.fallback.title || "予備の手順"));
+    card.appendChild(el("div", "txt", render.fallback.body));
+    d.appendChild(card);
+  }
+  if((render.checks || []).length){
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, "貼った後に照らす確認"));
+    const ol = el("ol");
+    for(const c of render.checks) ol.appendChild(el("li", null, c));
+    card.appendChild(ol);
+    d.appendChild(card);
+  }
+  if((render.notes || []).length){
+    const card = el("div", "card");
+    const ul = el("ul");
+    for(const n of render.notes) ul.appendChild(el("li", null, n));
+    card.appendChild(ul);
+    d.appendChild(card);
+  }
+  const pageCard = el("div", "card");
+  pageCard.appendChild(el("h2", null, "登録ボタンとリンク保存"));
+  pageCard.appendChild(el("p", "small", "追加ボタン（iCloud リンク）の保存は、自宅ネットワーク内の画面で行います。Safari でこのアドレスを開いてください："));
+  const pageUrl = id === "otp-relay" ? PAGE_BASE + "/otp-setup" : PAGE_BASE + "/v1/kits/" + id + "/page";
+  pageCard.appendChild(el("div", "txt", pageUrl));
+  const pb = el("button", null, "アドレスをコピー");
+  pb.addEventListener("click", () => copyText(pageUrl, pb));
+  pageCard.appendChild(pb);
+  d.appendChild(pageCard);
+}
+
+document.getElementById("cfg-save").addEventListener("click", () => {
+  const ep = document.getElementById("cfg-endpoint").value.trim();
+  const tk = document.getElementById("cfg-token").value.trim();
+  try{ localStorage.setItem(API_LS_KEY, JSON.stringify({ endpoint: ep, token: tk })); }catch(e){}
+  cfg = loadConfig();
+  showList();
+});
+
+/* ---- 試験モード（契約 launcher-test/v1） ---- */
+function discoverModuleId(){
+  try{
+    const raw = localStorage.getItem("launcher.privateModules.v1");
+    if(raw){
+      const arr = JSON.parse(raw) || [];
+      let best = null, bestLen = -1;
+      for(const m of arr){
+        if(m && m.url && location.href.indexOf(m.url) === 0 && m.url.length > bestLen){ best = m; bestLen = m.url.length; }
+      }
+      if(best && best.id) return best.id;
+    }
+  }catch(e){}
+  return "kits";
+}
+async function runTests(){
+  const items = [];
+  const t0 = Date.now();
+  const push = (id, label, ok, detail) => items.push({ id, gate: false, label, result: ok ? "pass" : "fail", detail: detail || "", ms: Date.now() - t0 });
+  push("KT1", "接続設定の読み取り", !!cfg, cfg ? "設定あり" : "設定なし");
+  let listOk = false;
+  try{ const d = await api("/v1/kits"); listOk = !!(d && d.kits && d.kits.length); }catch(e){}
+  push("KT2", "目録の取得", listOk, listOk ? kitsCache.length + "件" : "取得できず");
+  let stOk = false;
+  try{ const j = await api("/v1/kits/relay-base/state"); stOk = !!(j && j.items); }catch(e){}
+  push("KT3", "状態の取得（土台）", stOk, stOk ? "取得できた" : "取得できず");
+  const msg = { contract: "launcher-test/v1", moduleId: discoverModuleId(), version: MODULE_BUILD,
+    items, perf: null, untouched: { checked: false, same: null },
+    summary: { pass: items.filter(i => i.result === "pass").length, fail: items.filter(i => i.result === "fail").length, na: 0 } };
+  try{ window.parent.postMessage(msg, "*"); }catch(e){}
+  return msg;
+}
+if(new URLSearchParams(location.search).get("test") === "1"){
+  runTests();
+} else {
+  const tb = el("button", null, "テストを実行して送信");
+  tb.style.marginTop = "14px";
+  tb.addEventListener("click", async () => { await runTests(); tb.textContent = "送信しました"; });
+  document.body.appendChild(tb);
+}
+showList();
+</script>
+</body>
+</html>
