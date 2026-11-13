@@ -24,11 +24,12 @@
   .tile .run .tri{ width:0; height:0; border-left:11px solid #fff; border-top:7px solid transparent;
                    border-bottom:7px solid transparent; margin-left:2px; }
   .tile .run[disabled]{ opacity:.45; }
-  .tile .name{ position:absolute; left:12px; bottom:26px; font-size:15px; font-weight:600;
-               text-shadow:0 1px 3px rgba(0,0,0,.4); padding-right:10px; }
-  .tile .badge{ position:absolute; left:12px; bottom:8px; font-size:11px; background:rgba(0,0,0,.38);
-                border-radius:999px; padding:1px 8px; max-width:92%; white-space:nowrap; overflow:hidden;
-                text-overflow:ellipsis; }
+  .tile .name{ position:absolute; left:12px; right:48px; bottom:36px; font-size:15px; font-weight:600;
+               text-shadow:0 1px 3px rgba(0,0,0,.4); display:-webkit-box; -webkit-line-clamp:2;
+               -webkit-box-orient:vertical; overflow:hidden; }
+  .tile .badge{ position:absolute; left:12px; right:12px; bottom:8px; font-size:10.5px; line-height:1.3;
+                background:rgba(0,0,0,.38); border-radius:10px; padding:2px 8px; overflow:hidden;
+                display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .card{ background:#1b1b21; border-radius:16px; padding:14px; margin:0 0 12px; }
   .card h2{ font-size:16px; margin:0 0 6px; }
   .state .row{ display:flex; gap:8px; padding:2px 0; font-size:14px; }
@@ -72,7 +73,7 @@
 <script>
 "use strict";
 document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
-const MODULE_BUILD = "2026-11-14-0245";
+const MODULE_BUILD = "2026-11-14-0700";
 document.getElementById("build").textContent = "（版 " + MODULE_BUILD + "）";
 const API_LS_KEY = "iris-api-config-v1";
 const PAGE_BASE = "https://100.126.74.92:18787";
@@ -153,16 +154,16 @@ function badgeText(items){
   if(!items || !items.length) return "○ 状態なし";
   const v = (items[0].value || "");
   const arrived = items.some(i => !/まだ|未開始|ありません|閉じています/.test(i.value || ""));
-  const short = v.length > 16 ? v.slice(0, 16) + "…" : v;
-  return (arrived ? "✓ " : "○ ") + items[0].label + "：" + short;
+  return (arrived ? "✓ " : "○ ") + v;
 }
 
 /* ---- 疎通テスト（土台経由） ---- */
-async function runKitTest(id, report){
+function runKitTest(id, report){
   const input = id === "relay-base" ? "relay-test" : "test:" + id;
-  let before = null;
-  try{ before = testValueOf(await fetchState(id)); }catch(e){}
-  report("送信中…");
+  const t = tileState[id];
+  const before = testValueOf(t ? t.items : null);
+  if(t) t.testMsg = null;
+  report("テスト送信中…");
   const url = "shortcuts://run-shortcut?name=" + encodeURIComponent("基盤へ送る") + "&input=" + encodeURIComponent(input);
   try{ location.href = url; }catch(e){}
   let tries = 0;
@@ -170,13 +171,21 @@ async function runKitTest(id, report){
     const iv = setInterval(async () => {
       tries++;
       let now = null;
-      try{ now = testValueOf(await fetchState(id)); }catch(e){}
+      try{
+        const items = await fetchState(id);
+        if(t) t.items = items;
+        now = testValueOf(items);
+      }catch(e){}
       if(now && now !== "まだ届いていません" && now !== before){
         clearInterval(iv);
-        report("✓ 届きました：" + now, true);
+        const msg = "✓ 届きました：" + now;
+        if(t) t.testMsg = msg;
+        report(msg, true);
         resolve(true);
       } else if(tries >= 10){
         clearInterval(iv);
+        const msg = "○ 到達を確認できませんでした";
+        if(t) t.testMsg = msg;
         report("○ まだ届いていません。土台が作られているか確かめるか、ショートカット アプリで「基盤へ送る」を手で実行してから、もう一度試してください（同じ分の中の再テストでは表示が変わらないことがあります）。", false);
         resolve(false);
       }
@@ -212,7 +221,7 @@ async function showList(){
     const st = styleFor(k, idx);
     const tile = el("div", "tile");
     tile.style.background = st.bg;
-    tile.dataset.title = (k.title || k.id);
+    tile.dataset.title = ((k.tile_title || "") + " " + (k.title || k.id));
     tile.appendChild(el("div", "glyph", st.glyph));
     const badge = el("div", "badge", k.has_state ? "○ 読み中…" : "○ 状態なし");
     if(k.has_state){
@@ -224,16 +233,15 @@ async function showList(){
         run.disabled = true;
         runKitTest(k.id, (msg) => { badge.textContent = msg; }).then(() => {
           run.disabled = false;
-          setTimeout(() => refreshTileState(k.id), 4000);
         });
       });
       tile.appendChild(run);
     }
-    tile.appendChild(el("div", "name", k.title || k.id));
+    tile.appendChild(el("div", "name", k.tile_title || k.title || k.id));
     tile.appendChild(badge);
     tile.addEventListener("click", () => showDetail(k.id));
     grid.appendChild(tile);
-    tileState[k.id] = { badgeEl: badge };
+    tileState[k.id] = { badgeEl: badge, items: null, testMsg: null };
     if(k.has_state) refreshTileState(k.id);
   });
   applySearch();
@@ -241,8 +249,12 @@ async function showList(){
 async function refreshTileState(id){
   const t = tileState[id];
   if(!t) return;
-  try{ t.badgeEl.textContent = badgeText(await fetchState(id)); }
-  catch(e){ t.badgeEl.textContent = "○ 状態を読めませんでした"; }
+  try{
+    const items = await fetchState(id);
+    t.items = items;
+    if(!t.testMsg) t.badgeEl.textContent = badgeText(items);
+  }
+  catch(e){ if(!t.testMsg) t.badgeEl.textContent = "○ 状態を読めませんでした"; }
 }
 function applySearch(){
   const q = (document.getElementById("q").value || "").trim();
@@ -283,7 +295,7 @@ async function showDetail(id){
   if(kitInfo.has_state){
     const tCard = el("div", "card");
     tCard.appendChild(el("h2", null, "疎通テスト"));
-    tCard.appendChild(el("p", "small", "土台「基盤へ送る」経由でテストを送り、基盤の到達を読み戻します。これは土台までの通り道の確認です。自動化そのものの到達は、上の状態（最終受信など）で別に確かめます。"));
+    tCard.appendChild(el("p", "small", "土台「基盤へ送る」経由でテストを送り、基盤の到達を読み戻します。これは土台までの通り道の確認です。自動化そのものの到達は、上の状態（最終受信など）で別に確かめます。土台がまだ作られていないと届きません。その場合は、ショートカット アプリで土台を手で1回実行してから、上の状態が変わるかでも確認できます。"));
     const res = el("p", null);
     const btn = el("button", "btn primary", "テストを送る");
     btn.addEventListener("click", () => {
