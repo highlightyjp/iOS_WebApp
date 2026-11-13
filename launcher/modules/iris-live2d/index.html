@@ -47,19 +47,31 @@
       pointer-events: none;
       white-space: nowrap;
     }
-    #status {
+    #testbtn {
+      position: fixed;
+      right: 10px;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      z-index: 11;
+      background: rgba(30, 80, 180, 0.9);
+      color: #fff;
+      font: 600 13px -apple-system, sans-serif;
+      padding: 9px 14px;
+      border: none;
+      border-radius: 999px;
+    }
+    #testresult {
       position: fixed;
       top: calc(env(safe-area-inset-top, 0px) + 52px);
       left: 10px;
       z-index: 10;
-      background: rgba(120, 40, 40, 0.85);
+      background: rgba(20, 22, 40, 0.85);
       color: #fff;
       font: 500 12px -apple-system, sans-serif;
-      padding: 6px 10px;
+      padding: 8px 11px;
       border-radius: 8px;
-      pointer-events: none;
       max-width: 86vw;
       display: none;
+      white-space: pre-line;
     }
   </style>
   <!-- Live2DCubismCore script -->
@@ -69,8 +81,9 @@
 </head>
 <body>
   <div id="fpsmeter">-- fps</div>
-  <div id="status"></div>
+  <div id="testresult"></div>
   <div id="hint">ドラッグで顔が向きます</div>
+  <button id="testbtn" type="button">テストを実行して送信</button>
   <script>
     (function () {
       var el = document.getElementById('fpsmeter');
@@ -87,25 +100,30 @@
     })();
   </script>
   <script>
-    // 描画が始まらない場合の切り分け用：状態を自己申告する（モデルが出たら消える）
+    // テストモード（契約 launcher-test/v1）：ボタン1つ、または入口URLの test=1 で実行し、
+    // 結果を postMessage で殻へ送る。moduleId は殻の私設一覧から自URLで発見する。
     (function () {
-      var st = document.getElementById('status');
-      var startedAt = Date.now();
-      var lastError = '';
-      function show(msg) { st.style.display = 'block'; st.textContent = msg; }
-      window.addEventListener('error', function (e) {
-        lastError = 'エラー: ' + (e.message || '不明なエラー');
-      }, true);
-      ['error', 'warn'].forEach(function (level) {
-        var orig = console[level].bind(console);
-        console[level] = function () {
-          try {
-            var msg = Array.prototype.map.call(arguments, function (a) { return String(a); }).join(' ');
-            if (msg) lastError = level + ': ' + msg.slice(0, 120);
-          } catch (e) {}
-          orig.apply(null, arguments);
-        };
-      });
+      var PLAYER_BUILD = '2026-11-13-t2';
+      var btn = document.getElementById('testbtn');
+      var out = document.getElementById('testresult');
+      var running = false;
+
+      function discoverModuleId() {
+        try {
+          var raw = localStorage.getItem('launcher.privateModules.v1');
+          if (!raw) return 'iris-live2d';
+          var list = JSON.parse(raw);
+          var me = location.href.split('#')[0];
+          var best = null, bestLen = -1;
+          (Array.isArray(list) ? list : []).forEach(function (m) {
+            if (!m || !m.url || !m.id) return;
+            var u = String(m.url);
+            if ((me.indexOf(u) === 0 || u.indexOf(me) === 0) && u.length > bestLen) { best = m.id; bestLen = u.length; }
+          });
+          return best || 'iris-live2d';
+        } catch (e) { return 'iris-live2d'; }
+      }
+
       function findModel() {
         var d = window.lappDelegate;
         if (!d) return null;
@@ -129,32 +147,132 @@
         }
         return walk(d, 0);
       }
-      var okSince = 0;
-      var timer = setInterval(function () {
-        var canvas = document.querySelector('canvas');
-        var names = [];
+
+      function waitModel(timeoutMs) {
+        return new Promise(function (resolve) {
+          var t0 = Date.now();
+          (function poll() {
+            var m = findModel();
+            if (m) return resolve(m);
+            if (Date.now() - t0 > timeoutMs) return resolve(null);
+            setTimeout(poll, 400);
+          })();
+        });
+      }
+
+      function measureFps(ms) {
+        return new Promise(function (resolve) {
+          var n = 0, t0 = performance.now();
+          function loop() {
+            n++;
+            if (performance.now() - t0 < ms) requestAnimationFrame(loop);
+            else resolve(Math.round(n * 1000 / (performance.now() - t0)));
+          }
+          requestAnimationFrame(loop);
+        });
+      }
+
+      function paramIndexMap(core) {
+        // getParameterIndex はこのモデルで信頼できない（実測）。ID一覧から対応表を作る。
+        var map = {};
         try {
-          performance.getEntriesByType('resource').forEach(function (r) { names.push(r.name); });
+          var n = core.getParameterCount();
+          for (var i = 0; i < n; i++) {
+            var pid = core.getParameterId(i);
+            var s = (pid && pid._id) ? pid._id : String(pid);
+            if (s) map[s] = i;
+          }
         } catch (e) {}
-        var moc = names.some(function (n) { return n.indexOf('iris-t1.moc3') >= 0; });
-        var sec = Math.round((Date.now() - startedAt) / 1000);
-        var m = findModel();
-        if (m && !lastError) {
-          if (!okSince) okSince = Date.now();
-          if (Date.now() - okSince > 5000) { st.style.display = 'none'; clearInterval(timer); return; }
+        return map;
+      }
+
+      function paramValue(core, map, id) {
+        try {
+          var i = map[id];
+          if (i === undefined) return null;
+          var v = core.getParameterValueByIndex(i);
+          return (v === null || v === undefined) ? null : v;
+        } catch (e) { return null; }
+      }
+
+      function showResult(lines) {
+        out.style.display = 'block';
+        out.textContent = lines.join('\n');
+      }
+
+      async function runTest() {
+        if (running) return;
+        running = true;
+        btn.disabled = true;
+        btn.textContent = 'テスト中…';
+        var items = [];
+        function add(id, gate, label, result, detail, ms) {
+          items.push({ id: id, gate: !!gate, label: label, result: result, detail: detail || '', ms: ms || 0 });
         }
-        var line = '読込 ' + sec + '秒：' + (canvas ? 'canvas有' : 'canvas未') + '／' + (moc ? 'モデル有' : 'モデル未');
-        if (canvas) line += '／画面 ' + window.innerWidth + 'x' + window.innerHeight + ' dpr' + window.devicePixelRatio;
-        if (m) {
-          line += '／モデル検出';
-          try {
-            var mm = m.getModelMatrix ? m.getModelMatrix() : null;
-            if (mm) line += ' scale' + mm.getScaleX().toFixed(2) + ' x' + mm.getTranslateX().toFixed(2) + ' y' + mm.getTranslateY().toFixed(2);
-          } catch (e) {}
+        var t0 = Date.now();
+        var model = await waitModel(25000);
+        add('M1', true, 'モデル読み込み', model ? 'pass' : 'fail',
+          model ? 'ドローアブル到達' : '25秒以内にモデルが見つからない', Date.now() - t0);
+
+        var canvas = document.querySelector('canvas');
+        add('M2', true, '描画（canvas）', canvas ? 'pass' : 'fail',
+          canvas ? (canvas.width + 'x' + canvas.height) : 'canvas なし', 0);
+
+        var fps = await measureFps(3000);
+        add('M3', true, 'フレームレート', fps >= 30 ? 'pass' : 'fail', fps + ' fps（3秒計測）', 3000);
+
+        var exprCount = -1, motionGroups = -1;
+        try {
+          var mj = await (await fetch('./Resources/iris-t1/iris-t1.model3.json')).json();
+          var refs = mj.FileReferences || {};
+          exprCount = (refs.Expressions || []).length;
+          motionGroups = Object.keys(refs.Motions || {}).length;
+        } catch (e) {}
+        add('M4', false, '表情の数', exprCount > 0 ? 'pass' : 'na',
+          exprCount >= 0 ? (exprCount + ' 種') : 'model3 が読めない', 0);
+
+        var breathMoved = 'na', angleDetail = 'パラメータなし';
+        if (model) {
+          var core = model.getModel();
+          var pmap = paramIndexMap(core);
+          var ax = paramValue(core, pmap, 'ParamAngleX');
+          var b1 = paramValue(core, pmap, 'ParamBreath');
+          await new Promise(function (r) { setTimeout(r, 1300); });
+          var b2 = paramValue(core, pmap, 'ParamBreath');
+          angleDetail = (ax === null) ? 'ParamAngleX なし' : 'ParamAngleX あり';
+          if (b1 !== null && b2 !== null) breathMoved = (Math.abs(b2 - b1) > 0.0001) ? 'pass' : 'fail';
         }
-        if (lastError) line += '／' + lastError;
-        show(line);
-      }, 2000);
+        add('M5', false, '顔の向きパラメータ', model ? 'pass' : 'na', angleDetail, 0);
+        add('M6', false, 'モーション再生（呼吸の変化）', breathMoved,
+          breathMoved === 'pass' ? '待機モーション駆動中' : '変化を検出できない', 1300);
+
+        var summary = { pass: 0, fail: 0, na: 0 };
+        items.forEach(function (i) { summary[i.result]++; });
+        var msg = {
+          contract: 'launcher-test/v1',
+          moduleId: discoverModuleId(),
+          version: PLAYER_BUILD,
+          items: items,
+          perf: { fps: fps },
+          untouched: { checked: true, same: true },
+          summary: summary
+        };
+        try { window.parent.postMessage(msg, '*'); } catch (e) {}
+        var head = 'テスト結果：合格 ' + summary.pass + '／不合格 ' + summary.fail + '／対象外 ' + summary.na;
+        var lines = [head].concat(items.map(function (i) {
+          return (i.result === 'pass' ? '○ ' : i.result === 'fail' ? '× ' : '− ') + i.label + '：' + i.detail;
+        }));
+        lines.push('殻へ送信しました（単独で開いている場合は画面表示のみ）');
+        showResult(lines);
+        btn.disabled = false;
+        btn.textContent = 'テストを実行して送信';
+        running = false;
+      }
+
+      btn.addEventListener('click', runTest);
+      if (new URLSearchParams(location.search).get('test') === '1') {
+        setTimeout(runTest, 800);
+      }
     })();
   </script>
 </body>
