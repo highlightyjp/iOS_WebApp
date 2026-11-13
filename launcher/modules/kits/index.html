@@ -72,24 +72,19 @@
 <script>
 "use strict";
 document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
-const MODULE_BUILD = "2026-11-14-0210";
+const MODULE_BUILD = "2026-11-14-0230";
 document.getElementById("build").textContent = "（版 " + MODULE_BUILD + "）";
 const API_LS_KEY = "iris-api-config-v1";
 const PAGE_BASE = "https://100.126.74.92:18787";
 const ORDER = ["relay-base", "refresh-beacon", "liveness-charge", "presence-home", "otp-relay", "demo-greeting"];
-const STYLE = {
-  "relay-base":      { glyph: "➤", bg: "linear-gradient(135deg,#2f6bff,#173a8f)" },
-  "refresh-beacon":  { glyph: "↻", bg: "linear-gradient(135deg,#0fb5a3,#0a5f56)" },
-  "liveness-charge": { glyph: "◉", bg: "linear-gradient(135deg,#f59e0b,#9a4a00)" },
-  "presence-home":   { glyph: "⌂", bg: "linear-gradient(135deg,#8b5cf6,#4c1d95)" },
-  "otp-relay":       { glyph: "✉", bg: "linear-gradient(135deg,#64748b,#1e293b)" },
-  "demo-greeting":   { glyph: "✎", bg: "linear-gradient(135deg,#9ca3af,#4b5563)" }
-};
 const DEFAULT_BGS = ["linear-gradient(135deg,#2563eb,#1e3a8a)", "linear-gradient(135deg,#0f766e,#134e4a)",
                      "linear-gradient(135deg,#b45309,#78350f)", "linear-gradient(135deg,#6d28d9,#3b0764)"];
-function styleFor(id, idx){
-  if(STYLE[id]) return STYLE[id];
-  return { glyph: "▣", bg: DEFAULT_BGS[idx % DEFAULT_BGS.length] };
+function styleFor(kit, idx){
+  /* 色とグリフはキット定義の icon（本家と同じく、作った側が決めた固定の見た目。状態とは無関係） */
+  const ic = kit.icon || {};
+  const bg = ic.color ? (ic.color2 ? "linear-gradient(135deg," + ic.color + "," + ic.color2 + ")" : ic.color)
+                       : DEFAULT_BGS[idx % DEFAULT_BGS.length];
+  return { glyph: ic.glyph || "▣", bg };
 }
 
 function loadConfig(){
@@ -205,7 +200,7 @@ async function showList(){
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
   kitsCache.forEach((k, idx) => {
-    const st = styleFor(k.id, idx);
+    const st = styleFor(k, idx);
     const tile = el("div", "tile");
     tile.style.background = st.bg;
     tile.dataset.title = (k.title || k.id);
