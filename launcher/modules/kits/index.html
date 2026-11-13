@@ -5,60 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>ショートカット登録</title>
 <style>
-  :root{ color-scheme: light dark; }
-  *{ box-sizing:border-box; }
-  body{ font-family:-apple-system, "Hiragino Sans", sans-serif; margin:0; padding:16px;
-        line-height:1.65; touch-action:manipulation; }
-  h1{ font-size:19px; margin:4px 0 2px; }
-  .sub{ font-size:13px; opacity:.75; margin:0 0 14px; }
-  .card{ border:1px solid rgba(128,128,128,.45); border-radius:14px; padding:14px; margin:0 0 12px; }
-  .card h2{ font-size:16px; margin:0 0 4px; }
-  .state{ font-size:14px; }
-  .state .row{ display:flex; gap:8px; padding:2px 0; }
-  .state .lb{ min-width:6.5em; opacity:.75; }
-  button{ font-size:15px; padding:10px 16px; border-radius:10px; border:1px solid rgba(128,128,128,.6);
-          background:transparent; color:inherit; }
+  :root{ color-scheme: dark; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  body{ font-family:-apple-system, "Hiragino Sans", sans-serif; margin:0; padding:18px 16px 28px;
+        background:#0b0b0f; color:#f2f2f5; line-height:1.6; touch-action:manipulation; }
+  h1{ font-size:24px; margin:2px 0 10px; letter-spacing:.01em; }
+  .search{ display:flex; align-items:center; gap:8px; background:#1e1e24; border-radius:12px;
+           padding:9px 12px; margin:0 0 6px; }
+  .search .mag{ opacity:.55; font-size:15px; }
+  .search input{ flex:1; background:transparent; border:none; outline:none; color:#f2f2f5; font-size:16px; }
+  .conn{ font-size:12.5px; opacity:.65; margin:4px 2px 12px; min-height:1.2em; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tile{ position:relative; border-radius:20px; aspect-ratio:8/5.1; padding:12px; cursor:pointer;
+         overflow:hidden; color:#fff; }
+  .tile .glyph{ font-size:27px; line-height:1; text-shadow:0 1px 3px rgba(0,0,0,.35); }
+  .tile .run{ position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%;
+              background:rgba(255,255,255,.30); border:none; display:flex; align-items:center; justify-content:center; }
+  .tile .run .tri{ width:0; height:0; border-left:11px solid #fff; border-top:7px solid transparent;
+                   border-bottom:7px solid transparent; margin-left:2px; }
+  .tile .run[disabled]{ opacity:.45; }
+  .tile .name{ position:absolute; left:12px; bottom:26px; font-size:15px; font-weight:600;
+               text-shadow:0 1px 3px rgba(0,0,0,.4); padding-right:10px; }
+  .tile .badge{ position:absolute; left:12px; bottom:8px; font-size:11px; background:rgba(0,0,0,.38);
+                border-radius:999px; padding:1px 8px; max-width:92%; white-space:nowrap; overflow:hidden;
+                text-overflow:ellipsis; }
+  .card{ background:#1b1b21; border-radius:16px; padding:14px; margin:0 0 12px; }
+  .card h2{ font-size:16px; margin:0 0 6px; }
+  .state .row{ display:flex; gap:8px; padding:2px 0; font-size:14px; }
+  .state .lb{ min-width:6.5em; opacity:.65; }
+  button.btn{ font-size:15px; padding:10px 16px; border-radius:10px; border:1px solid #3a3a44;
+              background:#26262e; color:#f2f2f5; }
   button.primary{ background:#0a5cff; border-color:#0a5cff; color:#fff; font-weight:600; }
   button:active{ opacity:.7; }
-  .txt{ white-space:pre-wrap; font-size:13.5px; border:1px solid rgba(128,128,128,.35); border-radius:10px;
-        padding:10px; margin:6px 0; }
-  .small{ font-size:13px; opacity:.8; }
-  .ok{ color:#0a7d2c; font-weight:600; }
-  .warn{ color:#b25e00; font-weight:600; }
+  .txt{ white-space:pre-wrap; font-size:13.5px; background:#121216; border:1px solid #2c2c34;
+        border-radius:10px; padding:10px; margin:6px 0; }
+  .small{ font-size:13px; opacity:.75; }
+  .ok{ color:#4ade80; font-weight:600; }
+  .warn{ color:#fbbf24; font-weight:600; }
   .hidden{ display:none; }
-  .back{ margin-bottom:10px; }
-  input[type=text], input[type=password]{ width:100%; padding:10px; font-size:15px; border-radius:8px;
-        border:1px solid rgba(128,128,128,.6); margin:2px 0 10px; background:transparent; color:inherit; }
   ol, ul{ padding-left:20px; margin:6px 0; }
   li{ font-size:14px; }
+  input[type=text], input[type=password]{ width:100%; padding:10px; font-size:15px; border-radius:8px;
+        border:1px solid #3a3a44; margin:2px 0 10px; background:#121216; color:#f2f2f5; }
+  .back{ margin-bottom:12px; }
 </style>
 </head>
 <body>
-<h1>ショートカット登録</h1>
-<p class="sub">自宅の基盤と iPhone のショートカットをつなぐキットの目録です。状態は基盤からその場で読みます。<span id="build"></span></p>
-
-<div id="cfg-missing" class="card hidden">
-  <h2>基盤への接続設定がありません</h2>
-  <p class="small">取り込みページ（dynabook-3）で設定を入れるか、ここに基盤のアドレスと合言葉を入れてください（アイリスのモジュールと同じ保存場所を使います）。</p>
-  <label class="small">アドレス（例：https://…ts.net:8443/v1/chat）</label>
-  <input type="text" id="cfg-endpoint" autocomplete="off">
-  <label class="small">合言葉</label>
-  <input type="password" id="cfg-token" autocomplete="off">
-  <button id="cfg-save" class="primary">保存して読み直す</button>
+<div id="library">
+  <h1>ショートカット登録</h1>
+  <div class="search"><span class="mag">⌕</span><input type="text" id="q" placeholder="検索" autocomplete="off"></div>
+  <div class="conn" id="conn"></div>
+  <div id="cfg-missing" class="card hidden">
+    <h2>基盤への接続設定がありません</h2>
+    <p class="small">取り込みページ（dynabook-3）で設定を入れるか、ここに基盤のアドレスと合言葉を入れてください（アイリスのモジュールと同じ保存場所を使います）。</p>
+    <label class="small">アドレス（例：https://…ts.net:8443/v1/chat）</label>
+    <input type="text" id="cfg-endpoint" autocomplete="off">
+    <label class="small">合言葉</label>
+    <input type="password" id="cfg-token" autocomplete="off">
+    <button id="cfg-save" class="btn primary">保存して読み直す</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p class="small" style="margin-top:14px">タイル右上の ▶ は、そのキットの疎通テストです（土台「基盤へ送る」経由で送り、基盤の到達を読み戻します）。タイルを押すと詳細が開きます。<span id="build"></span></p>
 </div>
-
-<div id="conn" class="sub"></div>
-<div id="list"></div>
 <div id="detail" class="hidden"></div>
 
 <script>
 "use strict";
 document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
-const MODULE_BUILD = "2026-11-14-0110";
+const MODULE_BUILD = "2026-11-14-0210";
 document.getElementById("build").textContent = "（版 " + MODULE_BUILD + "）";
 const API_LS_KEY = "iris-api-config-v1";
 const PAGE_BASE = "https://100.126.74.92:18787";
 const ORDER = ["relay-base", "refresh-beacon", "liveness-charge", "presence-home", "otp-relay", "demo-greeting"];
+const STYLE = {
+  "relay-base":      { glyph: "➤", bg: "linear-gradient(135deg,#2f6bff,#173a8f)" },
+  "refresh-beacon":  { glyph: "↻", bg: "linear-gradient(135deg,#0fb5a3,#0a5f56)" },
+  "liveness-charge": { glyph: "◉", bg: "linear-gradient(135deg,#f59e0b,#9a4a00)" },
+  "presence-home":   { glyph: "⌂", bg: "linear-gradient(135deg,#8b5cf6,#4c1d95)" },
+  "otp-relay":       { glyph: "✉", bg: "linear-gradient(135deg,#64748b,#1e293b)" },
+  "demo-greeting":   { glyph: "✎", bg: "linear-gradient(135deg,#9ca3af,#4b5563)" }
+};
+const DEFAULT_BGS = ["linear-gradient(135deg,#2563eb,#1e3a8a)", "linear-gradient(135deg,#0f766e,#134e4a)",
+                     "linear-gradient(135deg,#b45309,#78350f)", "linear-gradient(135deg,#6d28d9,#3b0764)"];
+function styleFor(id, idx){
+  if(STYLE[id]) return STYLE[id];
+  return { glyph: "▣", bg: DEFAULT_BGS[idx % DEFAULT_BGS.length] };
+}
 
 function loadConfig(){
   try{
@@ -104,13 +136,58 @@ async function copyText(t, btn){
   }
   setTimeout(() => { btn.textContent = "コピー"; }, 1600);
 }
+function testValueOf(items){
+  if(!items) return null;
+  const it = items.find(i => i.label === "テストの到達");
+  return it ? it.value : null;
+}
+async function fetchState(id){
+  const j = await api("/v1/kits/" + id + "/state");
+  return j.items || [];
+}
+function badgeText(items){
+  if(!items || !items.length) return "○ 状態なし";
+  const v = (items[0].value || "");
+  const arrived = items.some(i => !/まだ|未開始|ありません|閉じています/.test(i.value || ""));
+  const short = v.length > 16 ? v.slice(0, 16) + "…" : v;
+  return (arrived ? "✓ " : "○ ") + items[0].label + "：" + short;
+}
 
+/* ---- 疎通テスト（土台経由） ---- */
+async function runKitTest(id, report){
+  const input = id === "relay-base" ? "relay-test" : "test:" + id;
+  let before = null;
+  try{ before = testValueOf(await fetchState(id)); }catch(e){}
+  report("送信中…");
+  const url = "shortcuts://run-shortcut?name=" + encodeURIComponent("基盤へ送る") + "&input=" + encodeURIComponent(input);
+  try{ location.href = url; }catch(e){}
+  let tries = 0;
+  return new Promise(resolve => {
+    const iv = setInterval(async () => {
+      tries++;
+      let now = null;
+      try{ now = testValueOf(await fetchState(id)); }catch(e){}
+      if(now && now !== "まだ届いていません" && now !== before){
+        clearInterval(iv);
+        report("✓ 届きました：" + now, true);
+        resolve(true);
+      } else if(tries >= 10){
+        clearInterval(iv);
+        report("○ まだ届いていません。土台が作られているか確かめるか、ショートカット アプリで「基盤へ送る」を手で実行してから、もう一度試してください（同じ分の中の再テストでは表示が変わらないことがあります）。", false);
+        resolve(false);
+      }
+    }, 2000);
+  });
+}
+
+/* ---- ライブラリ ---- */
 let kitsCache = [];
+const tileState = {};
 async function showList(){
   document.getElementById("detail").classList.add("hidden");
-  const list = document.getElementById("list");
-  list.classList.remove("hidden");
-  list.textContent = "";
+  document.getElementById("library").classList.remove("hidden");
+  const grid = document.getElementById("grid");
+  grid.textContent = "";
   const conn = document.getElementById("conn");
   if(!cfg){
     document.getElementById("cfg-missing").classList.remove("hidden");
@@ -121,44 +198,69 @@ async function showList(){
   conn.textContent = "基盤へ接続中…";
   let data;
   try{ data = await api("/v1/kits"); }
-  catch(e){ conn.innerHTML = ""; conn.appendChild(el("span", "warn", "基盤へ届きませんでした（" + e.message + "）")); return; }
+  catch(e){ conn.textContent = "基盤へ届きませんでした（" + e.message + "）"; return; }
   conn.textContent = "基盤へ接続できています";
   kitsCache = (data.kits || []).slice().sort((a, b) => {
     const ia = ORDER.indexOf(a.id), ib = ORDER.indexOf(b.id);
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
-  for(const k of kitsCache){
-    const card = el("div", "card");
-    card.appendChild(el("h2", null, k.title || k.id));
-    const st = el("div", null, "状態を読み中…");
-    card.appendChild(st);
-    const btn = el("button", null, "開く");
-    btn.addEventListener("click", () => showDetail(k.id));
-    card.appendChild(btn);
-    list.appendChild(card);
+  kitsCache.forEach((k, idx) => {
+    const st = styleFor(k.id, idx);
+    const tile = el("div", "tile");
+    tile.style.background = st.bg;
+    tile.dataset.title = (k.title || k.id);
+    tile.appendChild(el("div", "glyph", st.glyph));
+    const badge = el("div", "badge", k.has_state ? "○ 読み中…" : "○ 状態なし");
     if(k.has_state){
-      api("/v1/kits/" + k.id + "/state").then(j => {
-        st.textContent = "";
-        st.appendChild(stateBox(j.items));
-      }).catch(() => { st.textContent = "状態を読めませんでした"; });
-    } else {
-      st.textContent = "";
+      const run = el("button", "run");
+      run.setAttribute("aria-label", "疎通テスト");
+      run.appendChild(el("span", "tri"));
+      run.addEventListener("click", ev => {
+        ev.stopPropagation();
+        run.disabled = true;
+        runKitTest(k.id, (msg) => { badge.textContent = msg; }).then(() => {
+          run.disabled = false;
+          setTimeout(() => refreshTileState(k.id), 4000);
+        });
+      });
+      tile.appendChild(run);
     }
+    tile.appendChild(el("div", "name", k.title || k.id));
+    tile.appendChild(badge);
+    tile.addEventListener("click", () => showDetail(k.id));
+    grid.appendChild(tile);
+    tileState[k.id] = { badgeEl: badge };
+    if(k.has_state) refreshTileState(k.id);
+  });
+  applySearch();
+}
+async function refreshTileState(id){
+  const t = tileState[id];
+  if(!t) return;
+  try{ t.badgeEl.textContent = badgeText(await fetchState(id)); }
+  catch(e){ t.badgeEl.textContent = "○ 状態を読めませんでした"; }
+}
+function applySearch(){
+  const q = (document.getElementById("q").value || "").trim();
+  const grid = document.getElementById("grid");
+  for(const tile of grid.children){
+    tile.style.display = (!q || tile.dataset.title.indexOf(q) >= 0) ? "" : "none";
   }
 }
+document.getElementById("q").addEventListener("input", applySearch);
 
+/* ---- 詳細 ---- */
 let pollTimer = null;
 async function showDetail(id){
-  const kitInfo = kitsCache.find(k => k.id === id) || { id, title: id };
-  const list = document.getElementById("list");
-  list.classList.add("hidden");
+  const kitInfo = kitsCache.find(k => k.id === id) || { id, title: id, has_state: true };
+  document.getElementById("library").classList.add("hidden");
   const d = document.getElementById("detail");
   d.classList.remove("hidden");
   d.textContent = "";
-  const back = el("button", "back", "← 目録へ戻る");
+  const back = el("button", "btn back", "← ライブラリへ戻る");
   back.addEventListener("click", () => { if(pollTimer) clearInterval(pollTimer); showList(); });
   d.appendChild(back);
-  d.appendChild(el("h2", null, kitInfo.title || id));
+  d.appendChild(el("h1", null, kitInfo.title || id));
   const stCard = el("div", "card");
   stCard.appendChild(el("h2", null, "状態"));
   const stBox = el("div", null, "読み中…");
@@ -166,43 +268,26 @@ async function showDetail(id){
   d.appendChild(stCard);
   const loadState = async () => {
     try{
-      const j = await api("/v1/kits/" + id + "/state");
-      stBox.textContent = ""; stBox.appendChild(stateBox(j.items));
-      return j.items;
+      const items = await fetchState(id);
+      stBox.textContent = ""; stBox.appendChild(stateBox(items));
+      return items;
     }catch(e){ stBox.textContent = "状態を読めませんでした"; return null; }
   };
   if(pollTimer) clearInterval(pollTimer);
-  await loadState();
-  pollTimer = setInterval(loadState, 5000);
+  if(kitInfo.has_state){ await loadState(); pollTimer = setInterval(loadState, 5000); }
 
-  if(id === "relay-base"){
+  if(kitInfo.has_state){
     const tCard = el("div", "card");
     tCard.appendChild(el("h2", null, "疎通テスト"));
-    tCard.appendChild(el("p", "small", "土台「基盤へ送る」にテストを送らせ、基盤へ届いたかをここで読み戻します。"));
-    const res = el("p", "state");
-    const btn = el("button", "primary", "テストを送る");
-    btn.addEventListener("click", async () => {
-      const before = await loadState();
-      const beforeTest = before ? (before.find(i => i.label === "テストの到達") || {}).value : null;
-      res.textContent = "ショートカットを開きます…";
-      const url = "shortcuts://run-shortcut?name=" + encodeURIComponent("基盤へ送る") + "&input=" + encodeURIComponent("relay-test");
-      try{ location.href = url; }catch(e){}
-      res.textContent = "送信を確認中…（届くまで数秒かかります）";
-      let tries = 0;
-      const iv = setInterval(async () => {
-        tries++;
-        const items = await loadState();
-        const nowTest = items ? (items.find(i => i.label === "テストの到達") || {}).value : null;
-        if(nowTest && nowTest !== beforeTest && nowTest !== "まだ届いていません"){
-          clearInterval(iv);
-          res.textContent = "";
-          res.appendChild(el("span", "ok", "届きました：" + nowTest));
-        } else if(tries >= 10){
-          clearInterval(iv);
-          res.textContent = "";
-          res.appendChild(el("span", "warn", "まだ届いていません。ショートカット アプリで「基盤へ送る」を開き、入力に relay-test と入れて手で実行してから、この画面に戻って確かめてください。"));
-        }
-      }, 2000);
+    tCard.appendChild(el("p", "small", "土台「基盤へ送る」経由でテストを送り、基盤の到達を読み戻します。これは土台までの通り道の確認です。自動化そのものの到達は、上の状態（最終受信など）で別に確かめます。"));
+    const res = el("p", null);
+    const btn = el("button", "btn primary", "テストを送る");
+    btn.addEventListener("click", () => {
+      btn.disabled = true;
+      runKitTest(id, (msg, done) => {
+        res.textContent = "";
+        res.appendChild(el("span", done ? "ok" : (msg.indexOf("○") === 0 ? "warn" : ""), msg));
+      }).then(() => { btn.disabled = false; loadState(); });
     });
     tCard.appendChild(btn);
     tCard.appendChild(res);
@@ -215,12 +300,21 @@ async function showDetail(id){
     d.appendChild(el("p", "warn", "生成文を読めませんでした（" + e.message + "）"));
     return;
   }
+  if(render.registration && (render.registration.steps || []).length){
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, "登録手順"));
+    const ol = el("ol");
+    for(const s of render.registration.steps) ol.appendChild(el("li", null, s));
+    card.appendChild(ol);
+    if(render.registration.saved_note) card.appendChild(el("p", "small", render.registration.saved_note));
+    d.appendChild(card);
+  }
   for(const t of (render.texts || [])){
     const card = el("div", "card");
     card.appendChild(el("h2", null, t.label));
     if(t.lead) card.appendChild(el("p", "small", t.lead));
     card.appendChild(el("div", "txt", t.text));
-    const b = el("button", null, "コピー");
+    const b = el("button", "btn", "コピー");
     b.addEventListener("click", () => copyText(t.text, b));
     card.appendChild(b);
     d.appendChild(card);
@@ -247,11 +341,11 @@ async function showDetail(id){
     d.appendChild(card);
   }
   const pageCard = el("div", "card");
-  pageCard.appendChild(el("h2", null, "登録ボタンとリンク保存"));
+  pageCard.appendChild(el("h2", null, "自宅内ページ（登録ボタン）"));
   pageCard.appendChild(el("p", "small", "追加ボタン（iCloud リンク）の保存は、自宅ネットワーク内の画面で行います。Safari でこのアドレスを開いてください："));
   const pageUrl = id === "otp-relay" ? PAGE_BASE + "/otp-setup" : PAGE_BASE + "/v1/kits/" + id + "/page";
   pageCard.appendChild(el("div", "txt", pageUrl));
-  const pb = el("button", null, "アドレスをコピー");
+  const pb = el("button", "btn", "アドレスをコピー");
   pb.addEventListener("click", () => copyText(pageUrl, pb));
   pageCard.appendChild(pb);
   d.appendChild(pageCard);
@@ -285,11 +379,11 @@ async function runTests(){
   const t0 = Date.now();
   const push = (id, label, ok, detail) => items.push({ id, gate: false, label, result: ok ? "pass" : "fail", detail: detail || "", ms: Date.now() - t0 });
   push("KT1", "接続設定の読み取り", !!cfg, cfg ? "設定あり" : "設定なし");
-  let listOk = false;
-  try{ const d = await api("/v1/kits"); listOk = !!(d && d.kits && d.kits.length); }catch(e){}
-  push("KT2", "目録の取得", listOk, listOk ? kitsCache.length + "件" : "取得できず");
+  let listOk = false, count = 0;
+  try{ const d = await api("/v1/kits"); count = (d.kits || []).length; listOk = count > 0; }catch(e){}
+  push("KT2", "目録の取得", listOk, listOk ? count + "件" : "取得できず");
   let stOk = false;
-  try{ const j = await api("/v1/kits/relay-base/state"); stOk = !!(j && j.items); }catch(e){}
+  try{ const items = await fetchState("relay-base"); stOk = Array.isArray(items); }catch(e){}
   push("KT3", "状態の取得（土台）", stOk, stOk ? "取得できた" : "取得できず");
   const msg = { contract: "launcher-test/v1", moduleId: discoverModuleId(), version: MODULE_BUILD,
     items, perf: null, untouched: { checked: false, same: null },
@@ -300,7 +394,7 @@ async function runTests(){
 if(new URLSearchParams(location.search).get("test") === "1"){
   runTests();
 } else {
-  const tb = el("button", null, "テストを実行して送信");
+  const tb = el("button", "btn", "テストを実行して送信");
   tb.style.marginTop = "14px";
   tb.addEventListener("click", async () => { await runTests(); tb.textContent = "送信しました"; });
   document.body.appendChild(tb);
