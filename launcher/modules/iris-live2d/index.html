@@ -91,10 +91,45 @@
     (function () {
       var st = document.getElementById('status');
       var startedAt = Date.now();
+      var lastError = '';
       function show(msg) { st.style.display = 'block'; st.textContent = msg; }
       window.addEventListener('error', function (e) {
-        show('エラー: ' + (e.message || '不明なエラー'));
+        lastError = 'エラー: ' + (e.message || '不明なエラー');
       }, true);
+      ['error', 'warn'].forEach(function (level) {
+        var orig = console[level].bind(console);
+        console[level] = function () {
+          try {
+            var msg = Array.prototype.map.call(arguments, function (a) { return String(a); }).join(' ');
+            if (msg) lastError = level + ': ' + msg.slice(0, 120);
+          } catch (e) {}
+          orig.apply(null, arguments);
+        };
+      });
+      function findModel() {
+        var d = window.lappDelegate;
+        if (!d) return null;
+        var seen = new Set();
+        function walk(o, dep) {
+          if (!o || typeof o !== 'object' || seen.has(o) || dep > 5) return null;
+          seen.add(o);
+          if (typeof o.getModel === 'function' && typeof o.setExpression === 'function') {
+            try { var c = o.getModel(); if (c && c.getParameterCount() > 0) return o; } catch (e) {}
+          }
+          var keys = Object.keys(o);
+          for (var i = 0; i < keys.length; i++) {
+            try {
+              var v = o[keys[i]];
+              if (Array.isArray(v)) {
+                for (var j = 0; j < v.length; j++) { var r = walk(v[j], dep + 1); if (r) return r; }
+              } else { var r2 = walk(v, dep + 1); if (r2) return r2; }
+            } catch (e) {}
+          }
+          return null;
+        }
+        return walk(d, 0);
+      }
+      var okSince = 0;
       var timer = setInterval(function () {
         var canvas = document.querySelector('canvas');
         var names = [];
@@ -102,18 +137,23 @@
           performance.getEntriesByType('resource').forEach(function (r) { names.push(r.name); });
         } catch (e) {}
         var moc = names.some(function (n) { return n.indexOf('iris-t1.moc3') >= 0; });
-        var tex = names.some(function (n) { return n.indexOf('texture_00') >= 0; });
         var sec = Math.round((Date.now() - startedAt) / 1000);
-        if (canvas && moc) {
-          // モデルが取れたら描画は進む。少し待って消す
-          setTimeout(function () { st.style.display = 'none'; }, 5000);
-          clearInterval(timer);
-          return;
+        var m = findModel();
+        if (m && !lastError) {
+          if (!okSince) okSince = Date.now();
+          if (Date.now() - okSince > 5000) { st.style.display = 'none'; clearInterval(timer); return; }
         }
-        show('読み込み中 ' + sec + '秒：' +
-          (canvas ? 'canvas有' : 'canvas未') + '／' +
-          (moc ? 'モデル有' : 'モデル未') + '／' +
-          (tex ? '画像有' : '画像未'));
+        var line = '読込 ' + sec + '秒：' + (canvas ? 'canvas有' : 'canvas未') + '／' + (moc ? 'モデル有' : 'モデル未');
+        if (canvas) line += '／画面 ' + window.innerWidth + 'x' + window.innerHeight + ' dpr' + window.devicePixelRatio;
+        if (m) {
+          line += '／モデル検出';
+          try {
+            var mm = m.getModelMatrix ? m.getModelMatrix() : null;
+            if (mm) line += ' scale' + mm.getScaleX().toFixed(2) + ' x' + mm.getTranslateX().toFixed(2) + ' y' + mm.getTranslateY().toFixed(2);
+          } catch (e) {}
+        }
+        if (lastError) line += '／' + lastError;
+        show(line);
       }, 2000);
     })();
   </script>
