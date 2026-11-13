@@ -65,7 +65,7 @@
   <!-- Live2DCubismCore script -->
   <script src="./Core/live2dcubismcore.js"></script>
   <!-- Build script -->
-  <script type="module" crossorigin src="./assets/index-Y5OCC_ko.js"></script>
+  <script type="module" crossorigin src="./assets/index-CjQyo2gc.js"></script>
 </head>
 <body>
   <div id="fpsmeter">-- fps</div>
@@ -104,9 +104,9 @@
         var moc = names.some(function (n) { return n.indexOf('iris-t1.moc3') >= 0; });
         var tex = names.some(function (n) { return n.indexOf('texture_00') >= 0; });
         var sec = Math.round((Date.now() - startedAt) / 1000);
-        if (canvas && moc && tex) {
-          // 描画側の材料は揃っている。少し待って消す
-          setTimeout(function () { st.style.display = 'none'; }, 4000);
+        if (canvas && moc) {
+          // モデルが取れたら描画は進む。少し待って消す
+          setTimeout(function () { st.style.display = 'none'; }, 5000);
           clearInterval(timer);
           return;
         }
