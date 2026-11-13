@@ -57,7 +57,7 @@
   <div class="conn" id="conn"></div>
   <div id="cfg-missing" class="card hidden">
     <h2>基盤への接続設定がありません</h2>
-    <p class="small">取り込みページ（dynabook-3）で設定を入れるか、ここに基盤のアドレスと合言葉を入れてください（アイリスのモジュールと同じ保存場所を使います）。</p>
+    <p class="small">取り込みページ（dynabook-3）で設定を入れるか、ここに基盤のアドレスと合言葉を入れてください（他のモジュールと共通の保存場所を使います）。</p>
     <label class="small">アドレス（例：https://…ts.net:8443/v1/chat）</label>
     <input type="text" id="cfg-endpoint" autocomplete="off">
     <label class="small">合言葉</label>
@@ -72,7 +72,7 @@
 <script>
 "use strict";
 document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
-const MODULE_BUILD = "2026-11-14-0230";
+const MODULE_BUILD = "2026-11-14-0245";
 document.getElementById("build").textContent = "（版 " + MODULE_BUILD + "）";
 const API_LS_KEY = "iris-api-config-v1";
 const PAGE_BASE = "https://100.126.74.92:18787";
@@ -88,6 +88,15 @@ function styleFor(kit, idx){
 }
 
 function loadConfig(){
+  /* 共有の接続設定（取り込みページが書く、音楽モジュールと同じ保存場所）を先に読む */
+  try{
+    const base = (localStorage.getItem("suno.audioBase.v1") || "").trim();
+    const key = (localStorage.getItem("suno.audioKey.v1") || "").trim();
+    if(base && key){
+      const u = new URL(base);
+      return { origin: u.origin, token: key };
+    }
+  }catch(e){}
   try{
     const raw = localStorage.getItem(API_LS_KEY);
     if(!raw) return null;
@@ -349,7 +358,12 @@ async function showDetail(id){
 document.getElementById("cfg-save").addEventListener("click", () => {
   const ep = document.getElementById("cfg-endpoint").value.trim();
   const tk = document.getElementById("cfg-token").value.trim();
-  try{ localStorage.setItem(API_LS_KEY, JSON.stringify({ endpoint: ep, token: tk })); }catch(e){}
+  try{
+    localStorage.setItem(API_LS_KEY, JSON.stringify({ endpoint: ep, token: tk }));
+    const u = new URL(ep);
+    localStorage.setItem("suno.audioBase.v1", u.origin);
+    localStorage.setItem("suno.audioKey.v1", tk);
+  }catch(e){}
   cfg = loadConfig();
   showList();
 });
