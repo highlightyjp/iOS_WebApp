@@ -47,6 +47,20 @@
       pointer-events: none;
       white-space: nowrap;
     }
+    #status {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 52px);
+      left: 10px;
+      z-index: 10;
+      background: rgba(120, 40, 40, 0.85);
+      color: #fff;
+      font: 500 12px -apple-system, sans-serif;
+      padding: 6px 10px;
+      border-radius: 8px;
+      pointer-events: none;
+      max-width: 86vw;
+      display: none;
+    }
   </style>
   <!-- Live2DCubismCore script -->
   <script src="./Core/live2dcubismcore.js"></script>
@@ -55,6 +69,7 @@
 </head>
 <body>
   <div id="fpsmeter">-- fps</div>
+  <div id="status"></div>
   <div id="hint">ドラッグで顔が向きます</div>
   <script>
     (function () {
@@ -69,6 +84,37 @@
         requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
+    })();
+  </script>
+  <script>
+    // 描画が始まらない場合の切り分け用：状態を自己申告する（モデルが出たら消える）
+    (function () {
+      var st = document.getElementById('status');
+      var startedAt = Date.now();
+      function show(msg) { st.style.display = 'block'; st.textContent = msg; }
+      window.addEventListener('error', function (e) {
+        show('エラー: ' + (e.message || '不明なエラー'));
+      }, true);
+      var timer = setInterval(function () {
+        var canvas = document.querySelector('canvas');
+        var names = [];
+        try {
+          performance.getEntriesByType('resource').forEach(function (r) { names.push(r.name); });
+        } catch (e) {}
+        var moc = names.some(function (n) { return n.indexOf('iris-t1.moc3') >= 0; });
+        var tex = names.some(function (n) { return n.indexOf('texture_00') >= 0; });
+        var sec = Math.round((Date.now() - startedAt) / 1000);
+        if (canvas && moc && tex) {
+          // 描画側の材料は揃っている。少し待って消す
+          setTimeout(function () { st.style.display = 'none'; }, 4000);
+          clearInterval(timer);
+          return;
+        }
+        show('読み込み中 ' + sec + '秒：' +
+          (canvas ? 'canvas有' : 'canvas未') + '／' +
+          (moc ? 'モデル有' : 'モデル未') + '／' +
+          (tex ? '画像有' : '画像未'));
+      }, 2000);
     })();
   </script>
 </body>
