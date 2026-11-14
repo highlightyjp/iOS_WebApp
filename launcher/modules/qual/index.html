@@ -5,59 +5,126 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>資格工房</title>
 <style>
-:root{ --bg:#f4f2ec; --card:#ffffff; --ink:#22303c; --sub:#5b6b78; --line:#e2ded2; --accent:#1f4e9c; --accent2:#2e7d4f; --warn:#b3541e; --radius:14px; }
+:root{
+  --label:#1c1c1e; --label2:rgba(60,60,67,.66); --label3:rgba(60,60,67,.42);
+  --tint:#007AFF; --red:#FF3B30; --orange:#FF9500; --green:#34C759; --purple:#AF52DE;
+  --glass:rgba(255,255,255,.52); --glass-strong:rgba(255,255,255,.68); --glass-edge:rgba(255,255,255,.65);
+  --sep:rgba(60,60,67,.14); --card:#FFFFFF; --fill:rgba(120,120,128,.14);
+  --shadow:0 10px 34px rgba(31,38,135,.14),0 2px 8px rgba(31,38,135,.08);
+  --spec:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -0.5px 0 rgba(255,255,255,.25);
+  --radius:24px; --spring:cubic-bezier(.34,1.35,.44,1);
+  --motion-spatial-fast:.18s cubic-bezier(.34,1.56,.64,1); --motion-effect-med:.25s ease-out;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --label:#fff; --label2:rgba(235,235,245,.62); --label3:rgba(235,235,245,.38);
+    --tint:#0A84FF; --red:#FF453A; --orange:#FF9F0A; --green:#30D158; --purple:#BF5AF2;
+    --glass:rgba(38,38,44,.46); --glass-strong:rgba(44,44,52,.62); --glass-edge:rgba(255,255,255,.22);
+    --sep:rgba(255,255,255,.14); --card:#1E1E24; --fill:rgba(120,120,128,.26);
+    --shadow:0 12px 36px rgba(0,0,0,.5),0 2px 10px rgba(0,0,0,.35);
+    --spec:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -0.5px 0 rgba(255,255,255,.06); }
+}
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html{ touch-action:manipulation; }
-body{ margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); }
-header{ padding:14px 16px 8px; display:flex; align-items:baseline; gap:10px; }
-header h1{ font-size:20px; margin:0; }
-header .build{ font-size:11px; color:var(--sub); }
-nav{ display:flex; gap:6px; padding:0 16px 10px; }
-nav button{ flex:1; padding:9px 0; border:1px solid var(--line); background:var(--card); border-radius:10px; font-size:14px; color:var(--ink); }
-nav button.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
-main{ padding:0 16px 28px; }
-.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
-.card h2{ font-size:15px; margin:0 0 8px; }
-.card h3{ font-size:14px; margin:10px 0 6px; }
-.muted{ color:var(--sub); font-size:12px; }
-.big{ font-size:22px; font-weight:700; }
-.bar{ height:10px; background:#eceae2; border-radius:5px; overflow:hidden; margin:6px 0; }
-.bar > div{ height:100%; background:var(--accent2); }
+body{ margin:0; color:var(--label); background:#EDF1F8;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Hiragino Sans","Noto Sans CJK JP",sans-serif;
+  font-size:16px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom)); }
+@media (prefers-color-scheme: dark){ body{ background:#05060A; } }
+.aurora{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+.aurora i{ position:absolute; border-radius:50%; filter:blur(70px); opacity:.55; }
+.aurora .a1{ width:340px;height:340px;background:#8EC5FF;top:-110px;left:-90px; }
+.aurora .a2{ width:300px;height:300px;background:#D8B4FE;top:16%;right:-120px;opacity:.45; }
+.aurora .a3{ width:280px;height:280px;background:#A7F3EA;bottom:6%;left:-100px;opacity:.4; }
+.aurora .a4{ width:220px;height:220px;background:#FFD1A9;bottom:-80px;right:-40px;opacity:.35; }
+@media (prefers-color-scheme: dark){ .aurora i{ opacity:.28; } }
+.glass{ background:var(--glass); border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
+  box-shadow:var(--shadow),var(--spec); }
+.topbar{ position:sticky; top:calc(10px + env(safe-area-inset-top)); z-index:30; display:flex; justify-content:center; pointer-events:none; padding:0 12px; }
+.topbar .pill{ pointer-events:auto; display:flex; align-items:center; gap:8px; border-radius:999px; padding:8px 16px; font-size:14px; font-weight:600; }
+.topbar .sub{ color:var(--label2); font-weight:500; font-size:12.5px; }
+header{ padding:14px 22px 0; max-width:720px; margin:0 auto; }
+h1{ font-size:34px; font-weight:800; letter-spacing:-.022em; margin:0; }
+.meta{ color:var(--label2); font-size:13px; margin-top:3px; }
+main{ padding:4px 16px 8px; max-width:720px; margin:0 auto; }
+section{ display:none; }
+section.on{ display:block; animation:viewIn .38s var(--spring); }
+@keyframes viewIn{ from{opacity:0; transform:translateY(10px) scale(.995);} to{opacity:1; transform:none;} }
+h2{ font-size:13.5px; font-weight:600; color:var(--label2); margin:24px 8px 8px; letter-spacing:.02em; }
+.card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-top:12px; }
+.hero{ position:relative; overflow:hidden; border-radius:28px; padding:18px; margin-top:14px; color:#fff;
+  background:linear-gradient(130deg,#0A84FF 0%,#5E5CE6 55%,#BF5AF2 110%);
+  box-shadow:0 16px 40px rgba(64,84,220,.35),inset 0 1px 0 rgba(255,255,255,.5); }
+.hero::after{ content:""; position:absolute; inset:0; background:radial-gradient(120% 90% at 12% 0%,rgba(255,255,255,.35),transparent 55%); pointer-events:none; }
+.hero .k{ font-size:13px; font-weight:600; opacity:.85; letter-spacing:.04em; }
+.hero .t{ font-size:21px; font-weight:800; letter-spacing:-.015em; margin-top:2px; }
+.hero .s{ font-size:14.5px; opacity:.92; }
+.hero .scene{ margin-top:10px; background:rgba(255,255,255,.14); border-radius:18px; padding:6px 4px 2px; }
+.xpbar{ height:8px; background:rgba(255,255,255,.3); border-radius:4px; overflow:hidden; margin-top:8px; }
+.xpbar > div{ height:100%; background:#fff; border-radius:4px; }
+.act{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:none; cursor:pointer;
+  border-radius:999px; padding:16px; margin-top:14px; background:var(--tint); color:#fff;
+  font-size:17px; font-weight:700; box-shadow:var(--shadow); transition:transform var(--motion-spatial-fast); }
+.act:active{ transform:scale(.97); }
+.act.sub{ background:var(--card); color:var(--tint); border:1.5px solid var(--tint); box-shadow:none; font-size:15px; padding:13px; }
+.act:disabled{ opacity:.45; }
 .row{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
-.btn{ display:block; width:100%; padding:12px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; margin-top:10px; }
-.btn.sub{ background:var(--card); color:var(--accent); border:1px solid var(--accent); }
-.btn:disabled{ opacity:.45; }
-.choice{ display:block; width:100%; text-align:left; padding:12px; margin:8px 0; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:15px; }
-.choice.picked{ border-color:var(--accent); background:#eef3fb; }
-.choice.right{ border-color:var(--accent2); background:#e9f5ee; }
-.choice.wrong{ border-color:var(--warn); background:#fbeee6; }
-.pill{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid var(--line); color:var(--sub); }
-.pill.hot{ color:#fff; background:var(--warn); border-color:var(--warn); }
-table{ width:100%; border-collapse:collapse; font-size:13px; }
-th,td{ padding:6px 4px; border-bottom:1px solid var(--line); text-align:left; }
-.kobo{ font-size:34px; letter-spacing:4px; }
+.title{ font-size:17px; font-weight:700; }
+.small{ font-size:13px; color:var(--label2); }
+.big{ font-size:22px; font-weight:800; }
+.badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:12.5px; font-weight:600; }
+.badge.ok{ background:rgba(52,199,89,.16); color:#157347; }
+.badge.warn{ background:rgba(255,149,0,.18); color:#9a5b00; }
+.badge.info{ background:rgba(0,122,255,.14); color:#0a5cd6; }
+.badge.idle{ background:var(--fill); color:var(--label2); }
+@media (prefers-color-scheme: dark){
+  .badge.ok{ color:#4be07f; } .badge.warn{ color:#ffb340; } .badge.info{ color:#4da3ff; } }
+.bar{ height:10px; background:var(--fill); border-radius:5px; overflow:hidden; margin:8px 0 4px; }
+.bar > div{ height:100%; background:var(--tint); border-radius:5px; }
+.choice{ display:block; width:100%; text-align:left; padding:14px; margin:8px 0; border:1.5px solid var(--sep);
+  border-radius:16px; background:var(--card); color:var(--label); font-size:15.5px; cursor:pointer;
+  transition:transform var(--motion-spatial-fast); }
+.choice:active{ transform:scale(.98); }
+.choice.picked{ border-color:var(--tint); background:rgba(0,122,255,.08); }
+.choice.right{ border-color:var(--green); background:rgba(52,199,89,.12); }
+.choice.wrong{ border-color:var(--orange); background:rgba(255,149,0,.12); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.chip{ padding:5px 10px; border-radius:999px; font-size:12.5px; font-weight:600; border:1.5px solid var(--sep); color:var(--label2); background:var(--card); }
+.chip.done{ border-color:var(--tint); background:rgba(0,122,255,.12); color:var(--tint); }
+.fac{ display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--sep); }
+.fac:last-child{ border-bottom:none; }
+.fac .ic{ font-size:28px; width:44px; text-align:center; }
+.tabbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(12px + env(safe-area-inset-bottom)); z-index:40;
+  display:flex; gap:2px; border-radius:999px; padding:6px; }
+.tabbar button{ border:none; background:transparent; color:var(--label2); border-radius:999px; padding:7px 14px 5px;
+  font-size:10.5px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; min-width:64px; }
+.tabbar button .g{ font-size:19px; line-height:1.1; }
+.tabbar button.on{ background:var(--glass-strong); color:var(--label); box-shadow:var(--spec); }
+table{ width:100%; border-collapse:collapse; font-size:14px; }
+th,td{ padding:7px 4px; border-bottom:1px solid var(--sep); text-align:left; }
 .hidden{ display:none; }
 </style>
 </head>
 <body>
-<header><h1>資格工房</h1><span class="build" id="buildStamp"></span></header>
-<nav>
-  <button data-view="home" class="on">ホーム</button>
-  <button data-view="drill">演習</button>
-  <button data-view="records">記録</button>
-  <button data-view="kobo">工房</button>
-</nav>
+<div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i><i class="a4"></i></div>
+<div class="topbar"><div class="pill glass"><span>資格工房</span><span class="sub" id="freshPill"></span></div></div>
+<header><h1 id="pageTitle">工房</h1><div class="meta" id="pageMeta"></div></header>
 <main>
-  <section id="view-home"></section>
-  <section id="view-drill" class="hidden"></section>
-  <section id="view-records" class="hidden"></section>
-  <section id="view-kobo" class="hidden"></section>
+  <section id="view-home" class="on"></section>
+  <section id="view-drill"></section>
+  <section id="view-zukan"></section>
+  <section id="view-records"></section>
 </main>
+<nav class="tabbar glass">
+  <button data-view="home" class="on"><span class="g">🏭</span>ホーム</button>
+  <button data-view="drill"><span class="g">✎</span>演習</button>
+  <button data-view="zukan"><span class="g">📖</span>図鑑</button>
+  <button data-view="records"><span class="g">🧾</span>記録</button>
+</nav>
 <script src="questions-g.js"></script>
 <script>
 'use strict';
-var MODULE_BUILD = '2026-11-15-0130';
-document.getElementById('buildStamp').textContent = 'build ' + MODULE_BUILD;
+var MODULE_BUILD = '2026-11-15-0133';
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 
 var EXAMS = [
@@ -66,20 +133,24 @@ var EXAMS = [
   { id:'ap', name:'応用情報技術者', examDate:'2027-03-14', applyFrom:'2027-01-27', applyBy:'2027-02-16', note:'CBT（左の日付は目標日）', packReady:false }
 ];
 var UNITS = [
-  { id:'g-u1', exam:'g', name:'分野1 人工知能とは', facility:'知識の書庫' },
-  { id:'g-u3', exam:'g', name:'分野3 機械学習の概要', facility:'学習機械の工房' }
+  { id:'g-u1', exam:'g', name:'分野1 人工知能とは', facility:'知識の書庫', icon:'📚' },
+  { id:'g-u3', exam:'g', name:'分野3 機械学習の概要', facility:'学習機械の工房', icon:'⚙️' }
 ];
 var QUESTIONS = (window.QUAL_QUESTIONS_G || []);
 var SRS_DAYS = [1, 3, 7, 14, 30];
 var LS_KEY = 'qual.state.v1';
 
-function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function daysUntil(dateStr){ var a=new Date(todayStr()+'T00:00:00'), b=new Date(dateStr+'T00:00:00'); return Math.round((b-a)/86400000); }
-function addDays(dateStr, n){ var d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(dateStr, n){ var d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 
 function loadState(){
-  try{ var s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if(s && s.q) return s; }catch(e){}
-  return { q:{}, days:{}, xp:0, totalAnswers:0, totalCorrect:0 };
+  var s = null;
+  try{ s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
+  if(!s || !s.q) s = { q:{}, days:{}, xp:0, totalAnswers:0, totalCorrect:0 };
+  if(!s.daily) s.daily = {};
+  return s;
 }
 function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 var state = loadState();
@@ -91,84 +162,139 @@ function isDue(q){
   return todayStr() >= addDays(st.last, interval);
 }
 function unitQuestions(unitId){ return QUESTIONS.filter(function(q){ return q.unit===unitId; }); }
-function unitMastery(unitId){
-  var qs = unitQuestions(unitId); if(!qs.length) return 0;
-  var done = qs.filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length;
-  return done / qs.length;
-}
+function unitMasteredCount(unitId){ return unitQuestions(unitId).filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length; }
+function unitMastery(unitId){ var qs = unitQuestions(unitId); return qs.length ? unitMasteredCount(unitId)/qs.length : 0; }
 function planFor(exam){
   var qs = QUESTIONS.filter(function(q){ return q.exam===exam.id; });
   var fresh = qs.filter(function(q){ return !qState(q.id); });
   var due = qs.filter(isDue);
-  var left = Math.max(1, daysUntil(exam.examDate) - 7); // 直前1週間は復習と模擬に充てる
-  var quotaNew = fresh.length ? Math.ceil(fresh.length / left) : 0;
-  return { fresh:fresh.length, due:due.length, quotaNew:quotaNew, total:qs.length,
-           done: qs.length - fresh.length };
+  var left = Math.max(1, daysUntil(exam.examDate) - 7);
+  return { fresh:fresh.length, due:due.length, quotaNew: fresh.length ? Math.ceil(fresh.length/left) : 0,
+           total:qs.length, done: qs.length - fresh.length };
 }
+function levelOf(xp){ return 1 + Math.floor(Math.sqrt(xp/150)); }
+function xpFloorOfLevel(l){ return 150*(l-1)*(l-1); }
 function workshop(){
-  var level = 1 + Math.floor(Math.sqrt(state.xp / 150));
+  var level = levelOf(state.xp);
   var streak = 0; var d = todayStr();
   if(!state.days[d]) d = addDays(d, -1);
   while(state.days[d]){ streak++; d = addDays(d, -1); }
-  var facilities = UNITS.map(function(u){ return { name:u.facility, unit:u.name, unlocked: unitMastery(u.id) >= 1 }; });
-  return { level:level, xp:state.xp, streak:streak, facilities:facilities };
+  var facilities = UNITS.map(function(u){
+    var total = unitQuestions(u.id).length, got = unitMasteredCount(u.id);
+    return { name:u.facility, icon:u.icon, unit:u.name, unlocked: total>0 && got>=total, got:got, total:total };
+  });
+  return { level:level, xp:state.xp, streak:streak, lit: streak>0,
+    xpInLevel: state.xp - xpFloorOfLevel(level), xpSpan: xpFloorOfLevel(level+1) - xpFloorOfLevel(level),
+    facilities:facilities };
+}
+function lastStudyText(){
+  var days = Object.keys(state.days).sort();
+  if(!days.length) return 'まだ学習の記録がありません';
+  var last = days[days.length-1]; var diff = daysUntil(last) * -1;
+  if(diff === 0) return '最後の学習は今日';
+  if(diff === 1) return '最後の学習は昨日';
+  return '最後の学習は ' + diff + ' 日前';
+}
+function weekRange(offset){
+  var d = new Date(todayStr()+'T00:00:00');
+  var monday = new Date(d); monday.setDate(d.getDate() - ((d.getDay()+6)%7) + offset*7);
+  var sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  function f(x){ return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate()); }
+  return { from:f(monday), to:f(sunday) };
+}
+function weekSummary(offset){
+  var r = weekRange(offset); var out = { n:0, c:0, xp:0, days:0 };
+  Object.keys(state.daily).forEach(function(k){
+    if(k >= r.from && k <= r.to){ var v = state.daily[k]; out.n += v.n||0; out.c += v.c||0; out.xp += v.xp||0; if(v.n>0) out.days++; }
+  });
+  out.rate = out.n ? Math.round(out.c/out.n*100) : null;
+  return out;
 }
 
+var TITLES = { home:['工房','資格を取るための、自分の工房'], drill:['演習','単元ドリル・復習・ランダム実戦'],
+  zukan:['図鑑','設備と、踏破したキーワード'], records:['記録','週の決算と、これまでの積み重ね'] };
 function show(view){
-  document.querySelectorAll('nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.view===view); });
-  ['home','drill','records','kobo'].forEach(function(v){ document.getElementById('view-'+v).classList.toggle('hidden', v!==view); });
+  document.querySelectorAll('.tabbar button').forEach(function(b){ b.classList.toggle('on', b.dataset.view===view); });
+  ['home','drill','zukan','records'].forEach(function(v){ document.getElementById('view-'+v).classList.toggle('on', v===view); });
+  document.getElementById('pageTitle').textContent = TITLES[view][0];
+  document.getElementById('pageMeta').textContent = TITLES[view][1];
+  document.getElementById('freshPill').textContent = lastStudyText();
   if(view==='home') renderHome();
-  if(view==='drill') renderDrillSetup();
+  if(view==='drill' && !session) renderDrillSetup();
+  if(view==='zukan') renderZukan();
   if(view==='records') renderRecords();
-  if(view==='kobo') renderKobo();
 }
-document.querySelectorAll('nav button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.view); }); });
+document.querySelectorAll('.tabbar button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.view); }); });
+
+function sceneSVG(w){
+  var fac = {}; w.facilities.forEach(function(f){ fac[f.unit] = f.unlocked; });
+  var h = 56 + Math.min(3, w.level-1)*16;
+  var lamp = w.lit
+    ? '<circle cx="288" cy="46" r="13" fill="#FFD60A" opacity="0.35"/><text x="288" y="52" font-size="16" text-anchor="middle">🏮</text>'
+    : '<text x="288" y="52" font-size="16" text-anchor="middle" opacity="0.45">🏮</text>';
+  var shelf = fac['分野1 人工知能とは'] ? '<g><rect x="18" y="86" width="34" height="40" rx="3" fill="#7A4E1D"/><rect x="22" y="92" width="7" height="28" fill="#FFD60A"/><rect x="31" y="92" width="7" height="28" fill="#64D2FF"/><rect x="40" y="92" width="7" height="28" fill="#FF9F0A"/></g>' : '<rect x="18" y="86" width="34" height="40" rx="3" fill="rgba(255,255,255,.25)"/>';
+  var machine = fac['分野3 機械学習の概要'] ? '<g><rect x="238" y="92" width="40" height="34" rx="4" fill="#3A3A3C"/><circle cx="252" cy="109" r="8" fill="#FFD60A"/><circle cx="266" cy="109" r="5" fill="#64D2FF"/></g>' : '<rect x="238" y="92" width="40" height="34" rx="4" fill="rgba(255,255,255,.25)"/>';
+  var chimney = w.level >= 3 ? '<rect x="196" y="' + (126-h-14) + '" width="10" height="16" fill="#8E8E93"/>' : '';
+  return '<svg viewBox="0 0 320 140" width="100%" role="img" aria-label="工房の様子">' +
+    '<circle cx="34" cy="24" r="12" fill="#FFE9A8"/>' + lamp +
+    '<rect x="0" y="126" width="320" height="14" fill="rgba(0,0,0,.18)"/>' +
+    shelf + machine + chimney +
+    '<rect x="120" y="' + (126-h) + '" width="76" height="' + h + '" rx="5" fill="#F5F0E6"/>' +
+    '<polygon points="112,' + (126-h) + ' 204,' + (126-h) + ' 158,' + (126-h-20) + '" fill="#B23A48"/>' +
+    '<rect x="148" y="' + (126-26) + '" width="20" height="26" rx="3" fill="#5B4636"/>' +
+    '<rect x="128" y="' + (126-h+12) + '" width="14" height="14" rx="2" fill="#FFD60A"/>' +
+    '<rect x="176" y="' + (126-h+12) + '" width="14" height="14" rx="2" fill="#FFD60A"/>' +
+    '</svg>';
+}
 
 function renderHome(){
   var w = workshop();
-  var html = '<div class="card"><div class="row"><div><h2>工房の様子</h2>' +
-    '<div class="muted">レベル ' + w.level + ' ／ 経験値 ' + w.xp + ' ／ 連続 ' + w.streak + ' 日</div></div>' +
-    '<div class="kobo">' + (w.streak>0 ? '🏮' : '🏠') + '</div></div></div>';
+  var plan = planFor(EXAMS[0]);
+  var pct = Math.round(w.xpInLevel / w.xpSpan * 100);
+  var html = '<div class="hero"><div class="k">工房レベル ' + w.level + '</div>' +
+    '<div class="t">' + (w.lit ? '明かりが灯っている' : '今日はまだ静か') + '</div>' +
+    '<div class="s">連続 ' + w.streak + ' 日 ・ 経験値 ' + w.xp + '（次のレベルまで あと ' + (w.xpSpan - w.xpInLevel) + '）</div>' +
+    '<div class="xpbar"><div style="width:' + pct + '%"></div></div>' +
+    '<div class="scene">' + sceneSVG(w) + '</div></div>';
+  html += '<button class="act" id="startToday">今日の演習をはじめる（新規 ' + plan.quotaNew + ' 問 ＋ 復習 ' + plan.due + ' 件）</button>';
   EXAMS.forEach(function(ex){
     var d = daysUntil(ex.examDate);
-    var apply = '';
+    var badge = '';
     if(ex.applyBy){
       var ad = daysUntil(ex.applyBy);
       var started = ex.applyFrom ? daysUntil(ex.applyFrom) <= 0 : true;
-      apply = '<div class="row"><span class="muted">申込' + (ex.applyFrom ? '（' + ex.applyFrom + '〜' + ex.applyBy + '）' : '（〜' + ex.applyBy + '）') + '</span>' +
-        (started ? '<span class="pill hot">あと ' + ad + ' 日</span>' : '<span class="pill">開始まで あと ' + daysUntil(ex.applyFrom) + ' 日</span>') + '</div>';
+      badge = started ? '<span class="badge warn">! 申込は あと ' + ad + ' 日</span>' : '<span class="badge info">i 申込開始まで あと ' + daysUntil(ex.applyFrom) + ' 日</span>';
     }
-    var plan = ex.id==='g' ? planFor(ex) : null;
-    html += '<div class="card"><div class="row"><h2>' + ex.name + '</h2><span class="big">' + d + '<span style="font-size:13px"> 日</span></span></div>' +
-      '<div class="muted">' + ex.examDate + ' ・ ' + ex.note + '</div>' + apply;
-    if(plan){
-      var pct = plan.total ? Math.round(plan.done/plan.total*100) : 0;
-      html += '<div class="bar"><div style="width:'+pct+'%"></div></div>' +
-        '<div class="row"><span>今日のノルマ：新規 ' + plan.quotaNew + ' 問 ＋ 復習 ' + plan.due + ' 件</span><span class="muted">' + plan.done + ' / ' + plan.total + ' 問</span></div>' +
-        '<button class="btn" data-start="today">今日の演習をはじめる</button>';
+    html += '<div class="card"><div class="row"><span class="title">' + ex.name + '</span><span class="big">' + d + '<span style="font-size:13px"> 日</span></span></div>' +
+      '<div class="small">' + ex.examDate + ' ・ ' + ex.note + '</div><div style="margin-top:6px">' + badge + '</div>';
+    if(ex.id==='g'){
+      var gp = planFor(ex); var gpct = gp.total ? Math.round(gp.done/gp.total*100) : 0;
+      html += '<div class="bar"><div style="width:' + gpct + '%"></div></div><div class="small">解いた問題 ' + gp.done + ' / ' + gp.total + ' 問</div>';
     } else {
-      html += '<div class="muted" style="margin-top:8px">問題パックは準備中です（先行はG検定）。</div>';
+      html += '<div class="small" style="margin-top:6px">問題は準備中です（先にG検定から）。</div>';
     }
     html += '</div>';
   });
   document.getElementById('view-home').innerHTML = html;
-  var btn = document.querySelector('[data-start="today"]');
-  if(btn) btn.addEventListener('click', function(){ startSession(buildTodaySet()); show('drill'); });
+  document.getElementById('startToday').addEventListener('click', function(){ startSession(buildTodaySet()); });
 }
 
 function renderDrillSetup(){
-  var html = '<div class="card"><h2>演習の種類（G検定）</h2>';
+  var html = '<h2>G検定</h2>';
   UNITS.forEach(function(u){
     var qs = unitQuestions(u.id);
-    html += '<h3>' + u.name + '</h3><div class="muted">全 ' + qs.length + ' 問 ・ 習得 ' + Math.round(unitMastery(u.id)*100) + '%</div>' +
-      '<button class="btn sub" data-unit="' + u.id + '">この単元を解く</button>';
+    html += '<div class="card"><div class="row"><span class="title">' + u.name + '</span><span class="badge ' + (unitMastery(u.id)>=1 ? 'ok">✓ 制覇' : 'idle">全 ' + qs.length + ' 問') + '</span></div>' +
+      '<div class="bar"><div style="width:' + Math.round(unitMastery(u.id)*100) + '%"></div></div>' +
+      '<div class="small">正解した問題 ' + unitMasteredCount(u.id) + ' / ' + qs.length + '</div>' +
+      '<button class="act sub" data-unit="' + u.id + '">この単元を解く</button></div>';
   });
   var due = QUESTIONS.filter(isDue).length;
-  html += '<h3>復習</h3><div class="muted">期限が来ている問題：' + due + ' 件</div>' +
-    '<button class="btn sub" data-mode="review">復習をはじめる</button>' +
-    '<h3>ランダム実戦</h3><div class="muted">全範囲から10問</div>' +
-    '<button class="btn sub" data-mode="random">ランダム10問</button></div>' +
-    '<div id="session"></div>';
+  html += '<div class="card"><div class="row"><span class="title">復習</span><span class="badge ' + (due ? 'warn">! ' + due + ' 件が期限' : 'idle">期限のものなし') + '</span></div>' +
+    '<div class="small">正解した問題は間を空けて戻ってきます。間違えると早めに戻ります。</div>' +
+    '<button class="act sub" data-mode="review">復習をはじめる</button></div>';
+  html += '<div class="card"><div class="row"><span class="title">ランダム実戦</span><span class="badge idle">10問</span></div>' +
+    '<div class="small">全範囲から順不同で10問。</div>' +
+    '<button class="act sub" data-mode="random">ランダム10問</button></div><div id="session"></div>';
   document.getElementById('view-drill').innerHTML = html;
   document.querySelectorAll('[data-unit]').forEach(function(b){ b.addEventListener('click', function(){ startSession(unitQuestions(b.dataset.unit)); }); });
   document.querySelectorAll('[data-mode]').forEach(function(b){ b.addEventListener('click', function(){
@@ -180,27 +306,37 @@ function renderDrillSetup(){
 function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function buildTodaySet(){
   var plan = planFor(EXAMS[0]);
-  var fresh = QUESTIONS.filter(function(q){ return !qState(q.id); }).slice(0, plan.quotaNew);
-  var due = QUESTIONS.filter(isDue);
-  return shuffle(fresh.concat(due));
+  var fresh = QUESTIONS.filter(function(q){ return !qState(q.id); }).slice(0, Math.max(plan.quotaNew, 1));
+  return shuffle(fresh.concat(QUESTIONS.filter(isDue)));
 }
 
 var session = null;
+function snapshotGrowth(){
+  var w = workshop();
+  return { xp: w.xp, level: w.level, streak: w.streak,
+    unlocked: w.facilities.filter(function(f){ return f.unlocked; }).map(function(f){ return f.name; }),
+    mastered: QUESTIONS.filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length };
+}
 function startSession(qs){
-  if(!qs.length){ document.getElementById('session') && (document.getElementById('view-drill').innerHTML = '<div class="card"><h2>対象の問題がありません</h2><div class="muted">復習の期限が来ている問題はありません。単元ドリルから進めてください。</div><button class="btn" onclick="show(\'drill\')">演習の選択へ</button></div>'); return; }
-  session = { list: qs.map(function(q){ return { q:q, order: shuffle(q.choices.map(function(c,i){ return i; })) }; }), idx:0, correct:0 };
+  if(!qs.length){
+    show('drill');
+    document.getElementById('view-drill').innerHTML = '<div class="card"><span class="title">対象の問題がありません</span>' +
+      '<div class="small" style="margin-top:6px">復習の期限が来ている問題はありません。単元ドリルから進めてください。</div>' +
+      '<button class="act" id="backSetup">演習の選択へ</button></div>';
+    document.getElementById('backSetup').addEventListener('click', function(){ renderDrillSetup(); });
+    return;
+  }
+  session = { list: qs.map(function(q){ return { q:q, order: shuffle(q.choices.map(function(c,i){ return i; })) }; }),
+    idx:0, correct:0, before: snapshotGrowth() };
   show('drill'); renderQuestion();
 }
 function renderQuestion(){
-  var box = document.getElementById('view-drill');
   var item = session.list[session.idx]; var q = item.q;
-  var html = '<div class="card"><div class="row"><span class="pill">' + q.keyword + '</span><span class="muted">' + (session.idx+1) + ' / ' + session.list.length + ' 問</span></div>' +
-    '<h2 style="margin-top:10px">' + q.stem + '</h2><div id="choices">';
-  item.order.forEach(function(ci){
-    html += '<button class="choice" data-c="' + ci + '">' + q.choices[ci] + '</button>';
-  });
+  var html = '<div class="card"><div class="row"><span class="badge info">i ' + q.keyword + '</span><span class="small">' + (session.idx+1) + ' / ' + session.list.length + ' 問</span></div>' +
+    '<div class="title" style="margin-top:12px; line-height:1.45">' + q.stem + '</div><div id="choices">';
+  item.order.forEach(function(ci){ html += '<button class="choice" data-c="' + ci + '">' + q.choices[ci] + '</button>'; });
   html += '</div><div id="feedback"></div></div>';
-  box.innerHTML = html;
+  document.getElementById('view-drill').innerHTML = html;
   document.querySelectorAll('.choice').forEach(function(b){ b.addEventListener('click', function(){ answer(item, parseInt(b.dataset.c,10)); }); });
 }
 function answer(item, picked){
@@ -209,9 +345,13 @@ function answer(item, picked){
   st.stage = ok ? Math.min(st.stage+1, SRS_DAYS.length-1) : 0;
   st.last = todayStr(); st.everCorrect = st.everCorrect || ok;
   state.q[q.id] = st;
+  var gain = 10 + (ok ? 5 : 0);
   state.totalAnswers++; if(ok){ state.totalCorrect++; session.correct++; }
-  state.xp += 10 + (ok ? 5 : 0);
-  state.days[todayStr()] = (state.days[todayStr()] || 0) + 1;
+  state.xp += gain;
+  var t = todayStr();
+  state.days[t] = (state.days[t] || 0) + 1;
+  var dy = state.daily[t] || { n:0, c:0, xp:0 };
+  dy.n++; if(ok) dy.c++; dy.xp += gain; state.daily[t] = dy;
   saveState();
   document.querySelectorAll('.choice').forEach(function(b){
     var ci = parseInt(b.dataset.c,10); b.disabled = true;
@@ -220,27 +360,73 @@ function answer(item, picked){
   });
   var last = session.idx === session.list.length - 1;
   document.getElementById('feedback').innerHTML =
-    '<div style="margin-top:10px"><strong>' + (ok ? '正解' : '不正解') + '</strong><div class="muted" style="margin-top:4px">' + q.explanation + '</div>' +
-    '<button class="btn" id="nextBtn">' + (last ? '結果を見る' : '次の問題') + '</button></div>';
+    '<div style="margin-top:12px"><span class="badge ' + (ok ? 'ok">✓ 正解' : 'warn">✗ 不正解') + '</span>' +
+    '<div style="margin-top:8px">' + q.explanation + '</div>' +
+    '<button class="act" id="nextBtn">' + (last ? '結果を見る' : '次の問題') + '</button></div>';
   document.getElementById('nextBtn').addEventListener('click', function(){
     session.idx++;
-    if(session.idx >= session.list.length){
-      document.getElementById('view-drill').innerHTML = '<div class="card"><h2>結果</h2><div class="big">' + session.correct + ' / ' + session.list.length + ' 問 正解</div>' +
-        '<div class="muted">記録は保存されました。復習の期限は正誤に応じて自動で組まれます。</div>' +
-        '<button class="btn" id="backHome">ホームへ</button></div>';
-      document.getElementById('backHome').addEventListener('click', function(){ show('home'); });
-      session = null;
-    } else renderQuestion();
+    if(session.idx >= session.list.length) finishSession();
+    else renderQuestion();
   });
+}
+function finishSession(){
+  var after = snapshotGrowth(); var before = session.before;
+  var lines = [];
+  lines.push('<div class="row"><span>経験値</span><strong>+' + (after.xp - before.xp) + '</strong></div>');
+  if(after.level > before.level) lines.push('<div class="row"><span>工房のレベル</span><strong>' + before.level + ' → ' + after.level + ' に上がった</strong></div>');
+  var newFac = after.unlocked.filter(function(n){ return before.unlocked.indexOf(n) < 0; });
+  newFac.forEach(function(n){ lines.push('<div class="row"><span>新しい設備</span><strong>「' + n + '」が建った</strong></div>'); });
+  lines.push('<div class="row"><span>新しく正解した問題</span><strong>' + (after.mastered - before.mastered) + ' 問</strong></div>');
+  lines.push('<div class="row"><span>連続学習</span><strong>' + after.streak + ' 日（明かりは灯っている）</strong></div>');
+  document.getElementById('view-drill').innerHTML =
+    '<div class="card"><span class="badge ok">✓ 終了</span><div class="big" style="margin-top:8px">' + session.correct + ' / ' + session.list.length + ' 問 正解</div>' +
+    '<div style="margin-top:10px">' + lines.join('') + '</div>' +
+    '<button class="act" id="backHome">ホームへ</button></div>';
+  document.getElementById('backHome').addEventListener('click', function(){ session = null; show('home'); });
+  session = null; sessionDone = true;
+}
+var sessionDone = false;
+
+function renderZukan(){
+  var w = workshop();
+  var html = '<h2>設備</h2><div class="card">';
+  w.facilities.forEach(function(f){
+    html += '<div class="fac"><div class="ic">' + f.icon + '</div><div style="flex:1"><div class="title" style="font-size:15.5px">' + f.name + '</div>' +
+      '<div class="small">' + f.unit + ' ・ 正解 ' + f.got + ' / ' + f.total + '</div></div>' +
+      (f.unlocked ? '<span class="badge ok">✓ 建っている</span>' : '<span class="badge idle">あと ' + (f.total - f.got) + ' 問</span>') + '</div>';
+  });
+  html += '</div><h2>キーワード踏破（G検定）</h2>';
+  UNITS.forEach(function(u){
+    var qs = unitQuestions(u.id);
+    html += '<div class="card"><div class="row"><span class="title" style="font-size:15.5px">' + u.name + '</span><span class="small">' + unitMasteredCount(u.id) + ' / ' + qs.length + ' 語</span></div><div class="chips">';
+    qs.forEach(function(q){
+      var st = qState(q.id); var done = st && st.everCorrect;
+      html += '<span class="chip' + (done ? ' done' : '') + '">' + (done ? '✓ ' : '') + q.keyword + '</span>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('view-zukan').innerHTML = html;
 }
 
 function renderRecords(){
-  var html = '<div class="card"><h2>記録</h2><table><tr><th>単元</th><th>問題数</th><th>習得</th></tr>';
-  UNITS.forEach(function(u){
-    html += '<tr><td>' + u.name + '</td><td>' + unitQuestions(u.id).length + '</td><td>' + Math.round(unitMastery(u.id)*100) + '%</td></tr>';
-  });
-  html += '</table><div class="muted" style="margin-top:8px">通算：' + state.totalAnswers + ' 回答 ／ ' + state.totalCorrect + ' 正解</div>' +
-    '<button class="btn sub" id="exportBtn">記録を書き出す（JSON）</button></div>';
+  var now = weekSummary(0), prev = weekSummary(-1);
+  function rate(x){ return x.rate === null ? '—' : x.rate + '%'; }
+  var html = '<h2>週の決算（今週）</h2><div class="card"><table>' +
+    '<tr><th></th><th>今週</th><th>先週</th></tr>' +
+    '<tr><td>解いた問題</td><td>' + now.n + ' 問</td><td>' + prev.n + ' 問</td></tr>' +
+    '<tr><td>正解率</td><td>' + rate(now) + '</td><td>' + rate(prev) + '</td></tr>' +
+    '<tr><td>得た経験値</td><td>' + now.xp + '</td><td>' + prev.xp + '</td></tr>' +
+    '<tr><td>学習した日</td><td>' + now.days + ' 日</td><td>' + prev.days + ' 日</td></tr></table></div>';
+  var w = workshop();
+  html += '<h2>これまで</h2><div class="card"><table>' +
+    '<tr><td>通算の回答</td><td>' + state.totalAnswers + ' 問</td></tr>' +
+    '<tr><td>通算の正解</td><td>' + state.totalCorrect + ' 問</td></tr>' +
+    '<tr><td>工房レベル</td><td>' + w.level + '（経験値 ' + w.xp + '）</td></tr>' +
+    '<tr><td>連続学習</td><td>' + w.streak + ' 日</td></tr></table>' +
+    '<div class="small" style="margin-top:8px">単元ごとの正解した問題：' +
+    UNITS.map(function(u){ return u.name + ' ' + unitMasteredCount(u.id) + '/' + unitQuestions(u.id).length; }).join('、') + '</div>' +
+    '<button class="act sub" id="exportBtn">記録をファイルに書き出す</button>' +
+    '<div class="small" style="margin-top:10px">資格工房 ' + MODULE_BUILD + '</div></div>';
   document.getElementById('view-records').innerHTML = html;
   document.getElementById('exportBtn').addEventListener('click', function(){
     var blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
@@ -249,21 +435,6 @@ function renderRecords(){
   });
 }
 
-function renderKobo(){
-  var w = workshop();
-  var html = '<div class="card"><h2>工房</h2><div class="kobo">' + (w.streak>0 ? '🏮' : '🏠') + '🏭</div>' +
-    '<div class="row"><span>レベル</span><strong>' + w.level + '</strong></div>' +
-    '<div class="row"><span>経験値</span><strong>' + w.xp + '</strong></div>' +
-    '<div class="row"><span>連続学習</span><strong>' + w.streak + ' 日</strong></div></div>' +
-    '<div class="card"><h2>設備（図鑑）</h2>';
-  w.facilities.forEach(function(f){
-    html += '<div class="row" style="padding:6px 0"><div><div>' + f.name + '</div><div class="muted">' + f.unit + '</div></div><span class="pill' + (f.unlocked ? '' : ' hot') + '">' + (f.unlocked ? '解放済み' : '単元マスターで解放') + '</span></div>';
-  });
-  html += '<div class="muted" style="margin-top:6px">設備は、その単元の全問題に1回以上正解すると解放されます。蓄積は途切れても消えません。</div></div>';
-  document.getElementById('view-kobo').innerHTML = html;
-}
-
-// 試験モード launcher-test/v1
 function runSelfTest(){
   var items = [];
   function rec(id, label, ok, detail){ items.push({ id:id, gate:'must', label:label, result: ok?'pass':'fail', detail:detail||'', ms:0 }); }
@@ -271,14 +442,15 @@ function runSelfTest(){
   rec('QT1', '問題データの整合', dataOk, QUESTIONS.length + '問');
   var plan = planFor(EXAMS[0]);
   rec('QT2', '計画エンジン（今日のノルマ）', plan.quotaNew>=0 && plan.due>=0, '新規 ' + plan.quotaNew + ' 問／復習 ' + plan.due + ' 件');
-  var rt = false; try{ var probe={t:1}; localStorage.setItem('qual.probe', JSON.stringify(probe)); rt = JSON.parse(localStorage.getItem('qual.probe')).t===1; localStorage.removeItem('qual.probe'); }catch(e){}
+  var rt = false; try{ localStorage.setItem('qual.probe', JSON.stringify({t:1})); rt = JSON.parse(localStorage.getItem('qual.probe')).t===1; localStorage.removeItem('qual.probe'); }catch(e){}
   rec('QT3', '記録の読み書き', rt, '');
   var w = workshop();
   rec('QT4', '工房の計算', w.level>=1 && Array.isArray(w.facilities), 'レベル ' + w.level);
+  var ws = weekSummary(0);
+  rec('QT5', '週の決算の集計', ws && typeof ws.n === 'number' && typeof ws.xp === 'number', '今週 ' + ws.n + ' 問');
   var pass = items.filter(function(i){ return i.result==='pass'; }).length;
   return { contract:'launcher-test/v1', moduleId:'qual', version:MODULE_BUILD, items:items,
-           perf:{}, untouched:{ checked:true, same:true },
-           summary:{ pass:pass, fail:items.length-pass, na:0 } };
+           perf:{}, untouched:{ checked:true, same:true }, summary:{ pass:pass, fail:items.length-pass, na:0 } };
 }
 if(new URLSearchParams(location.search).get('test') === '1'){
   var result = runSelfTest();
