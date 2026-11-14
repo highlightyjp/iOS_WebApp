@@ -13,6 +13,14 @@
       "versionDescription": "v1.13: URLスキーム irislauncher:// を追加（irislauncher://iris でアイリス画面、irislauncher://home でトップへ直接）。",
       "versions": [
         {
+          "date": "2026-11-14T13:34:28Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.14.ipa",
+          "localizedDescription": "HealthKit書き込み試験ビルド（試験モード内に試験カードを追加）",
+          "size": 4490222,
+          "version": "1.14",
+          "minOSVersion": "15.0"
+        },
+        {
           "date": "2026-11-14T08:50:23Z",
           "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.13.ipa",
           "localizedDescription": "v1.13: URLスキーム irislauncher:// を追加（irislauncher://iris でアイリス画面、irislauncher://home でトップへ直接）。",
