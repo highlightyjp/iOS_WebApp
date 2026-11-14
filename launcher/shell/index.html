@@ -208,7 +208,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-2245';
+const SHELL_BUILD = '2026-11-14-2305';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -777,6 +777,29 @@ document.getElementById('testBackBtn').addEventListener('click', () => {
   document.getElementById('testStage').textContent = '';
 });
 
+  // === ヘルスケア書き込み試験（v1.14 試験ビルド用） ===
+  const hkOut = document.getElementById('hkResult');
+  function hkShow(label, obj){
+    if (hkOut) hkOut.textContent = label + '\n' + JSON.stringify(obj, null, 2);
+  }
+  function hkPlugin(){
+    const c = window.Capacitor;
+    return (c && c.Plugins && c.Plugins.HealthWriter) ? c.Plugins.HealthWriter : null;
+  }
+  async function hkCall(label, method){
+    const p = hkPlugin();
+    if (!p){ hkShow(label, { error: 'HealthWriter プラグインがありません（この殻は試験ビルドではありません）' }); return; }
+    hkShow(label, { state: '実行中…' });
+    try { hkShow(label, await p[method]()); }
+    catch (e) { hkShow(label, { error: String((e && e.message) || e) }); }
+  }
+  const hkWire = [['hkProbeBtn', '状態', 'probe'], ['hkAuthBtn', '許可', 'requestAuth'], ['hkRunBtn', '書き込み試験', 'runTest'], ['hkCleanBtn', '掃除', 'cleanup']];
+  for (const [id, label, method] of hkWire){
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => hkCall(label, method));
+  }
+
+
 function loadIntoStage(url, timeoutMs){
   const stage = document.getElementById('testStage');
   stage.textContent = '';
@@ -1008,28 +1031,6 @@ async function runTests(){
       });
     });
   }
-  // === ヘルスケア書き込み試験（v1.14 試験ビルド用） ===
-  const hkOut = document.getElementById('hkResult');
-  function hkShow(label, obj){
-    if (hkOut) hkOut.textContent = label + '\n' + JSON.stringify(obj, null, 2);
-  }
-  function hkPlugin(){
-    const c = window.Capacitor;
-    return (c && c.Plugins && c.Plugins.HealthWriter) ? c.Plugins.HealthWriter : null;
-  }
-  async function hkCall(label, method){
-    const p = hkPlugin();
-    if (!p){ hkShow(label, { error: 'HealthWriter プラグインがありません（この殻は試験ビルドではありません）' }); return; }
-    hkShow(label, { state: '実行中…' });
-    try { hkShow(label, await p[method]()); }
-    catch (e) { hkShow(label, { error: String((e && e.message) || e) }); }
-  }
-  const hkWire = [['hkProbeBtn', '状態', 'probe'], ['hkAuthBtn', '許可', 'requestAuth'], ['hkRunBtn', '書き込み試験', 'runTest'], ['hkCleanBtn', '掃除', 'cleanup']];
-  for (const [id, label, method] of hkWire){
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('click', () => hkCall(label, method));
-  }
-
   // 橋の記録（受け取りと URL の診断を含む）
   let blogArr = [];
   try{ blogArr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]'); }catch(e){}
