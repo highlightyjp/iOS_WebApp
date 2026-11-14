@@ -197,7 +197,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-2025';
+const SHELL_BUILD = '2026-11-14-2040';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -244,23 +244,37 @@ let urlListenerReady = false;
 function handleShellUrl(urlStr){
   try{
     const u = new URL(String(urlStr || ''));
-    if (u.protocol !== 'irislauncher:') return;
+    if (u.protocol !== 'irislauncher:'){
+      bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '対象外', detail: 'スキーム違い: ' + u.protocol });
+      return;
+    }
     const seg = (u.host || u.pathname.replace(/^\/+/, '')).split('/')[0];
-    if (seg === 'iris'){ pendingOpenTarget = 'iris'; tryOpenPending(); }
-    if (seg === 'home'){ closeViewer(); }
-  }catch(e){ /* 解釈できない URL は無視する */ }
+    if (seg === 'iris'){
+      pendingOpenTarget = 'iris'; tryOpenPending();
+      bridgeLog({ contract: 'launcher-url', moduleId: 'iris', result: pendingOpenTarget ? '開けなかった' : '開いた',
+        detail: pendingOpenTarget ? '一覧にアイリスモジュールが見つからない（一覧の件数 ' + (currentModules || []).length + '）' : 'アイリス画面を開いた' });
+    } else if (seg === 'home'){ closeViewer(); bridgeLog({ contract: 'launcher-url', moduleId: 'home', result: 'トップへ戻した', detail: '' }); }
+    else { bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '何もしない', detail: '裸のスキーム（アプリを開くだけ）' }); }
+  }catch(e){ bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '解釈できなかった', detail: String(urlStr || '') }); }
 }
 function initShellUrlHandling(){
   if (urlListenerReady) return;
   urlListenerReady = true;
   try{
     const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
-    if (!App) return;
+    if (!App){ bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '受け口なし', detail: 'App プラグインが見つからない' }); return; }
     if (App.addListener){
-      App.addListener('appUrlOpen', (data) => { if (data && data.url) handleShellUrl(data.url); }).catch(() => {});
+      App.addListener('appUrlOpen', (data) => {
+        bridgeLog({ contract: 'launcher-url', moduleId: '-', result: 'URL受信（起動中）', detail: String((data && data.url) || '') });
+        if (data && data.url) handleShellUrl(data.url);
+      }).then(() => { bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '待ち受け開始', detail: 'appUrlOpen' }); })
+        .catch((err) => { bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '待ち受け失敗', detail: String(err) }); });
+    } else {
+      bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '受け口なし', detail: 'addListener が無い' });
     }
     if (App.getLaunchUrl){
       App.getLaunchUrl().then(r => {
+        bridgeLog({ contract: 'launcher-url', moduleId: '-', result: '起動URLの読み取り', detail: (r && r.url) ? String(r.url) : 'なし' });
         if (!r || !r.url) return;
         // 殻の自己更新リロードで同じ起動 URL を二重に扱わないための合図（このセッション限り）
         let seen = null;
