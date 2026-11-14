@@ -715,7 +715,7 @@ setInterval(() => {
   }
 }, 1200);
 
-const IRIS_BUILD = "2026-11-13-0145";
+const IRIS_BUILD = "2026-11-14-1930";
 (function checkBuild(){
   try{
     fetch("build.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
@@ -953,6 +953,7 @@ try{
     if(p && typeof p.endpoint === "string" && typeof p.token === "string") apiConfig = { endpoint:p.endpoint, token:p.token };
   }
 }catch(e){}
+syncNativeConfig();
 function getApiConfig(){
   const ep = (apiConfig.endpoint || "").trim();
   const tk = (apiConfig.token || "").trim();
@@ -967,6 +968,15 @@ function saveApiConfig(){
   try{
     if(apiConfig.endpoint || apiConfig.token) localStorage.setItem(API_LS_KEY, JSON.stringify(apiConfig));
     else localStorage.removeItem(API_LS_KEY);
+  }catch(e){}
+  syncNativeConfig();
+}
+/* 殻 v1.12 の入り口（App Intents）が /v1/chat を直接叩けるよう、接続設定をネイティブ側へ写す。
+   プラグインが無い版では何もしない。秘密の置き場が端末内で2か所になるのは仕様どおり。 */
+function syncNativeConfig(){
+  try{
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.IrisEntry;
+    if(P && P.syncConfig) P.syncConfig({ endpoint: apiConfig.endpoint || "", token: apiConfig.token || "" });
   }catch(e){}
 }
 /* 会話の流れはこの画面の中だけに持つ（保存しない） */
@@ -1228,6 +1238,30 @@ function openingLine(){
   setEmotion({joy:0.08, shy:0, longing:0, calm:0.2}, 6);
   const tp = addTyping();
   setTimeout(() => { tp.remove(); const ol = openingLine(); addBubble("iris", ol); convoHistory.push({ role:"assistant", content:ol }); }, 700);
+})();
+
+/* ---- 入り口（殻 v1.12）で送れなかった文の受け取り ---- */
+(function checkEntryQueue(){
+  try{
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.IrisEntry;
+    if(!P || !P.getQueued) return;
+    P.getQueued().then(r => {
+      const items = (r && Array.isArray(r.items)) ? r.items.filter(it => it && typeof it.text === "string" && it.text) : [];
+      if(!items.length) return;
+      const row = addBubble("iris", "入り口から送れなかった文が " + items.length + " 件あります。", "未送信キュー");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "未送信を送る（" + items.length + "件）";
+      btn.style.cssText = "margin-top:8px;padding:8px 14px;border-radius:999px;border:1px solid rgba(125,211,252,.5);background:rgba(125,211,252,.15);color:inherit;font-size:13px;";
+      btn.addEventListener("click", () => {
+        btn.disabled = true;
+        btn.textContent = "送信中…";
+        items.forEach((it, i) => setTimeout(() => say(it.text), i * 2600));
+        setTimeout(() => { btn.textContent = "送信しました"; }, items.length * 2600 + 400);
+      });
+      row.appendChild(btn);
+    }).catch(() => {});
+  }catch(e){}
 })();
 
 /* ---- 入力 ---- */

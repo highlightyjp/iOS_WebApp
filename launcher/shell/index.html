@@ -197,7 +197,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-1530';
+const SHELL_BUILD = '2026-11-14-1930';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -205,6 +205,37 @@ const APPS_URL = REMOTE_BASE + 'apps.json';
 const LS_MODULES = 'launcher.modules.v1';
 const LS_PRIVATE = 'launcher.privateModules.v1';
 const LS_UPDATE_DISMISSED = 'launcher.updateDismissed.v1';
+
+// 端末の実際の版数（殻 v1.12 の IPA では @capacitor/app 経由で読める）。
+// 読めない環境では APP_VERSION（想定版）を代替に使う。
+let installedVersion = null;
+async function readInstalledVersion(){
+  try{
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (App && App.getInfo){
+      const info = await App.getInfo();
+      if (info && typeof info.version === 'string' && info.version) installedVersion = info.version;
+    }
+  }catch(e){ /* 読めなければ想定版のまま */ }
+}
+function effectiveVersion(){ return installedVersion || APP_VERSION; }
+
+// OS の入り口（App Intents 等）からの「開く」指定。プラグイン IrisEntry が無い版では何もしない。
+let pendingOpenTarget = null;
+async function checkPendingOpen(){
+  try{
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.IrisEntry;
+    if (!P || !P.consumePendingOpen) return;
+    const r = await P.consumePendingOpen();
+    if (r && r.target){ pendingOpenTarget = String(r.target); tryOpenPending(); }
+  }catch(e){ /* 入り口が無ければ静かに続ける */ }
+}
+function tryOpenPending(){
+  if (!pendingOpenTarget) return;
+  const part = '/modules/' + pendingOpenTarget + '/';
+  const mod = (currentModules || []).find(m => (m.url || '').includes(part));
+  if (mod){ pendingOpenTarget = null; openModule(mod); }
+}
 
 // 同梱の予備一覧（通信できない時の最初の表示）。文言は画面用に人の言葉で書く。
 const FALLBACK_MODULES = {
@@ -341,6 +372,7 @@ function render(modules){
   renderPrivate();
   renderRecent();
   applySearch();
+  tryOpenPending();
 }
 function renderPrivate(){
   privateGrid.textContent = '';
@@ -440,14 +472,15 @@ function cmpVer(a, b){
 }
 
 async function checkUpdate(){
+  await readInstalledVersion();
   try{
     const res = await fetchWithTimeout(APPS_URL + '?t=' + Date.now(), 6000);
     if (!res.ok) return;
     const data = await res.json();
     const app = (data.apps || [])[0];
-    if (!app || cmpVer(app.version, APP_VERSION) <= 0) return;
-    // 殻は端末の実際の版数を読めない（版数を読む部品が IPA に入っていない）ため、
-    // 更新済みでも判定は変わらない。その版を確認済みにしたら消せる形にする（応急処置）。
+    if (!app || cmpVer(app.version, effectiveVersion()) <= 0) return;
+    // 実測版が読める環境（v1.12 以降）では更新済みなら上の比較で静かになる。
+    // 読めない環境では、その版を確認済みにしたら消せる形にする（応急処置）。
     let dismissed = null;
     try { dismissed = localStorage.getItem(LS_UPDATE_DISMISSED); } catch(e) {}
     if (dismissed === app.version) return;
@@ -746,9 +779,12 @@ async function runTests(){
     perf.push({ id: 'fetch-apps', label: '更新の確認', ms: Math.round(performance.now() - t0) });
     const app = (data.apps || [])[0];
     if (app){
-      const newer = cmpVer(app.version, APP_VERSION) > 0;
+      const newer = cmpVer(app.version, effectiveVersion()) > 0;
+      const verNote = installedVersion
+        ? '端末の実際の版数は ' + installedVersion + '（実測）'
+        : '端末の実際の版数はこの環境では読めないため、想定版 ' + APP_VERSION + ' で判定している';
       items.push({ id: 'T2', label: '更新の判定', result: 'pass',
-        detail: '最新は ' + app.version + '／殻の想定版は ' + APP_VERSION + (newer ? '（新しい版がある）' : '（想定版と同じ）') + '。端末の実際の版数は殻からは読めないため、更新済みでもこの判定は変わらない。更新の実行そのものは SideStore 側の操作なので、ここでは判定まで' });
+        detail: '最新は ' + app.version + '／' + verNote + (newer ? '（新しい版がある）' : '（新しい版はない）') + '。更新の実行そのものは SideStore 側の操作なので、ここでは判定まで' });
     } else {
       items.push({ id: 'T2', label: '更新の判定', result: 'fail', detail: '配布リストにアプリが無い' });
     }
@@ -881,7 +917,7 @@ async function runTests(){
   lines.push('ランチャー 試験モード結果');
   lines.push('日時：' + startedAt.toLocaleString('ja-JP'));
   lines.push('端末：' + navigator.userAgent);
-  lines.push('殻の版：' + APP_VERSION);
+  lines.push('殻の版：' + effectiveVersion() + (installedVersion ? '（実測）' : '（想定）'));
   lines.push('本編の保存：試験では触れていない（試験前後で同一：' + (before === dataSnapshot() ? 'はい' : 'いいえ') + '）');
   lines.push('');
   items.forEach((it, i) => {
@@ -1018,6 +1054,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible'){
     checkShellFresh();
     refreshModules();
+    checkPendingOpen();
   }
 });
 
@@ -1068,6 +1105,8 @@ refreshModules();
 checkShellFresh();
 checkUpdate();
 checkProbeResume();
+checkPendingOpen();
+setTimeout(checkPendingOpen, 1800);
 </script>
 </body>
 </html>
