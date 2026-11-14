@@ -3,15 +3,22 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.12.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.13.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4455892,
-      "version": "1.12",
-      "versionDate": "2026-11-14T08:33:00Z",
-      "versionDescription": "v1.12: アイリスへの入り口（App Intents／ロック画面コントロール）を追加。端末の実際の版数を読めるようにもなった。",
+      "size": 4456458,
+      "version": "1.13",
+      "versionDate": "2026-11-14T08:50:23Z",
+      "versionDescription": "v1.13: URLスキーム irislauncher:// を追加（irislauncher://iris でアイリス画面、irislauncher://home でトップへ直接）。",
       "versions": [
+        {
+          "date": "2026-11-14T08:50:23Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.13.ipa",
+          "localizedDescription": "v1.13: URLスキーム irislauncher:// を追加（irislauncher://iris でアイリス画面、irislauncher://home でトップへ直接）。",
+          "size": 4456458,
+          "version": "1.13"
+        },
         {
           "date": "2026-11-14T08:33:00Z",
           "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.12.ipa",
