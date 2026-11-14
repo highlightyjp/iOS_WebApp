@@ -197,7 +197,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-1930';
+const SHELL_BUILD = '2026-11-14-2010';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -235,6 +235,41 @@ function tryOpenPending(){
   const part = '/modules/' + pendingOpenTarget + '/';
   const mod = (currentModules || []).find(m => (m.url || '').includes(part));
   if (mod){ pendingOpenTarget = null; openModule(mod); }
+}
+
+// URL スキーム irislauncher://（v1.13 の IPA で登録）。
+// irislauncher://iris は、Intent の入り口と同じ pendingOpenTarget の経路で開く。
+// 裸の irislauncher:// はアプリを開くだけ（何もしない）。
+let urlListenerReady = false;
+function handleShellUrl(urlStr){
+  try{
+    const u = new URL(String(urlStr || ''));
+    if (u.protocol !== 'irislauncher:') return;
+    const seg = (u.host || u.pathname.replace(/^\/+/, '')).split('/')[0];
+    if (seg === 'iris'){ pendingOpenTarget = 'iris'; tryOpenPending(); }
+  }catch(e){ /* 解釈できない URL は無視する */ }
+}
+function initShellUrlHandling(){
+  if (urlListenerReady) return;
+  urlListenerReady = true;
+  try{
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (!App) return;
+    if (App.addListener){
+      App.addListener('appUrlOpen', (data) => { if (data && data.url) handleShellUrl(data.url); }).catch(() => {});
+    }
+    if (App.getLaunchUrl){
+      App.getLaunchUrl().then(r => {
+        if (!r || !r.url) return;
+        // 殻の自己更新リロードで同じ起動 URL を二重に扱わないための合図（このセッション限り）
+        let seen = null;
+        try{ seen = sessionStorage.getItem('launcher.urlHandled.v1'); }catch(e){ /* 読めなければ素通し */ }
+        if (seen === r.url) return;
+        try{ sessionStorage.setItem('launcher.urlHandled.v1', r.url); }catch(e){ /* 書けなくても続ける */ }
+        handleShellUrl(r.url);
+      }).catch(() => {});
+    }
+  }catch(e){ /* 入り口が無ければ静かに続ける */ }
 }
 
 // 同梱の予備一覧（通信できない時の最初の表示）。文言は画面用に人の言葉で書く。
@@ -1054,6 +1089,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible'){
     checkShellFresh();
     refreshModules();
+    initShellUrlHandling();
     checkPendingOpen();
   }
 });
@@ -1105,6 +1141,7 @@ refreshModules();
 checkShellFresh();
 checkUpdate();
 checkProbeResume();
+initShellUrlHandling();
 checkPendingOpen();
 setTimeout(checkPendingOpen, 1800);
 </script>
