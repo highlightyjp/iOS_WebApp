@@ -197,7 +197,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-2010';
+const SHELL_BUILD = '2026-11-14-2025';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -247,6 +247,7 @@ function handleShellUrl(urlStr){
     if (u.protocol !== 'irislauncher:') return;
     const seg = (u.host || u.pathname.replace(/^\/+/, '')).split('/')[0];
     if (seg === 'iris'){ pendingOpenTarget = 'iris'; tryOpenPending(); }
+    if (seg === 'home'){ closeViewer(); }
   }catch(e){ /* 解釈できない URL は無視する */ }
 }
 function initShellUrlHandling(){
