@@ -13,7 +13,7 @@
   --shadow:0 10px 34px rgba(31,38,135,.14),0 2px 8px rgba(31,38,135,.08);
   --spec:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -0.5px 0 rgba(255,255,255,.25);
   --radius:24px; --spring:cubic-bezier(.34,1.35,.44,1);
-  --motion-spatial-fast:.18s cubic-bezier(.34,1.56,.64,1); --motion-effect-med:.25s ease-out;
+  --motion-spatial-fast:.18s cubic-bezier(.34,1.56,.64,1);
 }
 @media (prefers-color-scheme: dark){
   :root{ --label:#fff; --label2:rgba(235,235,245,.62); --label3:rgba(235,235,245,.38);
@@ -60,8 +60,6 @@ h2{ font-size:13.5px; font-weight:600; color:var(--label2); margin:24px 8px 8px;
 .hero .t{ font-size:21px; font-weight:800; letter-spacing:-.015em; margin-top:2px; }
 .hero .s{ font-size:14.5px; opacity:.92; }
 .hero .scene{ margin-top:10px; background:rgba(255,255,255,.14); border-radius:18px; padding:6px 4px 2px; }
-.xpbar{ height:8px; background:rgba(255,255,255,.3); border-radius:4px; overflow:hidden; margin-top:8px; }
-.xpbar > div{ height:100%; background:#fff; border-radius:4px; }
 .act{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:none; cursor:pointer;
   border-radius:999px; padding:16px; margin-top:14px; background:var(--tint); color:#fff;
   font-size:17px; font-weight:700; box-shadow:var(--shadow); transition:transform var(--motion-spatial-fast); }
@@ -85,24 +83,26 @@ h2{ font-size:13.5px; font-weight:600; color:var(--label2); margin:24px 8px 8px;
   border-radius:16px; background:var(--card); color:var(--label); font-size:15.5px; cursor:pointer;
   transition:transform var(--motion-spatial-fast); }
 .choice:active{ transform:scale(.98); }
-.choice.picked{ border-color:var(--tint); background:rgba(0,122,255,.08); }
 .choice.right{ border-color:var(--green); background:rgba(52,199,89,.12); }
 .choice.wrong{ border-color:var(--orange); background:rgba(255,149,0,.12); }
 .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .chip{ padding:5px 10px; border-radius:999px; font-size:12.5px; font-weight:600; border:1.5px solid var(--sep); color:var(--label2); background:var(--card); }
 .chip.done{ border-color:var(--tint); background:rgba(0,122,255,.12); color:var(--tint); }
-.fac{ display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--sep); }
+.fac{ display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--sep); }
 .fac:last-child{ border-bottom:none; }
-.fac .ic{ font-size:28px; width:44px; text-align:center; }
+.fac .ic{ width:46px; height:46px; flex:none; border-radius:12px; background:var(--fill); display:flex; align-items:center; justify-content:center; }
+.fac .ic svg{ width:28px; height:28px; }
 .tabbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(12px + env(safe-area-inset-bottom)); z-index:40;
   display:flex; gap:2px; border-radius:999px; padding:6px; }
 .tabbar button{ border:none; background:transparent; color:var(--label2); border-radius:999px; padding:7px 14px 5px;
-  font-size:10.5px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; min-width:64px; }
-.tabbar button .g{ font-size:19px; line-height:1.1; }
+  font-size:10.5px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:64px; }
+.tabbar button svg{ width:21px; height:21px; }
 .tabbar button.on{ background:var(--glass-strong); color:var(--label); box-shadow:var(--spec); }
 table{ width:100%; border-collapse:collapse; font-size:14px; }
 th,td{ padding:7px 4px; border-bottom:1px solid var(--sep); text-align:left; }
-.hidden{ display:none; }
+.kwexp{ font-size:13.5px; padding:8px 0; border-bottom:1px solid var(--sep); }
+.kwexp:last-child{ border-bottom:none; }
+.kwexp b{ color:var(--tint); }
 </style>
 </head>
 <body>
@@ -115,17 +115,25 @@ th,td{ padding:7px 4px; border-bottom:1px solid var(--sep); text-align:left; }
   <section id="view-zukan"></section>
   <section id="view-records"></section>
 </main>
-<nav class="tabbar glass">
-  <button data-view="home" class="on"><span class="g">🏭</span>ホーム</button>
-  <button data-view="drill"><span class="g">✎</span>演習</button>
-  <button data-view="zukan"><span class="g">📖</span>図鑑</button>
-  <button data-view="records"><span class="g">🧾</span>記録</button>
-</nav>
+<nav class="tabbar glass" id="tabbar"></nav>
 <script src="questions-g.js"></script>
 <script>
 'use strict';
-var MODULE_BUILD = '2026-11-15-0133';
+var MODULE_BUILD = '2026-11-15-0145';
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+/* ---- drawn icons (unified stroke style, no emoji) ---- */
+function ic(paths){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>'; }
+var ICONS = {
+  home: ic('<path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/>'),
+  drill: ic('<path d="M5 19 6.4 14.6 16.9 4.1a1.8 1.8 0 0 1 2.5 0l.5.5a1.8 1.8 0 0 1 0 2.5L9.4 17.6 5 19Z"/><path d="M14.8 6.2l2.5 2.5"/>'),
+  zukan: ic('<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15Z"/><path d="M5 18.5V21h14v-3"/><path d="M9 7h6"/>'),
+  records: ic('<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>'),
+  shelf: ic('<path d="M4 4h16v16H4z"/><path d="M4 12h16"/><path d="M7 8v3M10.5 7v4M15 8v3M13 15v3M17 15.5V18"/>'),
+  machine: ic('<circle cx="10" cy="10" r="3.2"/><path d="M10 3.8v2.4M10 13.8v2.4M3.8 10h2.4M13.8 10h2.4M5.6 5.6l1.7 1.7M12.7 12.7l1.7 1.7M18.4 5.6l-1.7 1.7"/><circle cx="17.5" cy="17" r="2.4"/><path d="M17.5 13.4v1.4M17.5 19.2v1.4M13.9 17h1.4M19.7 17h1.4"/>'),
+  crate: ic('<path d="M4 8.5 12 4l8 4.5V16l-8 4.5L4 16V8.5Z"/><path d="M4 8.5 12 13l8-4.5M12 13v7.5"/>'),
+  lamp: ic('<path d="M9 3h6M10 3v2h4V3"/><rect x="8" y="5" width="8" height="11" rx="2"/><path d="M12 21v-5M8.5 21h7"/>')
+};
 
 var EXAMS = [
   { id:'g', name:'G検定', examDate:'2027-01-16', candidates:['2027-01-16'], applyBy:'2027-01-08', note:'オンライン試験。対象日は候補日から選択（後続日程は公表され次第追加）' },
@@ -133,12 +141,19 @@ var EXAMS = [
   { id:'ap', name:'応用情報技術者', examDate:'2027-03-14', applyFrom:'2027-01-27', applyBy:'2027-02-16', note:'CBT（左の日付は目標日）', packReady:false }
 ];
 var UNITS = [
-  { id:'g-u1', exam:'g', name:'分野1 人工知能とは', facility:'知識の書庫', icon:'📚' },
-  { id:'g-u3', exam:'g', name:'分野3 機械学習の概要', facility:'学習機械の工房', icon:'⚙️' }
+  { id:'g-u1', exam:'g', name:'分野1 人工知能とは' },
+  { id:'g-u3', exam:'g', name:'分野3 機械学習の概要' }
+];
+var FACILITIES = [
+  { id:'shelf', unit:'g-u1', name:'知識の書庫', icon:'shelf', cost:30,
+    effect:'図鑑で、キーワードごとの解説が読めるようになります。' },
+  { id:'machine', unit:'g-u3', name:'学習機械の工房', icon:'machine', cost:30,
+    effect:'演習に「弱点だけ」の形式が増えます。一度でも間違えた問題だけを出します。' }
 ];
 var QUESTIONS = (window.QUAL_QUESTIONS_G || []);
 var SRS_DAYS = [1, 3, 7, 14, 30];
 var LS_KEY = 'qual.state.v1';
+var STAGE_NAMES = ['更地', '小さな小屋', '工房'];
 
 function pad(n){ return String(n).padStart(2,'0'); }
 function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
@@ -148,8 +163,9 @@ function addDays(dateStr, n){ var d=new Date(dateStr+'T00:00:00'); d.setDate(d.g
 function loadState(){
   var s = null;
   try{ s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
-  if(!s || !s.q) s = { q:{}, days:{}, xp:0, totalAnswers:0, totalCorrect:0 };
+  if(!s || !s.q) s = { q:{}, days:{}, totalAnswers:0, totalCorrect:0 };
   if(!s.daily) s.daily = {};
+  if(!s.built) s.built = {};
   return s;
 }
 function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
@@ -163,7 +179,7 @@ function isDue(q){
 }
 function unitQuestions(unitId){ return QUESTIONS.filter(function(q){ return q.unit===unitId; }); }
 function unitMasteredCount(unitId){ return unitQuestions(unitId).filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length; }
-function unitMastery(unitId){ var qs = unitQuestions(unitId); return qs.length ? unitMasteredCount(unitId)/qs.length : 0; }
+function unitOf(unitId){ return UNITS.filter(function(u){ return u.id===unitId; })[0]; }
 function planFor(exam){
   var qs = QUESTIONS.filter(function(q){ return q.exam===exam.id; });
   var fresh = qs.filter(function(q){ return !qState(q.id); });
@@ -172,25 +188,30 @@ function planFor(exam){
   return { fresh:fresh.length, due:due.length, quotaNew: fresh.length ? Math.ceil(fresh.length/left) : 0,
            total:qs.length, done: qs.length - fresh.length };
 }
-function levelOf(xp){ return 1 + Math.floor(Math.sqrt(xp/150)); }
-function xpFloorOfLevel(l){ return 150*(l-1)*(l-1); }
-function workshop(){
-  var level = levelOf(state.xp);
+/* resources: 1 per answer + 1 per correct, minus what was spent building */
+function resourcesEarned(){ return state.totalAnswers + state.totalCorrect; }
+function resourcesSpent(){ return FACILITIES.reduce(function(sum, f){ return sum + (state.built[f.id] ? f.cost : 0); }, 0); }
+function resourcesBalance(){ return resourcesEarned() - resourcesSpent(); }
+function facilityState(f){
+  var total = unitQuestions(f.unit).length, got = unitMasteredCount(f.unit);
+  if(state.built[f.id]) return { kind:'built', got:got, total:total };
+  if(total > 0 && got >= total) return { kind:'buildable', got:got, total:total, afford: resourcesBalance() >= f.cost };
+  return { kind:'locked', got:got, total:total };
+}
+function stageOf(){
+  var built = FACILITIES.filter(function(f){ return state.built[f.id]; }).length;
+  return Math.min(built, STAGE_NAMES.length - 1);
+}
+function streakOf(){
   var streak = 0; var d = todayStr();
   if(!state.days[d]) d = addDays(d, -1);
   while(state.days[d]){ streak++; d = addDays(d, -1); }
-  var facilities = UNITS.map(function(u){
-    var total = unitQuestions(u.id).length, got = unitMasteredCount(u.id);
-    return { name:u.facility, icon:u.icon, unit:u.name, unlocked: total>0 && got>=total, got:got, total:total };
-  });
-  return { level:level, xp:state.xp, streak:streak, lit: streak>0,
-    xpInLevel: state.xp - xpFloorOfLevel(level), xpSpan: xpFloorOfLevel(level+1) - xpFloorOfLevel(level),
-    facilities:facilities };
+  return streak;
 }
 function lastStudyText(){
   var days = Object.keys(state.days).sort();
   if(!days.length) return 'まだ学習の記録がありません';
-  var last = days[days.length-1]; var diff = daysUntil(last) * -1;
+  var last = days[days.length-1]; var diff = -daysUntil(last);
   if(diff === 0) return '最後の学習は今日';
   if(diff === 1) return '最後の学習は昨日';
   return '最後の学習は ' + diff + ' 日前';
@@ -203,16 +224,57 @@ function weekRange(offset){
   return { from:f(monday), to:f(sunday) };
 }
 function weekSummary(offset){
-  var r = weekRange(offset); var out = { n:0, c:0, xp:0, days:0 };
+  var r = weekRange(offset); var out = { n:0, c:0, res:0, days:0 };
   Object.keys(state.daily).forEach(function(k){
-    if(k >= r.from && k <= r.to){ var v = state.daily[k]; out.n += v.n||0; out.c += v.c||0; out.xp += v.xp||0; if(v.n>0) out.days++; }
+    if(k >= r.from && k <= r.to){ var v = state.daily[k]; out.n += v.n||0; out.c += v.c||0; out.res += (v.n||0)+(v.c||0); if(v.n>0) out.days++; }
   });
   out.rate = out.n ? Math.round(out.c/out.n*100) : null;
   return out;
 }
 
+/* ---- workshop scene: all drawn, stage-dependent ---- */
+function sceneSVG(){
+  var stage = stageOf(); var lit = streakOf() > 0;
+  var shelfBuilt = !!state.built['shelf'], machineBuilt = !!state.built['machine'];
+  var lamp = lit
+    ? '<circle cx="290" cy="52" r="15" fill="#FFD60A" opacity="0.35"/><g stroke="#FFE9A8" stroke-width="2" fill="#FFF3C4"><rect x="283" y="40" width="14" height="19" rx="4"/></g><path d="M290 34v6M284 40h12" stroke="#FFE9A8" stroke-width="2"/>'
+    : '<g stroke="rgba(255,255,255,.55)" stroke-width="2" fill="rgba(255,255,255,.18)"><rect x="283" y="40" width="14" height="19" rx="4"/></g><path d="M290 34v6M284 40h12" stroke="rgba(255,255,255,.55)" stroke-width="2"/>';
+  var shelf = shelfBuilt
+    ? '<g><rect x="14" y="84" width="38" height="44" rx="3" fill="#7A4E1D"/><rect x="18" y="90" width="7" height="30" fill="#FFD60A"/><rect x="27" y="90" width="7" height="30" fill="#64D2FF"/><rect x="36" y="90" width="7" height="30" fill="#FF9F0A"/><rect x="16" y="104" width="34" height="3" fill="#5B3A14"/></g>'
+    : '';
+  var machine = machineBuilt
+    ? '<g><rect x="240" y="92" width="42" height="36" rx="4" fill="#3A3A3C"/><circle cx="254" cy="110" r="8" fill="none" stroke="#FFD60A" stroke-width="3"/><circle cx="268" cy="110" r="5" fill="none" stroke="#64D2FF" stroke-width="3"/><rect x="246" y="98" width="30" height="3" fill="#8E8E93"/></g>'
+    : '';
+  var building = '';
+  if(stage === 0){
+    building = '<g stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-dasharray="5 4" fill="none"><rect x="118" y="82" width="84" height="46"/></g>' +
+      '<g><rect x="150" y="66" width="4" height="26" fill="#8A6D3B"/><rect x="154" y="64" width="26" height="15" rx="2" fill="#F5F0E6"/><rect x="158" y="69" width="18" height="2.4" fill="#B9AC93"/><rect x="158" y="73.5" width="12" height="2.4" fill="#B9AC93"/></g>';
+  } else if(stage === 1){
+    building = '<rect x="126" y="88" width="68" height="40" rx="4" fill="#F5F0E6"/>' +
+      '<polygon points="118,90 202,90 160,66" fill="#B23A48"/>' +
+      '<rect x="150" y="102" width="20" height="26" rx="3" fill="#5B4636"/>' +
+      '<rect x="133" y="96" width="13" height="13" rx="2" fill="#FFD60A"/>';
+  } else {
+    building = '<rect x="196" y="46" width="10" height="18" fill="#8E8E93"/>' +
+      '<rect x="118" y="62" width="84" height="66" rx="5" fill="#F5F0E6"/>' +
+      '<polygon points="110,64 210,64 160,40" fill="#B23A48"/>' +
+      '<rect x="148" y="102" width="22" height="26" rx="3" fill="#5B4636"/>' +
+      '<rect x="127" y="72" width="14" height="14" rx="2" fill="#FFD60A"/>' +
+      '<rect x="179" y="72" width="14" height="14" rx="2" fill="#FFD60A"/>' +
+      '<rect x="127" y="100" width="14" height="14" rx="2" fill="#BFE3FF"/>';
+  }
+  return '<svg viewBox="0 0 320 140" width="100%" role="img" aria-label="工房の様子">' +
+    '<circle cx="32" cy="24" r="12" fill="#FFE9A8"/>' + lamp +
+    '<rect x="0" y="126" width="320" height="14" fill="rgba(0,0,0,.18)"/>' +
+    shelf + machine + building + '</svg>';
+}
+
 var TITLES = { home:['工房','資格を取るための、自分の工房'], drill:['演習','単元ドリル・復習・ランダム実戦'],
   zukan:['図鑑','設備と、踏破したキーワード'], records:['記録','週の決算と、これまでの積み重ね'] };
+var TABS = [ ['home','ホーム'], ['drill','演習'], ['zukan','図鑑'], ['records','記録'] ];
+document.getElementById('tabbar').innerHTML = TABS.map(function(t){
+  return '<button data-view="' + t[0] + '"' + (t[0]==='home' ? ' class="on"' : '') + '>' + ICONS[t[0]] + t[1] + '</button>';
+}).join('');
 function show(view){
   document.querySelectorAll('.tabbar button').forEach(function(b){ b.classList.toggle('on', b.dataset.view===view); });
   ['home','drill','zukan','records'].forEach(function(v){ document.getElementById('view-'+v).classList.toggle('on', v===view); });
@@ -226,36 +288,18 @@ function show(view){
 }
 document.querySelectorAll('.tabbar button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.view); }); });
 
-function sceneSVG(w){
-  var fac = {}; w.facilities.forEach(function(f){ fac[f.unit] = f.unlocked; });
-  var h = 56 + Math.min(3, w.level-1)*16;
-  var lamp = w.lit
-    ? '<circle cx="288" cy="46" r="13" fill="#FFD60A" opacity="0.35"/><text x="288" y="52" font-size="16" text-anchor="middle">🏮</text>'
-    : '<text x="288" y="52" font-size="16" text-anchor="middle" opacity="0.45">🏮</text>';
-  var shelf = fac['分野1 人工知能とは'] ? '<g><rect x="18" y="86" width="34" height="40" rx="3" fill="#7A4E1D"/><rect x="22" y="92" width="7" height="28" fill="#FFD60A"/><rect x="31" y="92" width="7" height="28" fill="#64D2FF"/><rect x="40" y="92" width="7" height="28" fill="#FF9F0A"/></g>' : '<rect x="18" y="86" width="34" height="40" rx="3" fill="rgba(255,255,255,.25)"/>';
-  var machine = fac['分野3 機械学習の概要'] ? '<g><rect x="238" y="92" width="40" height="34" rx="4" fill="#3A3A3C"/><circle cx="252" cy="109" r="8" fill="#FFD60A"/><circle cx="266" cy="109" r="5" fill="#64D2FF"/></g>' : '<rect x="238" y="92" width="40" height="34" rx="4" fill="rgba(255,255,255,.25)"/>';
-  var chimney = w.level >= 3 ? '<rect x="196" y="' + (126-h-14) + '" width="10" height="16" fill="#8E8E93"/>' : '';
-  return '<svg viewBox="0 0 320 140" width="100%" role="img" aria-label="工房の様子">' +
-    '<circle cx="34" cy="24" r="12" fill="#FFE9A8"/>' + lamp +
-    '<rect x="0" y="126" width="320" height="14" fill="rgba(0,0,0,.18)"/>' +
-    shelf + machine + chimney +
-    '<rect x="120" y="' + (126-h) + '" width="76" height="' + h + '" rx="5" fill="#F5F0E6"/>' +
-    '<polygon points="112,' + (126-h) + ' 204,' + (126-h) + ' 158,' + (126-h-20) + '" fill="#B23A48"/>' +
-    '<rect x="148" y="' + (126-26) + '" width="20" height="26" rx="3" fill="#5B4636"/>' +
-    '<rect x="128" y="' + (126-h+12) + '" width="14" height="14" rx="2" fill="#FFD60A"/>' +
-    '<rect x="176" y="' + (126-h+12) + '" width="14" height="14" rx="2" fill="#FFD60A"/>' +
-    '</svg>';
-}
-
 function renderHome(){
-  var w = workshop();
+  var stage = stageOf(); var lit = streakOf() > 0;
   var plan = planFor(EXAMS[0]);
-  var pct = Math.round(w.xpInLevel / w.xpSpan * 100);
-  var html = '<div class="hero"><div class="k">工房レベル ' + w.level + '</div>' +
-    '<div class="t">' + (w.lit ? '明かりが灯っている' : '今日はまだ静か') + '</div>' +
-    '<div class="s">連続 ' + w.streak + ' 日 ・ 経験値 ' + w.xp + '（次のレベルまで あと ' + (w.xpSpan - w.xpInLevel) + '）</div>' +
-    '<div class="xpbar"><div style="width:' + pct + '%"></div></div>' +
-    '<div class="scene">' + sceneSVG(w) + '</div></div>';
+  var nextBuild = FACILITIES.map(function(f){ return { f:f, st:facilityState(f) }; }).filter(function(x){ return x.st.kind==='buildable'; })[0];
+  var html = '<div class="hero"><div class="k">工房の段階：' + STAGE_NAMES[stage] + '</div>' +
+    '<div class="t">' + (lit ? '明かりが灯っている' : '今日はまだ静か') + '</div>' +
+    '<div class="s">連続 ' + streakOf() + ' 日 ・ 資材 ' + resourcesBalance() + '（これまで ' + resourcesEarned() + ' 集めて ' + resourcesSpent() + ' 使った）</div>' +
+    '<div class="scene">' + sceneSVG() + '</div></div>';
+  if(nextBuild){
+    html += '<div class="card"><div class="row"><span class="title">建てられる設備があります</span><span class="badge info">i 図鑑から</span></div>' +
+      '<div class="small" style="margin-top:4px">「' + nextBuild.f.name + '」（資材 ' + nextBuild.f.cost + '）。' + nextBuild.f.effect + '</div></div>';
+  }
   html += '<button class="act" id="startToday">今日の演習をはじめる（新規 ' + plan.quotaNew + ' 問 ＋ 復習 ' + plan.due + ' 件）</button>';
   EXAMS.forEach(function(ex){
     var d = daysUntil(ex.examDate);
@@ -282,16 +326,24 @@ function renderHome(){
 function renderDrillSetup(){
   var html = '<h2>G検定</h2>';
   UNITS.forEach(function(u){
-    var qs = unitQuestions(u.id);
-    html += '<div class="card"><div class="row"><span class="title">' + u.name + '</span><span class="badge ' + (unitMastery(u.id)>=1 ? 'ok">✓ 制覇' : 'idle">全 ' + qs.length + ' 問') + '</span></div>' +
-      '<div class="bar"><div style="width:' + Math.round(unitMastery(u.id)*100) + '%"></div></div>' +
-      '<div class="small">正解した問題 ' + unitMasteredCount(u.id) + ' / ' + qs.length + '</div>' +
+    var qs = unitQuestions(u.id); var got = unitMasteredCount(u.id);
+    html += '<div class="card"><div class="row"><span class="title">' + u.name + '</span>' +
+      (got >= qs.length && qs.length ? '<span class="badge ok">✓ 全問正解</span>' : '<span class="badge idle">全 ' + qs.length + ' 問</span>') + '</div>' +
+      '<div class="bar"><div style="width:' + (qs.length ? Math.round(got/qs.length*100) : 0) + '%"></div></div>' +
+      '<div class="small">正解した問題 ' + got + ' / ' + qs.length + '</div>' +
       '<button class="act sub" data-unit="' + u.id + '">この単元を解く</button></div>';
   });
   var due = QUESTIONS.filter(isDue).length;
-  html += '<div class="card"><div class="row"><span class="title">復習</span><span class="badge ' + (due ? 'warn">! ' + due + ' 件が期限' : 'idle">期限のものなし') + '</span></div>' +
+  html += '<div class="card"><div class="row"><span class="title">復習</span>' +
+    (due ? '<span class="badge warn">! ' + due + ' 件が期限</span>' : '<span class="badge idle">期限のものなし</span>') + '</div>' +
     '<div class="small">正解した問題は間を空けて戻ってきます。間違えると早めに戻ります。</div>' +
     '<button class="act sub" data-mode="review">復習をはじめる</button></div>';
+  var weak = QUESTIONS.filter(function(q){ var st = qState(q.id); return st && st.everWrong; });
+  if(state.built['machine']){
+    html += '<div class="card"><div class="row"><span class="title">弱点だけ</span><span class="badge info">i 学習機械の工房の形式</span></div>' +
+      '<div class="small">一度でも間違えた問題だけを出します（いま ' + weak.length + ' 問）。</div>' +
+      '<button class="act sub" data-mode="weak">弱点だけを解く</button></div>';
+  }
   html += '<div class="card"><div class="row"><span class="title">ランダム実戦</span><span class="badge idle">10問</span></div>' +
     '<div class="small">全範囲から順不同で10問。</div>' +
     '<button class="act sub" data-mode="random">ランダム10問</button></div><div id="session"></div>';
@@ -299,6 +351,7 @@ function renderDrillSetup(){
   document.querySelectorAll('[data-unit]').forEach(function(b){ b.addEventListener('click', function(){ startSession(unitQuestions(b.dataset.unit)); }); });
   document.querySelectorAll('[data-mode]').forEach(function(b){ b.addEventListener('click', function(){
     if(b.dataset.mode==='review') startSession(QUESTIONS.filter(isDue));
+    else if(b.dataset.mode==='weak') startSession(shuffle(QUESTIONS.filter(function(q){ var st=qState(q.id); return st && st.everWrong; })));
     else startSession(shuffle(QUESTIONS.slice()).slice(0,10));
   }); });
 }
@@ -311,23 +364,23 @@ function buildTodaySet(){
 }
 
 var session = null;
-function snapshotGrowth(){
-  var w = workshop();
-  return { xp: w.xp, level: w.level, streak: w.streak,
-    unlocked: w.facilities.filter(function(f){ return f.unlocked; }).map(function(f){ return f.name; }),
-    mastered: QUESTIONS.filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length };
+function growthSnapshot(){
+  return { earned: resourcesEarned(), balance: resourcesBalance(),
+    buildable: FACILITIES.filter(function(f){ return facilityState(f).kind==='buildable'; }).map(function(f){ return f.name; }),
+    mastered: QUESTIONS.filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length,
+    stage: stageOf(), streak: streakOf() };
 }
 function startSession(qs){
   if(!qs.length){
     show('drill');
     document.getElementById('view-drill').innerHTML = '<div class="card"><span class="title">対象の問題がありません</span>' +
-      '<div class="small" style="margin-top:6px">復習の期限が来ている問題はありません。単元ドリルから進めてください。</div>' +
+      '<div class="small" style="margin-top:6px">いまの条件に合う問題はありません。単元ドリルから進めてください。</div>' +
       '<button class="act" id="backSetup">演習の選択へ</button></div>';
     document.getElementById('backSetup').addEventListener('click', function(){ renderDrillSetup(); });
     return;
   }
   session = { list: qs.map(function(q){ return { q:q, order: shuffle(q.choices.map(function(c,i){ return i; })) }; }),
-    idx:0, correct:0, before: snapshotGrowth() };
+    idx:0, correct:0, before: growthSnapshot() };
   show('drill'); renderQuestion();
 }
 function renderQuestion(){
@@ -341,17 +394,15 @@ function renderQuestion(){
 }
 function answer(item, picked){
   var q = item.q; var ok = picked === q.answer;
-  var st = qState(q.id) || { stage:0, last:null, everCorrect:false };
+  var st = qState(q.id) || { stage:0, last:null, everCorrect:false, everWrong:false };
   st.stage = ok ? Math.min(st.stage+1, SRS_DAYS.length-1) : 0;
-  st.last = todayStr(); st.everCorrect = st.everCorrect || ok;
+  st.last = todayStr(); st.everCorrect = st.everCorrect || ok; st.everWrong = st.everWrong || !ok;
   state.q[q.id] = st;
-  var gain = 10 + (ok ? 5 : 0);
   state.totalAnswers++; if(ok){ state.totalCorrect++; session.correct++; }
-  state.xp += gain;
   var t = todayStr();
   state.days[t] = (state.days[t] || 0) + 1;
-  var dy = state.daily[t] || { n:0, c:0, xp:0 };
-  dy.n++; if(ok) dy.c++; dy.xp += gain; state.daily[t] = dy;
+  var dy = state.daily[t] || { n:0, c:0 };
+  dy.n++; if(ok) dy.c++; state.daily[t] = dy;
   saveState();
   document.querySelectorAll('.choice').forEach(function(b){
     var ci = parseInt(b.dataset.c,10); b.disabled = true;
@@ -370,12 +421,11 @@ function answer(item, picked){
   });
 }
 function finishSession(){
-  var after = snapshotGrowth(); var before = session.before;
+  var after = growthSnapshot(); var before = session.before;
   var lines = [];
-  lines.push('<div class="row"><span>経験値</span><strong>+' + (after.xp - before.xp) + '</strong></div>');
-  if(after.level > before.level) lines.push('<div class="row"><span>工房のレベル</span><strong>' + before.level + ' → ' + after.level + ' に上がった</strong></div>');
-  var newFac = after.unlocked.filter(function(n){ return before.unlocked.indexOf(n) < 0; });
-  newFac.forEach(function(n){ lines.push('<div class="row"><span>新しい設備</span><strong>「' + n + '」が建った</strong></div>'); });
+  lines.push('<div class="row"><span>集めた資材</span><strong>+' + (after.earned - before.earned) + '（残り ' + after.balance + '）</strong></div>');
+  var newBuildable = after.buildable.filter(function(n){ return before.buildable.indexOf(n) < 0; });
+  newBuildable.forEach(function(n){ lines.push('<div class="row"><span>建てられる設備</span><strong>「' + n + '」が建てられるようになった</strong></div>'); });
   lines.push('<div class="row"><span>新しく正解した問題</span><strong>' + (after.mastered - before.mastered) + ' 問</strong></div>');
   lines.push('<div class="row"><span>連続学習</span><strong>' + after.streak + ' 日（明かりは灯っている）</strong></div>');
   document.getElementById('view-drill').innerHTML =
@@ -383,17 +433,23 @@ function finishSession(){
     '<div style="margin-top:10px">' + lines.join('') + '</div>' +
     '<button class="act" id="backHome">ホームへ</button></div>';
   document.getElementById('backHome').addEventListener('click', function(){ session = null; show('home'); });
-  session = null; sessionDone = true;
+  session = null;
 }
-var sessionDone = false;
 
 function renderZukan(){
-  var w = workshop();
-  var html = '<h2>設備</h2><div class="card">';
-  w.facilities.forEach(function(f){
-    html += '<div class="fac"><div class="ic">' + f.icon + '</div><div style="flex:1"><div class="title" style="font-size:15.5px">' + f.name + '</div>' +
-      '<div class="small">' + f.unit + ' ・ 正解 ' + f.got + ' / ' + f.total + '</div></div>' +
-      (f.unlocked ? '<span class="badge ok">✓ 建っている</span>' : '<span class="badge idle">あと ' + (f.total - f.got) + ' 問</span>') + '</div>';
+  var html = '<h2>設備（学習で資材を集めて建てます）</h2><div class="card">' +
+    '<div class="row"><span class="title" style="font-size:15.5px">資材の残り</span><span class="big">' + resourcesBalance() + '</span></div>' +
+    '<div class="small">問題を解くと資材が1つ、正解するともう1つ集まります。使っても、解いた記録は消えません。</div>';
+  FACILITIES.forEach(function(f){
+    var st = facilityState(f);
+    html += '<div class="fac"><div class="ic">' + ICONS[f.icon] + '</div><div style="flex:1">' +
+      '<div class="title" style="font-size:15.5px">' + f.name + '</div>' +
+      '<div class="small">' + unitOf(f.unit).name + ' ・ 正解 ' + st.got + ' / ' + st.total + ' 問 ・ 建設に資材 ' + f.cost + '</div>' +
+      '<div class="small">建つと：' + f.effect + '</div></div>';
+    if(st.kind==='built') html += '<span class="badge ok">✓ 建っている</span>';
+    else if(st.kind==='buildable') html += '<button class="act sub" style="margin-top:0; width:auto; padding:10px 18px" data-build="' + f.id + '"' + (st.afford ? '' : ' disabled') + '>建てる</button>';
+    else html += '<span class="badge idle">あと ' + (st.total - st.got) + ' 問で解放</span>';
+    html += '</div>';
   });
   html += '</div><h2>キーワード踏破（G検定）</h2>';
   UNITS.forEach(function(u){
@@ -403,9 +459,19 @@ function renderZukan(){
       var st = qState(q.id); var done = st && st.everCorrect;
       html += '<span class="chip' + (done ? ' done' : '') + '">' + (done ? '✓ ' : '') + q.keyword + '</span>';
     });
-    html += '</div></div>';
+    html += '</div>';
+    if(state.built['shelf'] && u.id === 'g-u1' || state.built['shelf'] && u.id === 'g-u3'){
+      html += '<div style="margin-top:10px">' + qs.map(function(q){ return '<div class="kwexp"><b>' + q.keyword + '</b>：' + q.explanation + '</div>'; }).join('') + '</div>';
+    }
+    html += '</div>';
   });
   document.getElementById('view-zukan').innerHTML = html;
+  document.querySelectorAll('[data-build]').forEach(function(b){ b.addEventListener('click', function(){
+    var f = FACILITIES.filter(function(x){ return x.id === b.dataset.build; })[0];
+    var st = facilityState(f);
+    if(st.kind !== 'buildable' || !st.afford) return;
+    state.built[f.id] = todayStr(); saveState(); renderZukan();
+  }); });
 }
 
 function renderRecords(){
@@ -415,14 +481,14 @@ function renderRecords(){
     '<tr><th></th><th>今週</th><th>先週</th></tr>' +
     '<tr><td>解いた問題</td><td>' + now.n + ' 問</td><td>' + prev.n + ' 問</td></tr>' +
     '<tr><td>正解率</td><td>' + rate(now) + '</td><td>' + rate(prev) + '</td></tr>' +
-    '<tr><td>得た経験値</td><td>' + now.xp + '</td><td>' + prev.xp + '</td></tr>' +
+    '<tr><td>集めた資材</td><td>' + now.res + '</td><td>' + prev.res + '</td></tr>' +
     '<tr><td>学習した日</td><td>' + now.days + ' 日</td><td>' + prev.days + ' 日</td></tr></table></div>';
-  var w = workshop();
   html += '<h2>これまで</h2><div class="card"><table>' +
     '<tr><td>通算の回答</td><td>' + state.totalAnswers + ' 問</td></tr>' +
     '<tr><td>通算の正解</td><td>' + state.totalCorrect + ' 問</td></tr>' +
-    '<tr><td>工房レベル</td><td>' + w.level + '（経験値 ' + w.xp + '）</td></tr>' +
-    '<tr><td>連続学習</td><td>' + w.streak + ' 日</td></tr></table>' +
+    '<tr><td>工房の段階</td><td>' + STAGE_NAMES[stageOf()] + '（建てた設備 ' + Object.keys(state.built).length + ' 件）</td></tr>' +
+    '<tr><td>資材</td><td>残り ' + resourcesBalance() + '（集めた ' + resourcesEarned() + '／使った ' + resourcesSpent() + '）</td></tr>' +
+    '<tr><td>連続学習</td><td>' + streakOf() + ' 日</td></tr></table>' +
     '<div class="small" style="margin-top:8px">単元ごとの正解した問題：' +
     UNITS.map(function(u){ return u.name + ' ' + unitMasteredCount(u.id) + '/' + unitQuestions(u.id).length; }).join('、') + '</div>' +
     '<button class="act sub" id="exportBtn">記録をファイルに書き出す</button>' +
@@ -444,10 +510,12 @@ function runSelfTest(){
   rec('QT2', '計画エンジン（今日のノルマ）', plan.quotaNew>=0 && plan.due>=0, '新規 ' + plan.quotaNew + ' 問／復習 ' + plan.due + ' 件');
   var rt = false; try{ localStorage.setItem('qual.probe', JSON.stringify({t:1})); rt = JSON.parse(localStorage.getItem('qual.probe')).t===1; localStorage.removeItem('qual.probe'); }catch(e){}
   rec('QT3', '記録の読み書き', rt, '');
-  var w = workshop();
-  rec('QT4', '工房の計算', w.level>=1 && Array.isArray(w.facilities), 'レベル ' + w.level);
+  var bal = resourcesBalance();
+  rec('QT4', '資材と工房の段階の計算', bal >= 0 && stageOf() >= 0, '資材残り ' + bal + '／段階 ' + STAGE_NAMES[stageOf()]);
   var ws = weekSummary(0);
-  rec('QT5', '週の決算の集計', ws && typeof ws.n === 'number' && typeof ws.xp === 'number', '今週 ' + ws.n + ' 問');
+  rec('QT5', '週の決算の集計', ws && typeof ws.n === 'number' && typeof ws.res === 'number', '今週 ' + ws.n + ' 問');
+  var facOk = FACILITIES.every(function(f){ var st = facilityState(f); return st && (st.kind==='built' || st.kind==='buildable' || st.kind==='locked'); });
+  rec('QT6', '設備の状態判定', facOk, FACILITIES.map(function(f){ return f.name + ':' + facilityState(f).kind; }).join(' '));
   var pass = items.filter(function(i){ return i.result==='pass'; }).length;
   return { contract:'launcher-test/v1', moduleId:'qual', version:MODULE_BUILD, items:items,
            perf:{}, untouched:{ checked:true, same:true }, summary:{ pass:pass, fail:items.length-pass, na:0 } };
