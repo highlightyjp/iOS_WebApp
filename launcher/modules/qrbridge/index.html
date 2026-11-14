@@ -40,7 +40,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver">版 2.0.1 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
+<div class="ver">版 2.1 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）／色コード最大 10,917バイト</div>
 <div class="tabs">
   <button id="tabSend">送る</button>
   <button id="tabRecv">受け取る</button>
@@ -56,6 +56,7 @@
     <select id="tplSel"><option value="">定型文を選ぶ</option></select>
     <button class="sub" id="btnTplSave">今の入力を定型文に保存</button>
   </div>
+  <label style="display:block;margin:8px 0"><input type="checkbox" id="chkC5"> 色コード（C5）で送る ─ 1枚で最大10,917バイト。受け側は写真から読み取ります</label>
   <button class="big" id="btnMake">QRを作る</button>
   <div class="status" id="sendStatus">未作成</div>
   <div id="qrwrap"></div>
@@ -13900,6 +13901,506 @@ function makeReceiver() {
 
 var QB_QL = { sha256, buildSync, parseSync, makeStream, makeReceiver, SYNC_LEN, METHOD_LT, METHOD_RLNC, makeRLNCSender, makeRLNCSession };
 
+var QB_RS = (function () {
+'use strict';
+/* rs.js — GF(256) Reed-Solomon（原始多項式 0x11d、生成元 α=2）
+ * systematic 符号化＋誤り・消失の訂正。NSYM=32 固定（RS(255,223) 相当、短縮可）。
+ * decode が成功を返すのは、訂正後にシンドロームが全ゼロの時だけ（fail-closed）。
+ */
+const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+{
+  let x = 1;
+  for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+}
+const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+const div = (a, b) => a ? EXP[LOG[a] - LOG[b] + 255] : 0;
+const polyMul = (p, q) => {
+  const r = new Uint8Array(p.length + q.length - 1);
+  for (let i = 0; i < p.length; i++) for (let j = 0; j < q.length; j++) r[i + j] ^= mul(p[i], q[j]);
+  return r;
+};
+const polyEval = (p, x) => { // p は降べき係数
+  let y = 0;
+  for (let i = 0; i < p.length; i++) y = mul(y, x) ^ p[i];
+  return y;
+};
+
+const NSYM = 32;
+const GEN = (() => { // g(x) = ∏_{i=0}^{NSYM-1} (x − α^i)、降べき
+  let g = new Uint8Array([1]);
+  for (let i = 0; i < NSYM; i++) g = polyMul(g, new Uint8Array([1, EXP[i]]));
+  return g;
+})();
+
+function rsEncode(msg) { // msg: Uint8Array(<=223) -> Uint8Array(msg.length + NSYM)
+  const out = new Uint8Array(msg.length + NSYM);
+  out.set(msg);
+  const rem = new Uint8Array(NSYM);
+  for (let i = 0; i < msg.length; i++) {
+    const coef = out[i] ^ rem[0];
+    rem.copyWithin(0, 1); rem[NSYM - 1] = 0;
+    if (coef) for (let j = 0; j < NSYM; j++) rem[j] ^= mul(GEN[j + 1], coef);
+  }
+  out.set(rem, msg.length);
+  return out;
+}
+
+function syndromes(word) { // S_i = word(α^i), i=0..NSYM-1。word は昇べきで受け取る形に直す
+  const s = new Uint8Array(NSYM);
+  const desc = word; // 受信語は「先頭が高次」の並びとして評価する
+  for (let i = 0; i < NSYM; i++) s[i] = polyEval(desc, EXP[i]);
+  return s;
+}
+function hasError(s) { return s.some(v => v !== 0); }
+
+// 位置 p（0=先頭=最高次）に対応する X = α^(n-1-p)
+function gaussSolve(A, b) { // GF(256) の連立方程式。解けない場合は null
+  const n = b.length;
+  const M = A.map((row, i) => row.slice().concat([b[i]]));
+  for (let col = 0, row = 0; col < n && row < n; col++, row++) {
+    let piv = -1;
+    for (let r = row; r < n; r++) if (M[r][col] !== 0) { piv = r; break; }
+    if (piv < 0) return null;
+    [M[row], M[piv]] = [M[piv], M[row]];
+    const inv = div(1, M[row][col]);
+    for (let k = col; k <= n; k++) M[row][k] = mul(M[row][k], inv);
+    for (let r = 0; r < n; r++) {
+      if (r === row || M[r][col] === 0) continue;
+      const f = M[r][col];
+      for (let k = col; k <= n; k++) M[r][k] ^= mul(f, M[row][k]);
+    }
+  }
+  return M.map(r => r[n]);
+}
+function polyMulAsc(p, q) {
+  const r = new Uint8Array(p.length + q.length - 1);
+  for (let i = 0; i < p.length; i++) for (let j = 0; j < q.length; j++) r[i + j] ^= mul(p[i], q[j]);
+  return r;
+}
+function polyEvalAsc(p, x) {
+  let y = 0;
+  for (let i = p.length - 1; i >= 0; i--) y = mul(y, x) ^ p[i];
+  return y;
+}
+function decode(wordIn, erasures) {
+  const n = wordIn.length;
+  const word = wordIn.slice();
+  const synd = syndromes(word);
+  if (!hasError(synd)) return word.slice(0, n - NSYM);
+  const erasePos = [...new Set((erasures || []).filter(p => p >= 0 && p < n))];
+  // 消失ロケータ Γ(x) = ∏ (1 + X_p x)（昇べき）
+  let gamma = new Uint8Array([1]);
+  for (const p of erasePos) gamma = polyMulAsc(gamma, new Uint8Array([1, EXP[(n - 1 - p) % 255]]));
+  // Forney シンドローム：S(x)Γ(x) mod x^NSYM の deg Γ 以降
+  const fsynd = polyMulAsc(synd, gamma).slice(erasePos.length, NSYM);
+  // PGZ：Hankel 行列で未知の誤りロケータを求める
+  let errPos = [];
+  if (fsynd.length >= 2) {
+    const maxNu = Math.min(16, Math.floor(fsynd.length / 2));
+    let found = null;
+    for (let nu = maxNu; nu >= 1 && !found; nu--) {
+      const A = [], b = [];
+      for (let m = nu; m < 2 * nu; m++) {
+        const row = [];
+        for (let i = 1; i <= nu; i++) row.push(fsynd[m - i]);
+        A.push(row); b.push(fsynd[m]);
+      }
+      const lam = gaussSolve(A, b);
+      if (!lam) continue;
+      const loc = new Uint8Array(nu + 1); loc[0] = 1; loc.set(lam, 1);
+      // 漸化式が fsynd の残り全部でも成り立つか
+      let recurOk = true;
+      for (let m = 2 * nu; m < fsynd.length; m++) {
+        let v = fsynd[m];
+        for (let i = 1; i <= nu; i++) v ^= mul(loc[i], fsynd[m - i]);
+        if (v !== 0) { recurOk = false; break; }
+      }
+      if (!recurOk) continue;
+      // Chien 探索
+      const pos = [];
+      for (let p = 0; p < n; p++) {
+        if (erasePos.includes(p)) continue;
+        const Xinv = EXP[(255 - ((n - 1 - p) % 255)) % 255];
+        if (polyEvalAsc(loc, Xinv) === 0) pos.push(p);
+      }
+      if (pos.length === nu) found = pos;
+    }
+    if (!found && hasError(fsynd)) return null;
+    errPos = found || [];
+  } else if (hasError(fsynd)) return null;
+  const allPos = [...erasePos, ...errPos];
+  if (allPos.length === 0 || allPos.length > NSYM) return null;
+  // 大きさは元のシンドロームで Vandermonde を解く：S_i = Σ Y_j X_j^i
+  const nu = allPos.length;
+  const A = [], b = [];
+  for (let i = 0; i < nu; i++) {
+    const row = [];
+    for (const p of allPos) {
+      const X = EXP[(n - 1 - p) % 255];
+      let v = 1; for (let e = 0; e < i; e++) v = mul(v, X);
+      row.push(v);
+    }
+    A.push(row); b.push(synd[i]);
+  }
+  const mags = gaussSolve(A, b);
+  if (!mags) return null;
+  for (let j = 0; j < nu; j++) word[allPos[j]] ^= mags[j];
+  if (hasError(syndromes(word))) return null;
+  return word.slice(0, n - NSYM);
+}
+return { rsEncode, decode, NSYM, syndromes };
+
+})();
+'use strict';
+/* c5.js — 自作コード C5（試作 v1）：8パターン×4色＝32状態（5bit/モジュール）
+ * 骨格は C4 と同じ 144×144（ファインダ・校正帯・透視補正）。
+ * 誤り訂正は RS(255,223) のインターリーブ＋消失（確信度の低いモジュール）。
+ * 設計値の正本は QR-RESULTS7。幾何まわりは c4.js からの複写。
+ */
+const C = { qbCrc32: qbCrc32 };
+const RS = QB_RS;
+
+const T = 144;
+const INK = [[16, 16, 16], [228, 32, 32], [32, 64, 228], [24, 176, 72]]; // 黒・赤・青・緑
+const WHITE = [255, 255, 255];
+const PATS = [0b0011, 0b1100, 0b0101, 0b1010, 0b1001, 0b0110, 0b1111, 0b0111];
+const BLOCK_DATA = 223, BLOCK_CODE = 255;
+
+function isFinderArea(r, c) { return (r < 8 && c < 8) || (r < 8 && c >= T - 8) || (r >= T - 8 && c < 8); }
+function isBRArea(r, c) { return r >= T - 6 && c >= T - 6; }
+function isCalib(r, c) { return (r === 9 || r === 12) && c >= 10 && c <= T - 11; }
+function isFunc(r, c) { return isFinderArea(r, c) || isBRArea(r, c) || isCalib(r, c); }
+function finderValue(lr, lc) {
+  if (lr === 0 || lr === 7 || lc === 0 || lc === 7) return 0;
+  if (lr === 1 || lr === 6 || lc === 1 || lc === 6) return 1;
+  return 2;
+}
+function brValue(lr, lc) {
+  if (lr === 0 || lr === 5 || lc === 0 || lc === 5) return 0;
+  if (lr === 1 || lr === 4 || lc === 1 || lc === 4) return 1;
+  return 3;
+}
+function dataModuleCount() {
+  let n = 0;
+  for (let r = 0; r < T; r++) for (let c = 0; c < T; c++) if (!isFunc(r, c)) n++;
+  return n;
+}
+const DATA_MODULES = dataModuleCount();
+const CODED_BYTES = Math.floor(DATA_MODULES * 5 / 8);
+const N_BLOCKS = Math.floor(CODED_BYTES / BLOCK_CODE);
+const FRAME_CAP = N_BLOCKS * BLOCK_DATA;
+const PAYLOAD_CAP = FRAME_CAP - 10;
+
+// grid は状態値（0..31）＋ 特殊値： 白モジュール = -1（finder の白輪など）
+function buildC5(payload) {
+  if (payload.length > PAYLOAD_CAP) throw new Error('C5 capacity exceeded: ' + payload.length + ' > ' + PAYLOAD_CAP);
+  const frame = new Uint8Array(FRAME_CAP);
+  frame[0] = 0x43; frame[1] = 0x35; // 'C','5'
+  const dv = new DataView(frame.buffer);
+  dv.setUint32(2, payload.length);
+  frame.set(payload, 6);
+  dv.setUint32(6 + payload.length, C.qbCrc32(payload));
+  // RS ブロック化 → インターリーブ
+  const coded = new Uint8Array(N_BLOCKS * BLOCK_CODE);
+  for (let b = 0; b < N_BLOCKS; b++) {
+    const enc = RS.rsEncode(frame.subarray(b * BLOCK_DATA, (b + 1) * BLOCK_DATA));
+    for (let j = 0; j < BLOCK_CODE; j++) coded[j * N_BLOCKS + b] = enc[j];
+  }
+  // 5bit ずつモジュールへ
+  const grid = new Int16Array(T * T).fill(-1);
+  for (let r = 0; r < T; r++) for (let c = 0; c < T; c++) {
+    if (r < 8 && c < 8) { const v = finderValue(r, c); grid[r * T + c] = v === 1 ? -1 : (6 << 2) | [0, 0, 1, 2][v]; }
+    else if (r < 8 && c >= T - 8) { const v = finderValue(r, c - (T - 8)); grid[r * T + c] = v === 1 ? -1 : (6 << 2) | [0, 0, 1, 2][v]; }
+    else if (r >= T - 8 && c < 8) { const v = finderValue(r - (T - 8), c); grid[r * T + c] = v === 1 ? -1 : (6 << 2) | [0, 0, 1, 2][v]; }
+    else if (isBRArea(r, c)) { const v = brValue(r - (T - 6), c - (T - 6)); grid[r * T + c] = v === 1 ? -1 : (6 << 2) | [0, 0, 0, 2][v]; }
+    else if (isCalib(r, c)) grid[r * T + c] = (6 << 2) | (c % 4);
+  }
+  let mi = 0;
+  const totalBits = N_BLOCKS * BLOCK_CODE * 8;
+  for (let r = 0; r < T; r++) for (let c = 0; c < T; c++) {
+    if (isFunc(r, c)) continue;
+    let v = 0;
+    for (let b = 0; b < 5; b++) {
+      const bitIdx = mi * 5 + b;
+      let bit = 0;
+      if (bitIdx < totalBits) bit = (coded[Math.floor(bitIdx / 8)] >> (7 - (bitIdx % 8))) & 1;
+      v = (v << 1) | bit;
+    }
+    grid[r * T + c] = v;
+    mi++;
+  }
+  return { grid, capBytes: PAYLOAD_CAP };
+}
+function stateRGB(state) { // 描画用：状態 -> [パターン, 色RGB]
+  if (state < 0) return [0b1111, WHITE];
+  return [PATS[state >> 2], INK[state & 3]];
+}
+function renderC5(grid, dpx) {
+  const W = T * dpx;
+  const img = new Float32Array(W * W * 3).fill(255);
+  const sub = dpx / 2;
+  for (let r = 0; r < T; r++) for (let c = 0; c < T; c++) {
+    const [pat, rgb] = stateRGB(grid[r * T + c]);
+    for (let q = 0; q < 4; q++) {
+      if (!((pat >> q) & 1)) continue;
+      const qx = q & 1, qy = (q >> 1) & 1;
+      for (let y = 0; y < sub; y++) for (let x = 0; x < sub; x++) {
+        const o = (((r * dpx + qy * sub + y) * W) + c * dpx + qx * sub + x) * 3;
+        img[o] = rgb[0]; img[o + 1] = rgb[1]; img[o + 2] = rgb[2];
+      }
+    }
+  }
+  return { img, W };
+}
+
+/* ---- 復号（幾何は c4.js と同じ手順） ---- */
+function components(rgba, W, H, pred, ds) {
+  const w = Math.floor(W / ds), h = Math.floor(H / ds);
+  const mask = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const o = ((y * ds) * W + x * ds) * 4;
+    if (pred(rgba[o], rgba[o + 1], rgba[o + 2])) mask[y * w + x] = 1;
+  }
+  const seen = new Uint8Array(w * h);
+  const comps = [];
+  const stack = [];
+  for (let i = 0; i < w * h; i++) {
+    if (!mask[i] || seen[i]) continue;
+    let area = 0, sx = 0, sy = 0, minx = 1e9, maxx = -1, miny = 1e9, maxy = -1;
+    stack.length = 0; stack.push(i); seen[i] = 1;
+    while (stack.length) {
+      const cur = stack.pop();
+      const cx = cur % w, cy = Math.floor(cur / w);
+      area++; sx += cx; sy += cy;
+      if (cx < minx) minx = cx; if (cx > maxx) maxx = cx;
+      if (cy < miny) miny = cy; if (cy > maxy) maxy = cy;
+      const nb = [cur - 1, cur + 1, cur - w, cur + w];
+      const ok = [cx > 0, cx < w - 1, cy > 0, cy < h - 1];
+      for (let k = 0; k < 4; k++) { const nn = nb[k]; if (ok[k] && mask[nn] && !seen[nn]) { seen[nn] = 1; stack.push(nn); } }
+    }
+    const bw = maxx - minx + 1, bh = maxy - miny + 1;
+    comps.push({ area, cx: (sx / area + 0.5) * ds, cy: (sy / area + 0.5) * ds, fill: area / (bw * bh), bwDs: bw, bhDs: bh });
+  }
+  comps.sort((a, b) => b.area - a.area);
+  return comps;
+}
+function solveHomography(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  const n = 8;
+  for (let col = 0; col < n; col++) {
+    let piv = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+    [A[col], A[piv]] = [A[piv], A[col]]; [b[col], b[piv]] = [b[piv], b[col]];
+    const d = A[col][col];
+    if (Math.abs(d) < 1e-12) throw new Error('homography singular');
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const f = A[r][col] / d;
+      if (f === 0) continue;
+      for (let k = col; k < n; k++) A[r][k] -= f * A[col][k];
+      b[r] -= f * b[col];
+    }
+  }
+  const h = b.map((v, i) => v / A[i][i]);
+  return [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]];
+}
+function applyH(H, x, y) {
+  const w = H[2][0] * x + H[2][1] * y + 1;
+  return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w, (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
+}
+function inkOf(R, G, B) { return Math.max(255 - Math.min(R, G, B), Math.max(R, G, B) - Math.min(R, G, B)); }
+
+function decodeC5(rgba, W, H, opts) {
+  const PAT_MARGIN = (opts && opts.patMargin != null) ? opts.patMargin : 0.22;
+  const COL_MARGIN = (opts && opts.colMargin != null) ? opts.colMargin : 0.18;
+  const ds = 2;
+  const reds = components(rgba, W, H, (r, g, b) => r > 110 && r - g > 45 && r - b > 45, ds);
+  function ringFrac(cx, cy, radiusPx, pred) {
+    let hit = 0, tot = 0;
+    const steps = 24;
+    for (let s = 0; s < steps; s++) {
+      const a = (s / steps) * Math.PI * 2;
+      const x = Math.round(cx + Math.cos(a) * radiusPx), y = Math.round(cy + Math.sin(a) * radiusPx);
+      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const o = (y * W + x) * 4;
+      tot++;
+      if (pred(rgba[o], rgba[o + 1], rgba[o + 2])) hit++;
+    }
+    return tot ? hit / tot : 0;
+  }
+  const isWhitePx = (r, g, b) => r > 170 && g > 170 && b > 170;
+  const isBlackPx = (r, g, b) => r < 90 && g < 90 && b < 90;
+  const scored = [];
+  for (const c of reds.slice(0, 40)) {
+    if (c.fill < 0.72) continue;
+    const modEst = (c.bwDs * ds) / 4;
+    if (modEst < 3) continue;
+    const score = ringFrac(c.cx, c.cy, modEst * 2.6, isWhitePx) + ringFrac(c.cx, c.cy, modEst * 3.6, isBlackPx);
+    if (score > 1.1) scored.push({ ...c, modEst, ringScore: score });
+  }
+  scored.sort((a, b) => b.ringScore - a.ringScore || b.area - a.area);
+  if (scored.length < 3) throw new Error('C5: finder candidates < 3');
+  const cands = scored.slice(0, 8);
+  let best = null;
+  for (let i = 0; i < cands.length; i++) for (let j = i + 1; j < cands.length; j++) for (let k = j + 1; k < cands.length; k++) {
+    const pts = [cands[i], cands[j], cands[k]];
+    for (let v = 0; v < 3; v++) {
+      const o = pts[v], a = pts[(v + 1) % 3], bb = pts[(v + 2) % 3];
+      const d1 = Math.hypot(a.cx - o.cx, a.cy - o.cy);
+      const d2 = Math.hypot(bb.cx - o.cx, bb.cy - o.cy);
+      const dh = Math.hypot(a.cx - bb.cx, a.cy - bb.cy);
+      const legRatio = Math.max(d1, d2) / Math.min(d1, d2);
+      const hypErr = Math.abs(dh - Math.hypot(d1, d2)) / dh;
+      if (legRatio < 1.15 && hypErr < 0.12) {
+        const score = (cands[i].area + cands[j].area + cands[k].area) - (legRatio - 1) * 1000 - hypErr * 1000;
+        if (!best || score > best.score) best = { score, vertex: o, a, b: bb, leg: (d1 + d2) / 2 };
+      }
+    }
+  }
+  if (!best) throw new Error('C5: finder geometry not found');
+  const TL = best.vertex;
+  let TR, BL;
+  if (Math.abs(best.a.cx - TL.cx) > Math.abs(best.a.cy - TL.cy)) { TR = best.a; BL = best.b; } else { TR = best.b; BL = best.a; }
+  const modulePx = best.leg / (T - 8);
+  const blues = components(rgba, W, H, (r, g, b) => b > 110 && b - r > 45 && b - g > 25, ds);
+  const predBR = (() => {
+    const gx = T - 3, gy = T - 3;
+    const u = (gx - 4) / (T - 8), v = (gy - 4) / (T - 8);
+    return { x: TL.cx + (TR.cx - TL.cx) * u + (BL.cx - TL.cx) * v, y: TL.cy + (TR.cy - TL.cy) * u + (BL.cy - TL.cy) * v };
+  })();
+  let BR = null, brDist = 1e18;
+  for (const bl of blues) { const d = Math.hypot(bl.cx - predBR.x, bl.cy - predBR.y); if (d < brDist) { brDist = d; BR = bl; } }
+  const srcPts = [[4, 4], [T - 4, 4], [4, T - 4]];
+  const dstPts = [[TL.cx, TL.cy], [TR.cx, TR.cy], [BL.cx, BL.cy]];
+  if (BR && brDist < modulePx * 4) { srcPts.push([T - 3, T - 3]); dstPts.push([BR.cx, BR.cy]); }
+  let Hm;
+  if (srcPts.length === 4) Hm = solveHomography(srcPts, dstPts);
+  else Hm = solveHomography(srcPts.concat([[T - 4, T - 4]]), dstPts.concat([[TR.cx + BL.cx - TL.cx, TR.cy + BL.cy - TL.cy]]));
+
+  function sampleAt(gx, gy, radiusModules) {
+    const [px, py] = applyH(Hm, gx, gy);
+    const half = modulePx * radiusModules;
+    let sr = 0, sg = 0, sb = 0, cnt = 0;
+    for (let y = Math.floor(py - half); y <= py + half; y++) for (let x = Math.floor(px - half); x <= px + half; x++) {
+      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const o = (y * W + x) * 4;
+      sr += rgba[o]; sg += rgba[o + 1]; sb += rgba[o + 2]; cnt++;
+    }
+    if (!cnt) return [255, 255, 255];
+    return [sr / cnt, sg / cnt, sb / cnt];
+  }
+  function quadrantSamples(r, c) {
+    return [0, 1, 2, 3].map(q => sampleAt(c + 0.25 + 0.5 * (q & 1), r + 0.25 + 0.5 * ((q >> 1) & 1), 0.11));
+  }
+  // 校正：校正帯は全象限インク×4色。プロトタイプとインク基準を作る
+  const protoAcc = INK.map(() => [0, 0, 0, 0]);
+  const inkVals = [];
+  for (const r of [9, 12]) for (let c = 10; c <= T - 11; c++) {
+    const qs = quadrantSamples(r, c);
+    const ci = c % 4;
+    for (const s of qs) {
+      const wgt = inkOf(s[0], s[1], s[2]);
+      inkVals.push(wgt);
+      const w2 = wgt * wgt;
+      protoAcc[ci][0] += s[0] * w2; protoAcc[ci][1] += s[1] * w2; protoAcc[ci][2] += s[2] * w2; protoAcc[ci][3] += w2;
+    }
+  }
+  const proto = protoAcc.map(a => a[3] ? [a[0] / a[3], a[1] / a[3], a[2] / a[3]] : null);
+  for (let i = 0; i < 4; i++) if (!proto[i]) throw new Error('C5: calibration failed for color ' + i);
+  inkVals.sort((a, b) => a - b);
+  const inkMed = inkVals[Math.floor(inkVals.length / 2)];
+  const inkThresh = Math.max(28, inkMed * 0.42);
+
+  // データモジュールの分類
+  const symbols = new Uint8Array(DATA_MODULES);
+  const erasureSyms = [];
+  let mi = 0, patErrHint = 0;
+  for (let r = 0; r < T; r++) for (let c = 0; c < T; c++) {
+    if (isFunc(r, c)) continue;
+    const qs = quadrantSamples(r, c);
+    const qInk = qs.map(s => inkOf(s[0], s[1], s[2]));
+    const qBit = qInk.map(v => v >= inkThresh ? 1 : 0);
+    let bp = -1, bd = 1e18, bd2 = 1e18;
+    for (let pi = 0; pi < 8; pi++) {
+      let d = 0;
+      for (let q = 0; q < 4; q++) {
+        const expectInk = (PATS[pi] >> q) & 1;
+        const target = expectInk ? inkMed : 0;
+        d += (qInk[q] - target) ** 2;
+      }
+      if (d < bd) { bd2 = bd; bd = d; bp = pi; } else if (d < bd2) bd2 = d;
+    }
+    // 色：インク象限の ink^2 重み平均
+    let sr = 0, sg = 0, sb = 0, cw = 0;
+    for (let q = 0; q < 4; q++) {
+      if (!qBit[q]) continue;
+      const w2 = qInk[q] * qInk[q];
+      sr += qs[q][0] * w2; sg += qs[q][1] * w2; sb += qs[q][2] * w2; cw += w2;
+    }
+    let bc = 0, cd1 = 1e18, cd2 = 1e18;
+    if (cw > 0) {
+      const mean = [sr / cw, sg / cw, sb / cw];
+      for (let ci = 0; ci < 4; ci++) {
+        const d = (mean[0] - proto[ci][0]) ** 2 + (mean[1] - proto[ci][1]) ** 2 + (mean[2] - proto[ci][2]) ** 2;
+        if (d < cd1) { cd2 = cd1; cd1 = d; bc = ci; } else if (d < cd2) cd2 = d;
+      }
+    }
+    symbols[mi] = (bp << 2) | bc;
+    // 確信度：パターンは距離比、色は距離比。低いモジュールは消失候補
+    const patMargin = bd2 > 0 ? (bd2 - bd) / bd2 : 1;
+    const colMargin = cd2 > 0 ? (cd2 - cd1) / cd2 : 1;
+    if (patMargin < PAT_MARGIN || colMargin < COL_MARGIN) erasureSyms.push(mi);
+    mi++;
+  }
+  // 5bit -> バイト列（インターリーブ済みストリーム）
+  const codedRx = new Uint8Array(N_BLOCKS * BLOCK_CODE);
+  for (let i = 0; i < DATA_MODULES; i++) {
+    for (let b = 0; b < 5; b++) {
+      const bitIdx = i * 5 + b;
+      const bytePos = Math.floor(bitIdx / 8);
+      if (bytePos >= codedRx.length) break;
+      const bit = (symbols[i] >> (4 - b)) & 1;
+      if (bit) codedRx[bytePos] |= 1 << (7 - (bitIdx % 8));
+    }
+  }
+  // 消失：シンボル -> バイト位置（最大2つ）-> ブロック別位置
+  const blockErasures = Array.from({ length: N_BLOCKS }, () => new Set());
+  for (const si of erasureSyms) {
+    for (let b = 0; b < 5; b++) {
+      const bitIdx = si * 5 + b;
+      const q = Math.floor(bitIdx / 8);
+      if (q >= N_BLOCKS * BLOCK_CODE) continue;
+      blockErasures[q % N_BLOCKS].add(Math.floor(q / N_BLOCKS));
+    }
+  }
+  // 逆インターリーブ + RS 復号
+  const frameRx = new Uint8Array(FRAME_CAP);
+  for (let b = 0; b < N_BLOCKS; b++) {
+    const word = new Uint8Array(BLOCK_CODE);
+    for (let j = 0; j < BLOCK_CODE; j++) word[j] = codedRx[j * N_BLOCKS + b];
+    let era = [...blockErasures[b]];
+    if (era.length > RS.NSYM) era = era.slice(0, RS.NSYM);
+    const dec = RS.decode(word, era);
+    if (!dec) throw new Error('C5: RS decode failed at block ' + b + ' (erasures ' + era.length + ')');
+    frameRx.set(dec, b * BLOCK_DATA);
+  }
+  if (frameRx[0] !== 0x43 || frameRx[1] !== 0x35) throw new Error('C5: bad magic');
+  const dv = new DataView(frameRx.buffer, frameRx.byteOffset, frameRx.byteLength);
+  const len = dv.getUint32(2);
+  if (10 + len > FRAME_CAP) throw new Error('C5: bad length ' + len);
+  const payload = frameRx.slice(6, 6 + len);
+  if (C.qbCrc32(payload) !== dv.getUint32(6 + len)) throw new Error('C5: CRC mismatch');
+  return payload;
+}
+
+var QB_C5 = { buildC5, renderC5, decodeC5, PAYLOAD_CAP };
+
 </script>
 <script>
 "use strict";
@@ -14196,6 +14697,25 @@ $("btnMake").onclick = function () {
   if (!text) { st.textContent = "テキストが空です"; return; }
   var frame = qbPack(text, QB_SEED, QB_DICT);
   var chars = [...text].length;
+  if ($("chkC5") && $("chkC5").checked) {
+    if (frame.length > QB_C5.PAYLOAD_CAP) {
+      st.innerHTML = "<span class='ng'>色コードの上限を超えています</span>\n符号化後 " + frame.length + " バイト（色コードの上限 " + QB_C5.PAYLOAD_CAP + " バイト）。チェックを外して灯台方式で送るか、文章を分けてください";
+      return;
+    }
+    var built = QB_C5.buildC5(frame);
+    var rr = QB_C5.renderC5(built.grid, 8);
+    var cv5 = document.createElement("canvas");
+    cv5.width = rr.W; cv5.height = rr.W;
+    cv5.style.width = "100%"; cv5.style.maxWidth = "560px"; cv5.style.imageRendering = "pixelated";
+    var cx5 = cv5.getContext("2d");
+    var id5 = cx5.createImageData(rr.W, rr.W);
+    for (var pi = 0; pi < rr.W * rr.W; pi++) { id5.data[pi * 4] = rr.img[pi * 3]; id5.data[pi * 4 + 1] = rr.img[pi * 3 + 1]; id5.data[pi * 4 + 2] = rr.img[pi * 3 + 2]; id5.data[pi * 4 + 3] = 255; }
+    cx5.putImageData(id5, 0, 0);
+    $("qrwrap").appendChild(cv5);
+    st.innerHTML = "<span class='ok'>作成しました（色コード C5）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト\n受け側は、この画面を撮影した写真から読み取ってください（受取画面の「写真から読み取る」）。画面の明るさを最大にしてください";
+    qbHistAdd("send", "色コード C5", frame.length, true, text); qbResendSet(text);
+    return;
+  }
   if (frame.length <= LIMIT) {
     var n = qbDrawQR(frame, $("qrwrap"));
     st.innerHTML = "<span class='ok'>作成しました（1枚）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト / QR " + n + "×" + n + "\n相手の画面でこのQRを読み取ってください。画面の明るさを最大にすると読み取りやすくなります";
@@ -14335,7 +14855,11 @@ $("photo").onchange = function () {
     var data = ctx.getImageData(0, 0, cv.width, cv.height);
     var res = jsQR(data.data, data.width, data.height);
     if (res && res.binaryData && res.binaryData.length) handleBytes(new Uint8Array(res.binaryData), st);
-    else st.innerHTML = "<span class='ng'>QRを見つけられませんでした</span>\nQR全体が写った、明るい写真で試してください";
+    else {
+      var c5done = false;
+      try { var pl5 = QB_C5.decodeC5(data.data, data.width, data.height); handleBytes(pl5, st); c5done = true; } catch (e5p) {}
+      if (!c5done) st.innerHTML = "<span class='ng'>QRも色コードも見つけられませんでした</span>\n全体が写った、明るい写真で試してください";
+    }
     URL.revokeObjectURL(img.src);
   };
   img.src = URL.createObjectURL(f);
@@ -14386,7 +14910,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -14395,7 +14919,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.0.1 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.1 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -14542,6 +15066,16 @@ $("btnTest").onclick = function () {
     if (top9) qbHistDel(top9.t);
     QB_REPORT.items[9] = { label: "履歴の記録と削除", result: ok9 ? "合格" : "不合格", detail: ok9 ? "抜粋とハッシュを記録し、削除できた" : "記録の読み戻しが一致しない" };
   } catch (e) { QB_REPORT.items[9] = { label: "履歴の記録と削除", result: "不合格", detail: e.message }; }
+  try {
+    var fr10 = qbPack("色コードの自己テスト。C5の往復確認。", QB_SEED, QB_DICT);
+    var b10 = QB_C5.buildC5(fr10);
+    var r10 = QB_C5.renderC5(b10.grid, 4);
+    var rgba10 = new Uint8ClampedArray(r10.W * r10.W * 4);
+    for (var j10 = 0; j10 < r10.W * r10.W; j10++) { rgba10[j10 * 4] = r10.img[j10 * 3]; rgba10[j10 * 4 + 1] = r10.img[j10 * 3 + 1]; rgba10[j10 * 4 + 2] = r10.img[j10 * 3 + 2]; rgba10[j10 * 4 + 3] = 255; }
+    var back10 = QB_C5.decodeC5(rgba10, r10.W, r10.W);
+    var ok10 = back10.length === fr10.length && back10.every(function (v, i) { return v === fr10[i]; });
+    QB_REPORT.items[10] = { label: "色コード（C5）の往復", result: ok10 ? "合格" : "不合格", detail: fr10.length + "バイト" };
+  } catch (e) { QB_REPORT.items[10] = { label: "色コード（C5）の往復", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
