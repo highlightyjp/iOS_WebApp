@@ -6,25 +6,29 @@
 <title>QRブリッジ</title>
 <style>
   body { font-family: sans-serif; margin: 0; padding: 16px; color: #1c2430;
-    background: linear-gradient(160deg, #dbe7f3 0%, #eef0e9 55%, #f6efe4 100%);
+    background: linear-gradient(155deg, #b9d2ea 0%, #dbe7f3 34%, #e9efe4 62%, #f3e8d2 100%);
     background-attachment: fixed; min-height: 100vh; box-sizing: border-box; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .ver { color: #4a5568; font-size: 12px; margin-bottom: 12px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-  .tabs button { flex: 1; min-width: 56px; padding: 12px 4px; font-size: 15px;
-    background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.8);
-    border-radius: 14px; -webkit-backdrop-filter: blur(14px) saturate(1.4);
-    backdrop-filter: blur(14px) saturate(1.4); box-shadow: 0 2px 8px rgba(30,45,70,.10); }
+  .ver { color: #4a5568; font-size: 12.5px; margin-bottom: 2px; }
+  .spec { color: #4a5568; font-size: 12px; margin-bottom: 12px; }
+  .spec summary { cursor: pointer; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: nowrap; }
+  .tabs button { flex: 1; min-width: 0; padding: 12px 2px; font-size: 13px; white-space: nowrap;
+    color: #1c2430; background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.9);
+    border-radius: 14px; -webkit-backdrop-filter: blur(16px) saturate(1.6);
+    backdrop-filter: blur(16px) saturate(1.6); box-shadow: 0 2px 8px rgba(30,45,70,.12); }
+  .tabs button.active { background: rgba(28,38,56,.94); color: #fff; font-weight: 700;
+    border-color: rgba(28,38,56,.9); box-shadow: 0 3px 10px rgba(30,45,70,.25); }
   textarea { width: 100%; box-sizing: border-box; font-size: 15px; border-radius: 12px;
-    border: 1px solid #aeb9c4; background: rgba(255,255,255,.92); padding: 8px; }
+    border: 1px solid #aeb9c4; background: #ffffff; padding: 8px; }
   .big { width: 100%; padding: 14px; font-size: 17px; margin: 8px 0; border-radius: 14px;
     background: rgba(28,38,56,.92); color: #fff; border: 1px solid rgba(28,38,56,.9); }
-  .sub { padding: 10px; font-size: 15px; border-radius: 12px;
-    background: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.8);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .sub { padding: 10px; font-size: 15px; border-radius: 12px; color: #1c2430;
+    background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.9);
+    -webkit-backdrop-filter: blur(12px) saturate(1.5); backdrop-filter: blur(12px) saturate(1.5); }
   #qrwrap { text-align: center; margin: 12px 0; background: #ffffff; border-radius: 8px; padding: 8px; }
   #qrwrap canvas { width: min(92vw, 560px); height: auto; image-rendering: pixelated; }
-  .status { white-space: pre-wrap; background: rgba(255,255,255,.68); padding: 10px;
+  .status { white-space: pre-wrap; background: rgba(255,255,255,.97); padding: 10px;
     font-size: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.8);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); margin: 8px 0; }
   .ng { color: #b00020; font-weight: bold; }
@@ -33,16 +37,17 @@
   .hidden { display: none; }
   .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
   .row select { flex: 1; padding: 10px; font-size: 15px; border-radius: 10px; }
-  .histItem { background: rgba(255,255,255,.68); border: 1px solid rgba(255,255,255,.8);
+  .histItem { background: rgba(255,255,255,.97); border: 1px solid rgba(210,218,226,.9);
     border-radius: 12px; padding: 8px 10px; margin: 8px 0; font-size: 13px; white-space: pre-wrap; }
   .histItem button { float: right; }
 </style>
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver">版 2.2 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）／色コード最大 11,701バイト</div>
+<div class="ver"><span style="white-space:nowrap">版 2.3</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約11,700バイト</span></div>
+<details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 11,701バイト（C5 v2）</details>
 <div class="tabs">
-  <button id="tabSend">送る</button>
+  <button id="tabSend" class="active">送る</button>
   <button id="tabRecv">受け取る</button>
   <button id="tabTest">自己テスト</button>
   <button id="tabPrompt">Copilot用</button>
@@ -93,14 +98,14 @@
 
 <section id="paneTest" class="hidden">
   <button class="big" id="btnTest">テストを実行する</button>
-  <button class="big" id="btnShowTestQr">テストQRを表示する</button>
+  <button class="sub" id="btnShowTestQr" style="width:100%">テストQRを表示する</button>
   <div id="testQrWrap" class="hidden">
     <p>テストQR 1（短文）を受取画面で読み取ると、読み取りテストになります。別の画面や印刷で表示して、カメラ経路を確認してください。</p>
     <div id="testQr1" style="text-align:center"></div>
     <p>テストQR 2（中文）</p>
     <div id="testQr2" style="text-align:center"></div>
   </div>
-  <button class="big" id="btnScanTest">テストQRを読み取る（受取画面へ）</button>
+  <button class="sub" id="btnScanTest" style="width:100%">テストQRを読み取る（受取画面へ）</button>
   <div class="status" id="testStatus">未実行</div>
   <textarea id="resultBox" readonly rows="11" class="hidden" style="user-select:text;-webkit-user-select:text"></textarea>
   <div id="testBar" class="hidden" style="position:sticky;bottom:0;background:#fff;padding:8px 0;display:flex;gap:8px">
@@ -14764,6 +14769,78 @@ function decodeC5(rgba, W, H, opts) {
 return { buildC5, renderC5, decodeC5, PAYLOAD_CAP };
 
 })();
+var QB_QC = (function () {
+'use strict';
+/* qc-stream.js — C5 ストリーム（色コードの灯台方式）試作
+ * 任意のバイト列を大きなブロック（C5容量）に割り、RLNC で混ぜて
+ * C5 シンボルとして流す。受け側は C5 ペイロードを集めて復元する。
+ * フレーム形式（C5ペイロード内、全てBE）:
+ *  'Q','C' + 版1 + msgId u32 + seed u32 + K u16 + blockSize u16
+ *  + totalLen u32 + ブロックデータ + CRC16(末尾, 先行全バイト対象) */
+const C5 = QB_C5;
+const R = QB_RLNC;
+const F = QB_FOUNTAIN;
+
+const QC_HDR = 19;
+const QC_BLOCK = C5.PAYLOAD_CAP - QC_HDR - 2;
+
+function splitBlocks(frame, blockSize) {
+  const K = Math.max(1, Math.ceil(frame.length / blockSize));
+  const blocks = [];
+  for (let i = 0; i < K; i++) {
+    const b = new Uint8Array(blockSize);
+    b.set(frame.subarray(i * blockSize, Math.min(frame.length, (i + 1) * blockSize)));
+    blocks.push(b);
+  }
+  return blocks;
+}
+function makeQCSender(frame) {
+  const blocks = splitBlocks(frame, QC_BLOCK);
+  const K = blocks.length;
+  const nextFrame = R.makeRLNCEncoder(blocks, QC_BLOCK);
+  const msgId = F.crc32(frame);
+  return {
+    K, blockSize: QC_BLOCK, totalLen: frame.length, msgId,
+    next() {
+      const f = nextFrame();
+      const out = new Uint8Array(QC_HDR + QC_BLOCK + 2);
+      const dv = new DataView(out.buffer);
+      out[0] = 0x51; out[1] = 0x43; out[2] = 1;
+      dv.setUint32(3, msgId); dv.setUint32(7, f.seed);
+      dv.setUint16(11, K); dv.setUint16(13, QC_BLOCK); dv.setUint32(15, frame.length);
+      out.set(f.payload, QC_HDR);
+      dv.setUint16(QC_HDR + QC_BLOCK, F.crc16ccitt(out.subarray(0, QC_HDR + QC_BLOCK)));
+      return out;
+    }
+  };
+}
+function parseQC(p) {
+  if (!p || p.length < QC_HDR + 2 || p[0] !== 0x51 || p[1] !== 0x43 || p[2] !== 1) return null;
+  const dv = new DataView(p.buffer, p.byteOffset, p.byteLength);
+  const blockSize = dv.getUint16(13);
+  if (p.length < QC_HDR + blockSize + 2) return null;
+  if (dv.getUint16(QC_HDR + blockSize) !== F.crc16ccitt(p.subarray(0, QC_HDR + blockSize))) return { bad: true };
+  return { msgId: dv.getUint32(3), seed: dv.getUint32(7), K: dv.getUint16(11), blockSize, totalLen: dv.getUint32(15), data: p.subarray(QC_HDR, QC_HDR + blockSize) };
+}
+function makeQCSession(K, blockSize, totalLen) {
+  const dec = R.makeRLNCDecoder(K, blockSize);
+  return {
+    add(p) {
+      const q = parseQC(p);
+      if (!q) return null;
+      if (q.bad) return { bad: true };
+      const doneNow = dec.add({ seed: q.seed, payload: q.data });
+      if (!doneNow) return { progress: true, count: dec.count(), K };
+      const blocks = dec.result();
+      const out = new Uint8Array(K * blockSize);
+      blocks.forEach((b, i) => out.set(b, i * blockSize));
+      return { done: true, frame: out.subarray(0, totalLen) };
+    }
+  };
+}
+return { makeQCSender, makeQCSession, parseQC, QC_BLOCK };
+
+})();
 </script>
 <script>
 "use strict";
@@ -14771,6 +14848,8 @@ var $ = function (id) { return document.getElementById(id); };
 function show(pane) {
   if (typeof qbCarStop === "function") qbCarStop();
   ["paneSend", "paneRecv", "paneTest", "panePrompt", "paneHist"].forEach(function (p) { $(p).classList.toggle("hidden", p !== pane); });
+  var tabOf = { paneSend: "tabSend", paneRecv: "tabRecv", paneTest: "tabTest", panePrompt: "tabPrompt", paneHist: "tabHist" };
+  Object.keys(tabOf).forEach(function (p) { $(tabOf[p]).classList.toggle("active", p === pane); });
 }
 $("tabSend").onclick = function () { show("paneSend"); };
 $("tabRecv").onclick = function () { show("paneRecv"); };
@@ -15273,7 +15352,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -15282,7 +15361,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.2 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.3 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -15439,6 +15518,24 @@ $("btnTest").onclick = function () {
     var ok10 = back10.length === fr10.length && back10.every(function (v, i) { return v === fr10[i]; });
     QB_REPORT.items[10] = { label: "色コード（C5）の往復", result: ok10 ? "合格" : "不合格", detail: fr10.length + "バイト" };
   } catch (e) { QB_REPORT.items[10] = { label: "色コード（C5）の往復", result: "不合格", detail: e.message }; }
+  try {
+    var plen11 = 40000, pay11 = new Uint8Array(plen11), s11 = 12345;
+    for (var i11 = 0; i11 < plen11; i11++) { s11 = (s11 * 1103515245 + 12345) & 0x7fffffff; pay11[i11] = (s11 >> 8) & 255; }
+    var snd11 = QB_QC.makeQCSender(pay11);
+    var ses11 = QB_QC.makeQCSession(snd11.K, snd11.blockSize, snd11.totalLen);
+    var frs11 = []; for (var f11 = 0; f11 < snd11.K + 1; f11++) frs11.push(snd11.next());
+    var done11 = null, used11 = 0;
+    for (var o11 = frs11.length - 1; o11 >= 0 && !done11; o11--) {
+      var bq11 = QB_C5.buildC5(frs11[o11]);
+      var rq11 = QB_C5.renderC5(bq11.grid, 4);
+      var rgba11 = new Uint8ClampedArray(rq11.W * rq11.W * 4);
+      for (var j11 = 0; j11 < rq11.W * rq11.W; j11++) { rgba11[j11 * 4] = rq11.img[j11 * 3]; rgba11[j11 * 4 + 1] = rq11.img[j11 * 3 + 1]; rgba11[j11 * 4 + 2] = rq11.img[j11 * 3 + 2]; rgba11[j11 * 4 + 3] = 255; }
+      var rr11 = ses11.add(QB_C5.decodeC5(rgba11, rq11.W, rq11.W)); used11++;
+      if (rr11 && rr11.done) done11 = rr11.frame;
+    }
+    var ok11 = !!done11 && done11.length === pay11.length && done11.every(function (v, i) { return v === pay11[i]; });
+    QB_REPORT.items[11] = { label: "色コードストリーム（QC）の往復", result: ok11 ? "合格" : "不合格", detail: plen11 + "バイト／K=" + snd11.K + "、投入 " + used11 + " 枚で復元" };
+  } catch (e) { QB_REPORT.items[11] = { label: "色コードストリーム（QC）の往復", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
