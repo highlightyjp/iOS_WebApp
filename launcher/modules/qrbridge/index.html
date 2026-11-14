@@ -40,7 +40,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver">版 2.0 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
+<div class="ver">版 2.0.1 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
 <div class="tabs">
   <button id="tabSend">送る</button>
   <button id="tabRecv">受け取る</button>
@@ -14386,7 +14386,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -14395,7 +14395,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.0 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.0.1 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
