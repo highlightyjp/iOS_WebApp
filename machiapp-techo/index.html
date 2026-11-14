@@ -10,242 +10,127 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="マチアプ手帳">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F2F5F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1A16" media="(prefers-color-scheme: dark)">
 <style>
-/*
- * Design tokens (colors, elevation, font stack, focus ring) are taken from the
- * Digital Agency Design System (DADS), design-system-example-components-html
- * src/global.css, site version v2.18.2 (checked 2026-10-21). Values are used and
- * adapted here (dark theme is derived from DADS primitives; DADS defines none).
- * 出典: デジタル庁デザインシステム（β版）https://design.digital.go.jp/dads/
- *
- * MIT License
- * Copyright (c) 2025 デジタル庁
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
 :root {
   box-sizing: border-box;
-  --color-neutral-white: #ffffff;
-  --color-neutral-black: #000000;
-  --color-neutral-solid-gray-50: #f2f2f2;
-  --color-neutral-solid-gray-100: #e6e6e6;
-  --color-neutral-solid-gray-200: #cccccc;
-  --color-neutral-solid-gray-300: #b3b3b3;
-  --color-neutral-solid-gray-420: #949494;
-  --color-neutral-solid-gray-536: #767676;
-  --color-neutral-solid-gray-600: #666666;
-  --color-neutral-solid-gray-700: #4d4d4d;
-  --color-neutral-solid-gray-800: #333333;
-  --color-neutral-solid-gray-900: #1a1a1a;
-  --color-primitive-blue-50: #e8f1fe;
-  --color-primitive-blue-200: #c5d7fb;
-  --color-primitive-blue-300: #9db7f9;
-  --color-primitive-blue-800: #0031d8;
-  --color-primitive-blue-900: #0017c1;
-  --color-primitive-blue-1000: #00118f;
-  --color-primitive-blue-1200: #000060;
-  --color-primitive-green-50: #e6f5ec;
-  --color-primitive-green-200: #9bd4b5;
-  --color-primitive-green-800: #197a4b;
-  --color-primitive-green-1200: #032213;
-  --color-primitive-yellow-50: #fbf5e0;
-  --color-primitive-yellow-200: #ffe380;
-  --color-primitive-yellow-300: #ffd43d;
-  --color-primitive-yellow-1000: #806300;
-  --color-primitive-yellow-1200: #604b00;
-  --color-primitive-red-50: #fdeeee;
-  --color-primitive-red-200: #ffbbbb;
-  --color-primitive-red-900: #ce0000;
-  --color-primitive-red-1200: #620000;
-  --font-family-sans: "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
-  --elevation-1: 0 2px 8px 1px rgba(0, 0, 0, 0.1), 0 1px 5px 0 rgba(0, 0, 0, 0.3);
-  --elevation-3: 0 4px 16px 3px rgba(0, 0, 0, 0.1), 0 1px 6px 0 rgba(0, 0, 0, 0.3);
-
-  --bg: var(--color-neutral-solid-gray-50);
-  --surface: var(--color-neutral-white);
-  --ink: var(--color-neutral-solid-gray-900);
-  --muted: var(--color-neutral-solid-gray-600);
-  --line: var(--color-neutral-solid-gray-200);
-  --field-border: var(--color-neutral-solid-gray-536);
-  --primary: var(--color-primitive-blue-800);
-  --on-primary: var(--color-neutral-white);
-  --primary-ink: var(--color-primitive-blue-1000);
-  --danger: var(--color-primitive-red-900);
-  --scrim: rgba(0, 0, 0, 0.4);
-  --ok-bg: var(--color-primitive-green-50); --ok-fg: var(--color-primitive-green-800);
-  --warn-bg: var(--color-primitive-yellow-50); --warn-fg: var(--color-primitive-yellow-1000);
-  --err-bg: var(--color-primitive-red-50); --err-fg: var(--color-primitive-red-900);
-  --info-bg: var(--color-primitive-blue-50); --info-fg: var(--color-primitive-blue-1000);
+  --bg: #F2F5F1;
+  --surface: #FFFFFF;
+  --ink: #16302A;
+  --muted: #64756D;
+  --line: #D8E0DA;
+  --accent: #06C755;
+  --on-accent: #062B17;
+  --danger: #B3261E;
+  --warn: #8A5A00;
+  --btn-bg: #16302A;
+  --btn-fg: #F2F5F1;
+  --scrim: rgba(10, 24, 19, .45);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: var(--color-neutral-solid-gray-900);
-    --surface: var(--color-neutral-solid-gray-800);
-    --ink: var(--color-neutral-solid-gray-50);
-    --muted: var(--color-neutral-solid-gray-300);
-    --line: var(--color-neutral-solid-gray-700);
-    --field-border: var(--color-neutral-solid-gray-420);
-    --primary: var(--color-primitive-blue-300);
-    --on-primary: var(--color-neutral-solid-gray-900);
-    --primary-ink: var(--color-primitive-blue-200);
-    --danger: var(--color-primitive-red-200);
-    --scrim: rgba(0, 0, 0, 0.6);
-    --ok-bg: var(--color-primitive-green-1200); --ok-fg: var(--color-primitive-green-200);
-    --warn-bg: var(--color-primitive-yellow-1200); --warn-fg: var(--color-primitive-yellow-200);
-    --err-bg: var(--color-primitive-red-1200); --err-fg: var(--color-primitive-red-200);
-    --info-bg: var(--color-primitive-blue-1200); --info-fg: var(--color-primitive-blue-200);
+    --bg: #0E1A16; --surface: #16251F; --ink: #E6F0EA; --muted: #93A69C; --line: #26382F;
+    --on-accent: #04200F; --danger: #FF8A80; --warn: #F2C26B;
+    --btn-bg: #E6F0EA; --btn-fg: #0E1A16; --scrim: rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: var(--color-neutral-solid-gray-900);
-  --surface: var(--color-neutral-solid-gray-800);
-  --ink: var(--color-neutral-solid-gray-50);
-  --muted: var(--color-neutral-solid-gray-300);
-  --line: var(--color-neutral-solid-gray-700);
-  --field-border: var(--color-neutral-solid-gray-420);
-  --primary: var(--color-primitive-blue-300);
-  --on-primary: var(--color-neutral-solid-gray-900);
-  --primary-ink: var(--color-primitive-blue-200);
-  --danger: var(--color-primitive-red-200);
-  --scrim: rgba(0, 0, 0, 0.6);
-  --ok-bg: var(--color-primitive-green-1200); --ok-fg: var(--color-primitive-green-200);
-  --warn-bg: var(--color-primitive-yellow-1200); --warn-fg: var(--color-primitive-yellow-200);
-  --err-bg: var(--color-primitive-red-1200); --err-fg: var(--color-primitive-red-200);
-  --info-bg: var(--color-primitive-blue-1200); --info-fg: var(--color-primitive-blue-200);
+  --bg: #0E1A16; --surface: #16251F; --ink: #E6F0EA; --muted: #93A69C; --line: #26382F;
+  --on-accent: #04200F; --danger: #FF8A80; --warn: #F2C26B;
+  --btn-bg: #E6F0EA; --btn-fg: #0E1A16; --scrim: rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: inherit; }
-html { height: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+html { height: 100%; }
 body {
-  margin: 0; min-height: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; touch-action: manipulation; background: var(--bg); color: var(--ink);
-  font-family: var(--font-family-sans);
-  font-size: 16px; line-height: 1.7; letter-spacing: 0.02em; -webkit-text-size-adjust: 100%;
+  margin: 0; min-height: 100%; background: var(--bg); color: var(--ink);
+  font-family: -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  font-size: 16px; line-height: 1.6; -webkit-text-size-adjust: 100%;
 }
-button, input, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible {
-  outline: 0.25rem solid var(--color-neutral-black);
-  outline-offset: 0.125rem;
-  border-radius: 0.25rem;
-  box-shadow: 0 0 0 0.125rem var(--color-primitive-yellow-300);
-}
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 [hidden] { display: none !important; }
-a { color: var(--primary-ink); }
 
-.wrap { width: 100%; min-width: 0; max-width: 560px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(168px + env(safe-area-inset-bottom, 0px)); }
-.top { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
-h1 { min-width: 0; margin: 0; font-size: 28px; font-weight: 700; line-height: 1.5; }
-.top-r { display: flex; align-items: baseline; gap: 16px; }
-.count { font-size: 14px; color: var(--muted); white-space: nowrap; }
-.txt { background: none; border: 0; padding: 8px 0; min-height: 44px; font-weight: 500; font-size: 14px; color: var(--primary-ink); text-decoration: underline; text-underline-offset: 3px; }
-h2 { margin: 24px 0 8px; font-size: 18px; font-weight: 700; line-height: 1.5; }
-.mini { overflow-wrap: anywhere; margin: 0 0 8px; font-size: 14px; color: var(--muted); }
-.mini.warn { color: var(--warn-fg); font-weight: 700; }
-.banner { overflow-wrap: anywhere; margin: 0 0 16px; padding: 16px; border: 2px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; }
-.banner strong { display: block; margin-bottom: 4px; }
-.banner.err { border-color: var(--err-fg); }
-.banner.warn { border-color: var(--warn-fg); }
-.banner.info { border-color: var(--info-fg); }
-.subactions { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 8px; }
-
-.seg { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
-.segb { min-height: 44px; padding: 0 16px; border: 2px solid var(--field-border); border-radius: 22px; background: var(--surface); font-size: 14px; font-weight: 700; }
-.segb[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-.find { margin-bottom: 8px; }
+.wrap { max-width: 560px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(170px + env(safe-area-inset-bottom, 0px)); }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: .02em; line-height: 1.2; }
+.top-r { display: flex; align-items: baseline; gap: 14px; }
+.count { font-size: 15px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.txt { background: none; border: 0; padding: 8px 0; min-height: 44px; font-weight: 500; font-size: 15px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.banner { margin: 0 0 16px; padding: 12px 14px; border: 1.5px solid var(--warn); border-radius: 12px; font-size: 14px; color: var(--ink); }
+.banner strong { display: block; margin-bottom: 2px; }
+h2 { margin: 28px 0 10px; font-size: 18px; font-weight: 700; }
+h2:first-child { margin-top: 0; }
+.subactions { display: flex; gap: 20px; margin-bottom: 4px; }
 
 .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.row { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.tile { flex: 0 0 48px; width: 48px; height: 48px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 700; font-size: 16px; text-align: center; line-height: 1.2; }
-.main { flex: 1 1 0; min-width: 0; max-width: 100%; overflow: hidden; min-height: 44px; text-align: left; background: none; border: 0; padding: 8px 0; }
-.name { display: block; font-size: 16px; font-weight: 700; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 14px; color: var(--muted); }
+.row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.tile { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 700; font-size: 17px; text-align: center; line-height: 1.15; }
+.tile small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+.main { flex: 1 1 auto; min-width: 0; text-align: left; background: none; border: 0; padding: 4px 0; }
+.name { display: block; font-size: 17px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; color: var(--muted); }
 .line1 { display: block; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hint { display: block; font-size: 14px; color: var(--muted); }
-.warnline { display: block; font-size: 14px; color: var(--warn-fg); font-weight: 700; }
-.wrapline { display: block; font-size: 14px; overflow-wrap: anywhere; }
-.badge { display: inline-block; padding: 0 8px; border: 1px solid currentColor; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 1.7; white-space: nowrap; }
-.badge.ok { background: var(--ok-bg); color: var(--ok-fg); }
-.badge.warn { background: var(--warn-bg); color: var(--warn-fg); }
-.badge.err { background: var(--err-bg); color: var(--err-fg); }
-.badge.info { background: var(--info-bg); color: var(--info-fg); }
-.badge.plain { color: var(--muted); }
-.qbadge { flex: 0 0 72px; text-align: center; }
-.go { flex: 0 0 auto; min-height: 44px; min-width: 72px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; border-radius: 22px; background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 14px; text-decoration: none; border: 0; }
+.hint { display: block; font-size: 13px; color: var(--muted); }
+.warn { display: block; font-size: 13px; color: var(--warn); font-weight: 500; }
+.chip { display: inline-block; padding: 0 9px; border: 1.5px solid var(--line); border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--ink); line-height: 1.7; }
+.chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.go { flex: 0 0 auto; min-height: 44px; min-width: 76px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; border-radius: 22px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 15px; text-decoration: none; border: 0; }
 .go[aria-disabled="true"] { background: var(--line); color: var(--muted); pointer-events: none; }
 .empty { padding: 48px 8px; text-align: center; color: var(--muted); }
 .empty strong { display: block; color: var(--ink); font-size: 18px; margin-bottom: 8px; }
-.group-h { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 0 8px; font-size: 16px; font-weight: 700; }
-.group-h span { font-weight: 400; color: var(--muted); font-size: 14px; }
-.kv { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-.kv b { font-size: 16px; }
+.group-h { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 0 6px; font-size: 15px; font-weight: 700; }
+.group-h span { font-weight: 500; color: var(--muted); font-size: 14px; }
 
-.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line); display: flex; padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0px)); }
-.tab { flex: 1 1 0; min-width: 0; min-height: 56px; border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line); display: flex; padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
+.tab { flex: 1 1 0; min-height: 52px; border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 500; color: var(--muted); }
 .tab svg { width: 24px; height: 24px; }
-.tab[aria-current="page"] { color: var(--primary-ink); font-weight: 700; }
-.fab { position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 9; min-height: 56px; padding: 0 24px; border: 0; border-radius: 28px; background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; box-shadow: var(--elevation-3); }
+.tab[aria-current="page"] { color: var(--ink); font-weight: 700; }
+.tab[aria-current="page"] svg { stroke: var(--accent); }
+.fab { position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 9; min-height: 56px; padding: 0 22px; border: 0; border-radius: 28px; background: var(--accent); color: var(--on-accent); display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
 .fab svg { width: 24px; height: 24px; }
 
 .scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; width: 100%; max-width: 560px; margin: 0 auto; max-height: 92%; overflow-y: auto; overflow-x: hidden; background: var(--surface); border-radius: 16px 16px 0 0; padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px)); border: 1px solid var(--line); border-bottom: 0; box-shadow: var(--elevation-3); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-width: 560px; margin: 0 auto; max-height: 92%; overflow-y: auto; background: var(--surface); border-radius: 22px 22px 0 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px)); border: 1px solid var(--line); border-bottom: 0; }
 .sheet h2 { margin: 0 0 16px; font-size: 20px; }
-.sheet h3 { margin: 24px 0 8px; font-size: 16px; font-weight: 700; }
-.field { display: block; min-width: 0; margin-bottom: 16px; }
-.field > span { display: block; font-size: 14px; color: var(--muted); margin-bottom: 4px; }
-.field input:not([type="checkbox"]), .field textarea, .field select, .in { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; padding: 8px 16px; border-radius: 8px; border: 2px solid var(--field-border); background: var(--bg); font-size: 16px; }
-.field textarea { min-height: 112px; resize: vertical; }
-.field select + input { margin-top: 8px; }
-input[type="date"], input[type="datetime-local"] { -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%; line-height: 1.5; }
-input[type="date"]::-webkit-date-and-time-value, input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
-.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; }
-@media (max-width: 420px) { .two { grid-template-columns: minmax(0, 1fr); } }
-.checks { display: grid; gap: 0; margin-bottom: 16px; }
-.check { display: flex; align-items: center; gap: 16px; min-height: 48px; font-size: 16px; }
-.check input { width: 24px; height: 24px; flex: 0 0 24px; accent-color: var(--primary); }
-.actions { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 16px; }
-.btn { min-height: 48px; padding: 0 24px; border-radius: 8px; border: 2px solid var(--field-border); background: transparent; font-weight: 700; font-size: 16px; text-decoration: none; color: var(--ink); display: inline-flex; align-items: center; }
-.btn.primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-.btn.danger { color: var(--danger); border-color: var(--danger); }
-.btn.right { margin-left: auto; }
+.sheet h3 { margin: 22px 0 10px; font-size: 15px; font-weight: 700; }
+.field { display: block; margin-bottom: 14px; }
+.field > span { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+.field input:not([type="checkbox"]), .field textarea, .field select, .in { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); font-size: 16px; }
+.field textarea { min-height: 100px; resize: vertical; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.checks { display: grid; gap: 4px; margin-bottom: 14px; }
+.check { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 15px; }
+.check input { width: 22px; height: 22px; flex: 0 0 22px; accent-color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+.btn { min-height: 48px; padding: 0 22px; border-radius: 14px; border: 1.5px solid var(--line); background: transparent; font-weight: 700; font-size: 16px; text-decoration: none; display: inline-flex; align-items: center; }
+.btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+.btn.danger { color: var(--danger); border-color: transparent; margin-left: auto; }
+.btn.go2 { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.mini { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.mini.warn { color: var(--warn); font-weight: 500; }
 
 .mnav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.mnav button { min-width: 48px; min-height: 48px; border: 2px solid var(--field-border); border-radius: 8px; background: transparent; font-size: 20px; }
+.mnav button { min-width: 48px; min-height: 48px; border: 1.5px solid var(--line); border-radius: 14px; background: transparent; font-size: 20px; }
 .mnav strong { font-size: 18px; }
-.kpi { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 0 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.kpi { display: grid; grid-template-columns: 1fr 110px; gap: 2px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .kpi .lab { font-weight: 700; }
 .kpi .val { text-align: right; font-weight: 700; font-size: 18px; }
-.kpi .note { grid-column: 1 / -1; font-size: 14px; color: var(--muted); }
-.kpi input { text-align: right; min-height: 48px; padding: 8px 16px; border-radius: 8px; border: 2px solid var(--field-border); background: var(--bg); width: 100%; font-size: 16px; font-weight: 700; }
+.kpi .note { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+.kpi input { text-align: right; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); width: 100%; font-size: 17px; font-weight: 700; }
 .judge { margin: 0; padding: 0; list-style: none; }
-.judge li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-.ver { display: flex; width: 100%; min-height: 48px; justify-content: space-between; align-items: center; gap: 8px; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 14px; }
+.judge li { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.ver { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 12px 0; font-size: 14px; }
 .ver span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.spark { display: block; width: 100%; height: 96px; margin: 8px 0; }
-.spark polyline { fill: none; stroke: var(--primary-ink); stroke-width: 2; }
-.spark circle { fill: var(--primary-ink); }
-.mono { width: 100%; min-height: 160px; font-family: ui-monospace, Menlo, monospace; font-size: 16px; }
 
-.toast { position: fixed; left: 50%; overflow-wrap: anywhere; bottom: calc(144px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; width: max-content; max-width: calc(100% - 32px); padding: 16px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 500; text-align: left; box-shadow: var(--elevation-1); }
+.toast { position: fixed; left: 50%; bottom: calc(140px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn-bg); color: var(--btn-fg); font-size: 15px; font-weight: 500; text-align: center; }
 @media (prefers-reduced-motion: no-preference) {
-  .toast { animation: pop 0.18s ease-out; }
-  @keyframes pop { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .toast { animation: pop .18s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 }
 </style>
 </head>
@@ -255,29 +140,28 @@ input[type="date"]::-webkit-date-and-time-value, input[type="datetime-local"]::-
     <h1 id="title"></h1>
     <div class="top-r"><span class="count" id="count"></span><button class="txt" id="btnSettings" type="button">設定</button></div>
   </header>
-  <main id="main"><p class="mini">読み込み中…</p></main>
-  <noscript><p class="banner err">JavaScriptが無効のため動作しません。設定でJavaScriptを有効にしてください。</p></noscript>
+  <div class="banner" id="banner" hidden><strong>ホーム画面に追加してから使い始めてください</strong>Safariで入力したデータは、ホーム画面版に引き継がれません。共有ボタン → 「ホーム画面に追加」</div>
+  <main id="main"></main>
 </div>
 
 <button class="fab" id="fab" type="button" hidden></button>
 
 <nav class="tabs" id="tabs" aria-label="メニュー">
-  <button class="tab" type="button" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>今日</button>
-  <button class="tab" type="button" data-tab="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>相手</button>
+  <button class="tab" type="button" data-tab="contacts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>連絡帳</button>
+  <button class="tab" type="button" data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7.6 7.6l3 3M13.6 13.6l3 3"/></svg>進捗</button>
   <button class="tab" type="button" data-tab="dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>デート</button>
-  <button class="tab" type="button" data-tab="numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-9M12 20V5M19 20v-7"/></svg>数値</button>
-  <button class="tab" type="button" data-tab="self"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>自分</button>
+  <button class="tab" type="button" data-tab="kpi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-9M12 20V5M19 20v-7"/></svg>KPI</button>
+  <button class="tab" type="button" data-tab="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>プロフィール</button>
 </nav>
 
 <div class="scrim" id="scrim" hidden></div>
-<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></section>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></section>
 <input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
 <input type="file" id="fileImg" accept="image/*" hidden>
 <input type="file" id="fileJson" accept="application/json,.json" hidden>
 <canvas id="work" hidden></canvas>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<!-- jsQR 1.4.0 (Apache-2.0). Authors: see package.json (Cosmo Wolfe, Jefff Nelson). License text: LICENSES.txt -->
 <script>
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -10385,24 +10269,11 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "2.1.0", SCHEMA = 2, DADS_VER = "v2.18.2";
-
-  /* ---------- constants (設定駆動) ---------- */
-  var CFG = {
-    firstDateDays: 7, photoDays: 90, introDays: 60, backupDays: 30, kpiRemindDay: 20, auditMax: 100,
-    target: { likes: 200, liked: 30, matches: 40, meets: 5, second: 2 },
-    likedLow: 20, matchRateLow: 0.1, meetsLow: 3, bodyMin: 20, bodyMax: 300, wipStatus: "dated"
-  };
+  var APP_VERSION = "1.0.0";
+  var KEYS = { contacts: "mt:contacts", progress: "mt:progress", dates: "mt:dates", kpi: "mt:kpi", profile: "mt:profile" };
   var STATUS = [["message", "メッセージ中"], ["arranging", "初回調整中"], ["dated", "デート済"], ["dating", "交際"], ["ended", "終了"]];
-  var STATUS_KEYS = STATUS.map(function (s) { return s[0]; });
-  var STATUS_KIND = { message: "info", arranging: "warn", dated: "info", dating: "ok", ended: "plain" };
   var APPS = ["Pairs", "Omiai", "ブライダルネット", "with", "その他"];
-  var UNASSIGNED = "未区分";
-  var CATS = ["アプリ課金", "デート費用", "身だしなみ", "その他"];
-  var QA_STAGES = ["プロフィール", "1〜3回目", "交際確定後", "結婚の具体化"];
   var CHECKS_DATE = [["workHome", "仕事・居住地を共有した"], ["marriage", "結婚観を確認した"], ["children", "子供の希望を確認した"], ["money", "金銭感覚を確認した"]];
-  var DATE_KEYS = CHECKS_DATE.map(function (c) { return c[0]; });
-  var DATE2COND = { workHome: "cWork", marriage: "cMarriage", children: "cChildren", money: "cMoney" };
   var CHECKS_PROFILE = [
     ["details", "詳細項目をすべて埋めた（空欄ゼロ）"],
     ["community", "Pairsのコミュニティに25〜30個参加した"],
@@ -10410,73 +10281,24 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     ["photoQuality", "写真：笑顔・自然光・加工は明るさ補正のみ"],
     ["photoFull", "写真：全身が写るものを1枚含めた"]
   ];
-  var PROFILE_KEYS = CHECKS_PROFILE.map(function (c) { return c[0]; });
-  var COND_STATES = [["", "未確認"], ["ok", "合致"], ["adjust", "要すり合わせ"], ["ng", "不一致"]];
-  var IMPS = [["must", "譲れない"], ["want", "望ましい"]];
-  var DEFAULT_CONDS = [
-    { id: "cMarriage", label: "結婚観（時期・結婚後の生活）", imp: "want" },
-    { id: "cChildren", label: "子供の希望", imp: "must" },
-    { id: "cMoney", label: "金銭感覚", imp: "must" },
-    { id: "cWork", label: "仕事・居住地", imp: "want" },
-    { id: "cIntimacy", label: "性生活・身体的な相性の希望", imp: "want" },
-    { id: "cPast", label: "過去の交際・婚姻歴の共有", imp: "want" }
-  ];
-  var QA_EXAMPLES = [
-    ["1〜3回目", "結婚観を聞かれたとき"], ["1〜3回目", "子供の希望を聞かれたとき"], ["1〜3回目", "金銭感覚を聞かれたとき"],
-    ["1〜3回目", "仕事・休日について聞かれたとき"], ["1〜3回目", "過去の交際・婚姻歴について聞かれたとき（短く）"],
-    ["交際確定後", "過去の交際・婚姻歴について詳しく聞かれたとき"], ["交際確定後", "喫煙・飲酒について聞かれたとき"],
-    ["結婚の具体化", "結婚後の生活（居住地・仕事・家計）をすり合わせるとき"]
-  ];
-  var TITLES = { today: "今日", people: "相手", dates: "デート", numbers: "数値", self: "自分" };
-  var NAMES = ["contacts", "progress", "dates", "kpi", "profile", "marriage", "costs", "body", "qa", "settings", "audit"];
-  var LEGACY = ["contacts", "progress", "dates", "kpi", "profile"];
-  var KEYS = {}; NAMES.forEach(function (n) { KEYS[n] = "mt:" + n; });
-  var SNAP_KEY = "mt:snapshot";
-  var ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
+  var TARGET = { likes: 200, liked: 30, matches: 40, meets: 5, second: 2 };
+  var TITLES = { contacts: "連絡帳", progress: "進捗", dates: "デート", kpi: "KPI", profile: "プロフィール" };
 
   var $ = function (s) { return document.querySelector(s); };
   var S = {
-    contacts: [], progress: {}, dates: [], kpi: {}, profile: null, marriage: null, costs: null, body: null, qa: null, settings: null, audit: null,
-    errors: [], readFail: {}, volatile: false, notice: "",
-    ui: { tab: "today", sub: { people: "list", numbers: "kpi", self: "profile" }, month: "", kpiApp: "all", q: "", filter: "all", introDraft: null, opener: null }
+    contacts: [], progress: {}, dates: [], kpi: {},
+    profile: { intros: [], currentId: "", checks: {}, photoUpdatedAt: "" },
+    tab: "contacts", month: "", introDraft: null
   };
 
   /* ---------- util ---------- */
   function z(n) { return String(n).padStart(2, "0"); }
-  function jstNow() { return new Date(Date.now() + 32400000).toISOString().slice(0, 16) + "+09:00"; }
-  function todayStr() { return jstNow().slice(0, 10); }
-  S.ui.month = todayStr().slice(0, 7);
-  function validYmd(s) {
-    var p = s.split("-").map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
-    return d.getUTCFullYear() === p[0] && d.getUTCMonth() === p[1] - 1 && d.getUTCDate() === p[2];
-  }
-  function isDate(s) { return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && validYmd(s); }
-  function normDT(s) {
-    if (typeof s !== "string") return "";
-    var m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})?$/.exec(s.trim());
-    if (!m || !isDate(m[1]) || +m[2] > 23 || +m[3] > 59) return "";
-    if (m[4] && m[4] !== "+09:00") {
-      var t = new Date(s.trim());
-      if (isNaN(t.getTime())) return "";
-      return new Date(t.getTime() + 32400000).toISOString().slice(0, 16) + "+09:00";
-    }
-    return m[1] + "T" + m[2] + ":" + m[3] + "+09:00";
-  }
-  function dayNum(ds) { var p = ds.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000; }
-  function daysSinceDate(ds) { return Math.floor(dayNum(todayStr()) - dayNum(ds)); }
-  function md(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ""); return m ? (+m[2]) + "/" + (+m[3]) : ""; }
-  function ymdSlash(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ""); return m ? m[1] + "/" + (+m[2]) + "/" + (+m[3]) : ""; }
-  function fmtNext(s) { var m = /^\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || ""); return m ? (+m[1]) + "/" + (+m[2]) + " " + m[3] + ":" + m[4] : ""; }
-  function fmtJst(s) { var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || ""); return m ? m[1] + "/" + (+m[2]) + "/" + (+m[3]) + " " + m[4] + ":" + m[5] : ""; }
-  function yen(n) { return "¥" + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function ymd(d) { return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()); }
+  S.month = ymd(new Date()).slice(0, 7);
   function uid() { return "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function asArr(v) { return Array.isArray(v) ? v : []; }
   function asObj(v) { return v && typeof v === "object" && !Array.isArray(v) ? v : {}; }
-  function str(v, max) { return (typeof v === "string" ? v : v == null ? "" : String(v)).slice(0, max); }
-  function nn(v, max) {
-    var n = typeof v === "number" ? v : (typeof v === "string" && v.trim() !== "" ? Number(v) : NaN);
-    return isFinite(n) && n >= 0 && n <= max ? Math.floor(n) : null;
-  }
+  function isNum(v) { return typeof v === "number" && isFinite(v); }
   function lineUrl(raw) {
     try {
       var u = new URL(String(raw).trim());
@@ -10486,6 +10308,16 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
       return null;
     } catch (e) { return null; }
   }
+  function md(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || "");
+    return m ? Number(m[2]) + "/" + Number(m[3]) : "";
+  }
+  function fmtNext(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s || "");
+    if (!m) return "";
+    return Number(m[2]) + "/" + Number(m[3]) + (m[4] ? " " + m[4] + ":" + m[5] : "");
+  }
+  function daysSince(ts) { return Math.floor((Date.now() - ts) / 86400000); }
   function el(tag, props) {
     var n = document.createElement(tag);
     props = props || {};
@@ -10500,271 +10332,44 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
       else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), v);
       else n.setAttribute(k, v === true ? "" : v);
     });
+    var kids = Array.prototype.slice.call(arguments, 2);
     (function add(list) {
       list.forEach(function (c) {
         if (c === null || c === undefined || c === false) return;
         if (Array.isArray(c)) { add(c); return; }
         n.append(c.nodeType ? c : document.createTextNode(String(c)));
       });
-    })(Array.prototype.slice.call(arguments, 2));
-    return n;
-  }
-  function svgEl(tag, attrs) {
-    var n = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    Object.keys(attrs || {}).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    })(kids);
     return n;
   }
   var toastTimer = 0;
-  function toast(msg, ms) {
+  function toast(msg) {
     var t = $("#toast");
     t.textContent = msg; t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.hidden = true; }, ms || (msg.length > 40 ? 7000 : 3000));
-  }
-  function badge(text, kind) { return el("span", { class: "badge " + (kind || "plain"), text: text }); }
-  function pushErr(scope, ref, msg) {
-    S.errors.push({ scope: scope, ref: String(ref || ""), msg: msg, at: jstNow() });
-    if (S.errors.length > 50) S.errors.shift();
-  }
-  function fail(scope, ref, what, cause, next) {
-    pushErr(scope, ref, what + "：" + cause);
-    toast(what + "。" + cause + "。" + next);
-    return false;
-  }
-
-  /* ---------- NORM（保存・起動・読込・復元の全経路で同一関数を通す） ---------- */
-  function normContacts(raw, E) {
-    var out = [], seen = {};
-    asArr(raw).forEach(function (c, i) {
-      if (!c || typeof c !== "object") { E("contacts", "#" + i, "連絡先の形式が不正です"); return; }
-      if (typeof c.id !== "string" || !ID_RE.test(c.id)) { E("contacts", "#" + i, "連絡先IDが不正です"); return; }
-      if (seen[c.id]) { E("contacts", c.id, "連絡先IDが重複しています"); return; }
-      var url = "";
-      if (typeof c.url === "string" && c.url.trim()) {
-        url = lineUrl(c.url) || "";
-        if (!url) E("contacts", c.id, "LINE以外のURLを除外しました");
-      }
-      seen[c.id] = 1;
-      out.push({ id: c.id, name: str(c.name, 40).trim() || "名前未設定", memo: str(c.memo, 500).trim(), url: url,
-        createdAt: typeof c.createdAt === "number" && isFinite(c.createdAt) ? c.createdAt : Date.now() });
-    });
-    return out;
-  }
-  function normProgress(raw, E, ids) {
-    var out = {};
-    Object.keys(asObj(raw)).forEach(function (id) {
-      if (!ID_RE.test(id)) { E("progress", id, "IDが不正です"); return; }
-      if (!ids[id]) return;
-      var p = asObj(raw[id]), st = STATUS_KEYS.indexOf(p.status) >= 0 ? p.status : "message";
-      if (p.status !== undefined && STATUS_KEYS.indexOf(p.status) < 0) E("progress", id, "ステータスが不正なため初期値にしました");
-      out[id] = { app: APPS.indexOf(p.app) >= 0 ? p.app : "", matchedAt: isDate(p.matchedAt) ? p.matchedAt : "", status: st, nextDate: normDT(p.nextDate) };
-    });
-    return out;
-  }
-  function normDates(raw, E, ids) {
-    var out = [], seen = {};
-    asArr(raw).forEach(function (d, i) {
-      if (!d || typeof d !== "object" || typeof d.id !== "string" || !ID_RE.test(d.id)) { E("dates", "#" + i, "デート記録のIDが不正です"); return; }
-      if (seen[d.id]) { E("dates", d.id, "デート記録のIDが重複しています"); return; }
-      if (typeof d.contactId !== "string" || !ids[d.contactId]) { E("dates", d.id, "相手が存在しません"); return; }
-      if (!isDate(d.date)) { E("dates", d.id, "日付が不正です"); return; }
-      var ck = {}, src = asObj(d.checks);
-      DATE_KEYS.forEach(function (k) { if (src[k] === true) ck[k] = true; });
-      seen[d.id] = 1;
-      out.push({ id: d.id, contactId: d.contactId, date: d.date, place: str(d.place, 60).trim(), memo: str(d.memo, 500).trim(), checks: ck,
-        createdAt: typeof d.createdAt === "number" && isFinite(d.createdAt) ? d.createdAt : Date.now() });
-    });
-    return out;
-  }
-  function kpiVals(o) {
-    var r = {}, any = false;
-    ["likes", "liked", "matches"].forEach(function (k) { var v = nn(o[k], 1000000); if (v !== null) { r[k] = v; any = true; } });
-    return any ? r : null;
-  }
-  function normKpi(raw, E) {
-    var out = {};
-    Object.keys(asObj(raw)).forEach(function (mk) {
-      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mk)) { E("kpi", mk, "月の形式が不正です"); return; }
-      var m = asObj(raw[mk]), res = {};
-      if ("likes" in m || "liked" in m || "matches" in m) { var u = kpiVals(m); if (u) res[UNASSIGNED] = u; }
-      Object.keys(m).forEach(function (a) {
-        if (a === "likes" || a === "liked" || a === "matches") return;
-        if (APPS.indexOf(a) < 0 && a !== UNASSIGNED) { E("kpi", mk, "アプリ名が不正です"); return; }
-        var v = kpiVals(asObj(m[a])); if (v) res[a] = v;
-      });
-      if (Object.keys(res).length) out[mk] = res;
-    });
-    return out;
-  }
-  function normProfile(raw, E) {
-    var p = asObj(raw), intros = [], seen = {};
-    asArr(p.intros).forEach(function (v, i) {
-      v = asObj(v);
-      if (typeof v.id !== "string" || !ID_RE.test(v.id) || seen[v.id]) { E("profile", "#" + i, "自己紹介文の版が不正です"); return; }
-      var text = str(v.text, 2000).trim();
-      if (!text) return;
-      seen[v.id] = 1;
-      intros.push({ id: v.id, text: text, createdAt: typeof v.createdAt === "number" && isFinite(v.createdAt) ? v.createdAt : Date.now() });
-    });
-    var ck = {}, src = asObj(p.checks);
-    PROFILE_KEYS.forEach(function (k) { if (src[k] === true) ck[k] = true; });
-    return { intros: intros, currentId: typeof p.currentId === "string" && seen[p.currentId] ? p.currentId : "", checks: ck, photoUpdatedAt: isDate(p.photoUpdatedAt) ? p.photoUpdatedAt : "" };
-  }
-  function normMarriage(raw, E, ids) {
-    var p = asObj(raw), conds = [], seen = {};
-    if (!Array.isArray(p.conditions)) conds = DEFAULT_CONDS.map(function (c) { return { id: c.id, label: c.label, imp: c.imp }; });
-    else p.conditions.slice(0, 30).forEach(function (c, i) {
-      c = asObj(c);
-      var label = str(c.label, 40).trim();
-      if (typeof c.id !== "string" || !ID_RE.test(c.id) || seen[c.id] || !label) { E("marriage", "#" + i, "条件の形式が不正です"); return; }
-      seen[c.id] = 1;
-      conds.push({ id: c.id, label: label, imp: c.imp === "must" ? "must" : "want" });
-    });
-    var okCond = {}; conds.forEach(function (c) { okCond[c.id] = 1; });
-    var ev = {};
-    Object.keys(asObj(p.eval)).forEach(function (cid) {
-      if (!ids[cid]) return;
-      var m = asObj(p.eval[cid]), res = {};
-      Object.keys(m).forEach(function (k) {
-        if (!okCond[k]) return;
-        var e = asObj(m[k]), s = ["ok", "adjust", "ng"].indexOf(e.s) >= 0 ? e.s : "", memo = str(e.memo, 100).trim();
-        if (s || memo) res[k] = { s: s, memo: memo };
-      });
-      if (Object.keys(res).length) ev[cid] = res;
-    });
-    return { conditions: conds, eval: ev };
-  }
-  function normCosts(raw, E, ids) {
-    var p = asObj(raw), items = [], seen = {};
-    asArr(p.items).forEach(function (c, i) {
-      c = asObj(c);
-      var amount = nn(c.amount, 10000000);
-      if (typeof c.id !== "string" || !ID_RE.test(c.id) || seen[c.id] || !isDate(c.date) || amount === null) { E("costs", "#" + i, "費用の記録が不正です"); return; }
-      seen[c.id] = 1;
-      items.push({ id: c.id, date: c.date, cat: CATS.indexOf(c.cat) >= 0 ? c.cat : "その他", amount: amount, contactId: typeof c.contactId === "string" && ids[c.contactId] ? c.contactId : "", memo: str(c.memo, 100).trim() });
-    });
-    return { budget: nn(p.budget, 10000000), items: items };
-  }
-  function normBody(raw, E) {
-    var p = asObj(raw), entries = [], seen = {};
-    asArr(p.entries).forEach(function (b, i) {
-      b = asObj(b);
-      var kg = typeof b.kg === "number" ? b.kg : Number(b.kg);
-      if (typeof b.id !== "string" || !ID_RE.test(b.id) || seen[b.id] || !isDate(b.date) || !isFinite(kg) || kg < CFG.bodyMin || kg > CFG.bodyMax) { E("body", "#" + i, "体重の記録が不正です"); return; }
-      seen[b.id] = 1;
-      entries.push({ id: b.id, date: b.date, kg: Math.round(kg * 10) / 10 });
-    });
-    var g = typeof p.goal === "number" ? p.goal : Number(p.goal);
-    return { entries: entries, goal: p.goal != null && p.goal !== "" && isFinite(g) && g >= CFG.bodyMin && g <= CFG.bodyMax ? Math.round(g * 10) / 10 : null };
-  }
-  function normQa(raw, E) {
-    var items = [], seen = {};
-    asArr(asObj(raw).items).forEach(function (q, i) {
-      q = asObj(q);
-      var title = str(q.q, 80).trim();
-      if (typeof q.id !== "string" || !ID_RE.test(q.id) || seen[q.id] || !title) { E("qa", "#" + i, "想定問答の形式が不正です"); return; }
-      seen[q.id] = 1;
-      items.push({ id: q.id, stage: QA_STAGES.indexOf(q.stage) >= 0 ? q.stage : QA_STAGES[1], q: title, a: str(q.a, 1000).trim() });
-    });
-    return { items: items };
-  }
-  function normSettings(raw) {
-    var p = asObj(raw), w = nn(p.wipLimit, 50);
-    return { wipLimit: w && w >= 1 ? w : null, lastBackupAt: normDT(p.lastBackupAt), badge: p.badge === true };
-  }
-  function normAudit(raw) {
-    var out = [];
-    asArr(asObj(raw).entries).forEach(function (a) {
-      a = asObj(a);
-      if (typeof a.t !== "string" || typeof a.op !== "string") return;
-      out.push({ t: a.t.slice(0, 25), op: a.op.slice(0, 40), scope: str(a.scope, 20), ref: str(a.ref, 60) });
-    });
-    return { entries: out.slice(-CFG.auditMax) };
-  }
-  function normAll(p, E) {
-    var o = {};
-    o.contacts = normContacts(p.contacts, E);
-    var ids = {}; o.contacts.forEach(function (c) { ids[c.id] = 1; });
-    o.progress = normProgress(p.progress, E, ids);
-    o.dates = normDates(p.dates, E, ids);
-    o.kpi = normKpi(p.kpi, E);
-    o.profile = normProfile(p.profile, E);
-    o.marriage = normMarriage(p.marriage, E, ids);
-    o.costs = normCosts(p.costs, E, ids);
-    o.body = normBody(p.body, E);
-    o.qa = normQa(p.qa, E);
-    o.settings = normSettings(p.settings);
-    o.audit = normAudit(p.audit);
-    return o;
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2800);
   }
 
   /* ---------- storage ---------- */
-  function rawGet(k) { try { return localStorage.getItem(k); } catch (e) { return undefined; } }
-  function rawSet(k, s) { try { localStorage.setItem(k, s); return true; } catch (e) { return false; } }
-  function rawDel(k) { try { localStorage.removeItem(k); } catch (e) { /* noop */ } }
-  function writeSnap(reason, raw) { return rawSet(SNAP_KEY, JSON.stringify({ v: SCHEMA, reason: reason, at: jstNow(), raw: raw })); }
-  function currentRaw() { var raw = {}; NAMES.forEach(function (n) { var r = rawGet(KEYS[n]); if (typeof r === "string") raw[n] = r; }); return raw; }
-  function takeSnapshot(reason) { return writeSnap(reason, currentRaw()); }
-  function readSnap() {
-    try { var s = JSON.parse(rawGet(SNAP_KEY)); return s && s.v === SCHEMA && s.raw && typeof s.raw === "object" ? s : null; } catch (e) { return null; }
+  function lsGet(k, def) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? def : v; } catch (e) { return def; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function load() {
+    S.contacts = asArr(lsGet(KEYS.contacts, []));
+    S.progress = asObj(lsGet(KEYS.progress, {}));
+    S.dates = asArr(lsGet(KEYS.dates, []));
+    S.kpi = asObj(lsGet(KEYS.kpi, {}));
+    var p = asObj(lsGet(KEYS.profile, {}));
+    S.profile = {
+      intros: asArr(p.intros),
+      currentId: typeof p.currentId === "string" ? p.currentId : "",
+      checks: asObj(p.checks),
+      photoUpdatedAt: typeof p.photoUpdatedAt === "string" ? p.photoUpdatedAt : ""
+    };
   }
-  function save(name, quiet) {
-    if (S.readFail[name]) {
-      return quiet ? false : fail("storage", name, "保存できませんでした", "「" + name + "」のデータが壊れているため上書きを止めています", "設定の「データの状態」で退避コピーを作成してください");
-    }
-    if (S.volatile) return true;
-    var ok = rawSet(KEYS[name], JSON.stringify({ v: SCHEMA, data: S[name] }));
-    if (!ok && !quiet) fail("storage", name, "保存できませんでした", "端末の保存領域に書き込めません（容量不足・プライベートブラウズの可能性）", "設定から書き出しを行い、Safariの設定を確認してください");
+  function save(name) {
+    var ok = lsSet(KEYS[name], S[name]);
+    if (!ok) toast("この端末に保存できませんでした");
     return ok;
-  }
-  function log(op, scope, ref) {
-    S.audit.entries.push({ t: jstNow(), op: op, scope: scope, ref: ref || "" });
-    while (S.audit.entries.length > CFG.auditMax) S.audit.entries.shift();
-    save("audit", true);
-  }
-  function commit(names, op, scope, ref) {
-    var ok = true;
-    names.forEach(function (n) { if (!save(n)) ok = false; });
-    if (ok) log(op, scope, ref);
-    return ok;
-  }
-  function loadAll(keepSnap) {
-    S.errors = []; S.readFail = {}; S.volatile = false; S.notice = "";
-    var payload = {}, legacy = false, rawMap = {}, avail = false;
-    NAMES.forEach(function (n) { var r = rawGet(KEYS[n]); rawMap[n] = r; if (r !== undefined) avail = true; });
-    if (!avail) S.volatile = true;
-    NAMES.forEach(function (n) {
-      var r = rawMap[n];
-      if (r === null || r === undefined) return;
-      var parsed;
-      try { parsed = JSON.parse(r); } catch (e) { S.readFail[n] = true; pushErr("storage", n, "「" + n + "」のデータを読み込めません。保存を停止しました"); return; }
-      if (parsed && typeof parsed === "object" && parsed.v === SCHEMA && "data" in parsed) { payload[n] = parsed.data; return; }
-      var hasV = parsed && typeof parsed === "object" && !Array.isArray(parsed) && "v" in parsed;
-      if (LEGACY.indexOf(n) >= 0 && !hasV) { payload[n] = parsed; legacy = true; return; }
-      S.readFail[n] = true;
-      pushErr("storage", n, "「" + n + "」は未対応の形式です（このアプリより新しい版のデータの可能性）。保存を停止しました");
-    });
-    if (legacy && !keepSnap) {
-      var raw = {}; NAMES.forEach(function (n) { if (typeof rawMap[n] === "string") raw[n] = rawMap[n]; });
-      writeSnap("v1から移行する前の状態", raw);
-    }
-    var n2 = normAll(payload, function (scope, ref, msg) { pushErr(scope, ref, msg); });
-    NAMES.forEach(function (n) { S[n] = n2[n]; });
-    if (legacy) {
-      var wrote = [];
-      LEGACY.forEach(function (n) { if (!S.readFail[n] && rawMap[n] !== null && rawMap[n] !== undefined && save(n, true)) wrote.push(n); });
-      var okRead = true;
-      wrote.forEach(function (n) {
-        try {
-          var back = JSON.parse(rawGet(KEYS[n])).data;
-          if (n === "contacts" && back.length !== S.contacts.length) okRead = false;
-          if (n === "dates" && back.length !== S.dates.length) okRead = false;
-          if (n === "progress" && Object.keys(back).length !== Object.keys(S.progress).length) okRead = false;
-        } catch (e) { okRead = false; }
-      });
-      if (!okRead) pushErr("migration", "v2", "移行後の読み戻しで件数が一致しません。設定の「直前の状態に戻す」で移行前に戻せます");
-      else { S.notice = "データを新しい形式（v2）に移行しました。移行前の状態は設定から戻せます。"; log("migrate", "all", "v1>v2"); }
-    }
   }
 
   /* ---------- domain ---------- */
@@ -10785,24 +10390,7 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
   }
   function checkedFor(id) {
     var r = {};
-    datesFor(id).forEach(function (d) { DATE_KEYS.forEach(function (k) { if (d.checks && d.checks[k]) r[k] = true; }); });
-    return r;
-  }
-  function evalOf(cid, condId) { var e = (S.marriage.eval[cid] || {})[condId]; return e || { s: "", memo: "" }; }
-  function condConfirmed(cid, cond) {
-    if (evalOf(cid, cond.id).s) return true;
-    var ck = checkedFor(cid);
-    return DATE_KEYS.some(function (k) { return DATE2COND[k] === cond.id && ck[k]; });
-  }
-  function condState(cid) {
-    var r = { total: S.marriage.conditions.length, confirmed: 0, mustNg: [], wantNg: [], adjust: [], unconfMust: [], unconfOther: [] };
-    S.marriage.conditions.forEach(function (cd) {
-      var s = evalOf(cid, cd.id).s, conf = condConfirmed(cid, cd);
-      if (conf) r.confirmed++;
-      if (s === "ng") (cd.imp === "must" ? r.mustNg : r.wantNg).push(cd.label);
-      else if (s === "adjust") r.adjust.push(cd.label);
-      if (!conf) (cd.imp === "must" ? r.unconfMust : r.unconfOther).push(cd.label);
-    });
+    datesFor(id).forEach(function (d) { CHECKS_DATE.forEach(function (c) { if (d.checks && d.checks[c[0]]) r[c[0]] = true; }); });
     return r;
   }
   function nextHint(n) {
@@ -10818,190 +10406,101 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     if (st === "dating") return "交際中";
     return nextHint(datesFor(id).length);
   }
-  function wipCount() { return S.contacts.filter(function (c) { return getProg(c.id).status === CFG.wipStatus; }).length; }
+  function alertsFor(id) {
+    var st = getProg(id).status;
+    if (st === "ended") return [];
+    var n = datesFor(id).length, c = checkedFor(id), out = [];
+    if (n >= 2) {
+      if (!c.workHome) out.push("仕事・居住地の共有が未記録（1〜2回目に共有）");
+      var miss = [];
+      if (!c.marriage) miss.push("結婚観");
+      if (!c.children) miss.push("子供の希望");
+      if (miss.length) out.push(miss.join("・") + "が未確認（2回目までに確認）");
+    }
+    if (n >= 3 && !c.money) out.push("金銭感覚が未確認（3回目までに確認）");
+    return out;
+  }
   function deleteContact(id) {
     S.contacts = S.contacts.filter(function (c) { return c.id !== id; });
     delete S.progress[id];
     S.dates = S.dates.filter(function (d) { return d.contactId !== id; });
-    delete S.marriage.eval[id];
-    S.costs.items.forEach(function (c) { if (c.contactId === id) c.contactId = ""; });
-    return commit(["contacts", "progress", "dates", "marriage", "costs"], "delete", "contacts", id);
-  }
-  function monthCosts(mk) { return S.costs.items.filter(function (c) { return c.date.slice(0, 7) === mk; }); }
-  function sumAmount(list) { return list.reduce(function (a, c) { return a + c.amount; }, 0); }
-  function monthStats(mk) {
-    var meets = 0, second = 0, byApp = {};
-    S.contacts.forEach(function (c) {
-      var ds = datesFor(c.id), a = getProg(c.id).app || UNASSIGNED;
-      if (ds[0] && ds[0].date.slice(0, 7) === mk) { meets++; byApp[a] = (byApp[a] || 0) + 1; }
-      if (ds[1] && ds[1].date.slice(0, 7) === mk) second++;
-    });
-    return { meets: meets, second: second, byApp: byApp };
-  }
-  function kpiTotal(mk) {
-    var t = { likes: 0, liked: 0, matches: 0, any: false }, m = S.kpi[mk] || {};
-    Object.keys(m).forEach(function (a) { ["likes", "liked", "matches"].forEach(function (k) { if (m[a][k] !== undefined) { t[k] += m[a][k]; t.any = true; } }); });
-    return t;
-  }
-  function judge(mk) {
-    var t = kpiTotal(mk), st = monthStats(mk), out = [];
-    if (t.any && t.likes < CFG.target.likes) out.push("稼働不足：いいね送信数が目標（" + CFG.target.likes + "）未満");
-    if (t.any && t.liked < CFG.likedLow) out.push("写真の問題の可能性：被いいね数が" + CFG.likedLow + "未満（写真の差し替えを最優先）");
-    if (t.likes > 0 && t.matches / t.likes < CFG.matchRateLow) out.push("自己紹介文・詳細項目の問題の可能性：マッチ率が10%未満");
-    if ((t.any || st.meets) && st.meets < CFG.meetsLow) out.push("メッセージ運用の問題の可能性：対面数が" + CFG.meetsLow + "未満（会う提案の遅れ）");
-    return out;
-  }
-  function currentIntro() { return S.profile.intros.find(function (v) { return v.id === S.profile.currentId; }) || null; }
-
-  /* ---------- 要対応キュー ---------- */
-  function buildQueue() {
-    var out = [], today = todayStr();
-    function add(sev, text, cid, go) { out.push({ sev: sev, text: text, cid: cid || "", go: go || null }); }
-    S.errors.slice(-5).forEach(function (e) { add("err", e.scope + (e.ref ? "（" + e.ref + "）" : "") + "：" + e.msg, "", openSettings); });
-    S.contacts.forEach(function (c) {
-      var p = getProg(c.id);
-      if (p.status === "ended") return;
-      var ds = datesFor(c.id), n = ds.length;
-      if ((p.status === "message" || p.status === "arranging") && n === 0) {
-        if (!p.matchedAt) add("info", "マッチ日が未入力です（日程確定の期限判定に使います）", c.id);
-        else {
-          var d = daysSinceDate(p.matchedAt);
-          if (d >= CFG.firstDateDays && !p.nextDate) add("warn", "マッチから" + d + "日経過。初回デートの日程が未確定です（目安：1週間以内）", c.id);
-        }
-      }
-      if (p.nextDate && p.nextDate.slice(0, 10) < today && !ds.some(function (x) { return x.date >= p.nextDate.slice(0, 10); })) {
-        add("warn", "次回デートの日時（" + fmtNext(p.nextDate) + "）を過ぎています。デート記録または日程を更新してください", c.id);
-      }
-      if (p.status !== "dating") {
-        if (n === 2) add("info", "次が3回目のデートです（告白の目安）", c.id);
-        else if (n >= 3) add("warn", "デートが" + n + "回です。3回目の目安を超えています（4回目以降は成功率が低下する傾向）", c.id);
-      }
-      var cs = condState(c.id);
-      if (cs.mustNg.length) add("err", "譲れない条件が不一致：" + cs.mustNg.join("・") + "（結婚前提では要検討。判断はあなたが行います）", c.id);
-      if (cs.wantNg.length) add("warn", "望ましい条件が不一致：" + cs.wantNg.join("・"), c.id);
-      if (cs.adjust.length) add("info", "要すり合わせ：" + cs.adjust.join("・"), c.id);
-      if (n >= 2 && cs.unconfMust.length) add("warn", "譲れない条件が未確認：" + cs.unconfMust.join("・") + "（2回目までに確認）", c.id);
-      if ((n >= 3 || p.status === "dating") && cs.unconfOther.length) add("info", "未確認の条件が" + cs.unconfOther.length + "件あります：" + cs.unconfOther.join("・"), c.id);
-    });
-    var lim = S.settings.wipLimit;
-    if (lim && wipCount() > lim) add("warn", "同時進行（デート済）が" + wipCount() + "名で、上限" + lim + "名を超えています");
-    if (S.contacts.length || S.dates.length) {
-      var lb = S.settings.lastBackupAt;
-      if (!lb) add("warn", "バックアップが未実施です。端末紛失・アプリ削除でデータが消えます", "", openSettings);
-      else { var bd = daysSinceDate(lb.slice(0, 10)); if (bd >= CFG.backupDays) add("warn", "最後のバックアップから" + bd + "日経過しています", "", openSettings); }
-    }
-    var cm = today.slice(0, 7);
-    if (+today.slice(8, 10) >= CFG.kpiRemindDay && !kpiTotal(cm).any) add("info", "今月のKPIが未入力です", "", function () { gotoTab("numbers", "kpi"); });
-    if (!S.profile.photoUpdatedAt) add("info", "写真の最終更新日が未入力です", "", function () { gotoTab("self", "profile"); });
-    else { var pd = daysSinceDate(S.profile.photoUpdatedAt); if (pd >= CFG.photoDays) add("warn", "写真の更新から" + pd + "日経過（3か月ごとの差し替え時期）", "", function () { gotoTab("self", "profile"); }); }
-    var ci = currentIntro();
-    if (!ci) add("info", "自己紹介文が未保存です", "", function () { gotoTab("self", "profile"); });
-    else { var idays = Math.floor((Date.now() - ci.createdAt) / 86400000); if (idays >= CFG.introDays) add("info", "自己紹介文の現行版が" + idays + "日前の作成です（2〜3か月ごとに微調整）", "", function () { gotoTab("self", "profile"); }); }
-    var pc = PROFILE_KEYS.filter(function (k) { return S.profile.checks[k]; }).length;
-    if (pc < PROFILE_KEYS.length) add("info", "プロフィールのチェックリストが未完了です（" + pc + "/" + PROFILE_KEYS.length + "）", "", function () { gotoTab("self", "profile"); });
-    var b = S.costs.budget, spent = sumAmount(monthCosts(cm));
-    if (b !== null && spent > b) add("warn", "今月の費用が予算を超えています（" + yen(spent) + " / " + yen(b) + "）", "", function () { gotoTab("numbers", "cost"); });
-    var rank = { err: 0, warn: 1, info: 2 };
-    return out.map(function (x, i) { x.i = i; return x; }).sort(function (a, b2) { return rank[a.sev] - rank[b2.sev] || a.i - b2.i; });
+    save("contacts"); save("progress"); save("dates");
   }
 
   /* ---------- sheet ---------- */
   function openSheet(title) {
     var sh = $("#sheet");
-    S.ui.opener = document.activeElement;
-    sh.replaceChildren(el("h2", { id: "sheetTitle", text: title }));
-    (function add(list) { list.forEach(function (n) { if (!n) return; if (Array.isArray(n)) { add(n); return; } sh.append(n); }); })(Array.prototype.slice.call(arguments, 1));
+    sh.replaceChildren(el("h2", { text: title }));
+    (function add(list) {
+      list.forEach(function (n) { if (!n) return; if (Array.isArray(n)) { add(n); return; } sh.append(n); });
+    })(Array.prototype.slice.call(arguments, 1));
     $("#scrim").hidden = false; sh.hidden = false; sh.scrollTop = 0;
   }
-  function closeSheet() {
-    $("#scrim").hidden = true; $("#sheet").hidden = true; $("#sheet").replaceChildren();
-    var o = S.ui.opener; S.ui.opener = null;
-    if (o && o.focus && document.contains(o)) o.focus();
-  }
+  function closeSheet() { $("#scrim").hidden = true; $("#sheet").hidden = true; $("#sheet").replaceChildren(); }
   $("#scrim").addEventListener("click", closeSheet);
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
-  function field(label, control, extra) { return el("label", { class: "field" }, el("span", { text: label }), control, extra); }
+  function field(label, control) { return el("label", { class: "field" }, el("span", { text: label }), control); }
   function select(options, value) {
     var s = el("select", {}, options.map(function (o) { return el("option", { value: o[0], text: o[1] }); }));
     s.value = value;
     return s;
   }
   function armDelete(btn, armedText, run) {
-    var t = 0, orig = btn.textContent;
     btn.addEventListener("click", function () {
-      if (btn.dataset.armed !== "1") {
-        btn.dataset.armed = "1"; btn.textContent = armedText;
-        t = setTimeout(function () { btn.dataset.armed = ""; btn.textContent = orig; }, 5000);
-        return;
-      }
-      clearTimeout(t); run();
+      if (btn.dataset.armed !== "1") { btn.dataset.armed = "1"; btn.textContent = armedText; return; }
+      run();
     });
-  }
-  function seg(opts, val, fn) {
-    return el("div", { class: "seg", role: "group" }, opts.map(function (o) {
-      return el("button", { class: "segb", type: "button", "aria-pressed": String(o[0] === val), text: o[1], onclick: function () { fn(o[0]); } });
-    }));
-  }
-  function gotoTab(tab, sub) {
-    closeSheet();
-    S.ui.tab = tab; if (sub) S.ui.sub[tab] = sub;
-    render(); window.scrollTo(0, 0);
   }
 
   /* ---------- contact sheet ---------- */
   function openContactSheet(c, isNew) {
-    var p = getProg(c.id), ctx = { c: c, isNew: isNew, evals: {}, oldStatus: p.status };
+    var p = getProg(c.id);
+    var ctx = { c: c, isNew: isNew };
     ctx.inName = el("input", { type: "text", maxlength: "40", placeholder: "名前未設定", autocomplete: "off", value: c.name && c.name !== "名前未設定" ? c.name : "" });
     ctx.inMemo = el("textarea", { maxlength: "500", value: c.memo || "" });
     ctx.inUrl = el("input", { type: "url", inputmode: "url", placeholder: "LINEのURL（未交換なら空欄）", autocomplete: "off", value: c.url || "" });
     ctx.selApp = select([["", "未選択"]].concat(APPS.map(function (a) { return [a, a]; })), p.app);
     ctx.inMatched = el("input", { type: "date", value: p.matchedAt });
     ctx.selStatus = select(STATUS, p.status);
-    ctx.inNext = el("input", { type: "datetime-local", value: p.nextDate ? p.nextDate.slice(0, 16) : "" });
+    ctx.inNext = el("input", { type: "datetime-local", value: p.nextDate });
+
     var nodes = [
-      field("表示名", ctx.inName), field("メモ", ctx.inMemo), field("LINE URL", ctx.inUrl),
+      field("表示名", ctx.inName),
+      field("メモ", ctx.inMemo),
+      field("LINE URL", ctx.inUrl),
       el("h3", { text: "進捗" }),
       el("div", { class: "two" }, field("出会ったアプリ", ctx.selApp), field("マッチ日", ctx.inMatched)),
       el("div", { class: "two" }, field("ステータス", ctx.selStatus), field("次回デート", ctx.inNext))
     ];
     if (!isNew) {
-      var ds = datesFor(c.id), ords = ordinals();
+      var ds = datesFor(c.id), ords = ordinals(), done = checkedFor(c.id);
       nodes.push(el("h3", { text: "デート（" + ds.length + "回）" }));
       var h = hintFor(c.id);
       if (h) nodes.push(el("p", { class: "mini", text: h }));
+      alertsFor(c.id).forEach(function (a) { nodes.push(el("p", { class: "mini warn", text: a })); });
+      nodes.push(el("div", { class: "sub", style: "margin-bottom:10px" },
+        CHECKS_DATE.map(function (k) { return el("span", { class: "chip" + (done[k[0]] ? " on" : ""), text: (done[k[0]] ? "済 " : "未 ") + k[1].replace("した", "") }); })));
       ds.slice().reverse().forEach(function (d) {
         nodes.push(el("button", { class: "ver", type: "button", onclick: function () { if (saveContactFromSheet(ctx)) openDateSheet(d, c.id); } },
-          el("span", { text: md(d.date) + "　" + (d.place || "場所未記入") }), el("span", { text: ords[d.id] + "回目" })));
+          el("span", { text: md(d.date) + "　" + (d.place || "場所未記入") }),
+          el("span", { text: ords[d.id] + "回目" })));
       });
       nodes.push(el("div", { class: "actions" }, el("button", { class: "btn", type: "button", text: "デートを記録", onclick: function () { if (saveContactFromSheet(ctx)) openDateSheet(null, c.id); } })));
-      var cs = condState(c.id);
-      nodes.push(el("h3", { text: "結婚前の確認（確認済 " + cs.confirmed + "/" + cs.total + "）" }));
-      S.marriage.conditions.forEach(function (cd) {
-        var ev = evalOf(c.id, cd.id);
-        var sel = select(COND_STATES, ev.s);
-        sel.setAttribute("aria-label", cd.label + "の状態");
-        var memo = el("input", { type: "text", maxlength: "100", placeholder: "メモ（任意）", autocomplete: "off", value: ev.memo || "", "aria-label": cd.label + "のメモ" });
-        ctx.evals[cd.id] = { sel: sel, memo: memo };
-        var viaDate = !ev.s && condConfirmed(c.id, cd);
-        nodes.push(el("div", { class: "field" }, el("span", {}, cd.label + "　", badge(cd.imp === "must" ? "譲れない" : "望ましい", cd.imp === "must" ? "info" : "plain"), viaDate ? "　デート記録で確認済み" : ""), sel, memo));
-      });
-    } else nodes.push(el("p", { class: "mini", text: "デート記録と結婚前の確認は、保存後に入力できます。" }));
-    var openLink = el("a", { class: "btn primary", text: "LINEを開く", target: "_blank", rel: "noopener noreferrer", hidden: true });
+    }
+    var openLink = el("a", { class: "btn go2", text: "LINEを開く", target: "_blank", rel: "noopener noreferrer", hidden: true });
     var safe = c.url && lineUrl(c.url);
     if (!isNew && safe) { openLink.href = safe; openLink.hidden = false; }
-    var del = el("button", { class: "btn danger right", type: "button", text: "削除" });
+    var del = el("button", { class: "btn danger", type: "button", text: "削除" });
     del.hidden = isNew;
-    armDelete(del, "もう一度押すと削除（デート記録・確認内容も削除）", function () {
-      takeSnapshot("連絡先の削除前の状態");
-      var ok = deleteContact(c.id);
-      closeSheet(); render();
-      if (ok) toast("削除しました。設定の「直前の状態に戻す」で元に戻せます");
+    armDelete(del, "もう一度押すと削除（デート記録も削除）", function () {
+      deleteContact(c.id); closeSheet(); render(); toast("削除しました");
     });
     nodes.push(el("div", { class: "actions" },
       el("button", { class: "btn primary", type: "button", text: "保存", onclick: function () {
         if (saveContactFromSheet(ctx)) { closeSheet(); render(); toast("保存しました"); }
       } }),
-      el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }), openLink, del));
+      el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }),
+      openLink, del));
     openSheet(isNew ? "連絡先を登録" : "連絡先", nodes);
     ctx.inName.focus();
   }
@@ -11009,37 +10508,24 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     var raw = ctx.inUrl.value.trim(), url = "";
     if (raw) {
       url = lineUrl(raw);
-      if (!url) { toast("LINEのURLではありません。line.me または lin.ee のURLを入力してください"); return false; }
+      if (!url) { toast("LINEのURLではありません"); return false; }
       var dup = S.contacts.find(function (x) { return x.url === url && x.id !== ctx.c.id; });
       if (dup) { toast("同じLINE URLが登録済みです：" + nameOf(dup.id)); return false; }
     }
-    var c = { id: ctx.c.id, name: ctx.inName.value.trim().slice(0, 40) || "名前未設定", memo: ctx.inMemo.value.trim().slice(0, 500), url: url, createdAt: ctx.c.createdAt };
-    var wasNew = ctx.isNew, i = S.contacts.findIndex(function (x) { return x.id === c.id; });
+    var c = { id: ctx.c.id, name: ctx.inName.value.trim() || "名前未設定", memo: ctx.inMemo.value.trim(), url: url, createdAt: ctx.c.createdAt };
+    var i = S.contacts.findIndex(function (x) { return x.id === c.id; });
     if (i >= 0) S.contacts[i] = c; else S.contacts.push(c);
-    var next = normDT(ctx.inNext.value);
-    S.progress[c.id] = { app: ctx.selApp.value, matchedAt: isDate(ctx.inMatched.value) ? ctx.inMatched.value : "", status: ctx.selStatus.value, nextDate: next };
-    var names = ["contacts", "progress"];
-    if (Object.keys(ctx.evals).length) {
-      var res = {};
-      Object.keys(ctx.evals).forEach(function (k) {
-        var s = ctx.evals[k].sel.value, memo = ctx.evals[k].memo.value.trim().slice(0, 100);
-        if (s || memo) res[k] = { s: s, memo: memo };
-      });
-      if (Object.keys(res).length) S.marriage.eval[c.id] = res; else delete S.marriage.eval[c.id];
-      names.push("marriage");
-    }
+    S.progress[c.id] = { app: ctx.selApp.value, matchedAt: ctx.inMatched.value, status: ctx.selStatus.value, nextDate: ctx.inNext.value };
     ctx.c = c; ctx.isNew = false;
-    var ok = commit(names, wasNew ? "add" : "update", "contacts", c.id);
-    if (ok && !wasNew && ctx.oldStatus !== ctx.selStatus.value) log("status:" + ctx.oldStatus + ">" + ctx.selStatus.value, "progress", c.id);
-    ctx.oldStatus = ctx.selStatus.value;
-    return ok;
+    var a = save("contacts"), b = save("progress");
+    return a && b;
   }
 
   /* ---------- date sheet ---------- */
   function openDateSheet(d, contactId) {
-    if (!S.contacts.length) { toast("先に連絡先を登録してください（相手タブ）"); return; }
+    if (!S.contacts.length) { toast("先に連絡先を登録してください"); return; }
     var isNew = !d;
-    d = d || { id: uid(), contactId: contactId || "", date: todayStr(), place: "", memo: "", checks: {}, createdAt: Date.now() };
+    d = d || { id: uid(), contactId: contactId || "", date: ymd(new Date()), place: "", memo: "", checks: {}, createdAt: Date.now() };
     var selC = select([["", "選択してください"]].concat(S.contacts.map(function (c) { return [c.id, c.name || "名前未設定"]; })), d.contactId);
     var inDate = el("input", { type: "date", value: d.date });
     var inPlace = el("input", { type: "text", maxlength: "60", autocomplete: "off", value: d.place || "" });
@@ -11048,237 +10534,64 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
       var cb = el("input", { type: "checkbox", checked: !!(d.checks && d.checks[k[0]]) });
       return { key: k[0], cb: cb, node: el("label", { class: "check" }, cb, k[1]) };
     });
-    var del = el("button", { class: "btn danger right", type: "button", text: "削除" });
+    var del = el("button", { class: "btn danger", type: "button", text: "削除" });
     del.hidden = isNew;
     armDelete(del, "もう一度押すと削除", function () {
       S.dates = S.dates.filter(function (x) { return x.id !== d.id; });
-      commit(["dates"], "delete", "dates", d.id); closeSheet(); render(); toast("削除しました");
+      save("dates"); closeSheet(); render(); toast("削除しました");
     });
     openSheet(isNew ? "デートを記録" : "デート記録",
-      field("相手", selC), field("日付", inDate), field("場所", inPlace),
+      field("相手", selC),
+      field("日付", inDate),
+      field("場所", inPlace),
       el("div", { class: "checks" }, boxes.map(function (b) { return b.node; })),
       field("メモ", inMemo),
       el("div", { class: "actions" },
         el("button", { class: "btn primary", type: "button", text: "保存", onclick: function () {
           if (!selC.value) { toast("相手を選択してください"); return; }
-          if (!isDate(inDate.value)) { toast("日付を入力してください"); return; }
+          if (!inDate.value) { toast("日付を入力してください"); return; }
           var checks = {};
           boxes.forEach(function (b) { if (b.cb.checked) checks[b.key] = true; });
-          var rec = { id: d.id, contactId: selC.value, date: inDate.value, place: inPlace.value.trim().slice(0, 60), memo: inMemo.value.trim().slice(0, 500), checks: checks, createdAt: d.createdAt };
+          var rec = { id: d.id, contactId: selC.value, date: inDate.value, place: inPlace.value.trim(), memo: inMemo.value.trim(), checks: checks, createdAt: d.createdAt };
           var i = S.dates.findIndex(function (x) { return x.id === rec.id; });
           if (i >= 0) S.dates[i] = rec; else S.dates.push(rec);
-          if (commit(["dates"], isNew ? "add" : "update", "dates", rec.id)) { closeSheet(); render(); toast("保存しました"); }
+          if (save("dates")) { closeSheet(); render(); toast("保存しました"); }
         } }),
-        el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }), del));
-  }
-
-  /* ---------- cost / body / cond / qa sheets ---------- */
-  function openCostSheet(item) {
-    var isNew = !item;
-    item = item || { id: uid(), date: todayStr(), cat: CATS[1], amount: 0, contactId: "", memo: "" };
-    var inDate = el("input", { type: "date", value: item.date });
-    var selCat = select(CATS.map(function (c) { return [c, c]; }), item.cat);
-    var inAmt = el("input", { type: "number", inputmode: "numeric", min: "0", max: "10000000", value: item.amount ? String(item.amount) : "" });
-    var selC = select([["", "指定なし"]].concat(S.contacts.map(function (c) { return [c.id, c.name || "名前未設定"]; })), item.contactId);
-    var inMemo = el("input", { type: "text", maxlength: "100", autocomplete: "off", value: item.memo || "" });
-    var del = el("button", { class: "btn danger right", type: "button", text: "削除" });
-    del.hidden = isNew;
-    armDelete(del, "もう一度押すと削除", function () {
-      S.costs.items = S.costs.items.filter(function (x) { return x.id !== item.id; });
-      commit(["costs"], "delete", "costs", item.id); closeSheet(); render(); toast("削除しました");
-    });
-    openSheet(isNew ? "費用を記録" : "費用",
-      field("日付", inDate), field("区分", selCat), field("金額（円）", inAmt), field("相手（任意）", selC), field("メモ", inMemo),
-      el("div", { class: "actions" },
-        el("button", { class: "btn primary", type: "button", text: "保存", onclick: function () {
-          var amt = nn(inAmt.value, 10000000);
-          if (!isDate(inDate.value)) { toast("日付を入力してください"); return; }
-          if (amt === null) { toast("金額は0〜10,000,000の整数で入力してください"); return; }
-          var rec = { id: item.id, date: inDate.value, cat: selCat.value, amount: amt, contactId: selC.value, memo: inMemo.value.trim().slice(0, 100) };
-          var i = S.costs.items.findIndex(function (x) { return x.id === rec.id; });
-          if (i >= 0) S.costs.items[i] = rec; else S.costs.items.push(rec);
-          if (commit(["costs"], isNew ? "add" : "update", "costs", rec.id)) { closeSheet(); render(); toast("保存しました"); }
-        } }),
-        el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }), del));
-  }
-  function openBodySheet(item) {
-    var isNew = !item;
-    item = item || { id: uid(), date: todayStr(), kg: "" };
-    var inDate = el("input", { type: "date", value: item.date });
-    var inKg = el("input", { type: "number", inputmode: "decimal", step: "0.1", min: String(CFG.bodyMin), max: String(CFG.bodyMax), value: item.kg === "" ? "" : String(item.kg) });
-    var del = el("button", { class: "btn danger right", type: "button", text: "削除" });
-    del.hidden = isNew;
-    armDelete(del, "もう一度押すと削除", function () {
-      S.body.entries = S.body.entries.filter(function (x) { return x.id !== item.id; });
-      commit(["body"], "delete", "body", item.id); closeSheet(); render(); toast("削除しました");
-    });
-    openSheet(isNew ? "体重を記録" : "体重",
-      field("日付", inDate), field("体重（kg）", inKg),
-      el("div", { class: "actions" },
-        el("button", { class: "btn primary", type: "button", text: "保存", onclick: function () {
-          var kg = Number(inKg.value);
-          if (!isDate(inDate.value)) { toast("日付を入力してください"); return; }
-          if (inKg.value === "" || !isFinite(kg) || kg < CFG.bodyMin || kg > CFG.bodyMax) { toast(CFG.bodyMin + "〜" + CFG.bodyMax + "の範囲で体重を入力してください"); return; }
-          var rec = { id: item.id, date: inDate.value, kg: Math.round(kg * 10) / 10 };
-          var i = S.body.entries.findIndex(function (x) { return x.id === rec.id; });
-          if (i >= 0) S.body.entries[i] = rec; else S.body.entries.push(rec);
-          if (commit(["body"], isNew ? "add" : "update", "body", rec.id)) { closeSheet(); render(); toast("保存しました"); }
-        } }),
-        el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }), del));
-  }
-  function openCondSheet(cd) {
-    var isNew = !cd;
-    cd = cd || { id: uid(), label: "", imp: "want" };
-    var inLabel = el("input", { type: "text", maxlength: "40", autocomplete: "off", value: cd.label });
-    var selImp = select(IMPS, cd.imp);
-    var del = el("button", { class: "btn danger right", type: "button", text: "削除" });
-    del.hidden = isNew;
-    armDelete(del, "もう一度押すと削除（相手ごとの評価も削除）", function () {
-      takeSnapshot("結婚条件の削除前の状態");
-      S.marriage.conditions = S.marriage.conditions.filter(function (x) { return x.id !== cd.id; });
-      Object.keys(S.marriage.eval).forEach(function (cid) { delete S.marriage.eval[cid][cd.id]; if (!Object.keys(S.marriage.eval[cid]).length) delete S.marriage.eval[cid]; });
-      commit(["marriage"], "delete", "marriage", cd.id); closeSheet(); render(); toast("削除しました。設定の「直前の状態に戻す」で元に戻せます");
-    });
-    openSheet(isNew ? "条件を追加" : "条件を編集",
-      field("条件", inLabel), field("重要度", selImp),
-      el("div", { class: "actions" },
-        el("button", { class: "btn primary", type: "button", text: "保存", onclick: function () {
-          var label = inLabel.value.trim().slice(0, 40);
-          if (!label) { toast("条件の名前を入力してください"); return; }
-          if (isNew && S.marriage.conditions.length >= 30) { toast("条件は30件までです。不要な条件を削除してください"); return; }
-          var rec = { id: cd.id, label: label, imp: selImp.value === "must" ? "must" : "want" };
-          var i = S.marriage.conditions.findIndex(function (x) { return x.id === rec.id; });
-          if (i >= 0) S.marriage.conditions[i] = rec; else S.marriage.conditions.push(rec);
-          if (commit(["marriage"], isNew ? "add" : "update", "marriage", rec.id)) { closeSheet(); render(); toast("保存しました"); }
-        } }),
-        el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }), del));
-  }
-  function openQaSheet(item) {
-    var isNew = !item || !item.id;
-    item = item || { id: uid(), stage: QA_STAGES[1], q: "", a: "" };
-    if (!item.id) item = { id: uid(), stage: item.stage || QA_STAGES[1], q: item.q || "", a: "" };
-    var selStage = select(QA_STAGES.map(function (s) { return [s, s]; }), item.stage);
-    var inQ = el("input", { type: "text", maxlength: "80", autocomplete: "off", value: item.q });
-    var inA = el("textarea", { maxlength: "1000", style: "min-height:200px", value: item.a });
-    var exists = S.qa.items.some(function (x) { return x.id === item.id; });
-    var del = el("button", { class: "btn danger right", type: "button", text: "削除" });
-    del.hidden = !exists;
-    armDelete(del, "もう一度押すと削除", function () {
-      S.qa.items = S.qa.items.filter(function (x) { return x.id !== item.id; });
-      commit(["qa"], "delete", "qa", item.id); closeSheet(); render(); toast("削除しました");
-    });
-    openSheet(exists ? "想定問答" : "想定問答を追加",
-      field("場面", selStage), field("聞かれること", inQ), field("答え（自分の言葉で）", inA),
-      el("div", { class: "actions" },
-        el("button", { class: "btn primary", type: "button", text: "保存", onclick: function () {
-          var q = inQ.value.trim().slice(0, 80);
-          if (!q) { toast("「聞かれること」を入力してください"); return; }
-          var rec = { id: item.id, stage: selStage.value, q: q, a: inA.value.trim().slice(0, 1000) };
-          var i = S.qa.items.findIndex(function (x) { return x.id === rec.id; });
-          if (i >= 0) S.qa.items[i] = rec; else S.qa.items.push(rec);
-          if (commit(["qa"], exists ? "update" : "add", "qa", rec.id)) { closeSheet(); render(); toast("保存しました"); }
-        } }),
-        el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }), del));
-  }
-  function openQaPicker() {
-    var have = {}; S.qa.items.forEach(function (x) { have[x.q] = 1; });
-    var list = QA_EXAMPLES.filter(function (e) { return !have[e[1]]; });
-    openSheet("例から追加",
-      el("p", { class: "mini", text: "題だけを追加します。答えはあなたの言葉で入力してください。" }),
-      list.length ? list.map(function (e) {
-        return el("button", { class: "ver", type: "button", onclick: function () { openQaSheet({ stage: e[0], q: e[1] }); } }, el("span", { text: e[1] }), badge(e[0], "plain"));
-      }) : el("p", { class: "mini", text: "追加できる例はありません" }),
-      el("div", { class: "actions" }, el("button", { class: "btn", type: "button", text: "閉じる", onclick: closeSheet })));
+        el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet }),
+        del));
   }
 
   /* ---------- tabs: render ---------- */
   function empty(h, t) { return el("div", { class: "empty" }, el("strong", { text: h }), el("span", { text: t })); }
+  function chip(t, on) { return el("span", { class: "chip" + (on ? " on" : ""), text: t }); }
   function goLink(c) {
     var name = c.name || "名前未設定", safe = c.url && lineUrl(c.url);
     var a = el("a", { class: "go", text: "LINE", "aria-label": name + "のLINEを開く" });
     if (safe) { a.href = safe; a.target = "_blank"; a.rel = "noopener noreferrer"; }
-    else { a.setAttribute("aria-disabled", "true"); a.setAttribute("role", "link"); }
+    else a.setAttribute("aria-disabled", "true");
     return a;
   }
   function tile(c) { return el("span", { class: "tile", "aria-hidden": "true", text: Array.from(c.name || "名前未設定")[0] || "?" }); }
-  function statusBadge(k) { return badge(statusLabel(k), STATUS_KIND[k]); }
 
-  function renderToday(main) {
-    var q = buildQueue();
-    if (S.volatile) main.append(el("div", { class: "banner err" }, el("strong", { text: "この端末では保存できません" }), "保存領域が使えないため、画面を閉じると入力が消えます。設定から書き出しを行ってください。"));
-    if (!DEV.standalone) main.append(el("div", { class: "banner warn" }, el("strong", { text: "ホーム画面アプリとして開いていません" }), "Safariのタブとホーム画面アプリでは保存データが別になります。共有ボタンから「ホーム画面に追加」し、そのアイコンから使い始めてください。"));
-    if (S.notice) main.append(el("div", { class: "banner info" }, el("strong", { text: "お知らせ" }), S.notice));
-    main.append(el("h2", { text: "要対応（" + q.length + "件）" }));
-    if (!q.length) main.append(empty("要対応はありません", "新しい要対応が発生するとここに並びます"));
-    else {
-      var ul = el("ul", { class: "list" });
-      q.forEach(function (it) {
-        var c = it.cid ? contactById(it.cid) : null;
-        var label = it.sev === "err" ? "要確認" : it.sev === "warn" ? "注意" : "お知らせ";
-        var btn = el("button", { class: "main", type: "button", onclick: function () { if (c) openContactSheet(c, false); else if (it.go) it.go(); } },
-          c ? el("span", { class: "name", text: c.name || "名前未設定" }) : null, el("span", { class: "wrapline", text: it.text }));
-        ul.append(el("li", { class: "row" }, el("span", { class: "qbadge" }, badge(label, it.sev)), btn));
-      });
-      main.append(ul);
-    }
-    var now = jstNow(), up = S.contacts.filter(function (c) { var p = getProg(c.id); return p.status !== "ended" && p.nextDate && p.nextDate >= now; })
-      .sort(function (a, b) { return getProg(a.id).nextDate < getProg(b.id).nextDate ? -1 : 1; });
-    main.append(el("h2", { text: "次の予定" }));
-    if (!up.length) main.append(el("p", { class: "mini", text: "次回デートの日時が入力された相手がいません" }));
-    else {
-      var ul2 = el("ul", { class: "list" });
-      up.forEach(function (c) {
-        var p = getProg(c.id);
-        ul2.append(el("li", { class: "row" }, el("span", { class: "tile", "aria-hidden": "true", text: md(p.nextDate) }),
-          el("button", { class: "main", type: "button", onclick: function () { openContactSheet(c, false); } },
-            el("span", { class: "name", text: c.name || "名前未設定" }), el("span", { class: "sub" }, fmtNext(p.nextDate), statusBadge(p.status))), goLink(c)));
-      });
-      main.append(ul2);
-    }
-    var lim = S.settings.wipLimit, mk = todayStr().slice(0, 7), st = monthStats(mk), spent = sumAmount(monthCosts(mk)), b = S.costs.budget;
-    main.append(el("h2", { text: "今月" }));
-    main.append(el("div", { class: "kv" }, "同時進行（デート済）", el("b", { text: wipCount() + "名" + (lim ? " / 上限" + lim + "名" : "（上限未設定）") })));
-    main.append(el("div", { class: "kv" }, "対面（初回デート）", el("b", { text: st.meets + " / 目標" + CFG.target.meets })));
-    main.append(el("div", { class: "kv" }, "2回目に進んだ人数", el("b", { text: st.second + " / 目標" + CFG.target.second })));
-    main.append(el("div", { class: "kv" }, "費用", el("b", { text: yen(spent) + (b !== null ? " / 予算" + yen(b) : "（予算未設定）") })));
-  }
-
-  function renderPeople(main) {
+  function renderContacts(main) {
     main.append(el("div", { class: "subactions" },
       el("button", { class: "txt", type: "button", text: "画像から読み取る", onclick: function () { pickFile("#fileImg"); } }),
       el("button", { class: "txt", type: "button", text: "手入力で追加", onclick: function () { openContactSheet(newContact(""), true); } })));
-    main.append(seg([["list", "一覧"], ["board", "進捗別"]], S.ui.sub.people, function (v) { S.ui.sub.people = v; render(); }));
     if (!S.contacts.length) { main.append(empty("連絡先がありません", "「QRを読み取る」でLINEのQRコードを登録します")); return; }
-    if (S.ui.sub.people === "board") { renderBoard(main); return; }
-    var inp = el("input", { class: "in find", type: "search", placeholder: "名前・メモで検索", "aria-label": "名前・メモで検索", autocomplete: "off", value: S.ui.q });
-    var listBox = el("div", {});
-    function fill() {
-      listBox.replaceChildren();
-      var qq = S.ui.q.trim().toLowerCase();
-      var items = S.contacts.filter(function (c) {
-        if (S.ui.filter !== "all" && getProg(c.id).status !== S.ui.filter) return false;
-        return !qq || (c.name + " " + c.memo).toLowerCase().indexOf(qq) >= 0;
-      }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
-      if (!items.length) { listBox.append(empty("該当する連絡先がありません", "検索語またはステータスの絞り込みを変えてください")); return; }
-      var ul = el("ul", { class: "list" });
-      items.forEach(function (c) {
-        var p = getProg(c.id), n = datesFor(c.id).length, cs = condState(c.id);
-        ul.append(el("li", { class: "row" }, tile(c),
-          el("button", { class: "main", type: "button", onclick: function () { openContactSheet(c, false); } },
-            el("span", { class: "name", text: c.name || "名前未設定" }),
-            el("span", { class: "sub" }, statusBadge(p.status), n ? "デート" + n + "回" : null, p.app || null, "確認" + cs.confirmed + "/" + cs.total),
-            c.memo ? el("span", { class: "line1", text: c.memo }) : null), goLink(c)));
-      });
-      listBox.append(ul);
-    }
-    inp.addEventListener("input", function () { S.ui.q = inp.value; fill(); });
-    main.append(inp);
-    main.append(seg([["all", "すべて"]].concat(STATUS), S.ui.filter, function (v) { S.ui.filter = v; render(); }));
-    main.append(listBox);
-    fill();
+    var ul = el("ul", { class: "list" });
+    S.contacts.slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); }).forEach(function (c) {
+      var p = getProg(c.id), n = datesFor(c.id).length;
+      var sub = el("span", { class: "sub" }, chip(statusLabel(p.status), p.status === "dating"), n ? "デート" + n + "回" : null, p.app || null);
+      ul.append(el("li", { class: "row" }, tile(c),
+        el("button", { class: "main", type: "button", onclick: function () { openContactSheet(c, false); } },
+          el("span", { class: "name", text: c.name || "名前未設定" }), sub, c.memo ? el("span", { class: "line1", text: c.memo }) : null),
+        goLink(c)));
+    });
+    main.append(ul);
   }
-  function renderBoard(main) {
-    var lim = S.settings.wipLimit;
+
+  function renderProgress(main) {
+    if (!S.contacts.length) { main.append(empty("連絡先がありません", "連絡帳に相手を登録すると、ここに進捗が並びます")); return; }
     STATUS.forEach(function (st) {
       var items = S.contacts.filter(function (c) { return getProg(c.id).status === st[0]; });
       if (!items.length) return;
@@ -11288,17 +10601,17 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
         if (x) return -1; if (y) return 1;
         return (b.createdAt || 0) - (a.createdAt || 0);
       });
-      var over = st[0] === CFG.wipStatus && lim && items.length > lim;
-      main.append(el("div", { class: "group-h" }, el("span", { style: "color:var(--ink);font-size:16px;font-weight:700", text: st[1] }),
-        el("span", {}, items.length + "件", over ? " " : null, over ? badge("上限" + lim + "名を超過", "warn") : null)));
+      main.append(el("div", { class: "group-h" }, st[1], el("span", { text: items.length + "件" })));
       var ul = el("ul", { class: "list" });
       items.forEach(function (c) {
-        var p = getProg(c.id), n = datesFor(c.id).length, h = hintFor(c.id), cs = condState(c.id);
+        var p = getProg(c.id), n = datesFor(c.id).length, h = hintFor(c.id), al = alertsFor(c.id);
         ul.append(el("li", { class: "row" }, tile(c),
           el("button", { class: "main", type: "button", onclick: function () { openContactSheet(c, false); } },
             el("span", { class: "name", text: c.name || "名前未設定" }),
-            el("span", { class: "sub" }, p.app || null, "デート" + n + "回", p.nextDate ? "次回 " + fmtNext(p.nextDate) : null, "確認" + cs.confirmed + "/" + cs.total),
-            h ? el("span", { class: "hint", text: h }) : null), goLink(c)));
+            el("span", { class: "sub" }, p.app || null, "デート" + n + "回", p.nextDate ? "次回 " + fmtNext(p.nextDate) : null),
+            h ? el("span", { class: "hint", text: h }) : null,
+            al.map(function (a) { return el("span", { class: "warn", text: a }); })),
+          goLink(c)));
       });
       main.append(ul);
     });
@@ -11309,7 +10622,8 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     var ords = ordinals(), ul = el("ul", { class: "list" });
     S.dates.slice().sort(function (a, b) { return -cmpDate(a, b); }).forEach(function (d) {
       var ck = CHECKS_DATE.filter(function (k) { return d.checks && d.checks[k[0]]; }).length;
-      ul.append(el("li", { class: "row" }, el("span", { class: "tile", "aria-hidden": "true", text: md(d.date) }),
+      ul.append(el("li", { class: "row" },
+        el("span", { class: "tile", "aria-hidden": "true" }, md(d.date)),
         el("button", { class: "main", type: "button", onclick: function () { openDateSheet(d, d.contactId); } },
           el("span", { class: "name", text: nameOf(d.contactId) }),
           el("span", { class: "sub" }, (ords[d.id] || "?") + "回目", d.place || null, ck ? "確認" + ck + "/4" : null),
@@ -11318,275 +10632,143 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     main.append(ul);
   }
 
+  function monthStats(mk) {
+    var meets = 0, second = 0;
+    S.contacts.forEach(function (c) {
+      var ds = datesFor(c.id);
+      if (ds[0] && ds[0].date.slice(0, 7) === mk) meets++;
+      if (ds[1] && ds[1].date.slice(0, 7) === mk) second++;
+    });
+    return { meets: meets, second: second };
+  }
+  function judge(mk) {
+    var k = S.kpi[mk] || {}, st = monthStats(mk), out = [];
+    if (isNum(k.likes) && k.likes < TARGET.likes) out.push("稼働不足：いいね送信数が目標（" + TARGET.likes + "）未満");
+    if (isNum(k.liked) && k.liked < 20) out.push("写真の問題の可能性：被いいね数が20未満（写真の差し替えを最優先）");
+    if (isNum(k.likes) && k.likes > 0 && isNum(k.matches) && k.matches / k.likes < 0.1) out.push("自己紹介文・詳細項目の問題の可能性：マッチ率が10%未満");
+    if ((Object.keys(k).length || st.meets) && st.meets < 3) out.push("メッセージ運用の問題の可能性：対面数が3未満（会う提案の遅れ）");
+    return out;
+  }
   function shiftMonth(delta) {
-    var p = S.ui.month.split("-"), d = new Date(Date.UTC(+p[0], +p[1] - 1 + delta, 1));
-    S.ui.month = d.getUTCFullYear() + "-" + z(d.getUTCMonth() + 1);
+    var p = S.month.split("-"), d = new Date(Number(p[0]), Number(p[1]) - 1 + delta, 1);
+    S.month = d.getFullYear() + "-" + z(d.getMonth() + 1);
     render();
   }
-  function monthNav(main) {
-    var p = S.ui.month.split("-");
+  function renderKpi(main) {
+    var mk = S.month, k = S.kpi[mk] || {}, st = monthStats(mk), p = mk.split("-");
     main.append(el("div", { class: "mnav" },
       el("button", { type: "button", "aria-label": "前の月", text: "‹", onclick: function () { shiftMonth(-1); } }),
-      el("strong", { text: p[0] + "年" + (+p[1]) + "月" }),
+      el("strong", { text: p[0] + "年" + Number(p[1]) + "月" }),
       el("button", { type: "button", "aria-label": "次の月", text: "›", onclick: function () { shiftMonth(1); } })));
-    if (S.ui.month === todayStr().slice(0, 7)) main.append(el("p", { class: "mini", text: "当月は月途中の暫定値です" }));
-  }
-  function renderNumbers(main) {
-    main.append(seg([["kpi", "KPI"], ["cost", "費用"], ["body", "体型"]], S.ui.sub.numbers, function (v) { S.ui.sub.numbers = v; render(); }));
-    if (S.ui.sub.numbers === "cost") renderCost(main);
-    else if (S.ui.sub.numbers === "body") renderBody(main);
-    else renderKpi(main);
-  }
-  function renderKpi(main) {
-    var mk = S.ui.month, st = monthStats(mk), m = S.kpi[mk] || {};
-    monthNav(main);
-    var hasUn = Object.keys(S.kpi).some(function (k) { return S.kpi[k][UNASSIGNED]; });
-    var choices = [["all", "全体"]].concat(APPS.map(function (a) { return [a, a]; }));
-    if (hasUn) choices.push([UNASSIGNED, UNASSIGNED + "（旧データ）"]);
-    if (!choices.some(function (c) { return c[0] === S.ui.kpiApp; })) S.ui.kpiApp = "all";
-    main.append(seg(choices, S.ui.kpiApp, function (v) { S.ui.kpiApp = v; render(); }));
-    function status(v, target) { return v === undefined ? "未入力" : v >= target ? "達成" : "未達"; }
-    var t = kpiTotal(mk);
-    if (S.ui.kpiApp === "all") {
-      main.append(el("div", { class: "kv" }, "いいね送信数（合計）", el("b", { text: t.any ? t.likes + " / 目標" + CFG.target.likes + "　" + status(t.likes, CFG.target.likes) : "未入力" })));
-      main.append(el("div", { class: "kv" }, "被いいね数（合計）", el("b", { text: t.any ? t.liked + " / 目標" + CFG.target.liked + "以上　" + status(t.liked, CFG.target.liked) : "未入力" })));
-      main.append(el("div", { class: "kv" }, "マッチ数（合計）", el("b", { text: t.any ? t.matches + " / 目標" + CFG.target.matches + "　" + status(t.matches, CFG.target.matches) : "未入力" })));
-      main.append(el("div", { class: "kv" }, "マッチ率", el("b", { text: t.likes > 0 ? (Math.round(t.matches / t.likes * 1000) / 10) + "%" : "—" })));
-      main.append(el("p", { class: "mini", text: "アプリごとの数値は、上のアプリ名を選んで入力します。" }));
-      var apps = Object.keys(m);
-      if (apps.length) {
-        main.append(el("h2", { text: "アプリ別の比較" }));
-        var ul = el("ul", { class: "list" });
-        apps.forEach(function (a) {
-          var v = m[a], r = v.likes > 0 && v.matches !== undefined ? (Math.round(v.matches / v.likes * 1000) / 10) + "%" : "—";
-          ul.append(el("li", { class: "row" }, el("div", { class: "main" }, el("span", { class: "name", text: a }),
-            el("span", { class: "sub" }, "送信" + (v.likes === undefined ? "—" : v.likes), "被" + (v.liked === undefined ? "—" : v.liked), "マッチ" + (v.matches === undefined ? "—" : v.matches), "マッチ率" + r, "対面" + (st.byApp[a] || 0)))));
-        });
-        main.append(ul);
-      }
-    } else {
-      var a = S.ui.kpiApp, cur = m[a] || {};
-      [["likes", "いいね送信数", CFG.target.likes + "（2アプリ併用の合計目標）"], ["liked", "被いいね数", ""], ["matches", "マッチ数", ""]].forEach(function (f) {
-        var inp = el("input", { type: "number", inputmode: "numeric", min: "0", "aria-label": a + " " + f[1], value: cur[f[0]] === undefined ? "" : String(cur[f[0]]) });
-        inp.addEventListener("change", function () {
-          var v = nn(inp.value, 1000000), month = S.kpi[mk] || {}, row = month[a] || {};
-          if (v === null) delete row[f[0]]; else row[f[0]] = v;
-          if (Object.keys(row).length) month[a] = row; else delete month[a];
-          if (Object.keys(month).length) S.kpi[mk] = month; else delete S.kpi[mk];
-          if (commit(["kpi"], "update", "kpi", mk + ":" + a)) render();
-        });
-        main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: f[1] }), inp, f[2] ? el("span", { class: "note", text: "目標（全体）" + f[2] }) : null));
+    if (mk === S.month && mk === ymd(new Date()).slice(0, 7)) main.append(el("p", { class: "mini", text: "当月は月途中の暫定値です" }));
+    function status(v, target) { return !isNum(v) ? "未入力" : v >= target ? "達成" : "未達"; }
+    function inputRow(key, label, target, ttext) {
+      var inp = el("input", { type: "number", inputmode: "numeric", min: "0", "aria-label": label, value: isNum(k[key]) ? String(k[key]) : "" });
+      inp.addEventListener("change", function () {
+        var v = parseInt(inp.value, 10), cur = S.kpi[mk] || {};
+        if (isNaN(v) || v < 0) delete cur[key]; else cur[key] = v;
+        if (Object.keys(cur).length) S.kpi[mk] = cur; else delete S.kpi[mk];
+        save("kpi"); render();
       });
-      var r = cur.likes > 0 && cur.matches !== undefined ? (Math.round(cur.matches / cur.likes * 1000) / 10) + "%" : "—";
-      main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: "マッチ率" }), el("span", { class: "val", text: r }), el("span", { class: "note", text: "マッチ数 ÷ いいね送信数。10%未満で要改善" })));
+      return el("div", { class: "kpi" }, el("span", { class: "lab", text: label }), inp,
+        el("span", { class: "note", text: ttext + "　" + status(k[key], target) }));
     }
-    main.append(el("div", { class: "kv" }, "対面数（デート記録から自動集計）", el("b", { text: st.meets + " / 目標" + CFG.target.meets + "　" + (st.meets >= CFG.target.meets ? "達成" : "未達") })));
-    main.append(el("div", { class: "kv" }, "2回目移行数（自動集計）", el("b", { text: st.second + " / 目標" + CFG.target.second + "　" + (st.second >= CFG.target.second ? "達成" : "未達") })));
-    main.append(el("h2", { text: "切り分け（全体の数値で判定）" }));
+    main.append(inputRow("likes", "いいね送信数", TARGET.likes, "目標 " + TARGET.likes + "（2アプリ併用）"));
+    main.append(inputRow("liked", "被いいね数", TARGET.liked, "目標 " + TARGET.liked + "以上"));
+    main.append(inputRow("matches", "マッチ数", TARGET.matches, "目標 " + TARGET.matches));
+    var rate = isNum(k.likes) && k.likes > 0 && isNum(k.matches) ? (Math.round(k.matches / k.likes * 1000) / 10) + "%" : "—";
+    main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: "マッチ率" }), el("span", { class: "val", text: rate }),
+      el("span", { class: "note", text: "マッチ数 ÷ いいね送信数。10%未満で要改善" })));
+    main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: "対面数" }), el("span", { class: "val", text: String(st.meets) }),
+      el("span", { class: "note", text: "目標 " + TARGET.meets + "以上　" + (st.meets >= TARGET.meets ? "達成" : "未達") + "　デート記録から自動集計（初回デートを実施した人数）" })));
+    main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: "2回目移行数" }), el("span", { class: "val", text: String(st.second) }),
+      el("span", { class: "note", text: "目標 " + TARGET.second + "以上　" + (st.second >= TARGET.second ? "達成" : "未達") + "　デート記録から自動集計（2回目デートを実施した人数）" })));
+    main.append(el("h2", { text: "切り分け" }));
     var js = judge(mk);
-    main.append(js.length ? el("ul", { class: "judge" }, js.map(function (x) { return el("li", { text: x }); }))
-      : el("p", { class: "mini", text: t.any || st.meets ? "該当なし" : "数値を入力すると、写真・文面・運用のどこに問題があるかを表示します" }));
-  }
-  function renderCost(main) {
-    var mk = S.ui.month;
-    monthNav(main);
-    var items = monthCosts(mk).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }), total = sumAmount(items), b = S.costs.budget;
-    var bi = el("input", { type: "number", inputmode: "numeric", min: "0", max: "10000000", "aria-label": "月の予算（円）", value: b === null ? "" : String(b) });
-    bi.addEventListener("change", function () {
-      S.costs.budget = nn(bi.value, 10000000);
-      if (commit(["costs"], "update", "costs", "budget")) render();
-    });
-    main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: "月の予算（円）" }), bi,
-      el("span", { class: "note", text: b === null ? "未設定（空欄のままなら超過の警告は出ません）" : (total > b ? "予算超過　" + yen(total - b) : "残り　" + yen(b - total)) })));
-    main.append(el("div", { class: "kv" }, "今月の合計", el("b", { text: yen(total) })));
-    CATS.forEach(function (c) {
-      var s = sumAmount(items.filter(function (x) { return x.cat === c; }));
-      if (s) main.append(el("div", { class: "kv" }, c, el("span", { text: yen(s) })));
-    });
-    main.append(el("div", { class: "actions" }, el("button", { class: "btn primary", type: "button", text: "費用を記録", onclick: function () { openCostSheet(null); } })));
-    if (!items.length) { main.append(empty("この月の費用記録がありません", "「費用を記録」で追加します")); return; }
-    var ul = el("ul", { class: "list", style: "margin-top:16px" });
-    items.forEach(function (it) {
-      ul.append(el("li", { class: "row" }, el("span", { class: "tile", "aria-hidden": "true", text: md(it.date) }),
-        el("button", { class: "main", type: "button", onclick: function () { openCostSheet(it); } },
-          el("span", { class: "name", text: yen(it.amount) }),
-          el("span", { class: "sub" }, badge(it.cat, "plain"), it.contactId ? nameOf(it.contactId) : null), it.memo ? el("span", { class: "line1", text: it.memo }) : null)));
-    });
-    main.append(ul);
-  }
-  function renderBody(main) {
-    var es = S.body.entries.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-    var gi = el("input", { type: "number", inputmode: "decimal", step: "0.1", min: String(CFG.bodyMin), max: String(CFG.bodyMax), "aria-label": "目標体重（kg）", value: S.body.goal === null ? "" : String(S.body.goal) });
-    gi.addEventListener("change", function () {
-      var g = Number(gi.value);
-      S.body.goal = gi.value !== "" && isFinite(g) && g >= CFG.bodyMin && g <= CFG.bodyMax ? Math.round(g * 10) / 10 : null;
-      if (commit(["body"], "update", "body", "goal")) render();
-    });
-    main.append(el("div", { class: "kpi" }, el("span", { class: "lab", text: "目標体重（kg）" }), gi, el("span", { class: "note", text: S.body.goal === null ? "未設定（あなたが決めた値を入力）" : "目標 " + S.body.goal + "kg" })));
-    if (!es.length) { main.append(el("div", { class: "actions" }, el("button", { class: "btn primary", type: "button", text: "体重を記録", onclick: function () { openBodySheet(null); } })), empty("体重の記録がありません", "「体重を記録」で追加します")); return; }
-    var last = es[es.length - 1], first = es[0];
-    main.append(el("div", { class: "kv" }, "最新（" + ymdSlash(last.date) + "）", el("b", { text: last.kg + "kg" })));
-    if (es.length > 1) main.append(el("div", { class: "kv" }, "初回（" + ymdSlash(first.date) + "）からの変化", el("b", { text: (last.kg - first.kg > 0 ? "+" : "") + (Math.round((last.kg - first.kg) * 10) / 10) + "kg" })));
-    if (S.profile.photoUpdatedAt) {
-      var base = es.find(function (e) { return e.date >= S.profile.photoUpdatedAt; });
-      if (base) main.append(el("div", { class: "kv" }, "写真更新日（" + ymdSlash(S.profile.photoUpdatedAt) + "）以降の変化", el("b", { text: (last.kg - base.kg > 0 ? "+" : "") + (Math.round((last.kg - base.kg) * 10) / 10) + "kg" })));
-    }
-    if (S.body.goal !== null) main.append(el("div", { class: "kv" }, "目標までの差", el("b", { text: (Math.round((last.kg - S.body.goal) * 10) / 10) + "kg" })));
-    var pts = es.slice(-30), min = Math.min.apply(null, pts.map(function (e) { return e.kg; })), max = Math.max.apply(null, pts.map(function (e) { return e.kg; }));
-    if (S.body.goal !== null) { min = Math.min(min, S.body.goal); max = Math.max(max, S.body.goal); }
-    var span = Math.max(max - min, 1), svg = svgEl("svg", { viewBox: "0 0 320 96", class: "spark", role: "img", "aria-label": "体重の推移（直近" + pts.length + "件）。最新" + last.kg + "kg" });
-    var xy = pts.map(function (e, i) { return [pts.length === 1 ? 160 : 8 + i * (304 / (pts.length - 1)), 88 - (e.kg - min) / span * 80]; });
-    if (S.body.goal !== null) svg.append(svgEl("line", { x1: "8", x2: "312", y1: String(88 - (S.body.goal - min) / span * 80), y2: String(88 - (S.body.goal - min) / span * 80), stroke: "currentColor", "stroke-dasharray": "4 4", "stroke-width": "1" }));
-    svg.append(svgEl("polyline", { points: xy.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" ") }));
-    xy.forEach(function (p) { svg.append(svgEl("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: "3" })); });
-    main.append(svg);
-    main.append(el("div", { class: "actions" }, el("button", { class: "btn primary", type: "button", text: "体重を記録", onclick: function () { openBodySheet(null); } })));
-    var ul = el("ul", { class: "list", style: "margin-top:16px" });
-    es.slice().reverse().forEach(function (e, i, arr) {
-      var prev = arr[i + 1], dlt = prev ? Math.round((e.kg - prev.kg) * 10) / 10 : null;
-      ul.append(el("li", { class: "row" }, el("span", { class: "tile", "aria-hidden": "true", text: md(e.date) }),
-        el("button", { class: "main", type: "button", onclick: function () { openBodySheet(e); } },
-          el("span", { class: "name", text: e.kg + "kg" }), dlt === null ? null : el("span", { class: "sub", text: "前回比 " + (dlt > 0 ? "+" : "") + dlt + "kg" }))));
-    });
-    main.append(ul);
+    main.append(js.length ? el("ul", { class: "judge" }, js.map(function (t) { return el("li", { text: t }); }))
+      : el("p", { class: "mini", text: Object.keys(k).length || st.meets ? "該当なし" : "数値を入力すると、写真・文面・運用のどこに問題があるかを表示します" }));
   }
 
-  function renderSelf(main) {
-    main.append(seg([["profile", "プロフィール"], ["cond", "結婚条件"], ["qa", "想定問答"]], S.ui.sub.self, function (v) { S.ui.sub.self = v; render(); }));
-    if (S.ui.sub.self === "cond") renderCond(main);
-    else if (S.ui.sub.self === "qa") renderQa(main);
-    else renderProfile(main);
-  }
-  function renderCond(main) {
-    main.append(el("p", { class: "mini", text: "相手ごとの評価は「相手」タブの連絡先から入力します。「譲れない」の条件が不一致・未確認のとき、今日タブに表示されます。判断はあなたが行います。" }));
-    var ul = el("ul", { class: "list" });
-    S.marriage.conditions.forEach(function (cd) {
-      ul.append(el("li", { class: "row" }, el("button", { class: "main", type: "button", onclick: function () { openCondSheet(cd); } },
-        el("span", { class: "name", text: cd.label }), el("span", { class: "sub" }, badge(cd.imp === "must" ? "譲れない" : "望ましい", cd.imp === "must" ? "info" : "plain")))));
-    });
-    main.append(ul);
-    if (!S.marriage.conditions.length) main.append(empty("条件がありません", "「条件を追加」で追加します"));
-    main.append(el("div", { class: "actions" }, el("button", { class: "btn primary", type: "button", text: "条件を追加", onclick: function () { openCondSheet(null); } })));
-  }
-  function renderQa(main) {
-    main.append(el("p", { class: "mini", text: "聞かれたときの答えを、場面ごとに自分の言葉で残します。" }));
-    main.append(el("div", { class: "actions", style: "margin-top:0" },
-      el("button", { class: "btn primary", type: "button", text: "追加", onclick: function () { openQaSheet(null); } }),
-      el("button", { class: "btn", type: "button", text: "例から追加", onclick: openQaPicker })));
-    if (!S.qa.items.length) { main.append(empty("想定問答がありません", "「追加」または「例から追加」で作ります")); return; }
-    QA_STAGES.forEach(function (stg) {
-      var items = S.qa.items.filter(function (x) { return x.stage === stg; });
-      if (!items.length) return;
-      main.append(el("div", { class: "group-h" }, el("span", { style: "color:var(--ink);font-size:16px;font-weight:700", text: stg }), el("span", { text: items.length + "件" })));
-      var ul = el("ul", { class: "list" });
-      items.forEach(function (it) {
-        ul.append(el("li", { class: "row" }, el("button", { class: "main", type: "button", onclick: function () { openQaSheet(it); } },
-          el("span", { class: "name", text: it.q }), it.a ? el("span", { class: "line1", text: it.a }) : el("span", { class: "hint", text: "答えが未入力です" }))));
-      });
-      main.append(ul);
-    });
-  }
+  function currentIntro() { return S.profile.intros.find(function (v) { return v.id === S.profile.currentId; }) || null; }
   function renderProfile(main) {
     var cur = currentIntro();
-    if (S.ui.introDraft === null) S.ui.introDraft = cur ? cur.text : "";
-    var ta = el("textarea", { maxlength: "2000", style: "min-height:224px", "aria-label": "自己紹介文", class: "in", value: S.ui.introDraft });
+    if (S.introDraft === null) S.introDraft = cur ? cur.text : "";
+    var ta = el("textarea", { maxlength: "2000", style: "min-height:220px", "aria-label": "自己紹介文", value: S.introDraft });
     var counter = el("p", { class: "mini" });
     function upd() {
       var n = Array.from(ta.value).length;
       counter.textContent = n + "字（目安300〜400字）" + (n === 0 ? "" : n < 300 ? "　不足" : n > 400 ? "　超過" : "　範囲内");
     }
-    ta.addEventListener("input", function () { S.ui.introDraft = ta.value; upd(); });
+    ta.addEventListener("input", function () { S.introDraft = ta.value; upd(); });
     upd();
-    main.append(el("h2", { text: "自己紹介文" }), ta, counter);
+    main.append(el("h2", { text: "自己紹介文" }), el("div", { class: "field" }, ta), counter);
     main.append(el("div", { class: "actions", style: "margin-top:0" }, el("button", { class: "btn primary", type: "button", text: "新しい版として保存", onclick: function () {
-      var text = ta.value.trim().slice(0, 2000);
+      var text = ta.value.trim();
       if (!text) { toast("本文を入力してください"); return; }
       var v = { id: uid(), text: text, createdAt: Date.now() };
       S.profile.intros.push(v); S.profile.currentId = v.id;
-      if (commit(["profile"], "add", "profile", v.id)) { S.ui.introDraft = null; render(); toast("保存しました"); }
+      if (save("profile")) { S.introDraft = null; render(); toast("保存しました"); }
     } })));
-    if (cur) { var d = Math.floor((Date.now() - cur.createdAt) / 86400000); main.append(el("p", { class: "mini", style: "margin-top:8px", text: "現行版は" + d + "日前に作成" + (d >= CFG.introDays ? "（2〜3か月ごとの微調整の時期）" : "（2〜3か月ごとに微調整が目安）") })); }
+    if (cur) {
+      var d = daysSince(cur.createdAt);
+      main.append(el("p", { class: "mini", style: "margin-top:12px", text: "現行版は" + d + "日前に作成" + (d >= 60 ? "（2〜3か月ごとの微調整の時期）" : "（2〜3か月ごとに微調整が目安）") }));
+    }
     if (S.profile.intros.length) {
       main.append(el("h2", { text: "版の履歴" }));
       S.profile.intros.slice().reverse().forEach(function (v) {
-        var d2 = new Date(v.createdAt + 32400000);
-        main.append(el("button", { class: "ver", type: "button", onclick: function () { S.ui.introDraft = v.text; S.profile.currentId = v.id; commit(["profile"], "update", "profile", v.id); render(); toast("この版を現行にして編集欄に読み込みました"); } },
-          el("span", { text: d2.getUTCFullYear() + "/" + (d2.getUTCMonth() + 1) + "/" + d2.getUTCDate() + "　" + Array.from(v.text).slice(0, 24).join("") }),
-          badge(v.id === S.profile.currentId ? "現行" : Array.from(v.text).length + "字", v.id === S.profile.currentId ? "ok" : "plain")));
+        var d2 = new Date(v.createdAt);
+        main.append(el("button", { class: "ver", type: "button", onclick: function () { S.introDraft = v.text; S.profile.currentId = v.id; save("profile"); render(); toast("この版を現行にして編集欄に読み込みました"); } },
+          el("span", { text: d2.getFullYear() + "/" + (d2.getMonth() + 1) + "/" + d2.getDate() + "　" + v.text.slice(0, 24) }),
+          chip(v.id === S.profile.currentId ? "現行" : Array.from(v.text).length + "字", v.id === S.profile.currentId)));
       });
     }
     main.append(el("h2", { text: "チェックリスト" }));
     var box = el("div", { class: "checks" });
     CHECKS_PROFILE.forEach(function (k) {
       var cb = el("input", { type: "checkbox", checked: !!S.profile.checks[k[0]] });
-      cb.addEventListener("change", function () { if (cb.checked) S.profile.checks[k[0]] = true; else delete S.profile.checks[k[0]]; commit(["profile"], "update", "profile", k[0]); });
+      cb.addEventListener("change", function () { S.profile.checks[k[0]] = cb.checked; save("profile"); });
       box.append(el("label", { class: "check" }, cb, k[1]));
     });
     main.append(box);
     main.append(el("h2", { text: "写真" }));
-    var inP = el("input", { type: "date", "aria-label": "写真の最終更新日", value: S.profile.photoUpdatedAt });
-    inP.addEventListener("change", function () { S.profile.photoUpdatedAt = isDate(inP.value) ? inP.value : ""; commit(["profile"], "update", "profile", "photo"); render(); });
+    var inP = el("input", { type: "date", "aria-label": "写真の更新日", value: S.profile.photoUpdatedAt });
+    inP.addEventListener("change", function () { S.profile.photoUpdatedAt = inP.value; save("profile"); render(); });
     main.append(field("最終更新日", inP));
     if (S.profile.photoUpdatedAt) {
-      var dd = daysSinceDate(S.profile.photoUpdatedAt);
-      main.append(el("p", { class: "mini" + (dd >= CFG.photoDays ? " warn" : ""), text: "更新から" + dd + "日" + (dd >= CFG.photoDays ? "（3か月ごとの差し替え時期）" : "（3か月ごとに差し替えが目安）") }));
-    }
-  }
-
-  /* ---------- 端末API（対応は機能検出。未対応なら何もしない） ---------- */
-  var DEV = { standalone: false, persisted: null, persistSupported: false };
-  function isStandalone() {
-    try { return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true; } catch (e) { return false; }
-  }
-  function initDevice() {
-    DEV.standalone = isStandalone();
-    try {
-      if (navigator.storage && navigator.storage.persist) {
-        DEV.persistSupported = true;
-        navigator.storage.persisted().then(function (already) {
-          if (already) { DEV.persisted = true; return; }
-          return navigator.storage.persist().then(function (g) { DEV.persisted = !!g; });
-        }).catch(function () { DEV.persisted = null; });
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(S.profile.photoUpdatedAt);
+      if (m) {
+        var dd = daysSince(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime());
+        main.append(el("p", { class: "mini" + (dd >= 90 ? " warn" : ""), text: "更新から" + dd + "日" + (dd >= 90 ? "（3か月ごとの差し替え時期）" : "（3か月ごとに差し替えが目安）") }));
       }
-    } catch (e) { /* 未対応 */ }
-  }
-  function badgeSupported() { return "setAppBadge" in navigator && "clearAppBadge" in navigator; }
-  function updateBadge() {
-    if (!badgeSupported() || S.readFail.settings) return;
-    try {
-      if (!S.settings.badge || typeof Notification === "undefined" || Notification.permission !== "granted") { navigator.clearAppBadge(); return; }
-      var n = buildQueue().filter(function (x) { return x.sev === "err" || x.sev === "warn"; }).length;
-      if (n > 0) navigator.setAppBadge(n); else navigator.clearAppBadge();
-    } catch (e) { /* バッジ更新失敗は本体機能に影響させない */ }
+    }
   }
 
   function render() {
     var main = $("#main");
     main.replaceChildren();
-    var tab = S.ui.tab;
-    $("#title").textContent = TITLES[tab];
-    $("#count").textContent = tab === "people" ? S.contacts.length + "件" : tab === "dates" ? S.dates.length + "件" : "";
-    document.querySelectorAll(".tab").forEach(function (b) { if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    $("#title").textContent = TITLES[S.tab];
+    $("#count").textContent = S.tab === "contacts" ? S.contacts.length + "件" : S.tab === "dates" ? S.dates.length + "件" : "";
+    document.querySelectorAll(".tab").forEach(function (b) {
+      if (b.dataset.tab === S.tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
     var fab = $("#fab");
     fab.replaceChildren();
-    fab.onclick = null;
-    if (tab === "people") {
+    if (S.tab === "contacts") {
       fab.hidden = false;
-      var ic = svgEl("svg", { viewBox: "0 0 28 28", fill: "none", stroke: "currentColor", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" });
-      ic.append(svgEl("path", { d: "M3 9V5a2 2 0 0 1 2-2h4M19 3h4a2 2 0 0 1 2 2v4M25 19v4a2 2 0 0 1-2 2h-4M9 25H5a2 2 0 0 1-2-2v-4" }), svgEl("path", { d: "M9 14h10" }));
-      fab.append(ic, "QRを読み取る");
+      fab.innerHTML = '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9V5a2 2 0 0 1 2-2h4M19 3h4a2 2 0 0 1 2 2v4M25 19v4a2 2 0 0 1-2 2h-4M9 25H5a2 2 0 0 1-2-2v-4"/><path d="M9 14h10"/></svg>';
+      fab.append("QRを読み取る");
       fab.onclick = function () { pickFile("#fileCam"); };
-    } else if (tab === "dates") {
-      fab.hidden = false; fab.append("デートを記録");
+    } else if (S.tab === "dates") {
+      fab.hidden = false;
+      fab.append("デートを記録");
       fab.onclick = function () { openDateSheet(null, ""); };
     } else fab.hidden = true;
-    ({ today: renderToday, people: renderPeople, dates: renderDates, numbers: renderNumbers, self: renderSelf })[tab](main);
-    updateBadge();
+    ({ contacts: renderContacts, progress: renderProgress, dates: renderDates, kpi: renderKpi, profile: renderProfile })[S.tab](main);
   }
   $("#tabs").addEventListener("click", function (e) {
     var b = e.target.closest(".tab");
     if (!b) return;
-    S.ui.tab = b.dataset.tab; render(); window.scrollTo(0, 0);
+    S.tab = b.dataset.tab; render(); window.scrollTo(0, 0);
   });
 
   /* ---------- QR decode ---------- */
@@ -11594,14 +10776,14 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
   function pickFile(sel) { var f = $(sel); f.value = ""; f.click(); }
   function handleDecoded(text) {
     var url = lineUrl(text);
-    if (!url) { toast("LINEの友だち追加QRコードではありません。LINEの「友だち追加」のQRを撮影してください"); return; }
+    if (!url) { toast("LINEの友だち追加QRコードではありません"); return; }
     var dup = S.contacts.find(function (c) { return c.url === url; });
     if (dup) { toast("登録済みです：" + (dup.name || "名前未設定")); openContactSheet(dup, false); return; }
     openContactSheet(newContact(url), true);
   }
   function decodeFile(f) {
     if (!f) return;
-    if (!window.jsQR) { toast("読み取り機能を読み込めませんでした。アプリを再起動してください"); return; }
+    if (!window.jsQR) { toast("読み取り機能を読み込めませんでした。再読み込みしてください"); return; }
     if (!ctx2d) ctx2d = canvas.getContext("2d", { willReadFrequently: true });
     var url = URL.createObjectURL(f), img = new Image();
     img.onload = function () {
@@ -11619,96 +10801,83 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
       if (found) handleDecoded(found);
       else toast("QRコードを検出できません。QRが大きく写る画像を選んでください");
     };
-    img.onerror = function () { URL.revokeObjectURL(url); toast("画像を読み込めませんでした。別の画像を選んでください"); };
+    img.onerror = function () { URL.revokeObjectURL(url); toast("画像を読み込めませんでした"); };
     img.src = url;
   }
   $("#fileCam").addEventListener("change", function (e) { decodeFile(e.target.files && e.target.files[0]); });
   $("#fileImg").addEventListener("change", function (e) { decodeFile(e.target.files && e.target.files[0]); });
 
-  /* ---------- export / import / snapshot ---------- */
+  /* ---------- export / import ---------- */
   function buildExport() {
-    var stores = {};
-    NAMES.forEach(function (n) { stores[n] = S[n]; });
-    return { app: "machiapp-techo", version: 2, exportedAt: jstNow(), stores: stores };
-  }
-  function markBackup() {
-    S.settings.lastBackupAt = jstNow();
-    save("settings", true);
-    log("backup", "all", "");
-    if (S.ui.tab === "today" && $("#sheet").hidden) render();
+    return { app: "machiapp-techo", version: 1, exportedAt: new Date().toISOString(), contacts: S.contacts, progress: S.progress, dates: S.dates, kpi: S.kpi, profile: S.profile };
   }
   async function doExport() {
-    var text = JSON.stringify(buildExport(), null, 1), name = "machiapp-techo-" + todayStr() + ".json";
+    var text = JSON.stringify(buildExport(), null, 1), name = "machiapp-techo-" + ymd(new Date()) + ".json";
     var file = new File([text], name, { type: "application/json" });
     try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); markBackup(); return; }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
     var url = URL.createObjectURL(file), a = el("a", { href: url, download: name });
     document.body.append(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    markBackup();
   }
   async function copyExport() {
-    try { await navigator.clipboard.writeText(JSON.stringify(buildExport(), null, 1)); markBackup(); toast("コピーしました。メモ等に貼り付けて保管してください"); }
-    catch (e) { toast("コピーできませんでした。クリップボードの許可がありません。「書き出し」を使ってください"); }
+    var text = JSON.stringify(buildExport(), null, 1);
+    try { await navigator.clipboard.writeText(text); toast("コピーしました"); }
+    catch (e) { toast("コピーできませんでした。「書き出し」を使ってください"); }
   }
-  function parseImport(o) {
-    var E = [];
-    if (!o || o.app !== "machiapp-techo") return { err: "このアプリのバックアップではありません。「書き出し」で作成したファイルを選んでください" };
-    var payload;
-    if (o.version === 2 && o.stores && typeof o.stores === "object") payload = o.stores;
-    else if (o.version === 1) payload = { contacts: o.contacts, progress: o.progress, dates: o.dates, kpi: o.kpi, profile: o.profile };
-    else return { err: "対応していないバージョンのバックアップです" };
-    var n = normAll(payload, function (scope, ref, msg) { E.push(scope + "（" + ref + "）" + msg); });
-    if (E.length) return { err: "バックアップのデータに問題があります：" + E.slice(0, 3).join(" / ") + (E.length > 3 ? " ほか" + (E.length - 3) + "件" : "") };
-    return { data: n, version: o.version };
+  function validateImport(o) {
+    if (!o || o.app !== "machiapp-techo") return "このアプリのバックアップではありません";
+    if (o.version !== 1) return "対応していないバージョンです";
+    if (!Array.isArray(o.contacts) || !Array.isArray(o.dates) || typeof o.progress !== "object" || typeof o.kpi !== "object" || typeof o.profile !== "object") return "ファイルの形式が正しくありません";
+    for (var i = 0; i < o.contacts.length; i++) {
+      var c = o.contacts[i];
+      if (!c || typeof c.id !== "string" || typeof c.name !== "string" || typeof c.url !== "string") return "連絡先のデータが正しくありません";
+      if (c.url && !lineUrl(c.url)) return "LINE以外のURLが含まれています";
+    }
+    for (var j = 0; j < o.dates.length; j++) {
+      var d = o.dates[j];
+      if (!d || typeof d.id !== "string" || typeof d.contactId !== "string" || typeof d.date !== "string") return "デート記録のデータが正しくありません";
+    }
+    return "";
   }
-  function applyImport(n) {
-    takeSnapshot("読み込み前の状態");
-    NAMES.forEach(function (k) { S[k] = n[k]; });
-    S.readFail = {}; S.ui.introDraft = null;
-    var ok = true;
-    NAMES.forEach(function (k) { if (!save(k)) ok = false; });
-    if (ok) log("import", "all", "");
-    return ok;
-  }
-  function confirmImport(o) {
-    var r = parseImport(o);
-    if (r.err) { toast(r.err); return; }
-    var n = r.data, btn = el("button", { class: "btn danger", type: "button", text: "読み込む（現在のデータを置き換え）" });
-    armDelete(btn, "もう一度押すと置き換えを実行", function () {
-      if (applyImport(n)) { closeSheet(); render(); toast("読み込みました。設定の「直前の状態に戻す」で元に戻せます"); }
-    });
-    openSheet("バックアップの読み込み",
-      el("p", { class: "mini", text: "連絡先" + n.contacts.length + "件、デート" + n.dates.length + "件、費用" + n.costs.items.length + "件、体重" + n.body.entries.length + "件。現在のデータはすべて置き換わります。" + (r.version === 1 ? "（旧形式のため、費用・体重・想定問答・設定は初期状態になります）" : "") }),
-      el("div", { class: "actions" }, btn, el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet })));
-  }
-  function restoreSnap() {
-    var s = readSnap();
-    if (!s) return;
-    var cur = currentRaw();
-    NAMES.forEach(function (n) { if (typeof s.raw[n] === "string") rawSet(KEYS[n], s.raw[n]); else rawDel(KEYS[n]); });
-    writeSnap("戻す前の状態", cur);
-    loadAll(true);
-    S.ui.introDraft = null;
-    log("restore", "all", "");
+  function applyImport(o) {
+    var err = validateImport(o);
+    if (err) { toast(err); return false; }
+    S.contacts = o.contacts; S.progress = asObj(o.progress); S.dates = o.dates; S.kpi = asObj(o.kpi);
+    var p = asObj(o.profile);
+    S.profile = { intros: asArr(p.intros), currentId: typeof p.currentId === "string" ? p.currentId : "", checks: asObj(p.checks), photoUpdatedAt: typeof p.photoUpdatedAt === "string" ? p.photoUpdatedAt : "" };
+    S.introDraft = null;
+    ["contacts", "progress", "dates", "kpi", "profile"].forEach(save);
+    return true;
   }
   $("#fileJson").addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0];
     if (!f) return;
     var r = new FileReader();
     r.onload = function () {
-      var o; try { o = JSON.parse(String(r.result)); } catch (x) { toast("JSONを読み込めませんでした。書き出したファイルを選んでください"); return; }
+      var o; try { o = JSON.parse(String(r.result)); } catch (x) { toast("JSONを読み込めませんでした"); return; }
       confirmImport(o);
     };
     r.readAsText(f);
   });
+  function confirmImport(o) {
+    var err = validateImport(o);
+    if (err) { toast(err); return; }
+    var btn = el("button", { class: "btn danger", type: "button", text: "読み込む（現在のデータを置き換え）", style: "margin-left:0" });
+    armDelete(btn, "もう一度押すと置き換えを実行", function () {
+      if (applyImport(o)) { closeSheet(); render(); toast("読み込みました"); }
+    });
+    openSheet("バックアップの読み込み",
+      el("p", { class: "mini", text: "連絡先" + o.contacts.length + "件、デート記録" + o.dates.length + "件。現在のデータはすべて置き換わります。" }),
+      el("div", { class: "actions" }, btn, el("button", { class: "btn", type: "button", text: "キャンセル", onclick: closeSheet })));
+  }
 
   /* ---------- settings / update ---------- */
   var swReg = null, updateRequested = false;
   async function checkUpdate() {
-    if (!swReg) { toast("オフライン機能が有効ではありません。ホーム画面から開き直してください"); return; }
-    try { await swReg.update(); } catch (e) { toast("更新を確認できませんでした。通信状況を確認してください"); return; }
+    if (!swReg) { toast("オフライン機能が有効ではありません"); return; }
+    try { await swReg.update(); } catch (e) { toast("更新を確認できませんでした"); return; }
     var w = swReg.waiting || swReg.installing;
     if (!w) { toast("最新です（v" + APP_VERSION + "）"); return; }
     updateRequested = true;
@@ -11717,93 +10886,38 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     else w.addEventListener("statechange", function () { if (w.state === "installed") go(); });
     toast("更新しています…");
   }
-  function openRawSheet(name) {
-    var raw = rawGet(KEYS[name]);
-    var ta = el("textarea", { class: "mono", readonly: true, "aria-label": name + "の退避コピー", value: typeof raw === "string" ? raw : "" });
-    var del = el("button", { class: "btn danger", type: "button", text: "このデータを破棄して初期化" });
-    armDelete(del, "もう一度押すと破棄（退避コピーが無いと元に戻せません）", function () {
-      takeSnapshot("破棄前の状態");
-      rawDel(KEYS[name]); delete S.readFail[name];
-      S.errors = S.errors.filter(function (e) { return !(e.scope === "storage" && e.ref === name); });
-      loadAll(true); closeSheet(); render(); toast("初期化しました。設定の「直前の状態に戻す」で元に戻せます");
-    });
-    openSheet("退避コピー（" + name + "）",
-      el("p", { class: "mini", text: "壊れたデータの内容です。全選択してコピーし、メモ等に保管してください。" }), ta,
-      el("div", { class: "actions" }, el("button", { class: "btn", type: "button", text: "閉じる", onclick: closeSheet }), del));
-  }
   function openSettings() {
-    var nodes = [], lb = S.settings.lastBackupAt;
-    nodes.push(el("h3", { text: "バックアップ" }),
-      el("p", { class: "mini", text: "データはこの端末内にのみ保存されます。端末の紛失・アプリ削除に備え、定期的に書き出してください。書き出したファイルは暗号化されません。保管場所に注意してください。最後の書き出し：" + (lb ? fmtJst(lb) : "なし") }),
+    var paste = el("textarea", { placeholder: "バックアップのJSONを貼り付け", "aria-label": "バックアップのJSON" });
+    openSheet("設定",
+      el("h3", { text: "バックアップ" }),
+      el("p", { class: "mini", text: "データはこの端末内にのみ保存されます。端末の紛失・アプリ削除に備え、定期的に書き出してください。" }),
       el("div", { class: "actions", style: "margin-top:0" },
         el("button", { class: "btn primary", type: "button", text: "書き出し", onclick: doExport }),
         el("button", { class: "btn", type: "button", text: "JSONをコピー", onclick: copyExport })),
       el("h3", { text: "読み込み" }),
-      el("div", { class: "actions", style: "margin-top:0" }, el("button", { class: "btn", type: "button", text: "ファイルから読み込む", onclick: function () { pickFile("#fileJson"); } })));
-    var paste = el("textarea", { class: "mono", placeholder: "バックアップのJSONを貼り付け", "aria-label": "バックアップのJSON" });
-    nodes.push(el("div", { class: "field", style: "margin-top:16px" }, paste),
-      el("div", { class: "actions", style: "margin-top:0" }, el("button", { class: "btn", type: "button", text: "貼り付けた内容を読み込む", onclick: function () {
-        var o; try { o = JSON.parse(paste.value); } catch (x) { toast("JSONを読み込めませんでした。貼り付けた内容を確認してください"); return; }
-        confirmImport(o);
-      } })));
-    var snap = readSnap();
-    nodes.push(el("h3", { text: "直前の状態に戻す" }));
-    if (snap) {
-      var rb = el("button", { class: "btn danger", type: "button", text: "この状態に戻す" });
-      armDelete(rb, "もう一度押すと、現在のデータを置き換えて戻します", function () { restoreSnap(); closeSheet(); render(); toast("戻しました。もう一度「直前の状態に戻す」で、戻す前の状態に切り替えられます"); });
-      nodes.push(el("p", { class: "mini", text: "保存済み：" + snap.reason + "（" + fmtJst(snap.at) + "）。移行・読み込み・削除の直前に自動で1件だけ保存されます。" }), el("div", { class: "actions", style: "margin-top:0" }, rb));
-    } else nodes.push(el("p", { class: "mini", text: "保存された状態はありません。" }));
-    var wip = el("input", { type: "number", inputmode: "numeric", min: "1", max: "50", "aria-label": "同時進行の上限（名）", value: S.settings.wipLimit === null ? "" : String(S.settings.wipLimit) });
-    wip.addEventListener("change", function () {
-      S.settings.wipLimit = nn(wip.value, 50) >= 1 ? nn(wip.value, 50) : null;
-      commit(["settings"], "update", "settings", "wip"); render(); toast(S.settings.wipLimit ? "上限を" + S.settings.wipLimit + "名にしました" : "上限を解除しました");
-    });
-    nodes.push(el("h3", { text: "同時進行の上限" }), el("p", { class: "mini", text: "「デート済」ステータスの人数が上限を超えると警告します（警告のみ。制限はしません）。空欄は警告なし。" }), field("上限（名）", wip));
-    nodes.push(el("h3", { text: "端末機能" }));
-    nodes.push(el("p", { class: "mini", text: "ホーム画面アプリ：" + (DEV.standalone ? "はい" : "いいえ（Safariのタブで開いています）") }));
-    nodes.push(el("p", { class: "mini", text: "保存データの保護(persist)：" + (!DEV.persistSupported ? "この端末では未対応" : DEV.persisted === true ? "許可済み" : DEV.persisted === false ? "未許可（端末側の判断。定期的に書き出してください）" : "確認中") }));
-    if (badgeSupported()) {
-      var perm = typeof Notification === "undefined" ? "unsupported" : Notification.permission;
-      var bb = el("button", { class: "btn", type: "button", text: S.settings.badge ? "アイコンのバッジ：オン（押すとオフ）" : "アイコンのバッジ：オフ（押すとオン）" });
-      bb.addEventListener("click", function () {
-        if (S.settings.badge) { S.settings.badge = false; commit(["settings"], "update", "settings", "badge"); updateBadge(); openSettings(); return; }
-        if (typeof Notification === "undefined") { toast("通知の許可を扱えない環境です。バッジは使えません"); return; }
-        Notification.requestPermission().then(function (r) {
-          if (r !== "granted") { toast("通知が許可されませんでした。バッジの表示には通知の許可が必要です。iPhoneの設定アプリで許可できます"); return; }
-          S.settings.badge = true; commit(["settings"], "update", "settings", "badge"); updateBadge(); openSettings();
-        });
-      });
-      nodes.push(el("p", { class: "mini", text: "要対応（要確認・注意）の件数をホーム画面アイコンに表示します。表示には通知の許可が必要です（現在：" + ({ granted: "許可", denied: "拒否", "default": "未選択", unsupported: "未対応" }[perm] || perm) + "）。通知は送信しません。" }), el("div", { class: "actions", style: "margin-top:0" }, bb));
-    } else nodes.push(el("p", { class: "mini", text: "アイコンのバッジ：この環境では未対応（ホーム画面アプリのiOS 16.4以降で利用可）" }));
-    nodes.push(el("h3", { text: "データの状態" }));
-    var bad = Object.keys(S.readFail);
-    if (!S.errors.length && !bad.length) nodes.push(el("p", { class: "mini", text: "問題は検出されていません。" }));
-    S.errors.slice(-10).forEach(function (e) { nodes.push(el("p", { class: "mini" }, badge("要確認", "err"), " " + e.scope + (e.ref ? "（" + e.ref + "）" : "") + "：" + e.msg + "（" + fmtJst(e.at) + "）")); });
-    bad.forEach(function (n) { nodes.push(el("div", { class: "actions", style: "margin-top:0" }, el("button", { class: "btn", type: "button", text: "「" + n + "」の退避コピーを表示", onclick: function () { openRawSheet(n); } }))); });
-    nodes.push(el("h3", { text: "変更履歴（直近20件・個人情報は記録しません）" }));
-    var ents = S.audit.entries.slice(-20).reverse();
-    if (!ents.length) nodes.push(el("p", { class: "mini", text: "履歴はありません。" }));
-    ents.forEach(function (a) { nodes.push(el("p", { class: "mini", style: "margin-bottom:0", text: fmtJst(a.t) + "　" + a.op + "　" + a.scope + (a.ref ? "　" + a.ref : "") })); });
-    nodes.push(el("h3", { text: "アプリ情報" }),
-      el("p", { class: "mini", text: "マチアプ手帳 v" + APP_VERSION + "（データ形式 v" + SCHEMA + "）" }),
-      el("p", { class: "mini", text: "出典：デジタル庁デザインシステム（β版、サイト表示 " + DADS_VER + "）のトークン値を利用し、加工しています（ダーク配色はDADS定義の値から構成）。QR読み取り：jsQR 1.4.0（Apache License 2.0）。" }),
-      el("p", { class: "mini" }, el("a", { href: "./LICENSES.txt", target: "_blank", rel: "noopener noreferrer", text: "ライセンス全文を開く" })),
+      el("div", { class: "actions", style: "margin-top:0" },
+        el("button", { class: "btn", type: "button", text: "ファイルから読み込む", onclick: function () { pickFile("#fileJson"); } })),
+      el("div", { class: "field", style: "margin-top:12px" }, paste),
+      el("div", { class: "actions", style: "margin-top:0" },
+        el("button", { class: "btn", type: "button", text: "貼り付けた内容を読み込む", onclick: function () {
+          var o; try { o = JSON.parse(paste.value); } catch (x) { toast("JSONを読み込めませんでした"); return; }
+          confirmImport(o);
+        } })),
+      el("h3", { text: "アプリ" }),
+      el("p", { class: "mini", text: "バージョン " + APP_VERSION }),
       el("div", { class: "actions", style: "margin-top:0" },
         el("button", { class: "btn", type: "button", text: "更新を確認", onclick: checkUpdate }),
         el("button", { class: "btn", type: "button", text: "閉じる", onclick: closeSheet })));
-    openSheet("設定", nodes);
   }
   $("#btnSettings").addEventListener("click", openSettings);
 
   /* ---------- init ---------- */
-  try { loadAll(false); } catch (e) { pushErr("init", "loadAll", "起動時の読み込みで例外が発生しました：" + (e && e.message ? e.message : e)); }
-  S.profile = S.profile || normProfile({}, function () {}); S.marriage = S.marriage || normMarriage({}, function () {}, {});
-  S.costs = S.costs || normCosts({}, function () {}, {}); S.body = S.body || normBody({}, function () {});
-  S.qa = S.qa || normQa({}, function () {}); S.settings = S.settings || normSettings({}); S.audit = S.audit || normAudit({});
-  initDevice();
+  load();
+  var standalone = (window.navigator && window.navigator.standalone === true) || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  $("#banner").hidden = !!standalone;
   render();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").then(function (r) { swReg = r; }).catch(function () { /* オフライン機能なしで継続 */ });
+    navigator.serviceWorker.register("./sw.js").then(function (r) { swReg = r; }).catch(function () {});
     navigator.serviceWorker.addEventListener("controllerchange", function () { if (updateRequested) location.reload(); });
   }
 })();
