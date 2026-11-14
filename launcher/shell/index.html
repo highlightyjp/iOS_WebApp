@@ -197,7 +197,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-2040';
+const SHELL_BUILD = '2026-11-14-2115';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -233,7 +233,12 @@ async function checkPendingOpen(){
 function tryOpenPending(){
   if (!pendingOpenTarget) return;
   const part = '/modules/' + pendingOpenTarget + '/';
-  const mod = (currentModules || []).find(m => (m.url || '').includes(part));
+  const pools = [currentModules || [], loadPrivate()];
+  let mod = null;
+  for (const pool of pools){
+    mod = pool.find(m => (m.url || '').includes(part)) || pool.find(m => m.id === pendingOpenTarget) || null;
+    if (mod) break;
+  }
   if (mod){ pendingOpenTarget = null; openModule(mod); }
 }
 
@@ -985,7 +990,20 @@ async function runTests(){
   if (modLines.length){
     lines.push('');
     lines.push('モジュールからの結果：');
-    modLines.forEach(l => lines.push('- ' + l));
+    modResults.forEach((r, i) => {
+      lines.push('- ' + modLines[i]);
+      (r.items || []).forEach(it => {
+        lines.push('  ・' + (it.label || it.id || '') + '：' + resultWord(it.result) + (it.detail ? '（' + it.detail + '）' : ''));
+      });
+    });
+  }
+  // 橋の記録（受け取りと URL の診断を含む）
+  let blogArr = [];
+  try{ blogArr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]'); }catch(e){}
+  if (blogArr.length){
+    lines.push('');
+    lines.push('橋の記録：');
+    blogArr.forEach(x => lines.push('[' + x.at + '] ' + x.contract + ' moduleId=' + (x.moduleId || '?') + ' → ' + x.result + (x.detail ? '（' + x.detail + '）' : '')));
   }
   lines.push('');
   lines.push('画像について：まとめ画像は結果画面を描き直したものです。再生画面とモジュールの実画面は、別オリジンの枠のため取得できません。');
@@ -1019,10 +1037,19 @@ document.getElementById('runTestBtn').addEventListener('click', runTests);
 async function copyTestText(){
   const ta = document.getElementById('testText');
   if (!ta.value) return false;
-  try{ await navigator.clipboard.writeText(ta.value); return true; }
-  catch(e){
-    try{ ta.select(); document.execCommand('copy'); return true; }catch(_){ return false; }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    try{ await navigator.clipboard.writeText(ta.value); return true; }catch(e){ /* 次の手段へ */ }
   }
+  try{
+    const wasReadonly = ta.hasAttribute('readonly');
+    if (wasReadonly) ta.removeAttribute('readonly');
+    ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    const ok = !!(document.execCommand && document.execCommand('copy'));
+    if (wasReadonly) ta.setAttribute('readonly', '');
+    if (ok) return true;
+  }catch(e){ /* 手動コピーの案内へ */ }
+  try{ ta.focus(); ta.select(); ta.scrollIntoView({ block: 'center' }); }catch(e){}
+  return false;
 }
 function noteCopied(ok){
   const m = document.getElementById('copyDoneMsg');
@@ -1030,12 +1057,19 @@ function noteCopied(ok){
   setTimeout(() => { m.textContent = ''; }, 4000);
 }
 document.getElementById('copyTestBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
-document.getElementById('barCopyBtn').addEventListener('click', async () => { noteCopied(await copyTestText()); });
+document.getElementById('barCopyBtn').addEventListener('click', async (ev) => {
+  const ok = await copyTestText();
+  noteCopied(ok);
+  const b = ev.currentTarget; const oldLabel = b.textContent;
+  b.textContent = ok ? 'コピーしました' : 'できませんでした（結果欄を長押ししてください）';
+  setTimeout(() => { b.textContent = oldLabel; }, 2600);
+});
 document.getElementById('barShareBtn').addEventListener('click', async () => {
   const ta = document.getElementById('testText');
   if (!ta.value) return;
   if (navigator.share){
-    try{ await navigator.share({ title: 'ランチャー 試験モード結果', text: ta.value }); }catch(e){ /* 閉じられただけ */ }
+    try{ await navigator.share({ title: 'ランチャー 試験モード結果', text: ta.value }); }
+    catch(e){ if (!e || e.name !== 'AbortError') noteCopied(await copyTestText()); }
   } else {
     noteCopied(await copyTestText());
   }
@@ -1050,7 +1084,10 @@ document.getElementById('shareTestBtn').addEventListener('click', async () => {
     noteCopied(await copyTestText());
   }
 });
-if (!navigator.share) document.getElementById('shareTestBtn').style.display = 'none';
+if (!navigator.share){
+  document.getElementById('shareTestBtn').style.display = 'none';
+  document.getElementById('barShareBtn').style.display = 'none';
+}
 
 document.getElementById('imageTestBtn').addEventListener('click', () => {
   const text = document.getElementById('testText').value;
