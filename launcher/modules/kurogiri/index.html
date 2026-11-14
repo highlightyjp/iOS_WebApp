@@ -464,6 +464,11 @@ header .hset{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid var
 /* F1: resume bar is a normal-flow row directly under the heading — it can never overlap chapter cards */
 #v-chapters .resumebar{flex:0 0 auto;margin:6px 0 8px;padding:0;display:flex;gap:8px}
 #v-chapters .resumebar .btn{flex:1;min-height:44px;padding:10px 12px}
+/* KG-CR-30: 短い表示領域では章選択の見出し行を畳み、主要ボタン（続きから再開）を main 内に収める。高さ341px以上では描画不変 */
+@media (max-height:340px){
+#v-chapters h2{display:none}
+#v-chapters .resumebar{margin-top:2px}
+}
 /* F1: chapter rows compressed so heading + resume bar + 8 rows + note + tab bar fit 390x844 with no scroll */
 #v-chapters .chapgrid{flex:1 1 auto;min-height:0;overflow:hidden}
 #v-chapters .chaprow{min-height:36px;padding:4px 10px;margin-bottom:4px;border-radius:12px;gap:8px}
@@ -1706,7 +1711,7 @@ var TEST_SAVE14_PREV_KEY='kurogiri.test.save14_prev';
 var DBG_SAVE_KEY='kurogiri.debug.save';
 var DBG_SAVE_PREV_KEY='kurogiri.debug.save_prev';
 var DBG_LOG_KEY='kurogiri.debug.log';
-var APP_VERSION='v67';
+var APP_VERSION='v68';
 /* 旧キーからの移行: 起動時に1回だけ、本編の状態を読み込む前に走る冪等な処理。新キーが無く旧キーがある場合に限り、旧キーの文字列をそのまま新キーへ写し、写した後に旧キーを消す。試験モードの実行中には呼ばない */
 function migrateStorageKeys(){var pairs=[[SAVE_KEY,'chinjufu_m1_save'],[SAVE_PREV_KEY,'chinjufu_m1_save_prev'],[PERF_KEY,'chinjufu_m1_perf']];pairs.forEach(function(p){try{if(localStorage.getItem(p[0])==null){var old=null;try{old=localStorage.getItem(p[1])}catch(e){}if(old!=null){localStorage.setItem(p[0],old);try{localStorage.removeItem(p[1])}catch(e){}}}}catch(e){}})}
 function parseSaveString(raw){if(raw==null)return null;var d=null;try{d=JSON.parse(raw)}catch(e){return null}
