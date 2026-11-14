@@ -3,36 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QRブリッジ v1</title>
+<title>QRブリッジ</title>
 <style>
-  body { font-family: sans-serif; margin: 16px; color: #222; }
+  body { font-family: sans-serif; margin: 0; padding: 16px; color: #1c2430;
+    background: linear-gradient(160deg, #dbe7f3 0%, #eef0e9 55%, #f6efe4 100%);
+    background-attachment: fixed; min-height: 100vh; box-sizing: border-box; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .ver { color: #666; font-size: 12px; margin-bottom: 12px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-  .tabs button { flex: 1; padding: 12px; font-size: 16px; }
-  textarea { width: 100%; box-sizing: border-box; font-size: 15px; }
-  .big { width: 100%; padding: 14px; font-size: 17px; margin: 10px 0; }
-  #qrwrap { text-align: center; margin: 12px 0; }
+  .ver { color: #4a5568; font-size: 12px; margin-bottom: 12px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tabs button { flex: 1; min-width: 56px; padding: 12px 4px; font-size: 15px;
+    background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.8);
+    border-radius: 14px; -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4); box-shadow: 0 2px 8px rgba(30,45,70,.10); }
+  textarea { width: 100%; box-sizing: border-box; font-size: 15px; border-radius: 12px;
+    border: 1px solid #aeb9c4; background: rgba(255,255,255,.92); padding: 8px; }
+  .big { width: 100%; padding: 14px; font-size: 17px; margin: 8px 0; border-radius: 14px;
+    background: rgba(28,38,56,.92); color: #fff; border: 1px solid rgba(28,38,56,.9); }
+  .sub { padding: 10px; font-size: 15px; border-radius: 12px;
+    background: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.8);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #qrwrap { text-align: center; margin: 12px 0; background: #ffffff; border-radius: 8px; padding: 8px; }
   #qrwrap canvas { width: min(92vw, 560px); height: auto; image-rendering: pixelated; }
-  .status { white-space: pre-wrap; background: #f4f4f4; padding: 10px; font-size: 14px; }
+  .status { white-space: pre-wrap; background: rgba(255,255,255,.68); padding: 10px;
+    font-size: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.8);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); margin: 8px 0; }
   .ng { color: #b00020; font-weight: bold; }
   .ok { color: #0a6b2d; font-weight: bold; }
-  video { width: 100%; background: #000; }
+  video { width: 100%; background: #000; border-radius: 12px; }
   .hidden { display: none; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+  .row select { flex: 1; padding: 10px; font-size: 15px; border-radius: 10px; }
+  .histItem { background: rgba(255,255,255,.68); border: 1px solid rgba(255,255,255,.8);
+    border-radius: 12px; padding: 8px 10px; margin: 8px 0; font-size: 13px; white-space: pre-wrap; }
+  .histItem button { float: right; }
 </style>
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver">版 1.4 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
+<div class="ver">版 2.0 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
 <div class="tabs">
   <button id="tabSend">送る</button>
   <button id="tabRecv">受け取る</button>
   <button id="tabTest">自己テスト</button>
   <button id="tabPrompt">Copilot用</button>
+  <button id="tabHist">履歴</button>
 </div>
 
 <section id="paneSend">
   <textarea id="inText" rows="10" placeholder="ここにテキストを入力"></textarea>
+  <div class="status" id="estLine">見積もり：未入力</div>
+  <div class="row">
+    <select id="tplSel"><option value="">定型文を選ぶ</option></select>
+    <button class="sub" id="btnTplSave">今の入力を定型文に保存</button>
+  </div>
   <button class="big" id="btnMake">QRを作る</button>
   <div class="status" id="sendStatus">未作成</div>
   <div id="qrwrap"></div>
@@ -54,6 +77,17 @@
   <div class="status" id="recvStatus">未受信</div>
   <textarea id="outText" rows="10" readonly placeholder="復元されたテキストがここに出ます"></textarea>
   <button class="big" id="btnCopy">結果をコピーする</button>
+  <div class="row">
+    <select id="saveFmt">
+      <option value="txt">テキスト .txt</option>
+      <option value="md">Markdown .md</option>
+      <option value="html">HTML .html</option>
+      <option value="csv">CSV .csv</option>
+      <option value="json">JSON .json</option>
+      <option value="svg">SVG .svg</option>
+    </select>
+    <button class="sub" id="btnSaveFile">ファイルとして保存</button>
+  </div>
 </section>
 
 <section id="paneTest" class="hidden">
@@ -74,7 +108,36 @@
   </div>
 </section>
 
+<section id="paneHist" class="hidden">
+  <div class="status" id="resendInfo">再送できる送信はありません</div>
+  <div class="row">
+    <button class="sub" id="btnResend">再送する（送る画面へ）</button>
+    <button class="sub" id="btnResendDel">再送分を消す</button>
+  </div>
+  <div id="histList"></div>
+  <div class="row">
+    <button class="sub" id="btnHistExport">履歴を書き出す</button>
+    <button class="sub" id="btnHistClear">履歴を全て消す</button>
+  </div>
+  <textarea id="histExport" readonly rows="8" class="hidden" style="user-select:text;-webkit-user-select:text"></textarea>
+  <p>設定</p>
+  <div class="row">
+    <label>灯台方式の速さ</label>
+    <select id="setHold">
+      <option value="100">速い（100ms）</option>
+      <option value="140">標準（140ms）</option>
+      <option value="250">確実（250ms）</option>
+    </select>
+  </div>
+  <div class="row">
+    <label><input type="checkbox" id="setFull"> 履歴に本文の全文を残す（既定は残さない）</label>
+  </div>
+</section>
+
 <section id="panePrompt" class="hidden">
+  <p>■ 本命：エージェント方式の案内</p>
+  <p>登録：(1) エージェントを新規作成し、社内ファイルへのアクセスを切る。(2) 指示文（agent-instructions）を貼る。(3) ナレッジに指定の5ファイルを添付する。使う前に受け入れテストを3件通すこと：①生成された道具の埋め込みコードが台帳の照合値と一致する ②自己テストの検収（固定文→49バイト／CRC32 2023908552） ③ランダムな文字列のハッシュ計算を頼み、こちらで検算して一致する。ファイル一式はこのアプリの外（qb-package と同じ受け渡し）で用意します。</p>
+  <p>■ サブ：パッケージ方式</p>
   <p>社内Copilotへ渡すパッケージです。渡し物は1ファイル（qb-package.txt）にまとめてあります。中身の切り分けと照合は Copilot 側が行います。添付は .txt のまま（.js や .json の添付は入口で止められやすいため）。</p>
   <p>■ パッケージ（1ファイル）</p>
   <p>手順：このファイルを社用端末へ運ぶ（「パッケージを送る」か「ダウンロード」）→ Copilot（Cowork）で Work IQ をオンにする → チャットに添付する（または OneDrive に置いて / で参照する）→ 下の「短い指示文」を貼って送る → Copilot が照合結果を返したら「生成して」と送る。OneDrive に置いておけば、次回からは参照と短い指示文だけで済みます。</p>
@@ -13843,12 +13906,13 @@ var QB_QL = { sha256, buildSync, parseSync, makeStream, makeReceiver, SYNC_LEN, 
 var $ = function (id) { return document.getElementById(id); };
 function show(pane) {
   if (typeof qbCarStop === "function") qbCarStop();
-  ["paneSend", "paneRecv", "paneTest", "panePrompt"].forEach(function (p) { $(p).classList.toggle("hidden", p !== pane); });
+  ["paneSend", "paneRecv", "paneTest", "panePrompt", "paneHist"].forEach(function (p) { $(p).classList.toggle("hidden", p !== pane); });
 }
 $("tabSend").onclick = function () { show("paneSend"); };
 $("tabRecv").onclick = function () { show("paneRecv"); };
 $("tabTest").onclick = function () { show("paneTest"); };
 $("tabPrompt").onclick = function () { show("panePrompt"); };
+$("tabHist").onclick = function () { show("paneHist"); qbRenderHist(); };
 
 function qbDownload(name, text) {
   var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -14135,15 +14199,17 @@ $("btnMake").onclick = function () {
   if (frame.length <= LIMIT) {
     var n = qbDrawQR(frame, $("qrwrap"));
     st.innerHTML = "<span class='ok'>作成しました（1枚）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト / QR " + n + "×" + n + "\n相手の画面でこのQRを読み取ってください。画面の明るさを最大にすると読み取りやすくなります";
+    qbHistAdd("send", "1枚", frame.length, true, text); qbResendSet(text);
     return;
   }
-  var stream = QB_QL.makeStream(frame, {});
+  var stream = QB_QL.makeStream(frame, { holdMs: qbGetSet().hold });
   QB_CAR = { ql: stream, i: 0, timer: null, holdMs: stream.manifest.holdMs };
   $("carCtl").classList.remove("hidden");
   $("btnCarPause").textContent = "一時停止";
   QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, QB_CAR.holdMs);
   qbCarShow();
   st.innerHTML = "<span class='ok'>作成しました（灯台方式 QL）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（1枚上限 " + LIMIT + " 超過のため複数枚）\nQRが速く切り替わります。相手の画面で「復元しました」と出たら、こちらも止めてください。枚数が多少読み落とされても復元できます";
+  qbHistAdd("send", "灯台方式 QL", frame.length, true, text); qbResendSet(text);
 };
 
 var QB_SCAN_TEST = false;
@@ -14160,7 +14226,7 @@ function handleBytes(bytes, st) {
     var rql = qbRxQLData(bytes);
     if (rql && rql.done) { bytes = rql.frame; }
     else if (rql && rql.ql) {
-      st.innerHTML = "<span class='ok'>灯台方式で受信中</span>\n復元の進み具合 " + Math.floor(rql.ratio * 100) + "%。そのまま読み続けてください";
+      st.innerHTML = "<span class='ok'>灯台方式で受信中</span>\n復元の進み具合 " + Math.floor(rql.ratio * 100) + "%" + qbEta(rql.ratio) + "。そのまま読み続けてください";
       return "progress";
     }
     if (!rql || !rql.done) {
@@ -14169,7 +14235,7 @@ function handleBytes(bytes, st) {
     if (rf.progress) {
       st.innerHTML = rf.bad
         ? "<span class='ng'>壊れたフレームを読み飛ばしました</span>\nそのまま読み続けてください"
-        : "<span class='ok'>ファウンテンフレームを受信中</span>\n復元の進み具合 " + Math.floor(rf.ratio * 100) + "%（" + rf.solved + " / " + rf.total + " ブロック）。そのまま読み続けてください";
+        : "<span class='ok'>ファウンテンフレームを受信中</span>\n復元の進み具合 " + Math.floor(rf.ratio * 100) + "%" + qbEta(rf.ratio) + "（" + rf.solved + " / " + rf.total + " ブロック）。そのまま読み続けてください";
       return "progress";
     }
     bytes = rf.frame;
@@ -14192,6 +14258,8 @@ function handleBytes(bytes, st) {
       : qbUnpack(bytes, QB_SEED, QB_DICT);
     $("outText").value = text;
     st.innerHTML = "<span class='ok'>復元しました</span>\n" + [...text].length + " 字";
+    QB_RXP = { t0: 0, r0: 0 };
+    qbHistAdd("recv", "受信", bytes.length, true, text);
     var QB_DONE = true;
     if (QB_SCAN_TEST) {
       QB_SCAN_TEST = false;
@@ -14327,7 +14395,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 1.4 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.0 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -14456,9 +14524,205 @@ $("btnTest").onclick = function () {
     var ok7 = qbUnpackLite(lite7) === QB_LITE_FIXTURE_TEXT;
     QB_REPORT.items[7] = { label: "薄型フレーム（deflate）の受け", result: ok7 ? "合格" : "不合格", detail: lite7.length + "バイト" };
   } catch (e) { QB_REPORT.items[7] = { label: "薄型フレーム（deflate）の受け", result: "不合格", detail: e.message }; }
+  try {
+    var estT = ""; var kana = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
+    var lcg = 123456789; function rnd() { lcg = (lcg * 1103515245 + 12345) & 0x7fffffff; return lcg; }
+    for (var ei = 0; ei < 6000; ei++) estT += kana[rnd() % kana.length];
+    var est = qbEstimate(estT);
+    var estFrame = qbPack(estT, QB_SEED, QB_DICT);
+    var ok8 = est.mode === "q" && est.bytes === estFrame.length;
+    QB_REPORT.items[8] = { label: "送信見積もりの計算", result: ok8 ? "合格" : "不合格", detail: est.bytes + "バイト／約" + est.frames + "枚・約" + est.seconds + "秒" };
+  } catch (e) { QB_REPORT.items[8] = { label: "送信見積もりの計算", result: "不合格", detail: e.message }; }
+  try {
+    var before9 = qbHistList().length;
+    qbHistAdd("test", "自己テスト", 3, true, "履歴の確認 123");
+    var list9 = qbHistList();
+    var top9 = list9[list9.length - 1];
+    var ok9 = list9.length === before9 + 1 && top9 && top9.head.indexOf("履歴の確認") === 0 && top9.hash.length === 64;
+    if (top9) qbHistDel(top9.t);
+    QB_REPORT.items[9] = { label: "履歴の記録と削除", result: ok9 ? "合格" : "不合格", detail: ok9 ? "抜粋とハッシュを記録し、削除できた" : "記録の読み戻しが一致しない" };
+  } catch (e) { QB_REPORT.items[9] = { label: "履歴の記録と削除", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
+</script>
+<script>
+/* ===== v2.0 features: estimate / history / templates / settings / file save ===== */
+var QB_MEM = {};
+function qbStoreGet(k) {
+  try { var v = localStorage.getItem(k); if (v !== null) return v; } catch (e) {}
+  return Object.prototype.hasOwnProperty.call(QB_MEM, k) ? QB_MEM[k] : null;
+}
+function qbStoreSet(k, v) {
+  QB_MEM[k] = v;
+  try { localStorage.setItem(k, v); } catch (e) {}
+}
+function qbStoreDel(k) {
+  delete QB_MEM[k];
+  try { localStorage.removeItem(k); } catch (e) {}
+}
+function qbGetSet() {
+  var d = { hold: 140, full: false };
+  try { var s = JSON.parse(qbStoreGet("qrb_set") || "null"); if (s) { if (s.hold) d.hold = s.hold; d.full = !!s.full; } } catch (e) {}
+  return d;
+}
+function qbSaveSet(s) { qbStoreSet("qrb_set", JSON.stringify(s)); }
+
+function qbShaHex(text) {
+  var h = QB_QL.sha256(new TextEncoder().encode(text));
+  var out = "";
+  for (var i = 0; i < h.length; i++) out += ("0" + h[i].toString(16)).slice(-2);
+  return out;
+}
+function qbEstimate(text) {
+  var frame = qbPack(text, QB_SEED, QB_DICT);
+  if (frame.length <= LIMIT) return { mode: "s", bytes: frame.length, frames: 1, seconds: 0 };
+  var st = QB_QL.makeStream(frame, { holdMs: qbGetSet().hold });
+  var frames = st.manifest.cycleLen;
+  return { mode: "q", bytes: frame.length, frames: frames, seconds: Math.round(frames * qbGetSet().hold / 100) / 10 };
+}
+var QB_RXP = { t0: 0, r0: 0 };
+function qbEta(ratio) {
+  var now = Date.now();
+  if (!QB_RXP.t0 || ratio < QB_RXP.r0) { QB_RXP = { t0: now, r0: ratio }; return ""; }
+  var dt = (now - QB_RXP.t0) / 1000;
+  if (dt < 1 || ratio <= QB_RXP.r0) return "";
+  var rate = (ratio - QB_RXP.r0) / dt;
+  var remain = (1 - ratio) / rate;
+  if (!(remain > 0) || remain > 900) return "";
+  return "、推定残り約" + Math.max(1, Math.round(remain)) + "秒";
+}
+
+/* history (F3) */
+function qbHistList() {
+  try { return JSON.parse(qbStoreGet("qrb_hist") || "[]"); } catch (e) { return []; }
+}
+function qbHistSave(list) { qbStoreSet("qrb_hist", JSON.stringify(list.slice(-100))); }
+function qbHistAdd(dir, method, bytes, ok, text) {
+  var set = qbGetSet();
+  var item = { t: Date.now(), dir: dir, method: method, bytes: bytes, ok: ok,
+    head: String(text).slice(0, 60), hash: qbShaHex(text) };
+  if (set.full) item.body = text;
+  var list = qbHistList(); list.push(item); qbHistSave(list);
+  return item;
+}
+function qbHistDel(t) {
+  qbHistSave(qbHistList().filter(function (x) { return x.t !== t; }));
+}
+function qbResendSet(text) { qbStoreSet("qrb_resend", JSON.stringify({ t: Date.now(), text: text })); }
+function qbResendGet() {
+  try {
+    var r = JSON.parse(qbStoreGet("qrb_resend") || "null");
+    if (!r) return null;
+    if (Date.now() - r.t > 7 * 24 * 3600 * 1000) { qbStoreDel("qrb_resend"); return null; }
+    return r;
+  } catch (e) { return null; }
+}
+function qbFmtTime(t) {
+  var d = new Date(t);
+  function p(n) { return ("0" + n).slice(-2); }
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+function qbRenderHist() {
+  var r = qbResendGet();
+  $("resendInfo").textContent = r
+    ? "再送できる送信があります（" + qbFmtTime(r.t) + "、" + [...r.text].length + "字）。次の送信が成功するか、7日たつと消えます"
+    : "再送できる送信はありません";
+  var list = qbHistList().slice().reverse();
+  var html = "";
+  list.forEach(function (x) {
+    html += "<div class='histItem'><button data-del='" + x.t + "'>消す</button>" +
+      (x.dir === "send" ? "送信" : x.dir === "recv" ? "受信" : "テスト") + "／" + x.method +
+      "／" + x.bytes + "バイト／" + (x.ok ? "成功" : "失敗") + "\\n" + qbFmtTime(x.t) +
+      "\\n冒頭：" + x.head.replace(/</g, "&lt;") +
+      "\\n照合値：" + x.hash.slice(0, 16) + "…" + "</div>";
+  });
+  $("histList").innerHTML = html || "<div class='status'>履歴はまだありません</div>";
+  var dels = $("histList").querySelectorAll("[data-del]");
+  for (var i = 0; i < dels.length; i++) dels[i].onclick = function () { qbHistDel(Number(this.getAttribute("data-del"))); qbRenderHist(); };
+  var set = qbGetSet();
+  $("setHold").value = String(set.hold);
+  $("setFull").checked = set.full;
+}
+$("btnResend").onclick = function () {
+  var r = qbResendGet();
+  if (!r) { qbRenderHist(); return; }
+  $("inText").value = r.text;
+  show("paneSend");
+  $("btnMake").onclick();
+};
+$("btnResendDel").onclick = function () { qbStoreDel("qrb_resend"); qbRenderHist(); };
+$("btnHistClear").onclick = function () { qbHistSave([]); qbRenderHist(); };
+$("btnHistExport").onclick = function () {
+  var lines = qbHistList().map(function (x) {
+    return qbFmtTime(x.t) + " " + x.dir + " " + x.method + " " + x.bytes + "B " + (x.ok ? "OK" : "NG") + " sha256:" + x.hash + " head:" + x.head.replace(/\\n/g, " ");
+  });
+  var box = $("histExport");
+  box.value = lines.join("\\n");
+  box.classList.remove("hidden");
+};
+$("setHold").onchange = function () { var s = qbGetSet(); s.hold = Number(this.value); qbSaveSet(s); };
+$("setFull").onchange = function () { var s = qbGetSet(); s.full = this.checked; qbSaveSet(s); };
+
+/* templates (F6) */
+function qbTplList() { try { return JSON.parse(qbStoreGet("qrb_tpl") || "[]"); } catch (e) { return []; } }
+function qbRenderTpl() {
+  var sel = $("tplSel");
+  sel.innerHTML = "<option value=''>定型文を選ぶ</option>";
+  qbTplList().forEach(function (t, i) {
+    var o = document.createElement("option");
+    o.value = String(i); o.textContent = t.slice(0, 24);
+    sel.appendChild(o);
+  });
+}
+$("tplSel").onchange = function () {
+  if (this.value === "") return;
+  var t = qbTplList()[Number(this.value)];
+  if (t !== undefined) { $("inText").value = t; qbUpdateEst(); }
+};
+$("btnTplSave").onclick = function () {
+  var t = $("inText").value;
+  if (!t) return;
+  var list = qbTplList();
+  if (list.indexOf(t) < 0) { list.push(t); if (list.length > 20) list = list.slice(-20); qbStoreSet("qrb_tpl", JSON.stringify(list)); }
+  qbRenderTpl();
+};
+
+/* estimate (F2) */
+var QB_EST_TIMER = null;
+function qbUpdateEst() {
+  var text = $("inText").value;
+  if (!text) { $("estLine").textContent = "見積もり：未入力"; return; }
+  try {
+    var e = qbEstimate(text);
+    $("estLine").textContent = e.mode === "s"
+      ? "見積もり：符号化後 " + e.bytes + " バイト／1枚で送れます"
+      : "見積もり：符号化後 " + e.bytes + " バイト／灯台方式 QL で約 " + e.frames + " 枚・約 " + e.seconds + " 秒（推定）";
+  } catch (err) { $("estLine").textContent = "見積もり：計算できませんでした"; }
+}
+$("inText").addEventListener("input", function () {
+  if (QB_EST_TIMER) clearTimeout(QB_EST_TIMER);
+  QB_EST_TIMER = setTimeout(qbUpdateEst, 400);
+});
+
+/* file save (F8) */
+$("btnSaveFile").onclick = function () {
+  var text = $("outText").value;
+  var st = $("recvStatus");
+  if (!text) { st.textContent = "保存するテキストがありません"; return; }
+  var fmt = $("saveFmt").value;
+  try {
+    var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "qrbridge." + fmt;
+    document.body.appendChild(a); a.click(); a.remove();
+    st.textContent = "保存を開始しました（qrbridge." + fmt + "）。始まらない場合は「結果をコピー」を使ってください";
+  } catch (e) {
+    st.textContent = "この環境では保存が始まりませんでした。「結果をコピー」を使ってください";
+  }
+};
+qbRenderTpl();
 </script>
 </body>
 </html>
