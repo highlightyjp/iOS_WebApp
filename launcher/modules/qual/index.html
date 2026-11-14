@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>資格工房</title>
+<style>
+:root{ --bg:#f4f2ec; --card:#ffffff; --ink:#22303c; --sub:#5b6b78; --line:#e2ded2; --accent:#1f4e9c; --accent2:#2e7d4f; --warn:#b3541e; --radius:14px; }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html{ touch-action:manipulation; }
+body{ margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); }
+header{ padding:14px 16px 8px; display:flex; align-items:baseline; gap:10px; }
+header h1{ font-size:20px; margin:0; }
+header .build{ font-size:11px; color:var(--sub); }
+nav{ display:flex; gap:6px; padding:0 16px 10px; }
+nav button{ flex:1; padding:9px 0; border:1px solid var(--line); background:var(--card); border-radius:10px; font-size:14px; color:var(--ink); }
+nav button.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+main{ padding:0 16px 28px; }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+.card h2{ font-size:15px; margin:0 0 8px; }
+.card h3{ font-size:14px; margin:10px 0 6px; }
+.muted{ color:var(--sub); font-size:12px; }
+.big{ font-size:22px; font-weight:700; }
+.bar{ height:10px; background:#eceae2; border-radius:5px; overflow:hidden; margin:6px 0; }
+.bar > div{ height:100%; background:var(--accent2); }
+.row{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.btn{ display:block; width:100%; padding:12px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; margin-top:10px; }
+.btn.sub{ background:var(--card); color:var(--accent); border:1px solid var(--accent); }
+.btn:disabled{ opacity:.45; }
+.choice{ display:block; width:100%; text-align:left; padding:12px; margin:8px 0; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:15px; }
+.choice.picked{ border-color:var(--accent); background:#eef3fb; }
+.choice.right{ border-color:var(--accent2); background:#e9f5ee; }
+.choice.wrong{ border-color:var(--warn); background:#fbeee6; }
+.pill{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid var(--line); color:var(--sub); }
+.pill.hot{ color:#fff; background:var(--warn); border-color:var(--warn); }
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+th,td{ padding:6px 4px; border-bottom:1px solid var(--line); text-align:left; }
+.kobo{ font-size:34px; letter-spacing:4px; }
+.hidden{ display:none; }
+</style>
+</head>
+<body>
+<header><h1>資格工房</h1><span class="build" id="buildStamp"></span></header>
+<nav>
+  <button data-view="home" class="on">ホーム</button>
+  <button data-view="drill">演習</button>
+  <button data-view="records">記録</button>
+  <button data-view="kobo">工房</button>
+</nav>
+<main>
+  <section id="view-home"></section>
+  <section id="view-drill" class="hidden"></section>
+  <section id="view-records" class="hidden"></section>
+  <section id="view-kobo" class="hidden"></section>
+</main>
+<script src="questions-g.js"></script>
+<script>
+'use strict';
+var MODULE_BUILD = '2026-11-15-0119';
+document.getElementById('buildStamp').textContent = 'build ' + MODULE_BUILD;
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+var EXAMS = [
+  { id:'g', name:'G検定', examDate:'2027-01-16', applyBy:'2027-01-08', note:'オンライン試験' },
+  { id:'boki', name:'日商簿記3級', examDate:'2027-02-28', applyBy:null, note:'ネット試験は随時（左の日付は目標日）', packReady:false },
+  { id:'ap', name:'応用情報技術者', examDate:'2027-03-14', applyFrom:'2027-01-27', applyBy:'2027-02-16', note:'CBT（左の日付は目標日）', packReady:false }
+];
+var UNITS = [
+  { id:'g-u1', exam:'g', name:'分野1 人工知能とは', facility:'知識の書庫' },
+  { id:'g-u3', exam:'g', name:'分野3 機械学習の概要', facility:'学習機械の工房' }
+];
+var QUESTIONS = (window.QUAL_QUESTIONS_G || []);
+var SRS_DAYS = [1, 3, 7, 14, 30];
+var LS_KEY = 'qual.state.v1';
+
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function daysUntil(dateStr){ var a=new Date(todayStr()+'T00:00:00'), b=new Date(dateStr+'T00:00:00'); return Math.round((b-a)/86400000); }
+function addDays(dateStr, n){ var d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+function loadState(){
+  try{ var s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if(s && s.q) return s; }catch(e){}
+  return { q:{}, days:{}, xp:0, totalAnswers:0, totalCorrect:0 };
+}
+function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+var state = loadState();
+
+function qState(id){ return state.q[id] || null; }
+function isDue(q){
+  var st = qState(q.id); if(!st) return false;
+  var interval = SRS_DAYS[Math.min(st.stage, SRS_DAYS.length-1)];
+  return todayStr() >= addDays(st.last, interval);
+}
+function unitQuestions(unitId){ return QUESTIONS.filter(function(q){ return q.unit===unitId; }); }
+function unitMastery(unitId){
+  var qs = unitQuestions(unitId); if(!qs.length) return 0;
+  var done = qs.filter(function(q){ var st=qState(q.id); return st && st.everCorrect; }).length;
+  return done / qs.length;
+}
+function planFor(exam){
+  var qs = QUESTIONS.filter(function(q){ return q.exam===exam.id; });
+  var fresh = qs.filter(function(q){ return !qState(q.id); });
+  var due = qs.filter(isDue);
+  var left = Math.max(1, daysUntil(exam.examDate) - 7); // 直前1週間は復習と模擬に充てる
+  var quotaNew = fresh.length ? Math.ceil(fresh.length / left) : 0;
+  return { fresh:fresh.length, due:due.length, quotaNew:quotaNew, total:qs.length,
+           done: qs.length - fresh.length };
+}
+function workshop(){
+  var level = 1 + Math.floor(Math.sqrt(state.xp / 150));
+  var streak = 0; var d = todayStr();
+  if(!state.days[d]) d = addDays(d, -1);
+  while(state.days[d]){ streak++; d = addDays(d, -1); }
+  var facilities = UNITS.map(function(u){ return { name:u.facility, unit:u.name, unlocked: unitMastery(u.id) >= 1 }; });
+  return { level:level, xp:state.xp, streak:streak, facilities:facilities };
+}
+
+function show(view){
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.view===view); });
+  ['home','drill','records','kobo'].forEach(function(v){ document.getElementById('view-'+v).classList.toggle('hidden', v!==view); });
+  if(view==='home') renderHome();
+  if(view==='drill') renderDrillSetup();
+  if(view==='records') renderRecords();
+  if(view==='kobo') renderKobo();
+}
+document.querySelectorAll('nav button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.view); }); });
+
+function renderHome(){
+  var w = workshop();
+  var html = '<div class="card"><div class="row"><div><h2>工房の様子</h2>' +
+    '<div class="muted">レベル ' + w.level + ' ／ 経験値 ' + w.xp + ' ／ 連続 ' + w.streak + ' 日</div></div>' +
+    '<div class="kobo">' + (w.streak>0 ? '🏮' : '🏠') + '</div></div></div>';
+  EXAMS.forEach(function(ex){
+    var d = daysUntil(ex.examDate);
+    var apply = '';
+    if(ex.applyBy){
+      var ad = daysUntil(ex.applyBy);
+      var started = ex.applyFrom ? daysUntil(ex.applyFrom) <= 0 : true;
+      apply = '<div class="row"><span class="muted">申込' + (ex.applyFrom ? '（' + ex.applyFrom + '〜' + ex.applyBy + '）' : '（〜' + ex.applyBy + '）') + '</span>' +
+        (started ? '<span class="pill hot">あと ' + ad + ' 日</span>' : '<span class="pill">開始まで あと ' + daysUntil(ex.applyFrom) + ' 日</span>') + '</div>';
+    }
+    var plan = ex.id==='g' ? planFor(ex) : null;
+    html += '<div class="card"><div class="row"><h2>' + ex.name + '</h2><span class="big">' + d + '<span style="font-size:13px"> 日</span></span></div>' +
+      '<div class="muted">' + ex.examDate + ' ・ ' + ex.note + '</div>' + apply;
+    if(plan){
+      var pct = plan.total ? Math.round(plan.done/plan.total*100) : 0;
+      html += '<div class="bar"><div style="width:'+pct+'%"></div></div>' +
+        '<div class="row"><span>今日のノルマ：新規 ' + plan.quotaNew + ' 問 ＋ 復習 ' + plan.due + ' 件</span><span class="muted">' + plan.done + ' / ' + plan.total + ' 問</span></div>' +
+        '<button class="btn" data-start="today">今日の演習をはじめる</button>';
+    } else {
+      html += '<div class="muted" style="margin-top:8px">問題パックは準備中です（先行はG検定）。</div>';
+    }
+    html += '</div>';
+  });
+  document.getElementById('view-home').innerHTML = html;
+  var btn = document.querySelector('[data-start="today"]');
+  if(btn) btn.addEventListener('click', function(){ startSession(buildTodaySet()); show('drill'); });
+}
+
+function renderDrillSetup(){
+  var html = '<div class="card"><h2>演習の種類（G検定）</h2>';
+  UNITS.forEach(function(u){
+    var qs = unitQuestions(u.id);
+    html += '<h3>' + u.name + '</h3><div class="muted">全 ' + qs.length + ' 問 ・ 習得 ' + Math.round(unitMastery(u.id)*100) + '%</div>' +
+      '<button class="btn sub" data-unit="' + u.id + '">この単元を解く</button>';
+  });
+  var due = QUESTIONS.filter(isDue).length;
+  html += '<h3>復習</h3><div class="muted">期限が来ている問題：' + due + ' 件</div>' +
+    '<button class="btn sub" data-mode="review">復習をはじめる</button>' +
+    '<h3>ランダム実戦</h3><div class="muted">全範囲から10問</div>' +
+    '<button class="btn sub" data-mode="random">ランダム10問</button></div>' +
+    '<div id="session"></div>';
+  document.getElementById('view-drill').innerHTML = html;
+  document.querySelectorAll('[data-unit]').forEach(function(b){ b.addEventListener('click', function(){ startSession(unitQuestions(b.dataset.unit)); }); });
+  document.querySelectorAll('[data-mode]').forEach(function(b){ b.addEventListener('click', function(){
+    if(b.dataset.mode==='review') startSession(QUESTIONS.filter(isDue));
+    else startSession(shuffle(QUESTIONS.slice()).slice(0,10));
+  }); });
+}
+
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function buildTodaySet(){
+  var plan = planFor(EXAMS[0]);
+  var fresh = QUESTIONS.filter(function(q){ return !qState(q.id); }).slice(0, plan.quotaNew);
+  var due = QUESTIONS.filter(isDue);
+  return shuffle(fresh.concat(due));
+}
+
+var session = null;
+function startSession(qs){
+  if(!qs.length){ document.getElementById('session') && (document.getElementById('view-drill').innerHTML = '<div class="card"><h2>対象の問題がありません</h2><div class="muted">復習の期限が来ている問題はありません。単元ドリルから進めてください。</div><button class="btn" onclick="show(\'drill\')">演習の選択へ</button></div>'); return; }
+  session = { list: qs.map(function(q){ return { q:q, order: shuffle(q.choices.map(function(c,i){ return i; })) }; }), idx:0, correct:0 };
+  show('drill'); renderQuestion();
+}
+function renderQuestion(){
+  var box = document.getElementById('view-drill');
+  var item = session.list[session.idx]; var q = item.q;
+  var html = '<div class="card"><div class="row"><span class="pill">' + q.keyword + '</span><span class="muted">' + (session.idx+1) + ' / ' + session.list.length + ' 問</span></div>' +
+    '<h2 style="margin-top:10px">' + q.stem + '</h2><div id="choices">';
+  item.order.forEach(function(ci){
+    html += '<button class="choice" data-c="' + ci + '">' + q.choices[ci] + '</button>';
+  });
+  html += '</div><div id="feedback"></div></div>';
+  box.innerHTML = html;
+  document.querySelectorAll('.choice').forEach(function(b){ b.addEventListener('click', function(){ answer(item, parseInt(b.dataset.c,10)); }); });
+}
+function answer(item, picked){
+  var q = item.q; var ok = picked === q.answer;
+  var st = qState(q.id) || { stage:0, last:null, everCorrect:false };
+  st.stage = ok ? Math.min(st.stage+1, SRS_DAYS.length-1) : 0;
+  st.last = todayStr(); st.everCorrect = st.everCorrect || ok;
+  state.q[q.id] = st;
+  state.totalAnswers++; if(ok){ state.totalCorrect++; session.correct++; }
+  state.xp += 10 + (ok ? 5 : 0);
+  state.days[todayStr()] = (state.days[todayStr()] || 0) + 1;
+  saveState();
+  document.querySelectorAll('.choice').forEach(function(b){
+    var ci = parseInt(b.dataset.c,10); b.disabled = true;
+    if(ci === q.answer) b.classList.add('right');
+    if(ci === picked && !ok) b.classList.add('wrong');
+  });
+  var last = session.idx === session.list.length - 1;
+  document.getElementById('feedback').innerHTML =
+    '<div style="margin-top:10px"><strong>' + (ok ? '正解' : '不正解') + '</strong><div class="muted" style="margin-top:4px">' + q.explanation + '</div>' +
+    '<button class="btn" id="nextBtn">' + (last ? '結果を見る' : '次の問題') + '</button></div>';
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    session.idx++;
+    if(session.idx >= session.list.length){
+      document.getElementById('view-drill').innerHTML = '<div class="card"><h2>結果</h2><div class="big">' + session.correct + ' / ' + session.list.length + ' 問 正解</div>' +
+        '<div class="muted">記録は保存されました。復習の期限は正誤に応じて自動で組まれます。</div>' +
+        '<button class="btn" id="backHome">ホームへ</button></div>';
+      document.getElementById('backHome').addEventListener('click', function(){ show('home'); });
+      session = null;
+    } else renderQuestion();
+  });
+}
+
+function renderRecords(){
+  var html = '<div class="card"><h2>記録</h2><table><tr><th>単元</th><th>問題数</th><th>習得</th></tr>';
+  UNITS.forEach(function(u){
+    html += '<tr><td>' + u.name + '</td><td>' + unitQuestions(u.id).length + '</td><td>' + Math.round(unitMastery(u.id)*100) + '%</td></tr>';
+  });
+  html += '</table><div class="muted" style="margin-top:8px">通算：' + state.totalAnswers + ' 回答 ／ ' + state.totalCorrect + ' 正解</div>' +
+    '<button class="btn sub" id="exportBtn">記録を書き出す（JSON）</button></div>';
+  document.getElementById('view-records').innerHTML = html;
+  document.getElementById('exportBtn').addEventListener('click', function(){
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'qual-state.json'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+}
+
+function renderKobo(){
+  var w = workshop();
+  var html = '<div class="card"><h2>工房</h2><div class="kobo">' + (w.streak>0 ? '🏮' : '🏠') + '🏭</div>' +
+    '<div class="row"><span>レベル</span><strong>' + w.level + '</strong></div>' +
+    '<div class="row"><span>経験値</span><strong>' + w.xp + '</strong></div>' +
+    '<div class="row"><span>連続学習</span><strong>' + w.streak + ' 日</strong></div></div>' +
+    '<div class="card"><h2>設備（図鑑）</h2>';
+  w.facilities.forEach(function(f){
+    html += '<div class="row" style="padding:6px 0"><div><div>' + f.name + '</div><div class="muted">' + f.unit + '</div></div><span class="pill' + (f.unlocked ? '' : ' hot') + '">' + (f.unlocked ? '解放済み' : '単元マスターで解放') + '</span></div>';
+  });
+  html += '<div class="muted" style="margin-top:6px">設備は、その単元の全問題に1回以上正解すると解放されます。蓄積は途切れても消えません。</div></div>';
+  document.getElementById('view-kobo').innerHTML = html;
+}
+
+// 試験モード launcher-test/v1
+function runSelfTest(){
+  var items = [];
+  function rec(id, label, ok, detail){ items.push({ id:id, gate:'must', label:label, result: ok?'pass':'fail', detail:detail||'', ms:0 }); }
+  var dataOk = QUESTIONS.length>0 && QUESTIONS.every(function(q){ return q.choices.length===4 && q.answer>=0 && q.answer<4 && !!q.explanation; });
+  rec('QT1', '問題データの整合', dataOk, QUESTIONS.length + '問');
+  var plan = planFor(EXAMS[0]);
+  rec('QT2', '計画エンジン（今日のノルマ）', plan.quotaNew>=0 && plan.due>=0, '新規 ' + plan.quotaNew + ' 問／復習 ' + plan.due + ' 件');
+  var rt = false; try{ var probe={t:1}; localStorage.setItem('qual.probe', JSON.stringify(probe)); rt = JSON.parse(localStorage.getItem('qual.probe')).t===1; localStorage.removeItem('qual.probe'); }catch(e){}
+  rec('QT3', '記録の読み書き', rt, '');
+  var w = workshop();
+  rec('QT4', '工房の計算', w.level>=1 && Array.isArray(w.facilities), 'レベル ' + w.level);
+  var pass = items.filter(function(i){ return i.result==='pass'; }).length;
+  return { contract:'launcher-test/v1', moduleId:'qual', version:MODULE_BUILD, items:items,
+           perf:{}, untouched:{ checked:true, same:true },
+           summary:{ pass:pass, fail:items.length-pass, na:0 } };
+}
+if(new URLSearchParams(location.search).get('test') === '1'){
+  var result = runSelfTest();
+  if(window.parent && window.parent !== window) window.parent.postMessage(result, '*');
+  document.body.insertAdjacentHTML('beforeend', '<pre style="padding:12px;font-size:11px;white-space:pre-wrap">' + JSON.stringify(result, null, 2) + '</pre>');
+}
+show('home');
+</script>
+</body>
+</html>
