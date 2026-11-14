@@ -3,15 +3,22 @@
     {
       "bundleIdentifier": "jp.highlightyjp.sunoplayer",
       "developerName": "highlightyjp",
-      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.11.ipa",
+      "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.12.ipa",
       "iconURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/player/icon.png",
       "localizedDescription": "モジュールを切り替えるランチャー。Suno Player と同じ土台で育てる。",
       "name": "ランチャー",
-      "size": 4390376,
-      "version": "1.11",
-      "versionDate": "2026-11-11T14:26:55Z",
-      "versionDescription": "v1.11: QRブリッジモジュール用にカメラ権限（用途説明）を追加。",
+      "size": 4455892,
+      "version": "1.12",
+      "versionDate": "2026-11-14T08:33:00Z",
+      "versionDescription": "v1.12: アイリスへの入り口（App Intents／ロック画面コントロール）を追加。端末の実際の版数を読めるようにもなった。",
       "versions": [
+        {
+          "date": "2026-11-14T08:33:00Z",
+          "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.12.ipa",
+          "localizedDescription": "v1.12: アイリスへの入り口（App Intents／ロック画面コントロール）を追加。端末の実際の版数を読めるようにもなった。",
+          "size": 4455892,
+          "version": "1.12"
+        },
         {
           "date": "2026-11-11T14:26:55Z",
           "downloadURL": "https://highlightyjp.github.io/iOS_WebApp/launcher/Launcher-unsigned-v1.11.ipa",
