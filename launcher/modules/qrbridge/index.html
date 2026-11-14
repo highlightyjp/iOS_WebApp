@@ -23,7 +23,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver">版 1.3 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
+<div class="ver">版 1.4 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
 <div class="tabs">
   <button id="tabSend">送る</button>
   <button id="tabRecv">受け取る</button>
@@ -13516,6 +13516,327 @@ function qbFountainSession(K, blockSize, totalLen) {
 
 var QB_FOUNTAIN = { mulberry32, robustSolitonCDF, neighbors, makeEncoder, makeDecoder, crc32, crc16ccitt, QF_BLOCK, qbFountainSend, qbParseQF, qbFountainSession };
 
+'use strict';
+/* rlnc.js — RLNC（ランダム線形ネットワーク符号）GF(256) 版
+   QF v2 の混合方式の本命候補。係数は seed から決定的に生成し、
+   フレームには seed だけを持たせる（v1 の QF フレーム形式と同型）。
+   復号は GF(256) 上のガウス消去。 */
+
+
+// GF(256)、原始多項式 0x11D
+const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+(function () {
+  let x = 1;
+  for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+})();
+const gmul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+const ginv = a => EXP[255 - LOG[a]];
+
+function coeffsFromSeed(seed, K) {
+  const rng = mulberry32(seed >>> 0);
+  const c = new Uint8Array(K);
+  for (let i = 0; i < K; i++) c[i] = Math.floor(rng() * 256);
+  return c;
+}
+const allZero = c => { for (const v of c) if (v) return false; return true; };
+
+// 送り側：種を通し番号で増やしながら符号化フレームを作る
+function makeRLNCEncoder(blocks, blockSize) {
+  const K = blocks.length;
+  let seed = 0;
+  return function nextFrame() {
+    let c;
+    do { seed++; c = coeffsFromSeed(seed, K); } while (allZero(c));
+    const payload = new Uint8Array(blockSize);
+    for (let i = 0; i < K; i++) {
+      if (!c[i]) continue;
+      const b = blocks[i], ci = c[i];
+      for (let j = 0; j < blockSize; j++) if (b[j]) payload[j] ^= gmul(ci, b[j]);
+    }
+    return { seed, coeffs: c, payload };
+  };
+}
+
+// 受け側：集めて消去する
+function makeRLNCDecoder(K, blockSize) {
+  const rows = []; // {c: Uint8Array(K), p: Uint8Array(blockSize)}
+  let solved = null;
+  function add(frame) {
+    if (solved) return true;
+    const c = coeffsFromSeed(frame.seed, K);
+    if (allZero(c)) return false;
+    rows.push({ c: Uint8Array.from(c), p: Uint8Array.from(frame.payload) });
+    return trySolve();
+  }
+  function trySolve() {
+    const n = rows.length; if (n < K) return false;
+    const M = rows.map(r => ({ c: Uint8Array.from(r.c), p: Uint8Array.from(r.p) }));
+    let rank = 0; const where = new Array(K).fill(-1);
+    for (let col = 0; col < K && rank < n; col++) {
+      let sel = -1;
+      for (let i = rank; i < n; i++) if (M[i].c[col]) { sel = i; break; }
+      if (sel < 0) continue;
+      [M[rank], M[sel]] = [M[sel], M[rank]];
+      where[col] = rank;
+      const inv = ginv(M[rank].c[col]);
+      for (let j = col; j < K; j++) M[rank].c[j] = gmul(M[rank].c[j], inv);
+      for (let j = 0; j < blockSize; j++) M[rank].p[j] = gmul(M[rank].p[j], inv);
+      for (let i = 0; i < n; i++) {
+        if (i !== rank && M[i].c[col]) {
+          const f = M[i].c[col];
+          for (let j = col; j < K; j++) M[i].c[j] ^= gmul(f, M[rank].c[j]);
+          for (let j = 0; j < blockSize; j++) M[i].p[j] ^= gmul(f, M[rank].p[j]);
+        }
+      }
+      rank++;
+    }
+    if (rank < K) return false;
+    solved = new Array(K);
+    for (let i = 0; i < K; i++) solved[i] = M[where[i]].p;
+    return true;
+  }
+  return { add, result: () => solved, count: () => rows.length };
+}
+
+var QB_RLNC = { coeffsFromSeed, makeRLNCEncoder, makeRLNCDecoder, gmul, ginv, EXP, LOG };
+
+'use strict';
+/* qf2.js — 灯台方式（QL）試作（旧称 QF v2・放送型）
+ * データフレームは QF v1 の形式をそのまま使う。QL で足すのは流れの層：
+ * 同期フレーム（QLS）、枠時計のパリティ、SHA-256 先頭128bit による最終確認、
+ * 同期前のブロックの仮置き採用。混合方式の既定は RLNC-GF256（rlnc.js）、
+ * LT は互換。仕様は QF2-DESIGN.md。
+ */
+const F = QB_FOUNTAIN;
+const R = QB_RLNC;
+
+/* ---- SHA-256（純JS、移植可能な形で持つ） ---- */
+const SHAK = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+];
+function sha256(bytes) {
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const bitLen = bytes.length * 8;
+  const total = Math.ceil((bytes.length + 9) / 64) * 64;
+  const msg = new Uint8Array(total);
+  msg.set(bytes);
+  msg[bytes.length] = 0x80;
+  const dv = new DataView(msg.buffer);
+  dv.setUint32(total - 4, bitLen >>> 0);
+  dv.setUint32(total - 8, Math.floor(bitLen / 4294967296));
+  const w = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let off = 0; off < total; off += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i * 4);
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + SHAK[i] + w[i]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const mj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + mj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0;
+      d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  const out = new Uint8Array(32);
+  const odv = new DataView(out.buffer);
+  for (let i = 0; i < 8; i++) odv.setUint32(i * 4, H[i] >>> 0);
+  return out;
+}
+
+/* ---- 同期フレーム QLS（灯台方式の同期） ---- */
+const SYNC_LEN = 39;
+const METHOD_LT = 1, METHOD_RLNC = 2;
+function buildSync(manifest) {
+  const out = new Uint8Array(SYNC_LEN);
+  out[0] = 0x51; out[1] = 0x4C; out[2] = 0x53; out[3] = 1; // 'Q','L','S', ver
+  const dv = new DataView(out.buffer);
+  dv.setUint32(4, manifest.msgId);
+  dv.setUint32(8, manifest.totalLen);
+  dv.setUint16(12, manifest.K);
+  dv.setUint16(14, manifest.blockSize);
+  out.set(manifest.hash16, 16);
+  dv.setUint16(32, manifest.cycleLen);
+  out[34] = manifest.method || METHOD_RLNC;
+  dv.setUint16(35, manifest.holdMs);
+  dv.setUint16(37, F.crc16ccitt(out.subarray(0, 37)));
+  return out;
+}
+function parseSync(bytes) {
+  if (!bytes || bytes.length !== SYNC_LEN) return null;
+  if (bytes[0] !== 0x51 || bytes[1] !== 0x4C || bytes[2] !== 0x53 || bytes[3] !== 1) return null;
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (F.crc16ccitt(bytes.subarray(0, 37)) !== dv.getUint16(37)) return null;
+  return {
+    msgId: dv.getUint32(4), totalLen: dv.getUint32(8), K: dv.getUint16(12),
+    blockSize: dv.getUint16(14), hash16: bytes.slice(16, 32),
+    cycleLen: dv.getUint16(32), method: bytes[34], holdMs: dv.getUint16(35)
+  };
+}
+
+/* ---- RLNC の送受（QF フレーム形式に載せる） ---- */
+function splitBlocks(frameBytes, blockSize) {
+  const K = Math.max(1, Math.ceil(frameBytes.length / blockSize));
+  const blocks = [];
+  for (let i = 0; i < K; i++) {
+    const b = new Uint8Array(blockSize);
+    b.set(frameBytes.subarray(i * blockSize, (i + 1) * blockSize));
+    blocks.push(b);
+  }
+  return blocks;
+}
+function makeRLNCSender(frameBytes, blockSize) {
+  const blocks = splitBlocks(frameBytes, blockSize);
+  const K = blocks.length;
+  const msgId = F.crc32(frameBytes);
+  const seedList = []; // 係数が全ゼロでない種の列（決定的）
+  function seedAt(i) {
+    while (seedList.length <= i) {
+      let s = (seedList.length ? seedList[seedList.length - 1] : 0) + 1;
+      while (true) { const c = R.coeffsFromSeed(s, K); let nz = false; for (const v of c) if (v) { nz = true; break; } if (nz) break; s++; }
+      seedList.push(s);
+    }
+    return seedList[i];
+  }
+  return {
+    msgId, K, blockSize, totalLen: frameBytes.length,
+    frameAt(i) {
+      const seed = seedAt(i);
+      const c = R.coeffsFromSeed(seed, K);
+      const data = new Uint8Array(blockSize);
+      for (let b = 0; b < K; b++) {
+        if (!c[b]) continue;
+        const blk = blocks[b];
+        for (let j = 0; j < blockSize; j++) if (blk[j]) data[j] ^= R.gmul(c[b], blk[j]);
+      }
+      const out = new Uint8Array(19 + blockSize + 2);
+      out[0] = 0x51; out[1] = 0x46; out[2] = 1;
+      const dv = new DataView(out.buffer);
+      dv.setUint32(3, msgId); dv.setUint32(7, seed);
+      dv.setUint16(11, K); dv.setUint16(13, blockSize);
+      dv.setUint32(15, frameBytes.length);
+      out.set(data, 19);
+      dv.setUint16(19 + blockSize, F.crc16ccitt(out.subarray(0, 19 + blockSize)));
+      return out;
+    }
+  };
+}
+function makeRLNCSession(K, blockSize, totalLen) {
+  const dec = R.makeRLNCDecoder(K, blockSize);
+  return {
+    get ratio() { return Math.min(1, dec.count() / K); },
+    add(seed, data) {
+      const doneNow = dec.add({ seed, payload: data });
+      if (!doneNow) return { progress: true, ratio: this.ratio };
+      const blocks = dec.result();
+      const out = new Uint8Array(K * blockSize);
+      blocks.forEach((b, i) => out.set(b, i * blockSize));
+      return { done: true, frame: out.subarray(0, totalLen) };
+    }
+  };
+}
+
+/* ---- 送り側：表示列の生成 ---- */
+function makeStream(frameBytes, opts) {
+  opts = opts || {};
+  const blockSize = opts.blockSize || F.QF_BLOCK;
+  const holdMs = opts.holdMs || 140;
+  const method = opts.method === 'lt' ? METHOD_LT : METHOD_RLNC;
+  const sender = method === METHOD_LT ? F.qbFountainSend(frameBytes, blockSize) : makeRLNCSender(frameBytes, blockSize);
+  const dataPerCycle = Math.ceil(sender.K * (method === METHOD_LT ? 1.3 : 1.15));
+  const cycleLen = 2 + dataPerCycle;
+  const manifest = {
+    msgId: sender.msgId, totalLen: sender.totalLen, K: sender.K, blockSize, method,
+    hash16: sha256(frameBytes).subarray(0, 16), cycleLen, holdMs
+  };
+  const syncBytes = buildSync(manifest);
+  return {
+    manifest, cycleLen,
+    frameAt(index) { // 表示列の index 番目（0始まり、無限に続く）
+      const pos = index % cycleLen;
+      const cycle = Math.floor(index / cycleLen);
+      if (pos < 2) return { kind: 'sync', bytes: syncBytes, parity: index & 1 };
+      const dataIdx = cycle * dataPerCycle + (pos - 2);
+      return { kind: 'data', bytes: sender.frameAt(dataIdx), seed: dataIdx, parity: index & 1 };
+    }
+  };
+}
+
+/* ---- 受け側 ---- */
+function makeReceiver() {
+  let manifest = null;
+  let session = null;
+  let preSync = []; // 同期前に拾ったデータフレーム（parse 済み）
+  let done = false;
+  let result = null;
+  function adopt(parsed) {
+    if (!session) return null;
+    const res = session.add(parsed.seed, parsed.data);
+    if (res.done) {
+      const frame = res.frame;
+      if (frame.length === manifest.totalLen) {
+        const h = sha256(frame);
+        let ok = true;
+        for (let i = 0; i < 16; i++) if (h[i] !== manifest.hash16[i]) { ok = false; break; }
+        if (ok) { done = true; result = frame; return { done: true, frame }; }
+      }
+      // ハッシュ不一致：このセッションでは確定させず集め続ける（fail-closed）
+      return { progress: true, hashMismatch: true, ratio: session.ratio };
+    }
+    return res;
+  }
+  return {
+    get done() { return done; },
+    get synced() { return !!manifest; },
+    get ratio() { return session ? session.ratio : 0; },
+    addSync(bytes) {
+      const m = parseSync(bytes);
+      if (!m) return { ignored: true };
+      if (manifest && manifest.msgId !== m.msgId) { // 別セッションが始まったら作り直す
+        manifest = null; session = null; preSync = [];
+      }
+      if (!manifest) {
+        manifest = m;
+        session = m.method === METHOD_LT ? F.qbFountainSession(m.K, m.blockSize, m.totalLen) : makeRLNCSession(m.K, m.blockSize, m.totalLen);
+        const buffered = preSync.filter(p => p.msgId === m.msgId);
+        preSync = [];
+        for (const p of buffered) { const r = adopt(p); if (r && r.done) return r; }
+      }
+      return { synced: true, manifest };
+    },
+    addData(bytes) {
+      if (done) return { done: true, frame: result };
+      const parsed = F.qbParseQF(bytes);
+      if (!parsed || parsed.bad) return { ignored: true };
+      if (!manifest) {
+        if (preSync.length < 600) preSync.push(parsed);
+        return { buffered: true };
+      }
+      if (parsed.msgId !== manifest.msgId) return { ignored: true };
+      return adopt(parsed);
+    }
+  };
+}
+
+var QB_QL = { sha256, buildSync, parseSync, makeStream, makeReceiver, SYNC_LEN, METHOD_LT, METHOD_RLNC, makeRLNCSender, makeRLNCSession };
+
 </script>
 <script>
 "use strict";
@@ -13722,6 +14043,60 @@ function qbDrawQR(bytes, wrap) {
   wrap.appendChild(cv);
   return n;
 }
+var QB_QL_RX = QB_QL.makeReceiver();
+function qbRxSync(bytes) {
+  var r = QB_QL_RX.addSync(bytes);
+  if (r && r.done) return { done: true, frame: r.frame };
+  if (r && r.synced) return { progress: true, synced: true };
+  return null;
+}
+function qbRxQLData(bytes) {
+  var r = QB_QL_RX.addData(bytes);
+  if (!r) return null;
+  if (r.done) return { done: true, frame: r.frame };
+  if (QB_QL_RX.synced) return { progress: true, ratio: QB_QL_RX.ratio, ql: true };
+  return null;
+}
+function qbUnpackLite(bytes) {
+  if (bytes.length < 13 || bytes[0] !== 0x51 || bytes[1] !== 0x42 || bytes[2] !== 1) throw new Error("フレーム形式が違います");
+  var codecId = bytes[3];
+  var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  var origLen = dv.getUint32(5), crc = dv.getUint32(9);
+  var payload = bytes.subarray(13);
+  var orig;
+  if (codecId === 7) orig = qbInflate(payload);
+  else if (codecId === 0) orig = payload;
+  else throw new Error("未知のコーデックID: " + codecId);
+  if (orig.length !== origLen) throw new Error("原文長が合いません");
+  if (qbCrc32(orig) !== crc) throw new Error("CRCが合いません");
+  return new TextDecoder().decode(orig);
+}
+function qbParityOf(img, loc) {
+  // 枠時計：QRの外側の帯の平均輝度。暗/明がはっきりすれば 0/1、混ざりは -1（読み飛ばす）
+  try {
+    if (!loc || !loc.topLeftCorner) return 1;
+    var cs = [loc.topLeftCorner, loc.topRightCorner, loc.bottomRightCorner, loc.bottomLeftCorner];
+    var cx = 0, cy = 0;
+    cs.forEach(function (p) { cx += p.x / 4; cy += p.y / 4; });
+    var ex = cs.map(function (p) { return { x: cx + (p.x - cx) * 1.22, y: cy + (p.y - cy) * 1.22 }; });
+    var sum = 0, cnt = 0;
+    for (var e = 0; e < 4; e++) {
+      var a = ex[e], b = ex[(e + 1) % 4];
+      for (var t = 0; t <= 8; t++) {
+        var x = Math.round(a.x + (b.x - a.x) * t / 8), y = Math.round(a.y + (b.y - a.y) * t / 8);
+        if (x < 0 || y < 0 || x >= img.width || y >= img.height) continue;
+        var o = (y * img.width + x) * 4;
+        sum += img.data[o] * 0.3 + img.data[o + 1] * 0.59 + img.data[o + 2] * 0.11;
+        cnt++;
+      }
+    }
+    if (!cnt) return 1;
+    var avg = sum / cnt;
+    if (avg < 100) return 0;
+    if (avg > 180) return 1;
+    return -1;
+  } catch (e) { return 1; }
+}
 var QB_CAR = null;
 function qbCarStop() {
   if (QB_CAR && QB_CAR.timer) clearInterval(QB_CAR.timer);
@@ -13730,13 +14105,21 @@ function qbCarStop() {
 }
 function qbCarShow() {
   if (!QB_CAR) return;
-  var n = qbDrawQR(QB_CAR.send.frameAt(QB_CAR.i), $("qrwrap"));
-  $("carLabel").textContent = "ファウンテン " + (QB_CAR.i + 1) + " 枚目（復元の目安は約 " + QB_CAR.send.K + " 枚＋余り、QR " + n + "×" + n + "）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
+  if (QB_CAR.ql) {
+    var fr = QB_CAR.ql.frameAt(QB_CAR.i);
+    var n = qbDrawQR(fr.bytes, $("qrwrap"));
+    $("qrwrap").style.border = fr.parity ? "14px solid #ffffff" : "14px solid #000000";
+    $("qrwrap").style.outline = "2px solid #999999";
+    $("carLabel").textContent = (fr.kind === "sync" ? "同期フレーム" : "灯台方式 " + (QB_CAR.i + 1) + " 枚目") + "（復元の目安は約 " + QB_CAR.ql.manifest.K + " 枚＋余り、QR " + n + "×" + n + "）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
+    return;
+  }
+  var n2 = qbDrawQR(QB_CAR.send.frameAt(QB_CAR.i), $("qrwrap"));
+  $("carLabel").textContent = "ファウンテン " + (QB_CAR.i + 1) + " 枚目（復元の目安は約 " + QB_CAR.send.K + " 枚＋余り、QR " + n2 + "×" + n2 + "）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
 }
 $("btnCarPause").onclick = function () {
   if (!QB_CAR) return;
   if (QB_CAR.timer) { clearInterval(QB_CAR.timer); QB_CAR.timer = null; $("btnCarPause").textContent = "再開"; }
-  else { QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, 1400); $("btnCarPause").textContent = "一時停止"; }
+  else { QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, QB_CAR.holdMs || 1400); $("btnCarPause").textContent = "一時停止"; }
   qbCarShow();
 };
 $("btnCarPrev").onclick = function () { if (QB_CAR) { QB_CAR.i = Math.max(0, QB_CAR.i - 1); qbCarShow(); } };
@@ -13754,18 +14137,33 @@ $("btnMake").onclick = function () {
     st.innerHTML = "<span class='ok'>作成しました（1枚）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト / QR " + n + "×" + n + "\n相手の画面でこのQRを読み取ってください。画面の明るさを最大にすると読み取りやすくなります";
     return;
   }
-  var send = qbFountainSend(frame);
-  QB_CAR = { send: send, i: 0, timer: null };
+  var stream = QB_QL.makeStream(frame, {});
+  QB_CAR = { ql: stream, i: 0, timer: null, holdMs: stream.manifest.holdMs };
   $("carCtl").classList.remove("hidden");
   $("btnCarPause").textContent = "一時停止";
-  QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, 1400);
+  QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, QB_CAR.holdMs);
   qbCarShow();
-  st.innerHTML = "<span class='ok'>作成しました（ファウンテン方式）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（1枚上限 " + LIMIT + " 超過のため複数枚）\nQRが自動で切り替わります。相手の画面で「復元しました」と出たら、こちらも止めてください。枚数が多少読み落とされても復元できます";
+  st.innerHTML = "<span class='ok'>作成しました（灯台方式 QL）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（1枚上限 " + LIMIT + " 超過のため複数枚）\nQRが速く切り替わります。相手の画面で「復元しました」と出たら、こちらも止めてください。枚数が多少読み落とされても復元できます";
 };
 
 var QB_SCAN_TEST = false;
 function handleBytes(bytes, st) {
+  if (bytes.length === QB_QL.SYNC_LEN && bytes[0] === 0x51 && bytes[1] === 0x4C && bytes[2] === 0x53) {
+    var rsy = qbRxSync(bytes);
+    if (rsy && rsy.done) { bytes = rsy.frame; }
+    else {
+      st.innerHTML = "<span class='ok'>灯台方式の同期を受け取りました</span>\nそのまま読み続けてください";
+      return "progress";
+    }
+  }
   if (bytes.length >= 2 && bytes[0] === 0x51 && bytes[1] === 0x46) {
+    var rql = qbRxQLData(bytes);
+    if (rql && rql.done) { bytes = rql.frame; }
+    else if (rql && rql.ql) {
+      st.innerHTML = "<span class='ok'>灯台方式で受信中</span>\n復元の進み具合 " + Math.floor(rql.ratio * 100) + "%。そのまま読み続けてください";
+      return "progress";
+    }
+    if (!rql || !rql.done) {
     var rf = qbRxFountain(bytes);
     if (!rf) { st.innerHTML = "<span class='ng'>ファウンテンフレームの形式が違います</span>"; return "progress"; }
     if (rf.progress) {
@@ -13775,6 +14173,7 @@ function handleBytes(bytes, st) {
       return "progress";
     }
     bytes = rf.frame;
+    }
   }
   if (bytes.length >= 2 && bytes[0] === 0x51 && bytes[1] === 0x53) {
     var r = qbRxChunk(bytes);
@@ -13788,7 +14187,9 @@ function handleBytes(bytes, st) {
     bytes = r.frame;
   }
   try {
-    var text = qbUnpack(bytes, QB_SEED, QB_DICT);
+    var text = (bytes.length >= 13 && bytes[0] === 0x51 && bytes[1] === 0x42 && (bytes[3] === 7 || bytes[3] === 0) && bytes[4] === 0)
+      ? qbUnpackLite(bytes)
+      : qbUnpack(bytes, QB_SEED, QB_DICT);
     $("outText").value = text;
     st.innerHTML = "<span class='ok'>復元しました</span>\n" + [...text].length + " 字";
     var QB_DONE = true;
@@ -13839,6 +14240,7 @@ $("btnCam").onclick = async function () {
       var img = ctx.getImageData(0, 0, cv.width, cv.height);
       var res = jsQR(img.data, img.width, img.height);
       if (res && res.binaryData && res.binaryData.length) {
+        if (qbParityOf(img, res.location) < 0) { requestAnimationFrame(tick); return; }
         var outcome = handleBytes(new Uint8Array(res.binaryData), st);
         if (outcome === "progress") { setTimeout(tick, 350); return; }
         scanning = false;
@@ -13916,7 +14318,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5];
+  var order = [1, 2, 3, 4, 5, 6, 7];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -13925,7 +14327,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 1.3 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 1.4 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -13997,6 +14399,8 @@ $("btnShareResult").onclick = function () {
   };
 });
 
+var QB_LITE_FIXTURE_B64 = "UUIBBwAAAAArirCtlns6Z/nzHeseN657vmjXi1W9CmVGVgrPpm542rBEwVjP0ORxQ+OLFTOe9m9XULQHAA==";
+var QB_LITE_FIXTURE_TEXT = "圧縮の確認 v2: 数値 3.14、記号 !?";
 var FIXTURES = [
   "会議は午後二時から本会議室で開催する。出席者は事前に資料を確認し、質問事項があれば前日までに担当へ連絡すること。議事録は会議の翌営業日に共有する。",
   "パスワードの再設定は、ログイン画面の案内から行ってください。有効期限は発行から二十四時間です。期限を過ぎた場合は、再度手続きを行ってください。",
@@ -14033,6 +14437,25 @@ $("btnTest").onclick = function () {
   } catch (e) {
     QB_REPORT.items[4] = { label: "QR描画→復号の往復", result: "不合格", detail: e.message };
   }
+  try {
+    var fr6 = qbPack(FIXTURES[1], QB_SEED, QB_DICT);
+    var st6 = QB_QL.makeStream(fr6, {});
+    var rx6 = QB_QL.makeReceiver();
+    var done6 = null;
+    for (var i6 = 0; i6 < 500 && !done6; i6++) {
+      if (i6 % 7 === 3) continue;
+      var f6 = st6.frameAt(i6);
+      var r6 = f6.kind === "sync" ? rx6.addSync(f6.bytes) : rx6.addData(f6.bytes);
+      if (r6 && r6.done) done6 = r6.frame;
+    }
+    var ok6 = !!done6 && qbUnpack(done6, QB_SEED, QB_DICT) === FIXTURES[1];
+    QB_REPORT.items[6] = { label: "灯台方式（QL）の往復", result: ok6 ? "合格" : "不合格", detail: "同期＋RLNC、欠損つき" };
+  } catch (e) { QB_REPORT.items[6] = { label: "灯台方式（QL）の往復", result: "不合格", detail: e.message }; }
+  try {
+    var lite7 = qbB64Decode(QB_LITE_FIXTURE_B64);
+    var ok7 = qbUnpackLite(lite7) === QB_LITE_FIXTURE_TEXT;
+    QB_REPORT.items[7] = { label: "薄型フレーム（deflate）の受け", result: ok7 ? "合格" : "不合格", detail: lite7.length + "バイト" };
+  } catch (e) { QB_REPORT.items[7] = { label: "薄型フレーム（deflate）の受け", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
