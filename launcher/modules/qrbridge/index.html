@@ -15471,6 +15471,29 @@ $("btnTest").onclick = function () {
   } catch (e) {
     QB_REPORT.items[4] = { label: "QR描画→復号の往復", result: "不合格", detail: e.message };
   }
+  // テストQRの読み取り（自動：描画→jsQR→復元→期待値照合）
+  try {
+    var okAll5 = true, det5 = [];
+    TESTQR_TEXTS.forEach(function (tx5, ix5) {
+      var fr5 = qbPack(tx5, QB_SEED, QB_DICT);
+      var bin5 = ""; fr5.forEach(function (b) { bin5 += String.fromCharCode(b); });
+      var qr5 = qrcode(0, "L"); qr5.addData(bin5, "Byte"); qr5.make();
+      var n5 = qr5.getModuleCount(), sc5 = 6, q5 = 4, sz5 = (n5 + q5 * 2) * sc5;
+      var cv5 = document.createElement("canvas"); cv5.width = sz5; cv5.height = sz5;
+      var cx5 = cv5.getContext("2d");
+      cx5.fillStyle = "#fff"; cx5.fillRect(0, 0, sz5, sz5); cx5.fillStyle = "#000";
+      for (var y5 = 0; y5 < n5; y5++) for (var x5 = 0; x5 < n5; x5++) if (qr5.isDark(y5, x5)) cx5.fillRect((x5 + q5) * sc5, (y5 + q5) * sc5, sc5, sc5);
+      var im5 = cx5.getImageData(0, 0, sz5, sz5);
+      var rs5 = jsQR(im5.data, im5.width, im5.height);
+      var ok5 = false;
+      if (rs5 && rs5.binaryData) ok5 = qbUnpack(new Uint8Array(rs5.binaryData), QB_SEED, QB_DICT) === tx5;
+      if (!ok5) okAll5 = false;
+      det5.push("QR" + (ix5 + 1) + " " + [...tx5].length + "字");
+    });
+    QB_REPORT.items[5] = { label: "テストQRの読み取り", result: okAll5 ? "合格" : "不合格", detail: det5.join("／") + "（自動・描画から読み取り）" };
+  } catch (e) {
+    QB_REPORT.items[5] = { label: "テストQRの読み取り", result: "不合格", detail: e.message };
+  }
   try {
     var fr6 = qbPack(FIXTURES[1], QB_SEED, QB_DICT);
     var st6 = QB_QL.makeStream(fr6, {});
