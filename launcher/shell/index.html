@@ -166,6 +166,17 @@
     <div id="testResults"></div>
     <div class="sectionTitle">橋の記録（モジュールからの依頼の受け取り）</div>
     <pre id="bridgeLog" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.7;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:12px;">（まだありません）</pre>
+    <div class="sectionTitle">ヘルスケア書き込み試験（殻の機能・試験用）</div>
+    <div style="font-size:13px;color:var(--sub);line-height:1.6;">摂取エネルギー（321kcal）と体重（70.5kg）の試験サンプルをヘルスケアへ書き込み、読み戻して確かめます。書いた試験サンプルは、あとで消せます。</div>
+    <div class="tBtnRow">
+      <button id="hkProbeBtn" type="button">状態を見る</button>
+      <button id="hkAuthBtn" type="button">許可を求める</button>
+    </div>
+    <div class="tBtnRow">
+      <button id="hkRunBtn" type="button">書き込み試験</button>
+      <button id="hkCleanBtn" type="button">試験サンプルを消す</button>
+    </div>
+    <pre id="hkResult" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.7;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:12px;">（まだありません）</pre>
     <div id="testShareRow" style="display:none;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 6px;">
       <button id="copyTestBtnTop" type="button" style="width:100%;padding:15px;border-radius:12px;border:0;background:var(--accent);color:#082f49;font-size:16px;font-weight:700;cursor:pointer;">結果テキストをコピー</button>
       <button id="shareTestBtn" type="button" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--card-border);background:var(--card);color:var(--text);font-size:15px;margin-top:8px;cursor:pointer;">共有する</button>
@@ -197,7 +208,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-2115';
+const SHELL_BUILD = '2026-11-14-2245';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -997,6 +1008,28 @@ async function runTests(){
       });
     });
   }
+  // === ヘルスケア書き込み試験（v1.14 試験ビルド用） ===
+  const hkOut = document.getElementById('hkResult');
+  function hkShow(label, obj){
+    if (hkOut) hkOut.textContent = label + '\n' + JSON.stringify(obj, null, 2);
+  }
+  function hkPlugin(){
+    const c = window.Capacitor;
+    return (c && c.Plugins && c.Plugins.HealthWriter) ? c.Plugins.HealthWriter : null;
+  }
+  async function hkCall(label, method){
+    const p = hkPlugin();
+    if (!p){ hkShow(label, { error: 'HealthWriter プラグインがありません（この殻は試験ビルドではありません）' }); return; }
+    hkShow(label, { state: '実行中…' });
+    try { hkShow(label, await p[method]()); }
+    catch (e) { hkShow(label, { error: String((e && e.message) || e) }); }
+  }
+  const hkWire = [['hkProbeBtn', '状態', 'probe'], ['hkAuthBtn', '許可', 'requestAuth'], ['hkRunBtn', '書き込み試験', 'runTest'], ['hkCleanBtn', '掃除', 'cleanup']];
+  for (const [id, label, method] of hkWire){
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => hkCall(label, method));
+  }
+
   // 橋の記録（受け取りと URL の診断を含む）
   let blogArr = [];
   try{ blogArr = JSON.parse(localStorage.getItem(LS_BRIDGE_LOG) || '[]'); }catch(e){}
