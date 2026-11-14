@@ -23,7 +23,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver">版 1.1 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
+<div class="ver">版 1.2 / モデル版 6 / 1枚上限 2,953バイト（誤り訂正L）</div>
 <div class="tabs">
   <button id="tabSend">送る</button>
   <button id="tabRecv">受け取る</button>
@@ -13205,6 +13205,317 @@ if (false) {
   module.exports = { qbPack, qbUnpack, qbPack5, qbUnpack5, qbEncode, qbDecode, qbCrc32, qbInflate, qbB64Decode, bitEncodeAll, bitDecodeAll };
 }
 
+'use strict';
+// fountain.js — 決定的 LT 符号（QRブリッジ QR側研究・第1期）
+// 符号化ブロックの近傍選択は seed 駆動の決定的 PRNG（mulberry32）のみで決まる。
+// 送り側・受け側が同じ seed から同じ近傍を再計算できることが前提。
+// PRNG は Math.imul ベースで、JS エンジン間で結果が一致する。
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Robust soliton 分布の CDF（K: ソースブロック数）
+function robustSolitonCDF(K, c, delta) {
+  c = c === undefined ? 0.1 : c;
+  delta = delta === undefined ? 0.5 : delta;
+  const R = c * Math.log(K / delta) * Math.sqrt(K);
+  const rho = new Float64Array(K + 1);
+  rho[1] = 1 / K;
+  for (let d = 2; d <= K; d++) rho[d] = 1 / (d * (d - 1));
+  const tau = new Float64Array(K + 1);
+  const limit = Math.floor(K / R);
+  for (let d = 1; d <= limit; d++) tau[d] = R / (d * K);
+  tau[limit + 1] = (R * Math.log(R / delta)) / K;
+  let Z = 0;
+  for (let d = 1; d <= K; d++) Z += rho[d] + tau[d];
+  const cdf = new Float64Array(K + 1);
+  let acc = 0;
+  for (let d = 1; d <= K; d++) { acc += (rho[d] + tau[d]) / Z; cdf[d] = acc; }
+  cdf[K] = 1;
+  return cdf;
+}
+
+function sampleDegree(rng, cdf, K) {
+  const x = rng();
+  let lo = 1, hi = K;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cdf[mid] < x) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+// seed から近傍（次数とソースindex列）を決定的に再計算する
+function neighbors(seed, K, cdf) {
+  const rng = mulberry32(seed);
+  const d = sampleDegree(rng, cdf, K);
+  const idx = new Uint32Array(K);
+  for (let i = 0; i < K; i++) idx[i] = i;
+  const chosen = [];
+  for (let i = 0; i < d; i++) {
+    const j = i + Math.floor(rng() * (K - i));
+    const tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
+    chosen.push(idx[i]);
+  }
+  chosen.sort((a, b) => a - b);
+  return chosen;
+}
+
+// 符号化：source（Uint8Array）を K 個のブロックに割り、seed 列の符号化ブロックを返す
+function makeEncoder(source, blockSize) {
+  const K = Math.ceil(source.length / blockSize);
+  const blocks = [];
+  for (let i = 0; i < K; i++) {
+    const b = new Uint8Array(blockSize);
+    b.set(source.subarray(i * blockSize, Math.min(source.length, (i + 1) * blockSize)));
+    blocks.push(b);
+  }
+  const cdf = robustSolitonCDF(K);
+  return {
+    K, blockSize,
+    encode(seed) {
+      const nb = neighbors(seed, K, cdf);
+      const out = new Uint8Array(blockSize);
+      for (const i of nb) {
+        const b = blocks[i];
+        for (let j = 0; j < blockSize; j++) out[j] ^= b[j];
+      }
+      return out;
+    },
+    neighborsOf(seed) { return neighbors(seed, K, cdf); }
+  };
+}
+
+// 復号：peeling（信念伝播）。詰まったら残りを GE（GF(2)）で解く
+function makeDecoder(K, blockSize) {
+  const cdf = robustSolitonCDF(K);
+  const solved = new Array(K).fill(null);
+  let solvedCount = 0;
+  const pending = []; // {set:Set, data:Uint8Array}
+  const received = []; // GE 用に全受信を保持 {nb:[], data}
+
+  function trySolve(block) {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = pending.length - 1; i >= 0; i--) {
+        const p = pending[i];
+        if (p.set.size === 1) {
+          const srcIdx = p.set.values().next().value;
+          if (!solved[srcIdx]) {
+            solved[srcIdx] = p.data;
+            solvedCount++;
+          }
+          pending.splice(i, 1);
+          for (const q of pending) {
+            if (q.set.has(srcIdx)) {
+              const sd = solved[srcIdx];
+              for (let j = 0; j < blockSize; j++) q.data[j] ^= sd[j];
+              q.set.delete(srcIdx);
+            }
+          }
+          changed = true;
+        }
+      }
+    }
+  }
+
+  function geSolve() {
+    // 残りの未解決について、受信ブロック全体から線形系を組み GE で解く
+    const unsolved = [];
+    for (let i = 0; i < K; i++) if (!solved[i]) unsolved.push(i);
+    if (unsolved.length === 0) return true;
+    const colOf = new Map(unsolved.map((v, i) => [v, i]));
+    const n = unsolved.length;
+    const rows = [];
+    for (const r of received) {
+      const bits = new Uint8Array(n);
+      let any = false;
+      for (const nb of r.nb) {
+        if (solved[nb]) continue;
+        if (colOf.has(nb)) { bits[colOf.get(nb)] = 1; any = true; }
+      }
+      if (!any) continue;
+      // 既解決分の寄与を差し引いたデータを作る
+      const data = new Uint8Array(r.data);
+      for (const nb of r.nb) {
+        if (solved[nb]) {
+          const sd = solved[nb];
+          for (let j = 0; j < blockSize; j++) data[j] ^= sd[j];
+        }
+      }
+      rows.push({ bits, data });
+    }
+    const pivotRowOfCol = new Array(n).fill(-1);
+    let row = 0;
+    for (let col = 0; col < n && row < rows.length; col++) {
+      let piv = -1;
+      for (let i = row; i < rows.length; i++) if (rows[i].bits[col]) { piv = i; break; }
+      if (piv === -1) continue;
+      const tmp = rows[row]; rows[row] = rows[piv]; rows[piv] = tmp;
+      pivotRowOfCol[col] = row;
+      for (let i = 0; i < rows.length; i++) {
+        if (i !== row && rows[i].bits[col]) {
+          for (let j = 0; j < n; j++) rows[i].bits[j] ^= rows[row].bits[j];
+          for (let j = 0; j < blockSize; j++) rows[i].data[j] ^= rows[row].data[j];
+        }
+      }
+      row++;
+    }
+    // ピボットが全列に揃うまで solved へは一切書かない（部分代入は状態を壊す）
+    for (let col = 0; col < n; col++) {
+      if (pivotRowOfCol[col] === -1) return false;
+    }
+    const newlySolved = [];
+    for (let col = 0; col < n; col++) {
+      solved[unsolved[col]] = rows[pivotRowOfCol[col]].data;
+      solvedCount++;
+      newlySolved.push(unsolved[col]);
+    }
+    // peeling 側の pending は GE で解けた分を知らないので、ここで突き合わせる
+    for (const p of pending) {
+      for (const idx of newlySolved) {
+        if (p.set.has(idx)) {
+          const sd = solved[idx];
+          for (let j = 0; j < blockSize; j++) p.data[j] ^= sd[j];
+          p.set.delete(idx);
+        }
+      }
+    }
+    for (let i = pending.length - 1; i >= 0; i--) {
+      if (pending[i].set.size === 0) pending.splice(i, 1);
+    }
+    trySolve();
+    return true;
+  }
+
+  return {
+    K,
+    get solvedCount() { return solvedCount; },
+    get done() { return solvedCount === K; },
+    add(seed, data) {
+      if (this.done) return;
+      const nb = neighbors(seed, K, cdf);
+      received.push({ nb, data: new Uint8Array(data) });
+      const set = new Set();
+      const d = new Uint8Array(data);
+      for (const i of nb) {
+        if (solved[i]) {
+          const sd = solved[i];
+          for (let j = 0; j < blockSize; j++) d[j] ^= sd[j];
+        } else set.add(i);
+      }
+      if (set.size === 0) return;
+      pending.push({ set, data: d });
+      trySolve();
+    },
+    finish() {
+      if (this.done) return true;
+      return geSolve();
+    },
+    result(totalLen) {
+      if (!this.done) return null;
+      const out = new Uint8Array(K * blockSize);
+      for (let i = 0; i < K; i++) out.set(solved[i], i * blockSize);
+      return out.subarray(0, totalLen);
+    }
+  };
+}
+
+// ---- QF フレーム（QF-DESIGN.md の形式） ----
+function crc32(data) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data[i];
+    for (let j = 0; j < 8; j++) crc = (crc & 1) ? ((crc >>> 1) ^ 0xEDB88320) : (crc >>> 1);
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function crc16ccitt(data) {
+  let crc = 0xFFFF;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data[i] << 8;
+    for (let j = 0; j < 8; j++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+  }
+  return crc;
+}
+
+const QF_BLOCK = 1379; // 1枚 1,400 バイト（ヘッダ+CRC 21）
+
+function qbFountainSend(frame, blockSize) {
+  blockSize = blockSize || QF_BLOCK;
+  const enc = makeEncoder(frame, blockSize);
+  const msgId = crc32(frame);
+  return {
+    msgId, K: enc.K, blockSize, totalLen: frame.length,
+    frameAt(seed) {
+      const data = enc.encode(seed);
+      const out = new Uint8Array(19 + blockSize + 2);
+      out[0] = 0x51; out[1] = 0x46; out[2] = 1;
+      const dv = new DataView(out.buffer);
+      dv.setUint32(3, msgId);
+      dv.setUint32(7, seed);
+      dv.setUint16(11, enc.K);
+      dv.setUint16(13, blockSize);
+      dv.setUint32(15, frame.length);
+      out.set(data, 19);
+      dv.setUint16(19 + blockSize, crc16ccitt(out.subarray(0, 19 + blockSize)));
+      return out;
+    }
+  };
+}
+
+function qbParseQF(bytes) {
+  if (bytes.length < 21 || bytes[0] !== 0x51 || bytes[1] !== 0x46 || bytes[2] !== 1) return null;
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const blockSize = dv.getUint16(13);
+  if (bytes.length !== 19 + blockSize + 2) return null;
+  if (crc16ccitt(bytes.subarray(0, bytes.length - 2)) !== dv.getUint16(bytes.length - 2)) return { bad: true };
+  const K = dv.getUint16(11);
+  if (K < 1 || K > 1024) return null;
+  return {
+    msgId: dv.getUint32(3), seed: dv.getUint32(7), K,
+    blockSize, totalLen: dv.getUint32(15),
+    data: bytes.slice(19, 19 + blockSize)
+  };
+}
+
+function qbFountainSession(K, blockSize, totalLen) {
+  const dec = makeDecoder(K, blockSize);
+  const seen = new Set();
+  let received = 0, lastFinishTry = 0;
+  return {
+    K,
+    get ratio() { return dec.solvedCount / K; },
+    get solvedCount() { return dec.solvedCount; },
+    add(seed, data) {
+      if (seen.has(seed)) return { progress: true, dup: true, ratio: this.ratio, solved: dec.solvedCount, K };
+      seen.add(seed);
+      received++;
+      dec.add(seed, data);
+      if (!dec.done && received > K && received - lastFinishTry >= 6) {
+        lastFinishTry = received;
+        dec.finish();
+      }
+      if (dec.done) {
+        const frame = dec.result(totalLen);
+        return { done: true, frame };
+      }
+      return { progress: true, ratio: this.ratio, solved: dec.solvedCount, K };
+    }
+  };
+}
+
+var QB_FOUNTAIN = { mulberry32, robustSolitonCDF, neighbors, makeEncoder, makeDecoder, crc32, crc16ccitt, QF_BLOCK, qbFountainSend, qbParseQF, qbFountainSession };
+
 </script>
 <script>
 "use strict";
@@ -13381,6 +13692,21 @@ function qbRxChunk(bytes) {
   delete QB_RX[msgId];
   return { done: true, frame: frame };
 }
+var QB_RXF = {};
+function qbRxFountain(bytes) {
+  var p = qbParseQF(bytes);
+  if (!p) return null;
+  if (p.bad) return { progress: true, bad: true };
+  var sess = QB_RXF[p.msgId];
+  if (!sess) { sess = QB_RXF[p.msgId] = qbFountainSession(p.K, p.blockSize, p.totalLen); }
+  var r = sess.add(p.seed, p.data);
+  if (r.done) {
+    delete QB_RXF[p.msgId];
+    if (crc32(r.frame) !== p.msgId) return { progress: true, bad: true };
+    return { done: true, frame: r.frame };
+  }
+  return { progress: true, ratio: r.ratio, solved: r.solved, total: r.K };
+}
 function qbDrawQR(bytes, wrap) {
   var bin = "";
   bytes.forEach(function (b) { bin += String.fromCharCode(b); });
@@ -13409,17 +13735,17 @@ function qbCarStop() {
 }
 function qbCarShow() {
   if (!QB_CAR) return;
-  var n = qbDrawQR(QB_CAR.chunks[QB_CAR.i], $("qrwrap"));
-  $("carLabel").textContent = "分割 " + (QB_CAR.i + 1) + " / " + QB_CAR.chunks.length + " 枚目（QR " + n + "×" + n + "）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
+  var n = qbDrawQR(QB_CAR.send.frameAt(QB_CAR.i), $("qrwrap"));
+  $("carLabel").textContent = "ファウンテン " + (QB_CAR.i + 1) + " 枚目（復元の目安は約 " + QB_CAR.send.K + " 枚＋余り、QR " + n + "×" + n + "）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
 }
 $("btnCarPause").onclick = function () {
   if (!QB_CAR) return;
   if (QB_CAR.timer) { clearInterval(QB_CAR.timer); QB_CAR.timer = null; $("btnCarPause").textContent = "再開"; }
-  else { QB_CAR.timer = setInterval(function () { QB_CAR.i = (QB_CAR.i + 1) % QB_CAR.chunks.length; qbCarShow(); }, 1400); $("btnCarPause").textContent = "一時停止"; }
+  else { QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, 1400); $("btnCarPause").textContent = "一時停止"; }
   qbCarShow();
 };
-$("btnCarPrev").onclick = function () { if (QB_CAR) { QB_CAR.i = (QB_CAR.i + QB_CAR.chunks.length - 1) % QB_CAR.chunks.length; qbCarShow(); } };
-$("btnCarNext").onclick = function () { if (QB_CAR) { QB_CAR.i = (QB_CAR.i + 1) % QB_CAR.chunks.length; qbCarShow(); } };
+$("btnCarPrev").onclick = function () { if (QB_CAR) { QB_CAR.i = Math.max(0, QB_CAR.i - 1); qbCarShow(); } };
+$("btnCarNext").onclick = function () { if (QB_CAR) { QB_CAR.i++; qbCarShow(); } };
 $("btnMake").onclick = function () {
   var text = $("inText").value;
   var st = $("sendStatus");
@@ -13433,17 +13759,28 @@ $("btnMake").onclick = function () {
     st.innerHTML = "<span class='ok'>作成しました（1枚）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト / QR " + n + "×" + n + "\n相手の画面でこのQRを読み取ってください。画面の明るさを最大にすると読み取りやすくなります";
     return;
   }
-  var chunks = qbSplitFrame(frame);
-  QB_CAR = { chunks: chunks, i: 0, timer: null };
+  var send = qbFountainSend(frame);
+  QB_CAR = { send: send, i: 0, timer: null };
   $("carCtl").classList.remove("hidden");
   $("btnCarPause").textContent = "一時停止";
-  QB_CAR.timer = setInterval(function () { QB_CAR.i = (QB_CAR.i + 1) % QB_CAR.chunks.length; qbCarShow(); }, 1400);
+  QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, 1400);
   qbCarShow();
-  st.innerHTML = "<span class='ok'>作成しました（分割 " + chunks.length + " 枚）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（1枚上限 " + LIMIT + " 超過のため分割）\nQRが自動で切り替わります。相手には全部の枚数を読み取ってもらってください";
+  st.innerHTML = "<span class='ok'>作成しました（ファウンテン方式）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（1枚上限 " + LIMIT + " 超過のため複数枚）\nQRが自動で切り替わります。相手の画面で「復元しました」と出たら、こちらも止めてください。枚数が多少読み落とされても復元できます";
 };
 
 var QB_SCAN_TEST = false;
 function handleBytes(bytes, st) {
+  if (bytes.length >= 2 && bytes[0] === 0x51 && bytes[1] === 0x46) {
+    var rf = qbRxFountain(bytes);
+    if (!rf) { st.innerHTML = "<span class='ng'>ファウンテンフレームの形式が違います</span>"; return "progress"; }
+    if (rf.progress) {
+      st.innerHTML = rf.bad
+        ? "<span class='ng'>壊れたフレームを読み飛ばしました</span>\nそのまま読み続けてください"
+        : "<span class='ok'>ファウンテンフレームを受信中</span>\n復元の進み具合 " + Math.floor(rf.ratio * 100) + "%（" + rf.solved + " / " + rf.total + " ブロック）。そのまま読み続けてください";
+      return "progress";
+    }
+    bytes = rf.frame;
+  }
   if (bytes.length >= 2 && bytes[0] === 0x51 && bytes[1] === 0x53) {
     var r = qbRxChunk(bytes);
     if (!r) { st.innerHTML = "<span class='ng'>分割フレームの形式が違います</span>"; return "progress"; }
@@ -13593,7 +13930,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 1.1 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 1.2 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
