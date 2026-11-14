@@ -7,7 +7,7 @@
 <title>ランチャー</title>
 <style>
   :root{
-    --bg:#0e1116; --card:rgba(255,255,255,.08); --card-border:rgba(255,255,255,.14);
+    --bg:#0e1116; --card:#171d29; --glass:rgba(23,29,41,.72); --card-border:rgba(255,255,255,.10);
     --text:#f2f4f8; --sub:#a7b0bf; --accent:#7dd3fc; --radius:20px;
     /* モーション分類骨格（試作）：spatial＝位置・大きさの移動（overshoot は押下の反動だけ）、
        effect＝色・不透明度（overshoot なし）。速度は3段トークンで持つ */
@@ -23,9 +23,15 @@
       --m-effect-fast:.01s linear; --m-effect-med:.01s linear; --m-effect-slow:.01s linear; }
     #viewer, #testView{ animation:none !important; }
   }
+  @media (prefers-reduced-transparency: reduce){
+    :root{ --glass:var(--card); }
+    #freshPill, #searchInput, #viewerBar, #testBar, #testActionBar{ backdrop-filter:none; }
+  }
   @keyframes viewIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
   @media (prefers-color-scheme: light){
-    :root{ --bg:#eef1f6; --card:rgba(255,255,255,.75); --card-border:rgba(20,30,50,.08); --text:#141a24; --sub:#5b6575; }
+    :root{ --bg:#eef1f6; --card:#ffffff; --glass:rgba(255,255,255,.72); --card-border:rgba(20,30,50,.10); --text:#141a24; --sub:#5b6575; --accent:#0369a1; }
+    .card .chip.warn{ color:#b45309; }
+    .tPass{ color:#15803d; } .tFail{ color:#dc2626; } .tNa{ color:#b45309; }
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; background:
@@ -34,82 +40,89 @@
     radial-gradient(100% 50% at 50% 110%, rgba(52,211,153,.14), transparent 60%), var(--bg);
     color:var(--text); min-height:100vh; }
   header{ padding:calc(16px + env(safe-area-inset-top)) 20px 8px; }
-  h1{ font-size:22px; margin:0 0 4px; font-weight:700; letter-spacing:.02em; }
+  h1{ font-size:21px; margin:0 0 4px; font-weight:800; letter-spacing:.02em; }
   #status{ color:var(--sub); font-size:13px; min-height:18px; }
   main{ padding:8px 16px calc(24px + env(safe-area-inset-bottom)); max-width:640px; margin:0 auto; }
-  #updateBox{ display:none; width:100%; margin:12px 0 4px; padding:18px; border-radius:var(--radius);
-    border:1px solid var(--card-border); background:var(--accent); color:#082f49; font-size:17px; font-weight:700; text-align:left; }
+  #updateBox{ display:none; width:100%; margin:16px 0 8px; padding:16px; border-radius:var(--radius);
+    border:1px solid var(--card-border); background:#7dd3fc; color:#082f49; font-size:17px; font-weight:700; text-align:left; }
   #updateBox small{ display:block; font-weight:500; font-size:13px; margin-top:4px; }
   #updateBox .dismiss{ display:inline-block; margin-top:10px; padding:7px 14px; border-radius:999px;
     background:rgba(8,47,73,.16); font-size:13px; font-weight:600; }
-  .grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
-  .card{ appearance:none; display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box;
-    border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px);
+  .grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
+  .card{ appearance:none; display:flex; align-items:center; gap:16px; width:100%; box-sizing:border-box;
+    border:1px solid var(--card-border); background:var(--card);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(10,15,30,.06), 0 16px 32px rgba(10,15,30,.10);
-    border-radius:24px; padding:12px 16px; text-align:left; color:var(--text); cursor:pointer;
+    border-radius:24px; padding:16px; text-align:left; color:var(--text); cursor:pointer;
     transition: transform var(--m-spatial-fast); }
   .card:active{ transform:scale(.98); }
   .card .tile{ flex:none; width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
     color:#fff; font-size:21px; font-weight:700; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
   .card .mainCol{ flex:1; min-width:0; display:flex; flex-direction:column; }
-  .card .name{ font-size:16px; font-weight:600; display:block; }
+  .card .name{ font-size:17px; font-weight:700; display:block; }
   .card > .name{ flex:1; }
-  .card .desc{ font-size:12.5px; color:var(--sub); display:block; margin-top:2px; line-height:1.5; }
-  .card .note{ font-size:12.5px; color:var(--accent); display:block; margin-top:2px; font-weight:600; }
-  .card .chip{ flex:none; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px;
+  .card .desc{ font-size:13px; color:var(--sub); display:block; margin-top:2px; line-height:1.5; }
+  .card .note{ font-size:13px; color:var(--accent); display:block; margin-top:2px; font-weight:600; }
+  .card .chip{ flex:none; font-size:12.5px; font-weight:600; padding:4px 10px; border-radius:999px;
     background:rgba(125,211,252,.16); color:var(--accent); }
-  .card .chip.warn{ background:rgba(251,191,36,.18); color:#d97706; }
+  .card .chip.warn{ background:rgba(251,191,36,.18); color:#fbbf24; }
   .card[disabled]{ opacity:.55; cursor:default; }
-  .sectionTitle{ font-size:13px; color:var(--sub); margin:24px 2px 0; font-weight:600; }
-  #addForm{ margin-top:12px; border:1px solid var(--card-border); background:var(--card); border-radius:var(--radius); padding:16px; }
-  #addForm input{ width:100%; padding:12px; margin:6px 0; border-radius:12px; border:1px solid var(--card-border);
+  .sectionTitle{ font-size:13.5px; color:var(--sub); margin:24px 0 0; font-weight:600; }
+  #addForm{ margin-top:16px; border:1px solid var(--card-border); background:var(--card); border-radius:var(--radius); padding:16px; }
+  #addForm input{ width:100%; padding:12px; margin:8px 0; border-radius:12px; border:1px solid var(--card-border);
     background:transparent; color:var(--text); font-size:16px; }
   #addForm button{ width:100%; padding:13px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:15px; font-weight:700; }
   .privRow{ display:flex; align-items:center; gap:8px; }
   .privRow .grow{ flex:1; }
   .del{ border:0; background:transparent; color:var(--sub); font-size:18px; padding:8px; cursor:pointer; }
-  #testOpenBtn{ width:100%; margin-top:12px; padding:14px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:15px; font-weight:600; text-align:left; cursor:pointer; }
+  #testOpenBtn{ width:100%; margin-top:16px; padding:16px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:15px; font-weight:600; text-align:left; cursor:pointer; }
   #testView{ position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:11; animation:viewIn var(--m-spatial-med) both; }
   #testBody{ flex:1; overflow-y:auto; padding:16px; max-width:640px; margin:0 auto; width:100%; }
   #runTestBtn{ width:100%; padding:14px; border-radius:12px; border:0; background:var(--accent); color:#082f49; font-size:16px; font-weight:700; cursor:pointer; }
   #runTestBtn[disabled]{ opacity:.5; }
-  .tItem{ border:1px solid var(--card-border); background:var(--card); border-radius:14px; padding:12px 14px; margin-top:10px; }
-  .tItem .tHead{ font-size:15px; font-weight:600; }
+  .tItem{ border:1px solid var(--card-border); background:var(--card); border-radius:16px; padding:16px; margin-top:8px; }
+  .tItem .tHead{ font-size:17px; font-weight:700; }
   .tItem .tDetail{ font-size:13px; color:var(--sub); margin-top:4px; line-height:1.6; white-space:pre-wrap; }
   .tPass{ color:#4ade80; } .tFail{ color:#f87171; } .tNa{ color:#fbbf24; }
-  #testStage{ height:280px; border:1px solid var(--card-border); border-radius:14px; overflow:hidden; margin-top:10px; background:#000; }
+  #testStage{ height:280px; border:1px solid var(--card-border); border-radius:16px; overflow:hidden; margin-top:16px; background:#000; }
   #testStage iframe{ width:100%; height:100%; border:0; display:block; }
-  #testText{ width:100%; min-height:180px; margin-top:12px; border-radius:12px; border:1px solid var(--card-border); background:transparent; color:var(--text); font-size:13px; padding:12px; }
-  .tBtnRow{ display:flex; gap:10px; margin-top:10px; }
+  #testText{ width:100%; min-height:180px; margin-top:16px; border-radius:12px; border:1px solid var(--card-border); background:transparent; color:var(--text); font-size:13px; padding:12px; }
+  .tBtnRow{ display:flex; gap:8px; margin-top:8px; }
   .tBtnRow button{ flex:1; padding:12px; border-radius:12px; border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; }
-  #testImageWrap img{ width:100%; margin-top:12px; border-radius:12px; border:1px solid var(--card-border); }
+  #testImageWrap img{ width:100%; margin-top:16px; border-radius:12px; border:1px solid var(--card-border); }
+  #testBar{ background:var(--glass); backdrop-filter:blur(14px); }
   #viewer{ position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:10; animation:viewIn var(--m-spatial-med) both; }
-  #viewerBar{ display:flex; align-items:center; gap:12px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
-    border-bottom:1px solid var(--card-border); }
+  #viewerBar{ display:flex; align-items:center; gap:12px; padding:calc(8px + env(safe-area-inset-top)) 16px 8px;
+    border-bottom:1px solid var(--card-border); background:var(--glass); backdrop-filter:blur(14px); }
   #backBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); border-radius:999px; padding:9px 16px; font-size:15px; }
-  #viewerTitle{ font-size:16px; font-weight:600; }
+  #viewerTitle{ font-size:17px; font-weight:700; }
   #frameWrap{ flex:1; }
   #frameWrap iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
   #testActionBar{ display:flex; gap:12px; padding:12px 16px calc(12px + env(safe-area-inset-bottom));
-    border-top:1px solid var(--card-border); background:var(--bg); }
+    border-top:1px solid var(--card-border); background:var(--glass); backdrop-filter:blur(14px); }
   #testActionBar button{ flex:1; padding:14px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
   #testActionBar button[disabled]{ opacity:.45; cursor:default; }
   #barCopyBtn{ border:0; background:var(--accent); color:#082f49; }
   #testActionBar button{ transition:opacity var(--m-effect-fast), background-color var(--m-effect-med); }
   #updateBox{ transition:opacity var(--m-effect-med); }
   #barShareBtn{ border:1px solid var(--card-border); background:var(--card); color:var(--text); }
-  #freshPill{ display:flex; align-items:center; gap:8px; margin-top:12px; padding:6px 6px 6px 14px;
-    border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(14px); border-radius:999px; }
+  #freshPill{ display:flex; align-items:center; gap:8px; margin-top:16px; padding:6px 6px 6px 14px;
+    border:1px solid var(--card-border); background:var(--glass); backdrop-filter:blur(14px); border-radius:999px; }
   #freshDot{ flex:none; width:8px; height:8px; border-radius:999px; background:#4ade80; }
   #freshPill #status{ flex:1; min-height:0; }
   #reloadListBtn{ margin-top:0 !important; flex:none; }
   #searchWrap{ margin-top:16px; }
   #searchInput{ width:100%; box-sizing:border-box; padding:13px 18px; border-radius:999px; border:1px solid var(--card-border);
-    background:var(--card); backdrop-filter:blur(14px); color:var(--text); font-size:16px; outline:none; }
-  #recentRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-  .recentChip{ display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border-radius:999px;
-    border:1px solid var(--card-border); background:var(--card); color:var(--text); font-size:14px; cursor:pointer; }
-  .recentChip .tile{ width:30px; height:30px; border-radius:999px; display:grid; place-items:center; color:#fff; font-size:14px; font-weight:700; }
+    background:var(--glass); backdrop-filter:blur(14px); color:var(--text); font-size:16px; outline:none; }
+  #recentRow{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+  .recentTile{ appearance:none; display:flex; flex-direction:column; align-items:flex-start; gap:8px; width:100%; box-sizing:border-box;
+    padding:16px; border:1px solid var(--card-border); background:var(--card); border-radius:24px; color:var(--text);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(10,15,30,.06), 0 16px 32px rgba(10,15,30,.10);
+    text-align:left; cursor:pointer; transition: transform var(--m-spatial-fast); }
+  .recentTile:active{ transform:scale(.98); }
+  .recentTile .tile{ flex:none; width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
+    color:#fff; font-size:21px; font-weight:700; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+  .recentTile .rName{ font-size:17px; font-weight:700; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .recentTile .rStatus{ font-size:13px; color:var(--sub); }
 </style>
 <style>html{touch-action:manipulation;}</style><script>document.addEventListener('gesturestart',function(e){e.preventDefault();});</script>
 </head>
@@ -121,7 +134,7 @@
 <main>
   <div id="searchWrap"><input id="searchInput" type="search" placeholder="アプリを探す" autocomplete="off" /></div>
   <button id="updateBox"></button>
-  <div id="resumeBox" style="display:none;border:1px solid var(--card-border);background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+  <div id="resumeBox" style="display:none;border:1px solid var(--card-border);background:var(--card);border-radius:16px;padding:16px;margin-bottom:16px;">
     <div style="font-size:14.5px;line-height:1.6;">LLM検証が途中で落ちています。<span id="resumeCount">3</span>秒後に続きを自動で開きます。</div>
     <button id="resumeCancelBtn" type="button" style="margin-top:8px;padding:9px 16px;border-radius:999px;border:1px solid var(--card-border);background:transparent;color:var(--text);font-size:14px;">開かない</button>
   </div>
@@ -143,9 +156,9 @@
 </main>
 
 <div id="testView">
-  <div id="testBar" style="display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--card-border);">
+  <div id="testBar" style="display:flex;align-items:center;gap:12px;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;border-bottom:1px solid var(--card-border);">
     <button id="testBackBtn" type="button" style="border:1px solid var(--card-border);background:var(--card);color:var(--text);border-radius:999px;padding:9px 16px;font-size:15px;">← 戻る</button>
-    <div style="font-size:16px;font-weight:600;">試験モード</div>
+    <div style="font-size:17px;font-weight:700;">試験モード</div>
   </div>
   <div id="testBody">
     <button id="runTestBtn" type="button">点検する</button>
@@ -184,7 +197,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-13-0010';
+const SHELL_BUILD = '2026-11-14-1530';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -226,6 +239,13 @@ function noteRecent(mod){
   try{ localStorage.setItem(LS_RECENT, JSON.stringify(list)); }catch(e){}
   renderRecent();
 }
+let currentModules = [];
+function recentStatusText(r){
+  const m = currentModules.find(x => x.id === r.id);
+  if (!m) return '開けます';
+  if (m.status === 'preparing') return '準備中';
+  return m.tag || '開けます';
+}
 function renderRecent(){
   const row = document.getElementById('recentRow');
   const title = document.getElementById('recentTitle');
@@ -233,12 +253,13 @@ function renderRecent(){
   const list = loadRecent();
   row.textContent = '';
   if (!list.length){ row.style.display = 'none'; title.style.display = 'none'; return; }
-  title.style.display = ''; row.style.display = 'flex';
+  title.style.display = ''; row.style.display = 'grid';
   list.forEach(r => {
-    const b = document.createElement('button'); b.className = 'recentChip'; b.type = 'button';
+    const b = document.createElement('button'); b.className = 'recentTile'; b.type = 'button';
     const t = document.createElement('span'); t.className = 'tile'; t.textContent = initialOf(r); t.style.background = tileBg(r);
-    const n = document.createElement('span'); n.textContent = r.name;
-    b.append(t, n);
+    const n = document.createElement('span'); n.className = 'rName'; n.textContent = r.name;
+    const st = document.createElement('span'); st.className = 'rStatus'; st.textContent = recentStatusText(r);
+    b.append(t, n, st);
     b.addEventListener('click', () => openModule({ id: r.id, name: r.name, url: r.url, status: 'ready' }));
     row.appendChild(b);
   });
@@ -314,9 +335,11 @@ function card(mod, extra){
 }
 
 function render(modules){
+  currentModules = modules || [];
   grid.textContent = '';
   modules.forEach(m => grid.appendChild(card(m)));
   renderPrivate();
+  renderRecent();
   applySearch();
 }
 function renderPrivate(){
@@ -357,6 +380,12 @@ const searchInput = document.getElementById('searchInput');
 function applySearch(){
   if (!searchInput) return;
   const q = (searchInput.value || '').trim();
+  const rTitle = document.getElementById('recentTitle');
+  const rRow = document.getElementById('recentRow');
+  if (rTitle && rRow){
+    if (q){ rTitle.style.display = 'none'; rRow.style.display = 'none'; }
+    else if (loadRecent().length){ rTitle.style.display = ''; rRow.style.display = 'grid'; }
+  }
   [grid, privateGrid].forEach(g => {
     if (!g) return;
     Array.prototype.forEach.call(g.children, c => {
@@ -883,7 +912,7 @@ async function runTests(){
     const head = document.createElement('div'); head.className = 'tHead';
     const mark = document.createElement('span');
     mark.className = it.result === 'pass' ? 'tPass' : (it.result === 'fail' ? 'tFail' : 'tNa');
-    mark.textContent = it.result === 'pass' ? '● ' : (it.result === 'fail' ? '● ' : '● ');
+    mark.textContent = it.result === 'pass' ? '✓ ' : (it.result === 'fail' ? '✗ ' : '－ ');
     const name = document.createElement('span'); name.textContent = it.id + ' ' + it.label + '：' + resultWord(it.result);
     head.append(mark, name);
     const det = document.createElement('div'); det.className = 'tDetail'; det.textContent = it.detail;
