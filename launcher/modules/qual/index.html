@@ -56,13 +56,13 @@ th,td{ padding:6px 4px; border-bottom:1px solid var(--line); text-align:left; }
 <script src="questions-g.js"></script>
 <script>
 'use strict';
-var MODULE_BUILD = '2026-11-15-0119';
+var MODULE_BUILD = '2026-11-15-0124';
 document.getElementById('buildStamp').textContent = 'build ' + MODULE_BUILD;
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 
 var EXAMS = [
   { id:'g', name:'G検定', examDate:'2027-01-16', applyBy:'2027-01-08', note:'オンライン試験' },
-  { id:'boki', name:'日商簿記3級', examDate:'2027-02-28', applyBy:null, note:'ネット試験は随時（左の日付は目標日）', packReady:false },
+  { id:'fe', name:'基本情報技術者', examDate:'2027-04-01', applyBy:null, note:'通年CBT。2026-12-28以降は制度移行で休止、新制度は2027年春開始予定（左の日付は仮置き）', packReady:false },
   { id:'ap', name:'応用情報技術者', examDate:'2027-03-14', applyFrom:'2027-01-27', applyBy:'2027-02-16', note:'CBT（左の日付は目標日）', packReady:false }
 ];
 var UNITS = [
