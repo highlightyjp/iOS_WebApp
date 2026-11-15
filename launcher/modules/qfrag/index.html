@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d1</title>
+<title>断片 d6</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -355,7 +355,7 @@ setInterval(function(){
   if(!dbgOn) return;
   var up = ((performance.now() - state.startedAt) / 1000).toFixed(0);
   document.getElementById('dbgState').textContent =
-    'fps ' + state.fps + ' / 稼働 ' + up + '秒\nタップ ' + state.taps + ' / 返し ' + state.hops +
+    (window.__build ? window.__build + '\n' : '') + 'fps ' + state.fps + ' / 稼働 ' + up + '秒\nタップ ' + state.taps + ' / 返し ' + state.hops +
     '\nparams ' + JSON.stringify(params);
 }, 1000);
 document.getElementById('dbgBtn').addEventListener('click', function(){
@@ -430,7 +430,7 @@ document.getElementById('exportCopy').addEventListener('click', function(){
   var txt = document.getElementById('exportJson').value;
   if(navigator.clipboard) navigator.clipboard.writeText(txt);
 });
-log('断片d1 起動');
+fetch('build.txt', { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){ window.__build = t.trim(); log('起動 ' + window.__build); }).catch(function(){ log('起動（build未取得）'); });
 </script>
 </body>
 </html>
