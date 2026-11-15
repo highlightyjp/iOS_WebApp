@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d7</title>
+<title>断片 d8</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -38,6 +38,11 @@ textarea{ width:100%; border-radius:10px; border:none; background:var(--fill); c
 #exportSheet.open{ display:flex; }
 #exportSheet .sheet{ background:var(--card); width:100%; border-radius:20px 20px 0 0; padding:16px; max-height:88vh; overflow-y:auto; }
 #exportSheet img{ width:100%; border-radius:12px; }
+#evStrip{ position:fixed; left:0; right:0; bottom:0; display:none; gap:6px; padding:8px; background:rgba(10,14,20,.88); z-index:35; }
+#evStrip.open{ display:flex; }
+#evStrip figure{ margin:0; flex:1; }
+#evStrip img{ width:100%; display:block; border-radius:8px; }
+#evStrip figcaption{ color:#d7e6f5; font-size:11px; text-align:center; margin-top:4px; }
 </style>
 </head>
 <body>
@@ -73,6 +78,7 @@ textarea{ width:100%; border-radius:10px; border:none; background:var(--fill); c
   </div>
 </div>
 
+<div id="evStrip"></div>
 <div id="exportSheet">
   <div class="sheet">
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -144,7 +150,7 @@ function log(s){
   if(el) el.textContent = logs.join('\n');
 }
 /* 誰か：丸い体。無操作でもさまよい、まばたきする。タップへの返しは「跳ねて寄る」1つ */
-var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0, startleAt:0, attendUntil:0 };
+var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0, startleAt:0, attendUntil:0, pendingStar:false };
 var ripples = [];
 var star = null;      /* 目立つ粒：1つだけ。そいつが取りに行く相手 */
 var starAt = 0;       /* 次に目立つ粒が出る時刻 */
@@ -153,7 +159,7 @@ function seedCre(){
   crea.x = W * 0.5; crea.y = H * 0.55;
   crea.dir = Math.random() < 0.5 ? -1 : 1;
   crea.nextSelf = performance.now() + 6000;
-  star = { x:0.22 + Math.random() * 0.56, y:0.3 + Math.random() * 0.4, s:1.6, p:Math.random() * 6.28 };
+  star = { x:0.22 + Math.random() * 0.56, y:0.3 + Math.random() * 0.4, s:1.6, p:Math.random() * 6.28, pointedUntil:0 };
   starAt = 0;
   motes = [];
   for(var i = 0; i < 40; i++) motes.push({ x:Math.random(), y:Math.random(), s:Math.random() * 2 + 0.6, p:Math.random() * 6.28 });
@@ -180,8 +186,9 @@ function draw(now){
   /* 目立つ粒（1つだけ） */
   var sp2 = starPos(t);
   if(sp2){
-    var pulse = 4.6 + Math.sin(t * 2.2) * 1.1;
-    ctx.fillStyle = 'rgba(255,214,120,.22)';
+    var pointed = now < (star.pointedUntil || 0);
+    var pulse = pointed ? (7.2 + Math.sin(t * 7) * 2.2) : (4.6 + Math.sin(t * 2.2) * 1.1);
+    ctx.fillStyle = pointed ? 'rgba(255,214,120,.40)' : 'rgba(255,214,120,.22)';
     ctx.beginPath(); ctx.arc(sp2.x, sp2.y, pulse * 2.6, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#ffd678';
     ctx.beginPath(); ctx.arc(sp2.x, sp2.y, pulse, 0, Math.PI * 2); ctx.fill();
@@ -206,6 +213,7 @@ function draw(now){
     var k2 = (now - hp.at) / hp.dur;
     if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ');
       if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); } } }
+      if(crea.pendingStar && star){ crea.pendingStar = false; var sp5 = starPos(t); if(sp5){ var tx5 = Math.max(r + 8, Math.min(W - r - 8, sp5.x)); var ty5 = Math.max(r + 70, Math.min(H - r - 30, sp5.y)); var dist5 = Math.hypot(tx5 - crea.x, ty5 - crea.y); crea.hop = { fx:crea.x, fy:crea.y, tx:tx5, ty:ty5, at:now, dur:Math.max(320, Math.min(780, dist5 * 1.25)), toStar:true }; crea.waitUntil = 0; log('着地 → 指さされた粒を取りに行く'); } }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
       crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
@@ -226,7 +234,7 @@ function draw(now){
     if(crea.y > H - r - 30){ crea.y = H - r - 30; crea.vy = -Math.abs(crea.vy); }
     if(Math.abs(crea.vx) > 2) crea.dir = crea.vx > 0 ? 1 : -1;
   }
-  if(!star && starAt && now > starAt){ star = { x:0.15 + Math.random() * 0.7, y:0.28 + Math.random() * 0.44, s:1.6, p:Math.random() * 6.28 }; starAt = 0; }
+  if(!star && starAt && now > starAt){ star = { x:0.15 + Math.random() * 0.7, y:0.28 + Math.random() * 0.44, s:1.6, p:Math.random() * 6.28, pointedUntil:0 }; starAt = 0; }
   if(!crea.hop && now >= crea.waitUntil && crea.nextSelf && now > crea.nextSelf){
     /* 世界の側から動く：目立つ粒を取りに行く時だけ。行き先＝粒の今の場所 */
     var sp3 = starPos(t);
@@ -250,8 +258,13 @@ function draw(now){
     crouch = Math.max(0, -sn) * 0.09;
   }
   crea.lookC += (((waiting || now < crea.attendUntil) ? 0 : crea.dir) - crea.lookC) * Math.min(1, dt * 7);
-  var startled = crea.startleAt && (now - crea.startleAt) < 380;
-  var sLift = startled ? Math.sin((now - crea.startleAt) / 380 * Math.PI) * 13 : 0;
+  var startled = crea.startleAt && (now - crea.startleAt) < 460;
+  var sLift = 0;
+  if(startled){
+    var sk = (now - crea.startleAt) / 460;
+    var sCurve = sk < 0.26 ? (sk / 0.26) : (sk > 0.65 ? Math.max(0, (1 - sk) / 0.35) : 1);
+    sLift = sCurve * 34;
+  }
   /* 満ちた様子：取り込んでから次の粒が出るまでの間だけ続く状態 */
   var contented = !star && crea.absorbAt > 0;
   /* まばたき */
@@ -283,7 +296,7 @@ function draw(now){
   ctx.fillStyle = bg;
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
   /* 目：進む方を見る。跳ねている間は見開く */
-  var lx = crea.lookC * r * 0.16, wide = (hopping || startled) ? 1.5 : 1;
+  var lx = crea.lookC * r * 0.16, wide = startled ? 2 : (hopping ? 1.5 : 1);
   ctx.fillStyle = '#22303f';
   if(blinking){
     ctx.fillRect(-r * 0.34 + lx - r * 0.11, -r * 0.08, r * 0.22, 2.4);
@@ -292,9 +305,14 @@ function draw(now){
     ctx.beginPath(); ctx.arc(-r * 0.23 + lx, -r * 0.08, r * 0.1 * wide, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(r * 0.23 + lx, -r * 0.08, r * 0.1 * wide, 0, Math.PI * 2); ctx.fill();
   }
-  /* 口：小さな弧 */
-  ctx.strokeStyle = '#22303f'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(lx * 0.4, r * 0.18, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  /* 口：通常は小さな弧。驚いている間は開いた口（静止画でも判別できる変化） */
+  if(startled){
+    ctx.fillStyle = '#22303f';
+    ctx.beginPath(); ctx.ellipse(lx * 0.4, r * 0.26, r * 0.13, r * 0.19, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.strokeStyle = '#22303f'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(lx * 0.4, r * 0.18, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  }
   ctx.restore();
   requestAnimationFrame(draw);
 }
@@ -303,6 +321,27 @@ requestAnimationFrame(draw);
 cv.addEventListener('pointerdown', function(ev){
   var now = performance.now();
   state.taps++;
+  /* 粒へのタップ：「指さした」ことにする。粒が強く脈打ち、そいつが気づいて取りに行く */
+  if(star){
+    var spT = starPos(now / 1000);
+    if(spT && Math.hypot(ev.clientX - spT.x, ev.clientY - spT.y) < 30){
+      star.pointedUntil = now + 2600;
+      ripples.push({ x:spT.x, y:spT.y, at:now });
+      if(!crea.hop){
+        var txp = Math.max(params.size + 8, Math.min(W - params.size - 8, spT.x));
+        var typ = Math.max(params.size + 70, Math.min(H - params.size - 30, spT.y));
+        var distp = Math.hypot(txp - crea.x, typ - crea.y);
+        crea.hop = { fx:crea.x, fy:crea.y, tx:txp, ty:typ, at:now, dur:Math.max(320, Math.min(780, distp * 1.25)), toStar:true };
+        crea.waitUntil = 0;
+        state.hops++;
+        log('粒を指さした → 気づいて取りに行く');
+      } else {
+        crea.pendingStar = true;
+        log('粒を指さした → 着地したら取りに行く');
+      }
+      return;
+    }
+  }
   /* 本人へのタップ：距離ゼロの「寄る」は見える返しにならない。驚いてその場で跳ね、こちらを見る */
   if(!crea.hop && Math.hypot(ev.clientX - crea.x, ev.clientY - crea.y) < params.size + 12){
     crea.startleAt = now;
@@ -322,6 +361,30 @@ cv.addEventListener('pointerdown', function(ev){
   state.hops++;
   log('タップ → 跳ねて寄る（距離 ' + Math.round(dist) + '）');
 });
+
+/* ===== 証跡モード（?evidence=1・作り手用）：驚き反応のピークを撮る ===== */
+var EVIDENCE = /[?&]evidence=1/.test(location.search);
+if(EVIDENCE){
+  var evStripEl = document.getElementById('evStrip');
+  var evCap = function(label){
+    var fig = document.createElement('figure');
+    var img = document.createElement('img');
+    img.src = cv.toDataURL('image/jpeg', 0.85);
+    img.alt = label;
+    var cap = document.createElement('figcaption');
+    cap.textContent = label;
+    fig.appendChild(img); fig.appendChild(cap);
+    evStripEl.appendChild(fig);
+    evStripEl.classList.add('open');
+  };
+  setTimeout(function(){
+    evCap('反応前');
+    crea.startleAt = performance.now();
+    crea.attendUntil = crea.startleAt + 1600;
+    setTimeout(function(){ evCap('ピーク（驚き）'); }, 210);
+    setTimeout(function(){ evCap('反応後'); }, 1100);
+  }, 1500);
+}
 
 /* ===== 開幕の自動撮影（0秒・3秒・10秒、無操作差分） ===== */
 var caps = []; /* {at, url, small:ImageData} */
