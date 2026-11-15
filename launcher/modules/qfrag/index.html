@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d11</title>
+<title>断片 d12</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -226,6 +226,11 @@ function seedCre(){
 }
 seedCre();
 var lastNow = 0;
+function starPos(t){
+  if(!star) return null;
+  return { x: ((star.x + t * 0.008 * (1 + star.s * 0.3)) % 1) * W,
+           y: (star.y + Math.sin(t * 0.5 + star.p) * 0.01) * H };
+}
 function draw(now){
   state.frames++;
   var dt = Math.min(0.05, lastNow ? (now - lastNow) / 1000 : 0.016);
@@ -261,11 +266,6 @@ function draw(now){
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(r.x, r.y, (6 + k * 46) * S, 0, Math.PI * 2); ctx.stroke();
   });
-  function starPos(t){
-  if(!star) return null;
-  return { x: ((star.x + t * 0.008 * (1 + star.s * 0.3)) % 1) * W,
-           y: (star.y + Math.sin(t * 0.5 + star.p) * 0.01) * H };
-}
 /* 誰かの移動：跳ねていない時は、ゆっくりさまよう */
   var r = R;
   if(crea.hop){
