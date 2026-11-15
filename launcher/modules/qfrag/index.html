@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d6</title>
+<title>断片 d7</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -144,7 +144,7 @@ function log(s){
   if(el) el.textContent = logs.join('\n');
 }
 /* 誰か：丸い体。無操作でもさまよい、まばたきする。タップへの返しは「跳ねて寄る」1つ */
-var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0 };
+var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0, startleAt:0, attendUntil:0 };
 var ripples = [];
 var star = null;      /* 目立つ粒：1つだけ。そいつが取りに行く相手 */
 var starAt = 0;       /* 次に目立つ粒が出る時刻 */
@@ -249,7 +249,9 @@ function draw(now){
     lift = Math.pow(Math.max(0, sn), 1.4) * params.waitHop;
     crouch = Math.max(0, -sn) * 0.09;
   }
-  crea.lookC += ((waiting ? 0 : crea.dir) - crea.lookC) * Math.min(1, dt * 7);
+  crea.lookC += (((waiting || now < crea.attendUntil) ? 0 : crea.dir) - crea.lookC) * Math.min(1, dt * 7);
+  var startled = crea.startleAt && (now - crea.startleAt) < 380;
+  var sLift = startled ? Math.sin((now - crea.startleAt) / 380 * Math.PI) * 13 : 0;
   /* 満ちた様子：取り込んでから次の粒が出るまでの間だけ続く状態 */
   var contented = !star && crea.absorbAt > 0;
   /* まばたき */
@@ -272,7 +274,7 @@ function draw(now){
   /* 体 */
   var sq = crea.squash * 0.18 + crouch;
   ctx.save();
-  ctx.translate(crea.x + (contented ? Math.sin(t * 1.15) * 3 : 0), crea.y - lift);
+  ctx.translate(crea.x + (contented ? Math.sin(t * 1.15) * 3 : 0), crea.y - lift - sLift);
   if(contented) ctx.rotate(Math.sin(t * 1.15) * 0.045);
   ctx.scale(1 + sq, 1 - sq);
   if(abK >= 0 && abK < 1){ var us = 1 + Math.sin(abK * Math.PI) * 0.13; ctx.scale(us, us); }
@@ -281,7 +283,7 @@ function draw(now){
   ctx.fillStyle = bg;
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
   /* 目：進む方を見る。跳ねている間は見開く */
-  var lx = crea.lookC * r * 0.16, wide = hopping ? 1.5 : 1;
+  var lx = crea.lookC * r * 0.16, wide = (hopping || startled) ? 1.5 : 1;
   ctx.fillStyle = '#22303f';
   if(blinking){
     ctx.fillRect(-r * 0.34 + lx - r * 0.11, -r * 0.08, r * 0.22, 2.4);
@@ -301,6 +303,16 @@ requestAnimationFrame(draw);
 cv.addEventListener('pointerdown', function(ev){
   var now = performance.now();
   state.taps++;
+  /* 本人へのタップ：距離ゼロの「寄る」は見える返しにならない。驚いてその場で跳ね、こちらを見る */
+  if(!crea.hop && Math.hypot(ev.clientX - crea.x, ev.clientY - crea.y) < params.size + 12){
+    crea.startleAt = now;
+    crea.attendUntil = now + 1600;
+    crea.waitUntil = 0;
+    ripples.push({ x:ev.clientX, y:ev.clientY, at:now });
+    state.hops++;
+    log('本人タップ → 驚いて跳ねる');
+    return;
+  }
   var tx = Math.max(params.size + 8, Math.min(W - params.size - 8, ev.clientX));
   var ty = Math.max(params.size + 70, Math.min(H - params.size - 30, ev.clientY));
   var dist = Math.hypot(tx - crea.x, ty - crea.y);
