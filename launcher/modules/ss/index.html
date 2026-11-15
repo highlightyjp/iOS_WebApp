@@ -78,6 +78,14 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .toolbar .controls{ margin-top:8px; }
 .moreBtn{ display:flex; align-items:center; justify-content:center; width:100%; border:none; cursor:pointer;
   border-radius:999px; padding:12px; margin-top:12px; background:var(--fill); color:var(--label); font-size:14.5px; font-weight:700; }
+.railWrap{ margin-top:14px; }
+.railTitle{ font-size:13px; font-weight:700; color:var(--label2); margin:0 2px 6px; }
+.hRail{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; scrollbar-width:none; }
+.hRail::-webkit-scrollbar{ display:none; }
+.hCard{ flex:0 0 168px; text-align:left; border:none; cursor:pointer; background:var(--card); border-radius:16px;
+  box-shadow:var(--shadow); padding:10px 12px; color:var(--label); }
+.hCard .t{ font-size:14px; font-weight:700; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:40px; }
+.hCard .pbar{ margin-top:6px; }
 .countLine{ text-align:center; font-size:12.5px; color:var(--label3); margin-top:10px; }
 .pbar{ height:5px; border-radius:3px; background:var(--fill); margin-top:6px; overflow:hidden; }
 .pbar i{ display:block; height:100%; background:var(--tint); border-radius:3px; }
@@ -137,6 +145,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
       </div>
       <div class="chips rail" id="tagChips"></div>
     </div>
+    <div id="homeRails"></div>
     <div id="shelf"></div>
     <div id="moreArea"></div>
     <div class="note" id="buildNote"></div>
@@ -181,7 +190,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss8';
+var SS_BUILD = '2026-11-15-ss9';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -403,6 +412,38 @@ function loadMore(){
   shownCount += PAGE_N;
   renderMore();
 }
+/* 棚の入口（Kindle の Home 分離の応用）：続きから／お気に入り／新着・更新を横レールで本棚の頭に置く。
+   縦は使わず、各レール最大8件。検索・絞り込み中は隠して結果に集中させる */
+function renderHome(){
+  var host = $('homeRails');
+  if(!INDEX){ host.innerHTML = ''; return; }
+  var searching = (($('q').value || '').trim() !== '') || stateFilter !== '' || curTags.length > 0;
+  if(searching){ host.innerHTML = ''; return; }
+  var rails = [];
+  var reading = INDEX.stories.filter(function(s){ var p = storyPct(s); return p > 0 && p < 100; })
+    .sort(function(a, b){ return ((progress[b.id] || {}).ts || 0) - ((progress[a.id] || {}).ts || 0); }).slice(0, 8);
+  if(reading.length) rails.push({ title:'続きから', items:reading, meta:function(s){ return '読みかけ ' + storyPct(s) + '%'; }, resume:true, bar:true });
+  var favList = INDEX.stories.filter(function(s){ return favs[s.id]; })
+    .sort(function(a, b){ return a.title < b.title ? -1 : 1; }).slice(0, 8);
+  if(favList.length) rails.push({ title:'お気に入り', items:favList, meta:function(s){ var p = storyPct(s); return p > 0 ? (p >= 100 ? '読了' : '読みかけ ' + p + '%') : s.parts + ' 編'; }, resume:false, bar:true });
+  var fresh = INDEX.stories.filter(function(s){ return storyMark(s) !== ''; }).slice(0, 8);
+  if(fresh.length) rails.push({ title:'新着・更新', items:fresh, meta:function(s){ return storyMark(s) + '・' + s.parts + ' 編'; }, resume:false, bar:false });
+  host.innerHTML = '';
+  rails.forEach(function(r){
+    var wrap = document.createElement('div');
+    wrap.className = 'railWrap';
+    var cards = r.items.map(function(s){
+      var bar = r.bar && storyPct(s) > 0 ? '<div class="pbar"><i style="width:' + storyPct(s) + '%"></i></div>' : '';
+      return '<button class="hCard" data-home="' + s.id + '" data-resume="' + (r.resume ? '1' : '') + '"><span class="t">' + esc(s.title) + '</span>' +
+        '<div class="small" style="margin-top:4px">' + esc(r.meta(s)) + '</div>' + bar + '</button>';
+    }).join('');
+    wrap.innerHTML = '<div class="railTitle">' + r.title + '</div><div class="hRail">' + cards + '</div>';
+    wrap.querySelectorAll('[data-home]').forEach(function(b){
+      b.addEventListener('click', function(){ openStory(b.getAttribute('data-home'), b.getAttribute('data-resume') === '1'); });
+    });
+    host.appendChild(wrap);
+  });
+}
 function renderShelf(reset){
   if(reset !== false) shownCount = PAGE_N;
   var list = filteredStories();
@@ -421,11 +462,12 @@ function renderShelf(reset){
   currentList = list;
   var shelf = $('shelf');
   shelf.innerHTML = '';
-  if(!list.length){ shelf.innerHTML = '<div class="card">見つからない。</div>'; renderMore(); return; }
+  if(!list.length){ shelf.innerHTML = '<div class="card">見つからない。</div>'; renderMore(); renderHome(); return; }
   var frag = document.createDocumentFragment();
   list.slice(0, shownCount).forEach(function(s){ frag.appendChild(storyNode(s)); });
   shelf.appendChild(frag);
   renderMore();
+  renderHome();
 }
 function loadIndex(){
   fetch('data/index.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(idx){
