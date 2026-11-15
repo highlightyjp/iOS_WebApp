@@ -243,8 +243,10 @@ function draw(now){
     crouch = Math.max(0, -sn) * 0.09;
   }
   crea.lookC += ((waiting ? 0 : crea.dir) - crea.lookC) * Math.min(1, dt * 7);
+  /* 満ちた様子：取り込んでから次の粒が出るまでの間だけ続く状態 */
+  var contented = !star && crea.absorbAt > 0;
   /* まばたき */
-  if(now > crea.nextBlink){ crea.blinkUntil = now + 130; crea.nextBlink = now + params.blinkSec * 1000 * (0.7 + Math.random() * 0.6); }
+  if(now > crea.nextBlink){ crea.blinkUntil = now + (contented ? 260 : 130); crea.nextBlink = now + params.blinkSec * 1000 * (0.7 + Math.random() * 0.6) * (contented ? 1.9 : 1); }
   var blinking = now < crea.blinkUntil;
   var hopping = !!crea.hop;
   /* 取り込む瞬間の1拍（300ms）：光の返し。出すのはこの瞬間だけ */
@@ -263,7 +265,8 @@ function draw(now){
   /* 体 */
   var sq = crea.squash * 0.18 + crouch;
   ctx.save();
-  ctx.translate(crea.x, crea.y - lift);
+  ctx.translate(crea.x + (contented ? Math.sin(t * 1.15) * 3 : 0), crea.y - lift);
+  if(contented) ctx.rotate(Math.sin(t * 1.15) * 0.045);
   ctx.scale(1 + sq, 1 - sq);
   if(abK >= 0 && abK < 1){ var us = 1 + Math.sin(abK * Math.PI) * 0.13; ctx.scale(us, us); }
   var bg = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.2, 0, 0, r * 1.15);
