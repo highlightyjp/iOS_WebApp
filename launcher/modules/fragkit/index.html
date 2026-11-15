@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>断片キット（道具の検収用）</title>
+<style>
+:root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
+  --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{ margin:0; font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; color:var(--label);
+  background:linear-gradient(180deg,#0b1526,#071018); overflow:hidden; }
+#scene{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:manipulation; }
+.hud{ position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; right:12px; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; }
+.hud .ttl{ font-size:13px; color:var(--label2); text-shadow:0 1px 6px rgba(0,0,0,.6); }
+.hud button{ pointer-events:auto; }
+button{ border:none; cursor:pointer; border-radius:999px; padding:8px 14px; background:var(--fill); color:var(--label);
+  font-size:13.5px; font-weight:600; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+button.on{ background:var(--accent); color:#fff; }
+.panel{ position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); background:var(--card);
+  border-radius:18px; box-shadow:var(--shadow); padding:14px; max-height:62vh; overflow-y:auto; display:none; }
+.panel.open{ display:block; }
+.panel h2{ font-size:14px; margin:2px 0 8px; }
+.knob{ display:flex; align-items:center; gap:10px; margin:8px 0; font-size:13px; }
+.knob label{ flex:0 0 108px; color:var(--label2); }
+.knob input[type=range]{ flex:1; }
+.knob .val{ flex:0 0 44px; text-align:right; font-variant-numeric:tabular-nums; }
+.row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.mono{ font-family:ui-monospace, Menlo, monospace; font-size:11.5px; white-space:pre-wrap; word-break:break-all; }
+.small{ font-size:12px; color:var(--label2); }
+#dbg{ position:fixed; top:calc(52px + env(safe-area-inset-top)); right:10px; width:min(320px, 86vw); background:var(--card);
+  border-radius:14px; box-shadow:var(--shadow); padding:10px 12px; display:none; z-index:30; }
+#dbg.open{ display:block; }
+#dbg .log{ max-height:150px; overflow-y:auto; }
+textarea{ width:100%; border-radius:10px; border:none; background:var(--fill); color:var(--label); padding:8px; font-size:13px; }
+#exportSheet{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-end; z-index:40; }
+#exportSheet.open{ display:flex; }
+#exportSheet .sheet{ background:var(--card); width:100%; border-radius:20px 20px 0 0; padding:16px; max-height:88vh; overflow-y:auto; }
+#exportSheet img{ width:100%; border-radius:12px; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="hud">
+  <div class="ttl">断片キット ― 道具の検収用ダミー断片（灯台と作業船）</div>
+  <div style="display:flex;gap:8px">
+    <button id="knobBtn">つまみ</button>
+    <button id="dbgBtn">デバッグ</button>
+  </div>
+</div>
+
+<div id="dbg">
+  <div class="mono" id="dbgState"></div>
+  <div class="small" style="margin-top:6px">開幕検出（無操作の画素差分）</div>
+  <div class="mono" id="dbgCaps"></div>
+  <div class="small" style="margin-top:6px">出来事</div>
+  <div class="mono log" id="dbgLog"></div>
+</div>
+
+<div class="panel" id="knobPanel">
+  <h2>つまみ（数値は外に出して、実行中に即時反映）</h2>
+  <div id="knobs"></div>
+  <div class="row">
+    <button id="copyParams">値をコピー</button>
+    <button id="resetParams">初期値に戻す</button>
+  </div>
+  <div class="small" style="margin-top:8px">良い値は録画と組で保存する。ここではコピーした JSON がその記録になる。</div>
+  <h2 style="margin-top:16px">今日の1枚</h2>
+  <textarea id="bodyNote" rows="2" placeholder="体の一文（作り手が遊んで、体に起きたこと）"></textarea>
+  <div class="row">
+    <button id="exportBtn">今日の1枚を出す</button>
+  </div>
+</div>
+
+<div id="exportSheet">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>今日の1枚</strong>
+      <button id="exportClose">閉じる</button>
+    </div>
+    <img id="exportImg" alt="開幕10秒の撮影">
+    <div class="small" style="margin:8px 0 4px">長押しで保存できます。</div>
+    <textarea id="exportJson" rows="7" readonly></textarea>
+    <div class="row"><button id="exportCopy">記録 JSON をコピー</button></div>
+  </div>
+</div>
+
+<script type="application/json" id="fragParams">
+{ "boatSpeed": 14, "bobAmp": 5, "sweepSec": 6, "flashMs": 700, "boatSize": 30 }
+</script>
+<script>
+'use strict';
+/* ===== 断片キット：断片期の道具立て（第0段-2）
+   1) 数値はプログラムの外（JSON＋つまみ）に出し、実行中へ即時反映する
+   2) デバッグ表示は切替式。初見の画面ではオフ
+   3) 開幕の自動撮影：0秒・3秒・10秒を撮り、無操作の画素差分を出す ===== */
+var PARAM_DEFS = [
+  { key:'boatSpeed', label:'船の速さ', min:0, max:40, step:1 },
+  { key:'bobAmp', label:'揺れの幅', min:0, max:14, step:0.5 },
+  { key:'sweepSec', label:'灯台の周期(秒)', min:2, max:16, step:0.5 },
+  { key:'flashMs', label:'返しの持続(ms)', min:150, max:2000, step:50 },
+  { key:'boatSize', label:'船の大きさ', min:16, max:56, step:1 }
+];
+var DEFAULTS = JSON.parse(document.getElementById('fragParams').textContent);
+var params = Object.assign({}, DEFAULTS);
+try {
+  var saved = JSON.parse(localStorage.getItem('fragkit.params') || 'null');
+  if(saved) params = Object.assign({}, DEFAULTS, saved);
+} catch(e) {}
+function saveParams(){ try { localStorage.setItem('fragkit.params', JSON.stringify(params)); } catch(e) {} }
+
+/* ===== ダミー断片（道具の検収専用。中身の出来は判定しない） ===== */
+var cv = document.getElementById('scene');
+var ctx = cv.getContext('2d');
+var W = 0, H = 0, dpr = 1;
+function resize(){
+  dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+var state = { taps:0, flashes:0, lastTapAt:0, flashUntil:0, startedAt:performance.now(), frames:0, fps:0 };
+var logs = [];
+function log(s){
+  logs.unshift(new Date().toLocaleTimeString('ja-JP') + ' ' + s);
+  logs = logs.slice(0, 8);
+  var el = document.getElementById('dbgLog');
+  if(el) el.textContent = logs.join('\n');
+}
+function draw(now){
+  state.frames++;
+  var t = now / 1000;
+  /* 海と空 */
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0d1b31'); g.addColorStop(0.62, '#0a2436'); g.addColorStop(0.63, '#06222e'); g.addColorStop(1, '#04141d');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  var horizon = H * 0.63;
+  /* 灯台（右） */
+  var lx = W * 0.8, lw = 16;
+  ctx.fillStyle = '#20303f';
+  ctx.fillRect(lx - lw / 2, horizon - 120, lw, 120);
+  ctx.fillStyle = '#ffd60a';
+  ctx.beginPath(); ctx.arc(lx, horizon - 128, 6, 0, Math.PI * 2); ctx.fill();
+  /* 灯台の光（無操作でも回る） */
+  var ang = (t / params.sweepSec) * Math.PI * 2;
+  var grad = ctx.createRadialGradient(lx, horizon - 128, 4, lx, horizon - 128, W * 0.55);
+  grad.addColorStop(0, 'rgba(255,214,10,.20)'); grad.addColorStop(1, 'rgba(255,214,10,0)');
+  ctx.save();
+  ctx.translate(lx, horizon - 128); ctx.rotate(Math.sin(ang) * 0.5);
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-W * 0.55, -26); ctx.lineTo(-W * 0.55, 26); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  /* 作業船（無操作でも進み、揺れる） */
+  var span = W + 160;
+  var bx = ((t * params.boatSpeed) % span) - 80;
+  var by = horizon + 26 + Math.sin(t * 1.7) * params.bobAmp;
+  var s = params.boatSize;
+  ctx.fillStyle = '#31435a';
+  ctx.beginPath();
+  ctx.moveTo(bx - s, by); ctx.lineTo(bx + s, by); ctx.lineTo(bx + s * 0.7, by + s * 0.42); ctx.lineTo(bx - s * 0.7, by + s * 0.42); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#49648a';
+  ctx.fillRect(bx - s * 0.28, by - s * 0.5, s * 0.56, s * 0.5);
+  /* 船の灯（タップへの返しで点滅する） */
+  var flashing = now < state.flashUntil;
+  ctx.fillStyle = flashing ? '#7df9ff' : 'rgba(240,240,240,.75)';
+  ctx.beginPath(); ctx.arc(bx, by - s * 0.66, flashing ? 6 : 3.5, 0, Math.PI * 2); ctx.fill();
+  if(flashing){
+    ctx.strokeStyle = 'rgba(125,249,255,.6)';
+    ctx.beginPath(); ctx.arc(bx, by - s * 0.66, 12 + (state.flashUntil - now) / params.flashMs * 16, 0, Math.PI * 2); ctx.stroke();
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+cv.addEventListener('pointerdown', function(){
+  var now = performance.now();
+  state.taps++;
+  state.lastTapAt = now;
+  state.flashUntil = now + params.flashMs;
+  state.flashes++;
+  log('タップ → 返し（灯の点滅 ' + params.flashMs + 'ms）');
+});
+
+/* ===== 開幕の自動撮影（0秒・3秒・10秒、無操作差分） ===== */
+var caps = []; /* {at, url, small:ImageData} */
+function snapshot(at){
+  var url = cv.toDataURL('image/png');
+  var off = document.createElement('canvas');
+  off.width = 96; off.height = 160;
+  var octx = off.getContext('2d');
+  var img = new Image();
+  img.onload = function(){
+    octx.drawImage(img, 0, 0, 96, 160);
+    caps.push({ at: at, url: url, data: octx.getImageData(0, 0, 96, 160).data });
+    renderCaps();
+  };
+  img.src = url;
+}
+function diffRatio(a, b){
+  if(!a || !b) return null;
+  var diff = 0, n = a.length;
+  for(var i = 0; i < n; i += 4){
+    if(Math.abs(a[i] - b[i]) + Math.abs(a[i+1] - b[i+1]) + Math.abs(a[i+2] - b[i+2]) > 36) diff++;
+  }
+  return diff / (n / 4);
+}
+function renderCaps(){
+  var el = document.getElementById('dbgCaps');
+  if(!el) return;
+  var lines = caps.map(function(c){ return c.at + '秒 撮影済み'; });
+  if(caps.length >= 2){
+    var d03 = diffRatio(caps[0].data, caps[1].data);
+    if(d03 !== null) lines.push('差分 0→3秒: ' + (d03 * 100).toFixed(2) + '%');
+  }
+  if(caps.length >= 3){
+    var d310 = diffRatio(caps[1].data, caps[2].data);
+    if(d310 !== null){
+      lines.push('差分 3→10秒: ' + (d310 * 100).toFixed(2) + '%');
+      lines.push(d310 < 0.001 ? '判定: 赤信号（無操作でほぼ静止）' : '判定: 無操作でも動いている');
+    }
+  }
+  el.textContent = lines.join('\n');
+}
+setTimeout(function(){ snapshot(0); }, 60);
+setTimeout(function(){ snapshot(3); }, 3000);
+setTimeout(function(){ snapshot(10); }, 10000);
+
+/* ===== デバッグ表示（既定オフ） ===== */
+var dbgOn = false;
+setInterval(function(){
+  state.fps = state.frames; state.frames = 0;
+  if(!dbgOn) return;
+  var up = ((performance.now() - state.startedAt) / 1000).toFixed(0);
+  document.getElementById('dbgState').textContent =
+    'fps ' + state.fps + ' / 稼働 ' + up + '秒\nタップ ' + state.taps + ' / 返し ' + state.flashes +
+    '\nparams ' + JSON.stringify(params);
+}, 1000);
+document.getElementById('dbgBtn').addEventListener('click', function(){
+  dbgOn = !dbgOn;
+  document.getElementById('dbg').classList.toggle('open', dbgOn);
+  this.classList.toggle('on', dbgOn);
+  if(dbgOn) renderCaps();
+});
+
+/* ===== つまみ（即時反映） ===== */
+var knobPanel = document.getElementById('knobPanel');
+document.getElementById('knobBtn').addEventListener('click', function(){
+  knobPanel.classList.toggle('open');
+  this.classList.toggle('on', knobPanel.classList.contains('open'));
+});
+function buildKnobs(){
+  var host = document.getElementById('knobs');
+  host.innerHTML = '';
+  PARAM_DEFS.forEach(function(d){
+    var row = document.createElement('div');
+    row.className = 'knob';
+    row.innerHTML = '<label>' + d.label + '</label>';
+    var input = document.createElement('input');
+    input.type = 'range'; input.min = d.min; input.max = d.max; input.step = d.step; input.value = params[d.key];
+    var val = document.createElement('span');
+    val.className = 'val'; val.textContent = params[d.key];
+    input.addEventListener('input', function(){
+      params[d.key] = Number(input.value);
+      val.textContent = input.value;
+      saveParams();
+    });
+    row.appendChild(input); row.appendChild(val);
+    host.appendChild(row);
+  });
+}
+buildKnobs();
+document.getElementById('copyParams').addEventListener('click', function(){
+  var txt = JSON.stringify(params, null, 2);
+  if(navigator.clipboard) navigator.clipboard.writeText(txt);
+  log('値をコピーした');
+});
+document.getElementById('resetParams').addEventListener('click', function(){
+  params = Object.assign({}, DEFAULTS);
+  saveParams(); buildKnobs();
+  log('初期値に戻した');
+});
+
+/* ===== 今日の1枚（開幕10秒の撮影＋記録JSON） ===== */
+document.getElementById('exportBtn').addEventListener('click', function(){
+  var cap = caps[caps.length - 1];
+  if(!cap){ log('撮影がまだ無い'); return; }
+  document.getElementById('exportImg').src = cap.url;
+  var meta = {
+    kind: 'frag-daily/v1',
+    at: new Date().toISOString(),
+    openingShotSec: cap.at,
+    params: params,
+    bodyNote: document.getElementById('bodyNote').value || '',
+    noInputDiff: caps.length >= 3 ? {
+      d0_3: diffRatio(caps[0].data, caps[1].data),
+      d3_10: diffRatio(caps[1].data, caps[2].data)
+    } : null,
+    taps: state.taps
+  };
+  document.getElementById('exportJson').value = JSON.stringify(meta, null, 2);
+  document.getElementById('exportSheet').classList.add('open');
+});
+document.getElementById('exportClose').addEventListener('click', function(){
+  document.getElementById('exportSheet').classList.remove('open');
+});
+document.getElementById('exportCopy').addEventListener('click', function(){
+  var txt = document.getElementById('exportJson').value;
+  if(navigator.clipboard) navigator.clipboard.writeText(txt);
+});
+log('断片キット起動（道具の検収用）');
+</script>
+</body>
+</html>
