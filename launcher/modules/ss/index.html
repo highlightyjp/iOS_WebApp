@@ -60,10 +60,26 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
   color:var(--label2); background:var(--card); cursor:pointer; }
 .chip.on{ background:var(--tint); border-color:var(--tint); color:#fff; }
 .story{ display:block; width:100%; text-align:left; border:none; cursor:pointer; background:var(--card);
-  border-radius:var(--radius); box-shadow:var(--shadow); padding:15px 16px; margin-top:10px; color:var(--label); }
-.story .t{ font-size:16.5px; font-weight:700; }
-.story .row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; align-items:center; }
-.pbar{ height:6px; border-radius:3px; background:var(--fill); margin-top:9px; overflow:hidden; }
+  border-radius:var(--radius); box-shadow:var(--shadow); padding:11px 44px 11px 14px; margin-top:8px; color:var(--label);
+  content-visibility:auto; contain-intrinsic-size:auto 78px; }
+.story .t{ font-size:15.5px; font-weight:700; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.story .row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; align-items:center; }
+.storyWrap{ position:relative; }
+.favStar{ position:absolute; top:8px; right:8px; z-index:2; border:none; cursor:pointer; width:34px; height:34px;
+  border-radius:999px; background:var(--fill); color:var(--label3); font-size:16px; line-height:1; }
+.favStar.on{ background:var(--orange); color:#fff; }
+.chips.rail{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; scrollbar-width:none; }
+.chips.rail::-webkit-scrollbar{ display:none; }
+.chips.rail .chip{ flex:0 0 auto; }
+.toolbar{ position:sticky; top:calc(6px + env(safe-area-inset-top)); z-index:25; background:var(--card);
+  border-radius:18px; box-shadow:var(--shadow); padding:10px 12px; margin-top:10px; }
+.toolbar input[type=search]{ margin-top:0; }
+.toolbar .chips{ margin-top:8px; }
+.toolbar .controls{ margin-top:8px; }
+.moreBtn{ display:flex; align-items:center; justify-content:center; width:100%; border:none; cursor:pointer;
+  border-radius:999px; padding:12px; margin-top:12px; background:var(--fill); color:var(--label); font-size:14.5px; font-weight:700; }
+.countLine{ text-align:center; font-size:12.5px; color:var(--label3); margin-top:10px; }
+.pbar{ height:5px; border-radius:3px; background:var(--fill); margin-top:6px; overflow:hidden; }
 .pbar i{ display:block; height:100%; background:var(--tint); border-radius:3px; }
 .bar{ position:sticky; top:calc(8px + env(safe-area-inset-top)); z-index:20; border-radius:26px;
   padding:8px 10px; display:flex; gap:6px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
@@ -106,20 +122,23 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 <div id="shelfView">
   <header><h1>のくす書庫</h1><div class="meta" id="freshMeta">読み込み中…</div></header>
   <main>
-    <input type="search" id="q" placeholder="題名・タグで探す">
-    <div class="chips" id="stateChips"></div>
-    <div class="controls">
-      <select id="sortSel" aria-label="並び替え">
-        <option value="recommend">並び：おすすめ（読みかけ先頭）</option>
-        <option value="title">並び：タイトル順</option>
-        <option value="chars_desc">並び：文字数が多い順</option>
-        <option value="parts_desc">並び：編数が多い順</option>
-        <option value="recent">並び：最近開いた順</option>
-      </select>
-      <button class="mini gray" id="randomBtn">未読からランダム</button>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="題名・タグで探す">
+      <div class="chips rail" id="stateChips"></div>
+      <div class="controls">
+        <select id="sortSel" aria-label="並び替え">
+          <option value="recommend">並び：おすすめ（読みかけ先頭）</option>
+          <option value="title">並び：タイトル順</option>
+          <option value="chars_desc">並び：文字数が多い順</option>
+          <option value="parts_desc">並び：編数が多い順</option>
+          <option value="recent">並び：最近開いた順</option>
+        </select>
+        <button class="mini gray" id="randomBtn">未読からランダム</button>
+      </div>
+      <div class="chips rail" id="tagChips"></div>
     </div>
-    <div class="chips" id="tagChips"></div>
     <div id="shelf"></div>
+    <div id="moreArea"></div>
     <div class="note" id="buildNote"></div>
   </main>
 </div>
@@ -162,7 +181,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss7';
+var SS_BUILD = '2026-11-15-ss8';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -322,7 +341,70 @@ function filteredStories(){
     return true;
   });
 }
-function renderShelf(){
+/* 本棚は分割描画（チャンク＋もっと見る）。全件を一度にDOMへ入れない。
+   既存調査（Baymard：load more＋遅延が最適／NN-g：無限スクロールは目的型に不向き）に基づく */
+var PAGE_N = 40;
+var shownCount = PAGE_N;
+var currentList = [];
+var shelfScrollY = 0;
+var moreObserver = null;
+function storyNode(s){
+  var pct = storyPct(s);
+  var tags = (s.tags || []).slice(0, 3).map(function(t){ return '<span class="badge idle">' + esc(t) + '</span>'; }).join('');
+  var moreTags = (s.tags || []).length > 3 ? '<span class="small">+' + ((s.tags || []).length - 3) + '</span>' : '';
+  var gap = (s.gaps && s.gaps.length) ? '<span class="badge warn">欠け ' + s.gaps.length + ' 編</span>' : '';
+  var first = s.has_first ? '' : '<span class="badge warn">初編なし</span>';
+  var mark = storyMark(s) ? '<span class="badge info">' + storyMark(s) + '</span>' : '';
+  var bar = pct > 0 ? '<div class="pbar"><i style="width:' + pct + '%"></i></div><div class="small" style="margin-top:3px">' + (pct >= 100 ? '読了' : '読みかけ ' + pct + '%') + '</div>' : '';
+  var resume = pct > 0 && pct < 100 ? '<div class="rowBtns"><button class="mini" data-resume="' + s.id + '">続きから読む</button></div>' : '';
+  var wrap = document.createElement('div');
+  wrap.className = 'storyWrap';
+  wrap.innerHTML = '<button class="favStar' + (favs[s.id] ? ' on' : '') + '" data-fav="' + s.id + '" aria-label="お気に入り">' + (favs[s.id] ? '★' : '☆') + '</button>' +
+    '<button class="story" data-open="' + s.id + '"><span class="t">' + esc(s.title) + '</span>' +
+    '<span class="row">' + mark + tags + moreTags + gap + first + '<span class="small">' + s.parts + ' 編／' + Number(s.chars || 0).toLocaleString() + ' 字</span></span>' +
+    bar + '</button>' + resume;
+  wrap.querySelector('[data-open]').addEventListener('click', function(){ openStory(s.id, false); });
+  var rb = wrap.querySelector('[data-resume]');
+  if(rb) rb.addEventListener('click', function(ev){ ev.stopPropagation(); openStory(s.id, true); });
+  wrap.querySelector('[data-fav]').addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if(favs[s.id]) delete favs[s.id]; else favs[s.id] = 1;
+    saveObj('ss.favs.v1', favs);
+    var on = !!favs[s.id];
+    ev.currentTarget.classList.toggle('on', on);
+    ev.currentTarget.textContent = on ? '★' : '☆';
+    if(stateFilter === 'fav') renderShelf(false);
+  });
+  return wrap;
+}
+function renderMore(){
+  var area = $('moreArea');
+  if(moreObserver){ moreObserver.disconnect(); moreObserver = null; }
+  if(!currentList.length){ area.innerHTML = ''; return; }
+  if(shownCount >= currentList.length){
+    area.innerHTML = '<div class="countLine">全 ' + currentList.length + ' 件を表示中</div>';
+    return;
+  }
+  area.innerHTML = '<div class="countLine">' + Math.min(shownCount, currentList.length) + ' / ' + currentList.length + ' 件を表示中</div>' +
+    '<button class="moreBtn" id="moreBtn">もっと見る（残り ' + (currentList.length - shownCount) + ' 件）</button><div id="moreSentinel" style="height:1px"></div>';
+  $('moreBtn').addEventListener('click', loadMore);
+  if(window.IntersectionObserver){
+    moreObserver = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting) loadMore(); });
+    }, { rootMargin:'600px' });
+    moreObserver.observe($('moreSentinel'));
+  }
+}
+function loadMore(){
+  if(shownCount >= currentList.length) return;
+  var frag = document.createDocumentFragment();
+  currentList.slice(shownCount, shownCount + PAGE_N).forEach(function(s){ frag.appendChild(storyNode(s)); });
+  $('shelf').appendChild(frag);
+  shownCount += PAGE_N;
+  renderMore();
+}
+function renderShelf(reset){
+  if(reset !== false) shownCount = PAGE_N;
   var list = filteredStories();
   var sort = settings.sort || 'recommend';
   list.sort(function(a, b){
@@ -336,34 +418,14 @@ function renderShelf(){
     if(ra === 0 && pa && pb) return (pb.ts || 0) - (pa.ts || 0);
     return a.title < b.title ? -1 : 1;
   });
-  if(!list.length){ $('shelf').innerHTML = '<div class="card">見つからない。</div>'; return; }
-  $('shelf').innerHTML = list.map(function(s){
-    var pct = storyPct(s);
-    var tags = (s.tags || []).map(function(t){ return '<span class="badge idle">' + esc(t) + '</span>'; }).join('');
-    var gap = (s.gaps && s.gaps.length) ? '<span class="badge warn">欠け ' + s.gaps.length + ' 編</span>' : '';
-    var first = s.has_first ? '' : '<span class="badge warn">初編なし</span>';
-    var mark = storyMark(s) ? '<span class="badge info">' + storyMark(s) + '</span>' : '';
-    var bar = pct > 0 ? '<div class="pbar"><i style="width:' + pct + '%"></i></div><div class="small" style="margin-top:4px">読みかけ ' + pct + '%' + (pct >= 100 ? '（読了）' : '') + '</div>' : '';
-    var resume = pct > 0 && pct < 100 ? '<button class="mini" data-resume="' + s.id + '">続きから読む</button>' : '';
-    var fav = '<button class="mini gray favBtn' + (favs[s.id] ? ' on' : '') + '" data-fav="' + s.id + '">' + (favs[s.id] ? 'お気に入り済み' : 'お気に入り') + '</button>';
-    return '<button class="story" data-open="' + s.id + '"><span class="t">' + esc(s.title) + '</span>' +
-      '<span class="row">' + mark + tags + gap + first + '<span class="small">' + s.parts + ' 編／' + Number(s.chars || 0).toLocaleString() + ' 字</span></span>' +
-      bar + '</button><div class="rowBtns">' + resume + fav + '</div>';
-  }).join('');
-  $('shelf').querySelectorAll('[data-open]').forEach(function(b){
-    b.addEventListener('click', function(){ openStory(b.getAttribute('data-open'), false); });
-  });
-  $('shelf').querySelectorAll('[data-resume]').forEach(function(b){
-    b.addEventListener('click', function(ev){ ev.stopPropagation(); openStory(b.getAttribute('data-resume'), true); });
-  });
-  $('shelf').querySelectorAll('[data-fav]').forEach(function(b){
-    b.addEventListener('click', function(ev){
-      ev.stopPropagation();
-      var id = b.getAttribute('data-fav');
-      if(favs[id]) delete favs[id]; else favs[id] = 1;
-      saveObj('ss.favs.v1', favs); renderShelf();
-    });
-  });
+  currentList = list;
+  var shelf = $('shelf');
+  shelf.innerHTML = '';
+  if(!list.length){ shelf.innerHTML = '<div class="card">見つからない。</div>'; renderMore(); return; }
+  var frag = document.createDocumentFragment();
+  list.slice(0, shownCount).forEach(function(s){ frag.appendChild(storyNode(s)); });
+  shelf.appendChild(frag);
+  renderMore();
 }
 function loadIndex(){
   fetch('data/index.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(idx){
@@ -440,6 +502,7 @@ function closePartSheet(){
 function openStory(id, resume){
   var story = INDEX.stories.filter(function(s){ return s.id === id; })[0];
   if(!story) return;
+  shelfScrollY = window.scrollY || 0; /* 戻った時に同じ場所へ復帰する（Baymardの指摘する離脱要因の対策） */
   fetch('data/texts/' + encodeURIComponent(id) + '.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(doc){
     cur = { story: story, seq: buildSequence(story, doc.parts || []) };
     $('shelfView').style.display = 'none';
@@ -511,8 +574,8 @@ $('backBtn').addEventListener('click', function(){
   cur = null;
   $('readerView').style.display = 'none';
   $('shelfView').style.display = 'block';
-  renderShelf();
-  window.scrollTo(0, 0);
+  renderShelf(false); /* 表示件数（チャンク）を保ったまま戻す */
+  window.scrollTo(0, shelfScrollY);
 });
 $('bmBtn').addEventListener('click', function(){
   if(!cur) return;
