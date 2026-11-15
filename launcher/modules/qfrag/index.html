@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d9</title>
+<title>断片 d10</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -160,7 +160,6 @@ var PARAM_DEFS = [
   { key:'waitSec', label:'待つ長さ(秒)', min:1.5, max:9, step:0.5 },
   { key:'waitHop', label:'待ち跳ねの高さ', min:0, max:22, step:1 },
   { key:'selfSec', label:'自分から動く間隔(秒)', min:4, max:30, step:1 },
-  { key:'size', label:'体の大きさ', min:18, max:54, step:1 },
   { key:'drift', label:'漂う粒の数', min:0, max:40, step:1 }
 ];
 var DEFAULTS = JSON.parse(document.getElementById('fragParams').textContent);
@@ -177,11 +176,14 @@ function saveParams(){ try { localStorage.setItem('qfrag.params', JSON.stringify
 var cv = document.getElementById('scene');
 var ctx = cv.getContext('2d');
 var W = 0, H = 0, dpr = 1;
+var R = 30, S = 1;
+function computeScale(){ R = Math.max(30, Math.min(160, Math.round(W / 10))); S = R / 30; }
 function resize(){
   dpr = window.devicePixelRatio || 1;
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  computeScale();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -245,7 +247,7 @@ function draw(now){
   var sp2 = starPos(t);
   if(sp2){
     var pointed = now < (star.pointedUntil || 0);
-    var pulse = pointed ? (7.2 + Math.sin(t * 7) * 2.2) : (4.6 + Math.sin(t * 2.2) * 1.1);
+    var pulse = (pointed ? (7.2 + Math.sin(t * 7) * 2.2) : (4.6 + Math.sin(t * 2.2) * 1.1)) * S;
     ctx.fillStyle = pointed ? 'rgba(255,214,120,.40)' : 'rgba(255,214,120,.22)';
     ctx.beginPath(); ctx.arc(sp2.x, sp2.y, pulse * 2.6, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#ffd678';
@@ -257,7 +259,7 @@ function draw(now){
     var k = (now - r.at) / 700;
     ctx.strokeStyle = 'rgba(125,249,255,' + (0.55 * (1 - k)).toFixed(3) + ')';
     ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(r.x, r.y, 6 + k * 46, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(r.x, r.y, (6 + k * 46) * S, 0, Math.PI * 2); ctx.stroke();
   });
   function starPos(t){
   if(!star) return null;
@@ -265,16 +267,16 @@ function draw(now){
            y: (star.y + Math.sin(t * 0.5 + star.p) * 0.01) * H };
 }
 /* 誰かの移動：跳ねていない時は、ゆっくりさまよう */
-  var r = params.size;
+  var r = R;
   if(crea.hop){
     var hp = crea.hop;
     var k2 = (now - hp.at) / hp.dur;
     if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ'); elog('状態', '着地 → 待つ');
-      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); elog('状態', '粒を取り込んだ'); } } }
+      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26 * S){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); elog('状態', '粒を取り込んだ'); } } }
       if(crea.pendingStar && star){ crea.pendingStar = false; var sp5 = starPos(t); if(sp5){ crea.noticePending = true; crea.noticeUntil = now + 650; crea.noticeDir = sp5.x >= crea.x ? 1 : -1; crea.waitUntil = 0; log('着地 → 指さされた粒に気づく'); elog('状態', '気づく一拍の開始（着地後・指さされた粒）'); } }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
-      crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
+      crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * S * params.hopPower;
     }
   }
   else if(now < crea.waitUntil){
@@ -326,7 +328,7 @@ function draw(now){
   if(waiting){
     var ph = ((now - crea.waitFrom) % 950) / 950;
     var sn = Math.sin(ph * Math.PI * 2);
-    lift = Math.pow(Math.max(0, sn), 1.4) * params.waitHop;
+    lift = Math.pow(Math.max(0, sn), 1.4) * params.waitHop * S;
     crouch = Math.max(0, -sn) * 0.09;
   }
   crea.lookC += (((now < crea.noticeUntil) ? crea.noticeDir : ((waiting || now < crea.attendUntil) ? 0 : crea.dir)) - crea.lookC) * Math.min(1, dt * 7);
@@ -335,7 +337,7 @@ function draw(now){
   if(startled){
     var sk = (now - crea.startleAt) / 460;
     var sCurve = sk < 0.26 ? (sk / 0.26) : (sk > 0.65 ? Math.max(0, (1 - sk) / 0.35) : 1);
-    sLift = sCurve * 34;
+    sLift = sCurve * 34 * S;
   }
   /* 満ちた様子：取り込んでから次の粒が出るまでの間だけ続く状態 */
   var contented = !star && crea.absorbAt > 0;
@@ -359,7 +361,7 @@ function draw(now){
   /* 体 */
   var sq = crea.squash * 0.18 + crouch;
   ctx.save();
-  ctx.translate(crea.x + (contented ? Math.sin(t * 1.15) * 3 : 0), crea.y - lift - sLift);
+  ctx.translate(crea.x + (contented ? Math.sin(t * 1.15) * 3 * S : 0), crea.y - lift - sLift);
   if(contented) ctx.rotate(Math.sin(t * 1.15) * 0.045);
   ctx.scale(1 + sq, 1 - sq);
   if(abK >= 0 && abK < 1){ var us = 1 + Math.sin(abK * Math.PI) * 0.13; ctx.scale(us, us); }
@@ -396,7 +398,7 @@ cv.addEventListener('pointerdown', function(ev){
   /* 粒へのタップ：「指さした」ことにする。粒が強く脈打ち、そいつが気づいて取りに行く */
   if(star){
     var spT = starPos(now / 1000);
-    if(spT && Math.hypot(ev.clientX - spT.x, ev.clientY - spT.y) < 30){
+    if(spT && Math.hypot(ev.clientX - spT.x, ev.clientY - spT.y) < Math.max(30, 18 * S)){
       elog('タップ', '（粒） x=' + Math.round(spT.x) + ' y=' + Math.round(spT.y));
       star.pointedUntil = now + 2600;
       ripples.push({ x:spT.x, y:spT.y, at:now });
@@ -415,11 +417,11 @@ cv.addEventListener('pointerdown', function(ev){
     }
   }
   /* 本人へのタップ：距離ゼロの「寄る」は見える返しにならない。驚いてその場で跳ね、こちらを見る */
-  if(!crea.hop && Math.hypot(ev.clientX - crea.x, ev.clientY - crea.y) < params.size + 12){
+  if(!crea.hop && Math.hypot(ev.clientX - crea.x, ev.clientY - crea.y) < R + 12 * S){
     crea.noticePending = false; crea.pendingStar = false;
     elog('タップ', '（本人） x=' + Math.round(ev.clientX) + ' y=' + Math.round(ev.clientY));
     crea.startleAt = now;
-    elog('返し', '驚き（本人タップへの返し）');
+    elog('返し', '驚き（本人タップへの返し・跳ね ' + Math.round(34 * S) + 'px）');
     crea.attendUntil = now + 1600;
     crea.waitUntil = 0;
     ripples.push({ x:ev.clientX, y:ev.clientY, at:now });
@@ -428,8 +430,8 @@ cv.addEventListener('pointerdown', function(ev){
     return;
   }
   crea.noticePending = false; crea.pendingStar = false;
-  var tx = Math.max(params.size + 8, Math.min(W - params.size - 8, ev.clientX));
-  var ty = Math.max(params.size + 70, Math.min(H - params.size - 30, ev.clientY));
+  var tx = Math.max(R + 8, Math.min(W - R - 8, ev.clientX));
+  var ty = Math.max(R + 70, Math.min(H - R - 30, ev.clientY));
   var dist = Math.hypot(tx - crea.x, ty - crea.y);
   crea.hop = { fx:crea.x, fy:crea.y, tx:tx, ty:ty, at:now, dur:Math.max(240, Math.min(620, dist * 1.1)) };
   crea.waitUntil = 0;
