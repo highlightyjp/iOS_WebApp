@@ -84,6 +84,15 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .note{ font-size:12.5px; color:var(--label3); margin-top:10px; }
 .act{ display:flex; align-items:center; justify-content:center; width:100%; border:none; cursor:pointer;
   border-radius:999px; padding:14px; margin-top:14px; background:var(--tint); color:#fff; font-size:15.5px; font-weight:700; }
+.tagSheet{ position:fixed; inset:0; z-index:60; display:none; background:rgba(20,24,40,.38); }
+.tagSheet.open{ display:flex; flex-direction:column; justify-content:flex-end; }
+.tagPanel{ background:var(--card); border-radius:28px 28px 0 0; max-height:86vh; display:flex; flex-direction:column;
+  padding:16px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow:var(--shadow); }
+.tagPanelHead{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.tagPanel input[type=search]{ margin-top:12px; }
+.tagList{ overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-wrap:wrap; gap:6px;
+  padding:10px 0 8px; align-content:flex-start; overscroll-behavior:contain; }
+.tagList .chip{ flex:0 0 auto; }
 </style>
 </head>
 <body>
@@ -93,7 +102,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 <div id="shelfView">
   <header><h1>のくす書庫</h1><div class="meta" id="freshMeta">読み込み中…</div></header>
   <main>
-    <input type="search" id="q" placeholder="題名で探す">
+    <input type="search" id="q" placeholder="題名・タグで探す">
     <div class="chips" id="tagChips"></div>
     <div id="shelf"></div>
     <div class="note" id="buildNote"></div>
@@ -114,9 +123,19 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
   </main>
 </div>
 
+<div id="tagSheet" class="tagSheet" aria-hidden="true">
+  <div class="tagPanel">
+    <div class="tagPanelHead"><span class="title">タグで探す</span><button class="mini gray" id="tagSheetClose">閉じる</button></div>
+    <input type="search" id="tagQ" placeholder="タグ名で絞る">
+    <div class="small" id="tagSheetMeta" style="margin-top:8px"></div>
+    <div class="tagList" id="tagList"></div>
+    <button class="mini gray" id="tagClearBtn" style="align-self:flex-start">絞り込みを外す</button>
+  </div>
+</div>
+
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss4';
+var SS_BUILD = '2026-11-15-ss5';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -168,7 +187,6 @@ function buildSequence(story, parts){
 
 /* ============ 本棚 ============ */
 var curTag = '';
-var tagsExpanded = false;
 var TAG_TOP = 12;
 function allTags(){
   var counts = {};
@@ -178,28 +196,67 @@ function allTags(){
 }
 function renderTags(){
   var tags = allTags();
-  var shown = tagsExpanded ? tags : tags.slice(0, TAG_TOP);
-  if(curTag && !tagsExpanded && !shown.some(function(x){ return x.tag === curTag; })){
+  var shown = tags.slice(0, TAG_TOP);
+  if(curTag && !shown.some(function(x){ return x.tag === curTag; })){
     var cur = tags.filter(function(x){ return x.tag === curTag; })[0];
     if(cur) shown = shown.concat([cur]);
   }
   var html = '<button class="chip' + (curTag === '' ? ' on' : '') + '" data-tag="">すべて</button>' +
     shown.map(function(x){ return '<button class="chip' + (curTag === x.tag ? ' on' : '') + '" data-tag="' + esc(x.tag) + '">' + esc(x.tag) + ' ' + x.n + '</button>'; }).join('');
   if(tags.length > TAG_TOP)
-    html += '<button class="chip" data-more="1">' + (tagsExpanded ? 'タグを閉じる' : 'タグをすべて見る（' + tags.length + '）') + '</button>';
+    html += '<button class="chip" data-more="1">タグで探す（全' + tags.length + '）</button>';
   $('tagChips').innerHTML = html;
   $('tagChips').querySelectorAll('.chip').forEach(function(c){
     c.addEventListener('click', function(){
-      if(c.getAttribute('data-more')){ tagsExpanded = !tagsExpanded; renderTags(); return; }
+      if(c.getAttribute('data-more')){ openTagSheet(); return; }
       curTag = c.getAttribute('data-tag'); renderTags(); renderShelf();
     });
   });
 }
+/* タグ一覧はシート内だけをスクロールさせる。本棚の縦は伸ばさない */
+function filteredTags(){
+  var q = ($('tagQ').value || '').trim().toLowerCase();
+  var tags = allTags();
+  if(!q) return tags;
+  return tags.filter(function(x){ return x.tag.toLowerCase().indexOf(q) >= 0; });
+}
+function renderTagSheet(){
+  var list = filteredTags();
+  $('tagSheetMeta').textContent = list.length + ' 件' + (curTag ? '・選択中：' + curTag : '');
+  if(!list.length){ $('tagList').innerHTML = '<span class="small">該当するタグがない。</span>'; return; }
+  /* 検索なしの初期表示は上位120件までに抑える。全件描画で重くしない */
+  var q = ($('tagQ').value || '').trim();
+  var shown = q ? list : list.slice(0, 120);
+  var html = shown.map(function(x){ return '<button class="chip' + (curTag === x.tag ? ' on' : '') + '" data-stag="' + esc(x.tag) + '">' + esc(x.tag) + ' ' + x.n + '</button>'; }).join('');
+  if(!q && list.length > shown.length)
+    html += '<span class="small" style="align-self:center">ほか ' + (list.length - shown.length) + ' 件は上の入力で絞れる</span>';
+  $('tagList').innerHTML = html;
+  $('tagList').querySelectorAll('[data-stag]').forEach(function(c){
+    c.addEventListener('click', function(){
+      curTag = c.getAttribute('data-stag'); closeTagSheet(); renderTags(); renderShelf();
+    });
+  });
+}
+function openTagSheet(){
+  $('tagSheet').classList.add('open');
+  $('tagSheet').setAttribute('aria-hidden', 'false');
+  renderTagSheet();
+  setTimeout(function(){ try{ $('tagQ').focus(); }catch(e){} }, 60);
+}
+function closeTagSheet(){
+  $('tagSheet').classList.remove('open');
+  $('tagSheet').setAttribute('aria-hidden', 'true');
+}
 function renderShelf(){
   var q = ($('q').value || '').trim();
+  var ql = q.toLowerCase();
   var list = INDEX.stories.filter(function(s){
     if(curTag && (s.tags || []).indexOf(curTag) < 0) return false;
-    if(q && s.title.indexOf(q) < 0) return false;
+    if(q){
+      var inTitle = s.title.toLowerCase().indexOf(ql) >= 0;
+      var inTag = (s.tags || []).some(function(t){ return t.toLowerCase().indexOf(ql) >= 0; });
+      if(!inTitle && !inTag) return false;
+    }
     return true;
   });
   list.sort(function(a, b){
@@ -239,6 +296,10 @@ function loadIndex(){
   });
 }
 $('q').addEventListener('input', renderShelf);
+$('tagQ').addEventListener('input', renderTagSheet);
+$('tagSheetClose').addEventListener('click', closeTagSheet);
+$('tagClearBtn').addEventListener('click', function(){ curTag = ''; $('tagQ').value = ''; closeTagSheet(); renderTags(); renderShelf(); });
+$('tagSheet').addEventListener('click', function(ev){ if(ev.target === $('tagSheet')) closeTagSheet(); });
 
 /* ============ リーダー ============ */
 var cur = null; /* {story, seq} */
