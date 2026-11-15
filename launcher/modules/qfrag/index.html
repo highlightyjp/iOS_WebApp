@@ -140,7 +140,7 @@ if(OBS){
     var nSelf = taps.filter(function(e){ return e.detail.indexOf('（本人）') === 0; }).length;
     var nStar = taps.filter(function(e){ return e.detail.indexOf('（粒）') === 0; }).length;
     var nSelfMove = evLog.filter(function(e){ return e.detail.indexOf('自律移動') === 0; }).length;
-    var head = '断片セッションログ（build ' + (window.__build || '不明') + '）\n'
+    var head = '断片セッションログ（' + (window.__build || 'build 不明') + '）\n'
       + '開始：' + new Date(T0 + performance.timeOrigin).toLocaleString('ja-JP') + '\n'
       + '時刻は、ページを開いてからの秒数です。\n\n';
     var foot = '\n\n集計：タップ ' + taps.length + '件（地面 ' + nGround + '／本人 ' + nSelf + '／粒 ' + nStar + '）、自律移動 ' + nSelfMove + '件';
