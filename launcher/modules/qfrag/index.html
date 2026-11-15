@@ -139,11 +139,15 @@ function log(s){
 /* 誰か：丸い体。無操作でもさまよい、まばたきする。タップへの返しは「跳ねて寄る」1つ */
 var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0 };
 var ripples = [];
+var star = null;      /* 目立つ粒：1つだけ。そいつが取りに行く相手 */
+var starAt = 0;       /* 次に目立つ粒が出る時刻 */
 var motes = [];
 function seedCre(){
   crea.x = W * 0.5; crea.y = H * 0.55;
   crea.dir = Math.random() < 0.5 ? -1 : 1;
   crea.nextSelf = performance.now() + 6000;
+  star = { x:0.22 + Math.random() * 0.56, y:0.3 + Math.random() * 0.4, s:1.6, p:Math.random() * 6.28 };
+  starAt = 0;
   motes = [];
   for(var i = 0; i < 40; i++) motes.push({ x:Math.random(), y:Math.random(), s:Math.random() * 2 + 0.6, p:Math.random() * 6.28 });
 }
@@ -166,6 +170,15 @@ function draw(now){
     var my = (m.y + Math.sin(t * 0.5 + m.p) * 0.01) * H;
     ctx.beginPath(); ctx.arc(mx, my, m.s, 0, Math.PI * 2); ctx.fill();
   }
+  /* 目立つ粒（1つだけ） */
+  var sp2 = starPos(t);
+  if(sp2){
+    var pulse = 4.6 + Math.sin(t * 2.2) * 1.1;
+    ctx.fillStyle = 'rgba(255,214,120,.22)';
+    ctx.beginPath(); ctx.arc(sp2.x, sp2.y, pulse * 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffd678';
+    ctx.beginPath(); ctx.arc(sp2.x, sp2.y, pulse, 0, Math.PI * 2); ctx.fill();
+  }
   /* 波紋（返しの痕） */
   ripples = ripples.filter(function(r){ return now - r.at < 700; });
   ripples.forEach(function(r){
@@ -174,12 +187,18 @@ function draw(now){
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(r.x, r.y, 6 + k * 46, 0, Math.PI * 2); ctx.stroke();
   });
-  /* 誰かの移動：跳ねていない時は、ゆっくりさまよう */
+  function starPos(t){
+  if(!star) return null;
+  return { x: ((star.x + t * 0.008 * (1 + star.s * 0.3)) % 1) * W,
+           y: (star.y + Math.sin(t * 0.5 + star.p) * 0.01) * H };
+}
+/* 誰かの移動：跳ねていない時は、ゆっくりさまよう */
   var r = params.size;
   if(crea.hop){
     var hp = crea.hop;
     var k2 = (now - hp.at) / hp.dur;
-    if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ'); }
+    if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ');
+      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; log('粒を取り込んだ'); } } }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
       crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
@@ -200,14 +219,18 @@ function draw(now){
     if(crea.y > H - r - 30){ crea.y = H - r - 30; crea.vy = -Math.abs(crea.vy); }
     if(Math.abs(crea.vx) > 2) crea.dir = crea.vx > 0 ? 1 : -1;
   }
+  if(!star && starAt && now > starAt){ star = { x:0.15 + Math.random() * 0.7, y:0.28 + Math.random() * 0.44, s:1.6, p:Math.random() * 6.28 }; starAt = 0; }
   if(!crea.hop && now >= crea.waitUntil && crea.nextSelf && now > crea.nextSelf){
-    /* 世界の側から動く：自分で行き先を決めて跳ぶ。着地で待ちに入り、こちらを振り返る（既存の経路） */
-    var tx0 = r + 14 + Math.random() * Math.max(10, W - (r + 14) * 2);
-    var ty0 = (r + 84) + Math.random() * Math.max(10, H - (r + 84) - (r + 44));
-    var dist0 = Math.hypot(tx0 - crea.x, ty0 - crea.y);
-    crea.hop = { fx:crea.x, fy:crea.y, tx:tx0, ty:ty0, at:now, dur:Math.max(320, Math.min(780, dist0 * 1.25)) };
+    /* 世界の側から動く：目立つ粒を取りに行く時だけ。行き先＝粒の今の場所 */
+    var sp3 = starPos(t);
+    if(sp3){
+      var tx0 = Math.max(r + 8, Math.min(W - r - 8, sp3.x));
+      var ty0 = Math.max(r + 70, Math.min(H - r - 30, sp3.y));
+      var dist0 = Math.hypot(tx0 - crea.x, ty0 - crea.y);
+      crea.hop = { fx:crea.x, fy:crea.y, tx:tx0, ty:ty0, at:now, dur:Math.max(320, Math.min(780, dist0 * 1.25)), toStar:true };
+      log('世界から動いた（粒を取りに行く）');
+    }
     crea.nextSelf = now + params.selfSec * 1000 * (0.7 + Math.random() * 0.7);
-    log('世界から動いた（自分で移動）');
   }
   if(crea.squash > 0) crea.squash = Math.max(0, crea.squash - dt * 5);
   /* 待つ間の予備動作：沈んで（予備）→小さく跳ねる。目は徐々にこちらを向く */
