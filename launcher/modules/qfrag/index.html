@@ -95,6 +95,13 @@ textarea{ width:100%; border-radius:10px; border:none; background:var(--fill); c
    1) 数値はプログラムの外（JSON＋つまみ）に出し、実行中へ即時反映する
    2) デバッグ表示は切替式。初見の画面ではオフ
    3) 開幕の自動撮影：0秒・3秒・10秒を撮り、無操作の画素差分を出す ===== */
+/* 観察用ビルド：?obs=1 で作り手の道具（つまみ／デバッグ／今日の1枚）を画面から隠す。
+   断片の中身は不変。作り手は通常URLで開く */
+var OBS = /[?&]obs=1/.test(location.search);
+if(OBS){
+  document.getElementById('knobBtn').style.display = 'none';
+  document.getElementById('dbgBtn').style.display = 'none';
+}
 var PARAM_DEFS = [
   { key:'wanderSpeed', label:'さまよう速さ', min:0, max:70, step:1 },
   { key:'hopPower', label:'跳ねの強さ', min:0.3, max:2.2, step:0.1 },
