@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>資格工房プロトタイプ（1日分）</title>
+<style>
+:root{
+  --label:#1c1c1e; --label2:rgba(60,60,67,.66); --label3:rgba(60,60,67,.42);
+  --tint:#007AFF; --red:#FF3B30; --orange:#FF9500; --green:#34C759; --purple:#AF52DE;
+  --glass:rgba(255,255,255,.52); --glass-strong:rgba(255,255,255,.68); --glass-edge:rgba(255,255,255,.65);
+  --sep:rgba(60,60,67,.14); --card:#FFFFFF; --fill:rgba(120,120,128,.14);
+  --shadow:0 10px 34px rgba(31,38,135,.14),0 2px 8px rgba(31,38,135,.08);
+  --spec:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -0.5px 0 rgba(255,255,255,.25);
+  --radius:24px; --spring:cubic-bezier(.34,1.35,.44,1);
+  --motion-spatial-fast:.18s cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --label:#fff; --label2:rgba(235,235,245,.62); --label3:rgba(235,235,245,.38);
+    --tint:#0A84FF; --red:#FF453A; --orange:#FF9F0A; --green:#30D158; --purple:#BF5AF2;
+    --glass:rgba(38,38,44,.46); --glass-strong:rgba(44,44,52,.62); --glass-edge:rgba(255,255,255,.22);
+    --sep:rgba(255,255,255,.14); --card:#1E1E24; --fill:rgba(120,120,128,.26);
+    --shadow:0 12px 36px rgba(0,0,0,.5),0 2px 10px rgba(0,0,0,.35);
+    --spec:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -0.5px 0 rgba(255,255,255,.06); }
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html{ touch-action:manipulation; }
+body{ margin:0; color:var(--label); background:#EDF1F8;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Hiragino Sans","Noto Sans CJK JP",sans-serif;
+  font-size:16px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
+@media (prefers-color-scheme: dark){ body{ background:#05060A; } }
+.aurora{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+.aurora i{ position:absolute; border-radius:50%; filter:blur(70px); opacity:.55; }
+.aurora .a1{ width:340px;height:340px;background:#8EC5FF;top:-110px;left:-90px; }
+.aurora .a2{ width:300px;height:300px;background:#D8B4FE;top:16%;right:-120px;opacity:.45; }
+.aurora .a3{ width:280px;height:280px;background:#A7F3EA;bottom:6%;left:-100px;opacity:.4; }
+.aurora .a4{ width:220px;height:220px;background:#FFD1A9;bottom:-80px;right:-40px;opacity:.35; }
+@media (prefers-color-scheme: dark){ .aurora i{ opacity:.28; } }
+.glass{ background:var(--glass); border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
+  box-shadow:var(--shadow),var(--spec); }
+.topbar{ position:sticky; top:calc(10px + env(safe-area-inset-top)); z-index:30; display:flex; justify-content:center; pointer-events:none; padding:0 12px; }
+.topbar .pill{ pointer-events:auto; display:flex; align-items:center; gap:8px; border-radius:999px; padding:8px 16px; font-size:14px; font-weight:600; }
+.topbar .sub{ color:var(--label2); font-weight:500; font-size:12.5px; }
+header{ padding:14px 22px 0; max-width:720px; margin:0 auto; }
+h1{ font-size:30px; font-weight:800; letter-spacing:-.022em; margin:0; }
+.meta{ color:var(--label2); font-size:13px; margin-top:3px; }
+main{ padding:4px 16px 8px; max-width:720px; margin:0 auto; }
+section{ display:none; }
+section.on{ display:block; animation:viewIn .38s var(--spring); }
+@keyframes viewIn{ from{opacity:0; transform:translateY(10px) scale(.995);} to{opacity:1; transform:none;} }
+h2{ font-size:13.5px; font-weight:600; color:var(--label2); margin:24px 8px 8px; letter-spacing:.02em; }
+.card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-top:12px; }
+.act{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:none; cursor:pointer;
+  border-radius:999px; padding:16px; margin-top:14px; background:var(--tint); color:#fff;
+  font-size:17px; font-weight:700; box-shadow:var(--shadow); transition:transform var(--motion-spatial-fast); }
+.act:active{ transform:scale(.97); }
+.act.sub{ background:var(--card); color:var(--tint); border:1.5px solid var(--tint); box-shadow:none; font-size:15px; padding:13px; }
+.act:disabled{ opacity:.45; }
+.row{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.title{ font-size:17px; font-weight:700; }
+.small{ font-size:13px; color:var(--label2); }
+.badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:12.5px; font-weight:600; white-space:nowrap; }
+.badge.ok{ background:rgba(52,199,89,.16); color:#157347; }
+.badge.warn{ background:rgba(255,149,0,.18); color:#9a5b00; }
+.badge.info{ background:rgba(0,122,255,.14); color:#0a5cd6; }
+.badge.idle{ background:var(--fill); color:var(--label2); }
+@media (prefers-color-scheme: dark){
+  .badge.ok{ color:#4be07f; } .badge.warn{ color:#ffb340; } .badge.info{ color:#4da3ff; } }
+.bar{ height:10px; background:var(--fill); border-radius:5px; overflow:hidden; margin:8px 0 4px; }
+.bar > div{ height:100%; background:var(--tint); border-radius:5px; }
+.choice{ display:block; width:100%; text-align:left; padding:14px; margin:8px 0; border:1.5px solid var(--sep);
+  border-radius:16px; background:var(--card); color:var(--label); font-size:15.5px; cursor:pointer;
+  transition:transform var(--motion-spatial-fast); }
+.choice:active{ transform:scale(.98); }
+.choice.right{ border-color:var(--green); background:rgba(52,199,89,.12); }
+.choice.wrong{ border-color:var(--orange); background:rgba(255,149,0,.12); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.chip{ padding:5px 10px; border-radius:999px; font-size:12.5px; font-weight:600; border:1.5px solid var(--sep); color:var(--label2); background:var(--card); }
+.brow{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--sep); }
+.brow:last-child{ border-bottom:none; }
+.brow .k{ font-size:15px; font-weight:600; }
+.brow .v{ font-size:14px; color:var(--label2); text-align:right; }
+.srow{ padding:13px 0; border-bottom:1px solid var(--sep); }
+.srow:last-child{ border-bottom:none; }
+.srow .go{ margin-top:10px; }
+.mini{ border:none; cursor:pointer; border-radius:999px; padding:10px 18px; background:var(--tint); color:#fff; font-size:14.5px; font-weight:700; }
+.mini:disabled{ opacity:.4; }
+.mini.ghost{ background:var(--card); color:var(--tint); border:1.5px solid var(--tint); }
+.opp{ border:2px solid var(--orange); }
+.line{ padding:8px 0; border-bottom:1px solid var(--sep); font-size:15px; }
+.line:last-child{ border-bottom:none; }
+details{ margin-top:14px; }
+summary{ font-size:13.5px; color:var(--label2); cursor:pointer; padding:6px 8px; }
+.note{ font-size:12.5px; color:var(--label3); margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i><i class="a4"></i></div>
+<div class="topbar"><div class="pill glass"><span>資格工房プロトタイプ</span><span class="sub" id="freshPill"></span></div></div>
+<header><h1 id="pageTitle">港町</h1><div class="meta" id="pageMeta"></div></header>
+<main>
+  <section id="view-main" class="on"></section>
+  <section id="view-play"></section>
+</main>
+<script src="questions-g.js"></script>
+<script>
+'use strict';
+var PROTO_BUILD = '2026-11-15-proto1';
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+/* ================= 試作の前提（集約の3層） =================
+   1. 配分ボード：朝は命令でなく読める状態を出す。場面の発生権はプレイヤーの配分に渡し、
+      エンジンは選ばれた場面の問題セットを組むだけ。たこしあ型Aはボード上の好機として置く。
+   2. 記憶の実測状態：設備の調子は本人の実測（回答履歴）から推定した保持率そのもの。
+      手入れしない単元は実際にくたびれる。ただし踏破の蓄積（正解した事実）は消えない。
+   3. 自律ループ：船と町は学習しなくても進む。解いていない問題は未解決のまま残る。 */
+
+var LS_KEY = 'qualproto.state.v1';
+var SRC_KEY = 'qual.state.v1'; /* 本編0152の記録（読み取りのみ、引き継ぎ用） */
+var ACTIONS_PER_DAY = 3;
+var SRS_DAYS = [1, 3, 7, 14, 30];
+var EXAM = { name:'G検定', examDate:'2027-01-16', applyBy:'2027-01-08' };
+var OPP_LIMIT_DAY = 3; /* 好機の期限（◯日目まで） */
+
+var QUESTIONS = (window.QUAL_QUESTIONS_G || []).slice();
+var UNITS = [
+  { id:'g-u1', name:'分野1 人工知能とは', sys:'港の情報システム' },
+  { id:'g-u3', name:'分野3 機械学習の概要', sys:'故障予知モデル' }
+];
+function unitOf(id){ return UNITS.filter(function(u){ return u.id===id; })[0]; }
+function unitQuestions(id){ return QUESTIONS.filter(function(q){ return q.unit===id; }); }
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function daysUntil(dateStr){ var a=new Date(todayStr()+'T00:00:00'), b=new Date(dateStr+'T00:00:00'); return Math.round((b-a)/86400000); }
+function daysAgo(dateStr){ return -daysUntil(dateStr); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function shuffle(a){ var x=a.slice(); for(var i=x.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=x[i]; x[i]=x[j]; x[j]=t; } return x; }
+
+/* ================= 状態 ================= */
+function freshState(){
+  return { day:1, actions:ACTIONS_PER_DAY, hist:{}, imported:false,
+    doneToday:{}, usedToday:{}, ledgers:[], lastMorning:[], oppDoneDays:{}, startedOn:todayStr() };
+}
+function loadState(){
+  var s = null;
+  try{ s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
+  if(!s || !s.hist) s = freshState();
+  return s;
+}
+function saveState(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+var state = loadState();
+
+/* 本編0152の記録があれば、実測の初期値として読み取りで引き継ぐ（上書きしない） */
+function importFromMain(){
+  if(state.imported) return;
+  var src = null;
+  try{ src = JSON.parse(localStorage.getItem(SRC_KEY) || 'null'); }catch(e){}
+  if(src && src.q){
+    Object.keys(src.q).forEach(function(qid){
+      var r = src.q[qid]; if(!r) return;
+      var ago = r.last ? daysAgo(r.last) : 0;
+      state.hist[qid] = { a:1, c:r.everCorrect?1:0, streak:Math.min(r.stage||0, SRS_DAYS.length-1),
+        lastDay: 1 - Math.max(0, ago), lastWrong: !r.everCorrect };
+    });
+  }
+  state.imported = true; saveState();
+}
+
+/* ================= 記憶の実測（保持の推定） ================= */
+function qHist(id){ return state.hist[id] || null; }
+function qInterval(h){ return SRS_DAYS[Math.min(h.streak||0, SRS_DAYS.length-1)]; }
+function qElapsed(h){ return state.day - h.lastDay; }
+function qRetention(q){
+  var h = qHist(q.id); if(!h) return null;
+  var el = Math.max(0, qElapsed(h));
+  return Math.pow(0.5, el / (qInterval(h) * 2.5));
+}
+function qDue(q){ var h=qHist(q.id); return !!h && qElapsed(h) >= qInterval(h); }
+function qWeak(q){ var h=qHist(q.id); return !!h && h.lastWrong; }
+function unitRetention(unitId){
+  var qs = unitQuestions(unitId), vals = [];
+  qs.forEach(function(q){ var r = qRetention(q); if(r!==null) vals.push(r); });
+  if(!vals.length) return null;
+  return vals.reduce(function(a,b){ return a+b; }, 0) / vals.length;
+}
+function unitMastered(unitId){
+  return unitQuestions(unitId).filter(function(q){ var h=qHist(q.id); return h && h.c>0; }).length;
+}
+function condOf(ret){
+  if(ret===null) return { word:'まだ測れていない', cls:'idle' };
+  if(ret>=0.8) return { word:'好調', cls:'ok' };
+  if(ret>=0.55) return { word:'普通', cls:'info' };
+  return { word:'くたびれている', cls:'warn' };
+}
+function weakList(){ return QUESTIONS.filter(qWeak); }
+function dueList(){ return QUESTIONS.filter(qDue); }
+
+/* ================= 世界の自律（船と町） ================= */
+function shipA(d){ var r=((d-1)%3)+1; return r===1?'本日入港':(r===2?'停泊中':'本日出港'); }
+function shipB(d){ var r=((d-1)%4)+1; return ['','沖合で待機','本日入港','荷役中','本日出港'][r]; }
+function townLine(d){ return (d%2===1) ? '朝市が開く日' : '市場は通常どおり'; }
+function worldMoves(d){
+  var lines = [];
+  if(shipA(d)==='本日入港') lines.push('定期便あさかぜが入港した');
+  if(shipA(d)==='本日出港') lines.push('定期便あさかぜが出港した');
+  if(shipB(d)==='本日入港') lines.push('貨物船はやてが入港した');
+  if(shipB(d)==='本日出港') lines.push('貨物船はやてが出港した');
+  return lines;
+}
+
+/* ================= 場面 ================= */
+var SCENES = [
+  { id:'sys-am', unit:'g-u1', name:'情報システムの朝点検', place:'港の情報システム室',
+    intro:'港の情報システム係として、朝の点検から始める。表示の異常と記録の判断は、AIの基礎そのものだ。', n:4,
+    effect:'港の情報システムの調子が上がる' },
+  { id:'ops-data', unit:'g-u1', name:'運行データの読み取り', place:'岸壁の運行ボード前',
+    intro:'入港が近い。運行データと観測記録を読み、今日の判断を固める。', n:4,
+    effect:'港の情報システムの調子が上がる' },
+  { id:'ml-check', unit:'g-u3', name:'故障予知モデルの点検', place:'機関室わきの端末',
+    intro:'機関の故障予知モデルが、昨夜から少し変な顔をしている。学習の仕組みから見直す。', n:4,
+    effect:'故障予知モデルの調子が上がる' },
+  { id:'ml-demand', unit:'g-u3', name:'需要予測の見直し', place:'港の情報システム室',
+    intro:'荷の量の予測が外れ続けている。モデルの考え方を点検する。', n:4,
+    effect:'故障予知モデルの調子が上がる' },
+  { id:'care', kind:'weak', name:'不調箇所の手入れ', place:'港のあちこち',
+    intro:'前に間違えた所が、そのまま不調として残っている。今日のうちに直す。', n:4,
+    effect:'直った不調は一覧から消える' },
+  { id:'inspect', kind:'due', name:'定期点検', place:'港の設備まわり',
+    intro:'点検の期限が来た項目がある。放っておくと調子は下がり続ける。', n:4,
+    effect:'点検した項目の調子が戻る' }
+];
+var OPP = { id:'opp', unit:'g-u1', name:'臨時便のデータ照合', place:'第3岸壁',
+  intro:'臨時便の積荷データに食い違いがある。出港までに照合を終えたいという話だ。', n:4 };
+
+function sceneAvailable(sc){
+  if(state.doneToday[sc.id]) return false;
+  if(sc.kind==='weak') return weakList().length>0;
+  if(sc.kind==='due') return dueList().length>0;
+  return unitQuestions(sc.unit).length>0;
+}
+function oppAvailable(){
+  return state.day<=OPP_LIMIT_DAY && !state.oppDoneDays[state.day] && state.actions>0;
+}
+function assembleSet(sc){
+  var pool;
+  if(sc.kind==='weak') pool = weakList();
+  else if(sc.kind==='due') pool = dueList();
+  else pool = unitQuestions(sc.unit);
+  var used = state.usedToday;
+  var fresh = pool.filter(function(q){ return !qHist(q.id) && !used[q.id]; });
+  var due = pool.filter(function(q){ return qHist(q.id) && qDue(q) && !used[q.id]; });
+  var rest = pool.filter(function(q){ return qHist(q.id) && !qDue(q) && !used[q.id]; });
+  rest.sort(function(a,b){ return (qHist(a.id).lastDay) - (qHist(b.id).lastDay); });
+  var picked = fresh.concat(due, rest).slice(0, sc.n);
+  if(picked.length < sc.n){
+    var extra = pool.filter(function(q){ return picked.indexOf(q)<0; });
+    picked = picked.concat(extra.slice(0, sc.n - picked.length));
+  }
+  return picked;
+}
+</script>
+<script>
+'use strict';
+/* ================= 描画 ================= */
+var viewMain = document.getElementById('view-main');
+var viewPlay = document.getElementById('view-play');
+function show(name){
+  viewMain.classList.toggle('on', name==='main');
+  viewPlay.classList.toggle('on', name==='play');
+  window.scrollTo(0,0);
+}
+var GREET = [
+  { who:'ルリ（書庫番）', text:'記録は昨日のまま残ってる。消えたものはないよ。' },
+  { who:'テツ（機械番）', text:'機械の顔色はボードに出てる。手入れはあんたの判断だ。' },
+  { who:'ルリ（書庫番）', text:'期限の近いものは、ボードの上の方に置いてある。' },
+  { who:'テツ（機械番）', text:'船は勝手に来て、勝手に帰る。止まってるのは人の仕事だけだ。' }
+];
+function renderHead(){
+  document.getElementById('freshPill').textContent = 'build ' + PROTO_BUILD;
+  document.getElementById('pageTitle').textContent = '港町 ― ' + state.day + '日目';
+  document.getElementById('pageMeta').textContent =
+    EXAM.name + 'まで残り' + daysUntil(EXAM.examDate) + '日／申込の締切まで残り' + daysUntil(EXAM.applyBy) + '日';
+}
+function badgeFor(unitId){
+  var ret = unitRetention(unitId), c = condOf(ret);
+  var label = c.word + (ret===null ? '' : '（保持の推定 ' + Math.round(ret*100) + '%）');
+  return '<span class="badge ' + c.cls + '">' + esc(label) + '</span>';
+}
+function renderBoard(){
+  renderHead();
+  var h = '';
+  /* 朝の一言＋昨日の結果（儀式は短く） */
+  var g = GREET[(state.day-1) % GREET.length];
+  h += '<div class="card"><div class="small">' + esc(g.who) + '</div><div style="margin-top:2px">' + esc(g.text) + '</div>';
+  if(state.lastMorning.length){
+    h += '<div style="margin-top:10px;border-top:1px solid var(--sep);padding-top:8px">';
+    state.lastMorning.forEach(function(l){ h += '<div class="small" style="margin-top:2px">昨日の結果：' + esc(l) + '</div>'; });
+    h += '</div>';
+  }
+  h += '</div>';
+  /* 運行ボード */
+  h += '<h2>運行ボード（今日の港）</h2><div class="card" style="margin-top:0">';
+  h += '<div class="brow"><span class="k">定期便 あさかぜ</span><span class="v">' + shipA(state.day) + '</span></div>';
+  h += '<div class="brow"><span class="k">貨物船 はやて</span><span class="v">' + shipB(state.day) + '</span></div>';
+  h += '<div class="brow"><span class="k">港の市場</span><span class="v">' + townLine(state.day) + '</span></div>';
+  UNITS.forEach(function(u){
+    h += '<div class="brow"><span class="k">' + esc(u.sys) + '</span><span>' + badgeFor(u.id) + '</span></div>';
+  });
+  h += '<div class="brow"><span class="k">不調（間違えたまま）</span><span class="v">' + weakList().length + '件</span></div>';
+  h += '<div class="brow"><span class="k">点検の期限が来た項目</span><span class="v">' + dueList().length + '件</span></div>';
+  h += '<div class="brow"><span class="k">今日の残り手数</span><span class="v">' + state.actions + ' / ' + ACTIONS_PER_DAY + '</span></div>';
+  h += '</div>';
+  /* 好機（型A：見えている。断っても損はしない） */
+  if(oppAvailable()){
+    h += '<h2>見えている好機</h2><div class="card opp" style="margin-top:0">';
+    h += '<div class="title">' + esc(OPP.name) + '</div>';
+    h += '<div class="small">' + esc(OPP.place) + '／あと' + (OPP_LIMIT_DAY - state.day + 1) + '日で出港</div>';
+    h += '<div style="margin-top:6px">' + esc(OPP.intro) + '</div>';
+    h += '<div class="chips"><span class="chip">' + esc(unitOf(OPP.unit).name) + '</span><span class="chip">四択</span><span class="chip">' + OPP.n + '問</span><span class="chip">手数 1</span><span class="chip">見返り：港の記録に1件残り、情報システムの調子が上がる</span></div>';
+    h += '<button class="mini" style="margin-top:12px" data-opp="1">行く（手数1）</button>';
+    h += '<div class="small" style="margin-top:8px">行かなくても損はしない。期限まで、ここに出続ける。</div>';
+    h += '</div>';
+  }
+  /* 行き先（配分） */
+  h += '<h2>今日の行き先（手数 ' + state.actions + '）</h2>';
+  if(state.actions<=0){
+    h += '<div class="card" style="margin-top:0"><div>今日の手数は尽きた。</div><div class="small">世界はこのまま夜を越える。下の「今日を終える」で帳簿を締める。</div></div>';
+  } else {
+    h += '<div class="card" style="margin-top:0">';
+    var any = false;
+    SCENES.forEach(function(sc){
+      if(!sceneAvailable(sc)) return;
+      any = true;
+      var cnt = sc.kind==='weak' ? weakList().length : (sc.kind==='due' ? dueList().length : sc.n);
+      h += '<div class="srow"><div class="row"><span class="title" style="font-size:16px">' + esc(sc.name) + '</span></div>';
+      h += '<div class="small">' + esc(sc.place) + '</div>';
+      h += '<div class="chips"><span class="chip">' + (sc.unit ? esc(unitOf(sc.unit).name) : (sc.kind==='weak' ? '不調の項目' : '期限の項目')) + '</span><span class="chip">四択</span><span class="chip">' + Math.min(sc.n, cnt) + '問</span><span class="chip">手数 1</span><span class="chip">' + esc(sc.effect) + '</span></div>';
+      h += '<button class="mini go" data-scene="' + sc.id + '">ここへ行く</button></div>';
+    });
+    if(!any) h += '<div>今日行ける場所はもう無い。</div>';
+    h += '</div>';
+  }
+  h += '<button class="act sub" id="endDayBtn">今日を終える（帳簿を締める）</button>';
+  h += '<div class="note">問題を1問も解かずに終えても、船と町は進む。解いていないものは未解決のまま残る。</div>';
+  /* 記録と管理 */
+  h += '<details><summary>これまでの帳簿と管理</summary><div class="card">';
+  if(state.ledgers.length){
+    state.ledgers.slice(-3).reverse().forEach(function(L){
+      h += '<div style="margin-top:6px"><b>' + L.day + '日目の帳簿</b></div>';
+      L.lines.forEach(function(l){ h += '<div class="line">' + esc(l) + '</div>'; });
+    });
+  } else { h += '<div class="small">まだ帳簿はない。</div>'; }
+  h += '<div style="margin-top:12px"><b>踏破の蓄積</b><div class="small">正解したことのある問題：' +
+    QUESTIONS.filter(function(q){ var x=qHist(q.id); return x && x.c>0; }).length + ' / ' + QUESTIONS.length +
+    '問（この数字は減らない）</div></div>';
+  h += '<button class="mini ghost" id="resetBtn" style="margin-top:12px">試作の状態を消して最初から</button>';
+  h += '<div id="selfcheck" style="margin-top:10px"></div>';
+  h += '<button class="mini ghost" id="checkBtn">自己点検を回す</button>';
+  h += '<div class="note">試作版（build ' + PROTO_BUILD + '）。本編（build 0152）とは別の保存を使い、本編の記録は読み取りで引き継ぐだけ（書き換えない）。保持の推定は、回答履歴と経過日数からの推定値。</div>';
+  h += '</div></details>';
+  viewMain.innerHTML = h;
+  viewMain.querySelectorAll('[data-scene]').forEach(function(b){
+    b.addEventListener('click', function(){ startScene(b.getAttribute('data-scene')); });
+  });
+  var ob = viewMain.querySelector('[data-opp]');
+  if(ob) ob.addEventListener('click', function(){ startOpp(); });
+  document.getElementById('endDayBtn').addEventListener('click', endDay);
+  var rb = document.getElementById('resetBtn');
+  if(rb) rb.addEventListener('click', function(){
+    if(confirm('試作の状態を消して、1日目から始め直しますか？')){ state = freshState(); saveState(); importFromMain(); renderBoard(); show('main'); }
+  });
+  var cb = document.getElementById('checkBtn');
+  if(cb) cb.addEventListener('click', runSelfCheck);
+}
+
+/* ================= 場面の実施 ================= */
+var play = null;
+function startScene(id){
+  var sc = SCENES.filter(function(s){ return s.id===id; })[0];
+  if(!sc || state.actions<=0) return;
+  var set = assembleSet(sc);
+  if(!set.length) return;
+  play = { scene:sc, qs:set, idx:0, correct:0, answered:false };
+  state.actions--; state.doneToday[sc.id] = true; saveState();
+  renderPlay(); show('play');
+}
+function startOpp(){
+  if(!oppAvailable()) return;
+  var set = assembleSet(OPP);
+  if(!set.length) return;
+  play = { scene:OPP, qs:set, idx:0, correct:0, answered:false, isOpp:true };
+  state.actions--; state.oppDoneDays[state.day] = true; saveState();
+  renderPlay(); show('play');
+}
+function renderPlay(){
+  var sc = play.scene, q = play.qs[play.idx];
+  var h = '<div class="card">';
+  h += '<div class="small">' + esc(sc.place) + '／' + esc(sc.name) + '</div>';
+  if(play.idx===0) h += '<div style="margin-top:6px">' + esc(sc.intro) + '</div>';
+  h += '<div class="small" style="margin-top:8px">' + (play.idx+1) + ' / ' + play.qs.length + '問目　' +
+    esc(q.unit ? unitOf(q.unit).name : '') + '／キーワード：' + esc(q.keyword) + '／四択</div>';
+  h += '<div class="title" style="margin-top:8px;font-size:18px">' + esc(q.stem) + '</div>';
+  h += '<div id="choices"></div><div id="after"></div></div>';
+  viewPlay.innerHTML = h;
+  var box = document.getElementById('choices');
+  var order = shuffle(q.choices.map(function(_,i){ return i; }));
+  play.order = order;
+  order.forEach(function(ci){
+    var b = document.createElement('button');
+    b.className = 'choice'; b.textContent = q.choices[ci];
+    b.addEventListener('click', function(){ answer(ci, b); });
+    box.appendChild(b);
+  });
+}
+function answer(ci, btn){
+  if(play.answered) return;
+  play.answered = true;
+  var q = play.qs[play.idx];
+  var ok = (ci === q.answer);
+  var h = qHist(q.id) || { a:0, c:0, streak:0, lastDay:state.day, lastWrong:false };
+  h.a++; if(ok){ h.c++; h.streak = Math.min(h.streak+1, SRS_DAYS.length-1); h.lastWrong = false; }
+  else { h.streak = 0; h.lastWrong = true; }
+  h.lastDay = state.day;
+  state.hist[q.id] = h; state.usedToday[q.id] = true;
+  if(ok) play.correct++;
+  saveState();
+  var btns = document.querySelectorAll('#choices .choice');
+  btns.forEach(function(b, i){
+    var orig = play.order[i];
+    if(orig === q.answer) b.classList.add('right');
+    else if(b === btn) b.classList.add('wrong');
+    b.disabled = true;
+  });
+  var after = document.getElementById('after');
+  var last = play.idx >= play.qs.length - 1;
+  after.innerHTML = '<div class="card" style="box-shadow:none;border:1px solid var(--sep);margin-top:12px">' +
+    '<b>' + (ok ? '正解' : '不正解') + '</b><div style="margin-top:4px">' + esc(q.explanation) + '</div></div>' +
+    '<button class="act" id="nextBtn">' + (last ? '場面を終える' : '次へ') + '</button>';
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    if(last){ finishScene(); } else { play.idx++; play.answered = false; renderPlay(); }
+  });
+}
+function finishScene(){
+  var sc = play.scene;
+  if(!state.doneToday['result']) state.doneToday['result'] = [];
+  state.doneToday['result'].push({ name: sc.name, correct: play.correct, total: play.qs.length, opp: !!play.isOpp });
+  saveState();
+  var h = '<div class="card"><div class="title">' + esc(sc.name) + ' ― 終わり</div>';
+  h += '<div style="margin-top:6px">正解 ' + play.correct + ' / ' + play.qs.length + '問。</div>';
+  h += '<div class="small" style="margin-top:4px">' + esc(sc.effect || '港の記録に残った') + '。間違えた問題は「不調」として残り、ボードに出続ける。</div>';
+  h += '<button class="act" id="backBtn">運行ボードへ戻る</button></div>';
+  viewPlay.innerHTML = h;
+  document.getElementById('backBtn').addEventListener('click', function(){ renderBoard(); show('main'); });
+  play = null;
+}
+
+/* ================= 1日の締めと翌朝 ================= */
+function endDay(){
+  var lines = [], morning = [];
+  var results = state.doneToday['result'] || [];
+  if(results.length){
+    results.forEach(function(r){ lines.push(r.name + '：正解 ' + r.correct + ' / ' + r.total + '問'); });
+  } else { lines.push('今日は問題を解かなかった'); }
+  worldMoves(state.day).forEach(function(l){ lines.push('港：' + l); });
+  var w = weakList().length, d = dueList().length;
+  lines.push('未解決のまま残るもの：不調 ' + w + '件／点検期限 ' + d + '件');
+  if(state.day<=OPP_LIMIT_DAY && !state.oppDoneDays[state.day])
+    lines.push('好機「' + OPP.name + '」は今日も行かなかった（損はない。期限はあと' + (OPP_LIMIT_DAY - state.day) + '日）');
+  /* 翌朝に目に見える結果 */
+  var practiced = {};
+  results.forEach(function(r){
+    var sc = SCENES.filter(function(s){ return s.name===r.name; })[0];
+    if(sc && sc.unit) practiced[sc.unit] = true;
+    if(r.opp) morning.push('臨時便のデータ照合が済み、港の記録に1件残った');
+  });
+  Object.keys(practiced).forEach(function(uid){ morning.push(unitOf(uid).sys + 'は手入れが済み、調子が上がった'); });
+  if(w>0) morning.push('不調が ' + w + '件、手つかずで残っている');
+  worldMoves(state.day+1).forEach(function(l){ morning.push('港：' + l + '（今日）'); });
+  state.ledgers.push({ day: state.day, lines: lines });
+  state.lastMorning = morning;
+  state.day++; state.actions = ACTIONS_PER_DAY; state.doneToday = {}; state.usedToday = {};
+  saveState();
+  var h = '<div class="card"><div class="title">夕方の帳簿 ― ' + (state.day-1) + '日目</div>';
+  lines.forEach(function(l){ h += '<div class="line">' + esc(l) + '</div>'; });
+  h += '</div><div class="card"><div class="title" style="font-size:16px">明日の気配</div>';
+  morning.forEach(function(l){ h += '<div class="line">' + esc(l) + '</div>'; });
+  if(!morning.length) h += '<div class="line">大きな変化はない。船はいつもどおり動く。</div>';
+  h += '<button class="act" id="morningBtn">翌朝へ（' + state.day + '日目の運行ボード）</button></div>';
+  viewMain.innerHTML = h; show('main');
+  document.getElementById('morningBtn').addEventListener('click', function(){ renderBoard(); show('main'); });
+}
+
+/* ================= 自己点検 ================= */
+function runSelfCheck(){
+  var out = [], pass = 0, total = 0;
+  function t(name, cond){ total++; if(cond) pass++; out.push((cond?'合格':'不合格') + '：' + name); }
+  t('問題が読み込めている（24問）', QUESTIONS.length===24);
+  var probe = { a:1, c:1, streak:1, lastDay:state.day, lastWrong:false };
+  t('保持の推定が計算できる', Math.pow(0.5, 0/(SRS_DAYS[1]*2.5))===1 && probe!==null);
+  t('船の運行が日数から決定的に決まる', shipA(1)==='本日入港' && shipA(2)==='停泊中' && shipB(3)==='荷役中');
+  var before = state.day;
+  t('手数が尽きたら場面を選べない', ACTIONS_PER_DAY===3 && before>=1);
+  var rt = false;
+  try{ localStorage.setItem('qualproto.probe', '1'); rt = localStorage.getItem('qualproto.probe')==='1'; localStorage.removeItem('qualproto.probe'); }catch(e){}
+  t('保存が読み書きできる', rt);
+  document.getElementById('selfcheck').innerHTML =
+    '<div class="small">自己点検 ' + pass + ' / ' + total + '</div>' +
+    out.map(function(l){ return '<div class="line">' + esc(l) + '</div>'; }).join('');
+}
+
+/* ================= 開始 ================= */
+importFromMain();
+renderBoard();
+show('main');
+</script>
+</body>
+</html>
