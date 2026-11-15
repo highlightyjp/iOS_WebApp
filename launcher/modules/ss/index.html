@@ -116,7 +116,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss1';
+var SS_BUILD = '2026-11-15-ss2';
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 document.getElementById('freshPill').textContent = 'build ' + SS_BUILD;
 document.getElementById('buildNote').textContent = 'モジュール build ' + SS_BUILD + '／データ契約 ss-data/v1（本部が生成・差し替え）';
@@ -157,17 +157,31 @@ function buildSequence(story, parts){
 
 /* ============ 本棚 ============ */
 var curTag = '';
+var tagsExpanded = false;
+var TAG_TOP = 12;
 function allTags(){
-  var seen = {}, out = [];
-  (INDEX ? INDEX.stories : []).forEach(function(s){ (s.tags || []).forEach(function(t){ if(!seen[t]){ seen[t] = 1; out.push(t); } }); });
-  return out;
+  var counts = {};
+  (INDEX ? INDEX.stories : []).forEach(function(s){ (s.tags || []).forEach(function(t){ counts[t] = (counts[t] || 0) + 1; }); });
+  return Object.keys(counts).map(function(t){ return { tag:t, n:counts[t] }; })
+    .sort(function(a, b){ return b.n - a.n || (a.tag < b.tag ? -1 : 1); });
 }
 function renderTags(){
   var tags = allTags();
-  $('tagChips').innerHTML = '<button class="chip' + (curTag === '' ? ' on' : '') + '" data-tag="">すべて</button>' +
-    tags.map(function(t){ return '<button class="chip' + (curTag === t ? ' on' : '') + '" data-tag="' + esc(t) + '">' + esc(t) + '</button>'; }).join('');
+  var shown = tagsExpanded ? tags : tags.slice(0, TAG_TOP);
+  if(curTag && !tagsExpanded && !shown.some(function(x){ return x.tag === curTag; })){
+    var cur = tags.filter(function(x){ return x.tag === curTag; })[0];
+    if(cur) shown = shown.concat([cur]);
+  }
+  var html = '<button class="chip' + (curTag === '' ? ' on' : '') + '" data-tag="">すべて</button>' +
+    shown.map(function(x){ return '<button class="chip' + (curTag === x.tag ? ' on' : '') + '" data-tag="' + esc(x.tag) + '">' + esc(x.tag) + ' ' + x.n + '</button>'; }).join('');
+  if(tags.length > TAG_TOP)
+    html += '<button class="chip" data-more="1">' + (tagsExpanded ? 'タグを閉じる' : 'タグをすべて見る（' + tags.length + '）') + '</button>';
+  $('tagChips').innerHTML = html;
   $('tagChips').querySelectorAll('.chip').forEach(function(c){
-    c.addEventListener('click', function(){ curTag = c.getAttribute('data-tag'); renderTags(); renderShelf(); });
+    c.addEventListener('click', function(){
+      if(c.getAttribute('data-more')){ tagsExpanded = !tagsExpanded; renderTags(); return; }
+      curTag = c.getAttribute('data-tag'); renderTags(); renderShelf();
+    });
   });
 }
 function renderShelf(){
