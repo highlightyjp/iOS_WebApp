@@ -388,7 +388,7 @@ function draw(now){
     ctx.beginPath(); ctx.arc(lx * 0.4, r * 0.18, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
   }
   ctx.restore();
-  selftestTick(now);
+  try { selftestTick(now); } catch(e){}
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -476,8 +476,15 @@ function selftestTick(now){
   var sp = starPos(now / 1000);
   if(!sp) return;
   selftestDone = true;
-  cv.dispatchEvent(new PointerEvent('pointerdown', { clientX: sp.x, clientY: sp.y, bubbles: true }));
   elog('状態', 'セルフテスト：粒の位置へ pointerdown を合成した');
+  var ev = null;
+  try { ev = new PointerEvent('pointerdown', { clientX: sp.x, clientY: sp.y, bubbles: true }); }
+  catch(e){
+    ev = document.createEvent('Event');
+    ev.initEvent('pointerdown', true, false);
+    ev.clientX = sp.x; ev.clientY = sp.y;
+  }
+  cv.dispatchEvent(ev);
 }
 
 /* ===== 開幕の自動撮影（0秒・3秒・10秒、無操作差分） ===== */
