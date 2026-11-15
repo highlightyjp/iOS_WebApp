@@ -102,6 +102,9 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .aa{ font-family:ui-monospace, Menlo, "Courier New", monospace; white-space:pre; overflow-x:auto;
   -webkit-overflow-scrolling:touch; line-height:1.25; font-size:12.5px; padding:10px 6px;
   background:var(--fill); border-radius:12px; margin:10px 0; word-break:normal; }
+.aaBox{ background:var(--fill); border-radius:12px; margin:10px 0; padding:10px 6px; overflow-x:auto;
+  -webkit-overflow-scrolling:touch; }
+.aaCanvas{ display:block; }
 .text .ph2{ color:var(--label2); font-size:.82em; }
 .vwrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .vtext{ writing-mode:vertical-rl; height:62vh; line-height:2.0; white-space:pre-wrap; word-break:break-word; padding:6px 4px; }
@@ -193,7 +196,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss10';
+var SS_BUILD = '2026-11-15-ss11';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -534,32 +537,94 @@ function segmentize(text){
     var symbolOnly = !ln.trim() || !/[ぁ-んァ-ヶ一-龥a-zA-Z0-9]/.test(ln);
     if(symbolOnly && ((b > 0 && ext[b-1]) || (b + 1 < lines.length && raw[b+1]))) ext[b] = true;
   }
-  /* AA塊の合格条件：6行以上、かつ素のAA行が6割以上（短い記号の並びや字下げセリフをAAにしない） */
-  function runAt(i){
-    if(!ext[i]) return 0;
-    var j = i;
-    while(j < lines.length && ext[j]) j++;
-    var len = j - i, real = 0;
-    for(var x = i; x < j; x++) if(raw[x]) real++;
-    return (len >= 6 && real / len >= 0.6) ? len : 0;
-  }
-  var segs = [];
+  /* AA塊の合格条件：6行以上、かつ素のAA行が6割以上（短い記号の並びや字下げセリフをAAにしない）。
+     本体の直後（3行以内）に続く短い塊（3行以上）は末尾として連ねる */
+  var runs = [];
   var i = 0;
   while(i < lines.length){
-    var r = runAt(i);
-    if(r > 0){ segs.push({ type:'aa', lines:lines.slice(i, i + r) }); i += r; continue; }
+    if(ext[i]){
+      var j = i;
+      while(j < lines.length && ext[j]) j++;
+      var real = 0;
+      for(var x = i; x < j; x++) if(raw[x]) real++;
+      runs.push({ start:i, len:j - i, ratio: real / (j - i) });
+      i = j;
+    } else i++;
+  }
+  var qualified = {};
+  var lastEnd = -99;
+  runs.forEach(function(r){
+    var ok = (r.len >= 6 && r.ratio >= 0.6) || (r.len >= 3 && r.ratio >= 0.6 && r.start - lastEnd <= 3);
+    if(ok){ qualified[r.start] = r.len; lastEnd = r.start + r.len; }
+  });
+  var segs = [];
+  i = 0;
+  while(i < lines.length){
+    if(qualified[i]){ segs.push({ type:'aa', lines:lines.slice(i, i + qualified[i]) }); i += qualified[i]; continue; }
     var buf = [];
-    while(i < lines.length && runAt(i) === 0){ buf.push(lines[i]); i++; }
+    while(i < lines.length && !qualified[i]){ buf.push(lines[i]); i++; }
     segs.push({ type:'text', lines:buf });
   }
   return segs;
 }
+var AA_BLOCKS = [];
 function renderPartText(text){
   return segmentize(text).map(function(seg){
-    if(seg.type === 'aa') return '<div class="aa">' + esc(seg.lines.join('\n')) + '</div>';
+    if(seg.type === 'aa'){
+      var aai = AA_BLOCKS.push(seg.lines) - 1;
+      return '<div class="aaBox"><canvas class="aaCanvas" data-aai="' + aai + '"></canvas></div>';
+    }
     var inner = '<div class="' + (settings.vertical ? 'vtext' : 'text') + '">' + fmtText(seg.lines.join('\n')) + '</div>';
     return settings.vertical ? '<div class="vwrap">' + inner + '</div>' : inner;
   }).join('');
+}
+/* AAはフォントの字幅に頼らず格子で描く：全角＝2マス、半角＝1マスで文字をマスの中央に置く。
+   iOSの等幅フォントは全角:半角が2:1にならず、そのまま流すと右へ行くほどずれるため */
+function aaCells(ch){
+  var c = ch.codePointAt(0);
+  if(c < 0x80) return 1;
+  if(c >= 0xFF61 && c <= 0xFF9F) return 1; /* 半角カナ */
+  if(c >= 0x2500 && c <= 0x25FF) return 2; /* 罫線・幾何（┏┃●など） */
+  if((c >= 0x1100 && c <= 0x115F) || (c >= 0x2E80 && c <= 0xA4CF) || (c >= 0xAC00 && c <= 0xD7A3) ||
+     (c >= 0xF900 && c <= 0xFAFF) || (c >= 0xFE30 && c <= 0xFE4F) || (c >= 0xFF00 && c <= 0xFF60) ||
+     (c >= 0xFFE0 && c <= 0xFFE6) || c >= 0x20000) return 2;
+  return 1;
+}
+function drawAA(canvas, lines){
+  var ctx = canvas.getContext && canvas.getContext('2d');
+  if(!ctx){ canvas.outerHTML = '<div class="aa">' + esc(lines.join('\n')) + '</div>'; return; }
+  var FS = 11, CELL = FS * 0.6, LH = Math.round(FS * 1.3);
+  var lineCols = lines.map(function(line){
+    var n = 0;
+    for(var ch of line) n += aaCells(ch);
+    return n;
+  });
+  var maxCols = Math.max.apply(null, lineCols.concat([1]));
+  var W = Math.ceil(maxCols * CELL), H = lines.length * LH;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.scale(dpr, dpr);
+  ctx.font = FS + 'px ui-monospace, Menlo, "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = getComputedStyle(document.body).color;
+  lines.forEach(function(line, y){
+    var x = 0;
+    for(var ch of line){
+      var w = aaCells(ch);
+      if(ch !== ' ' && ch !== '　') ctx.fillText(ch, x + (w * CELL) / 2, y * LH + LH / 2);
+      x += w;
+    }
+  });
+}
+function drawAllAA(){
+  document.querySelectorAll('.aaCanvas').forEach(function(cv){
+    var lines = AA_BLOCKS[Number(cv.getAttribute('data-aai'))];
+    if(lines) drawAA(cv, lines);
+  });
 }
 function applyTextStyle(){
   var body = $('rBody');
@@ -622,6 +687,7 @@ function openStory(id, resume){
   });
 }
 function renderReaderBody(){
+  AA_BLOCKS = [];
   var html = cur.seq.map(function(item, i){
     if(item.type === 'gap')
       return '<div class="gap" data-seq="' + i + '">第' + item.n + '編は回収できていません</div>';
@@ -630,6 +696,7 @@ function renderReaderBody(){
     return '<div class="part" id="part-' + i + '" data-seq="' + i + '">' + inner + '</div>';
   }).join('');
   $('rBody').innerHTML = html;
+  drawAllAA();
   applyTextStyle();
 }
 function currentSeqIndex(){
