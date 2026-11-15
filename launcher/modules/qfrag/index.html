@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d8</title>
+<title>断片 d9</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -150,7 +150,7 @@ function log(s){
   if(el) el.textContent = logs.join('\n');
 }
 /* 誰か：丸い体。無操作でもさまよい、まばたきする。タップへの返しは「跳ねて寄る」1つ */
-var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0, startleAt:0, attendUntil:0, pendingStar:false };
+var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0, startleAt:0, attendUntil:0, pendingStar:false, noticePending:false, noticeUntil:0, noticeDir:1 };
 var ripples = [];
 var star = null;      /* 目立つ粒：1つだけ。そいつが取りに行く相手 */
 var starAt = 0;       /* 次に目立つ粒が出る時刻 */
@@ -213,7 +213,7 @@ function draw(now){
     var k2 = (now - hp.at) / hp.dur;
     if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ');
       if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); } } }
-      if(crea.pendingStar && star){ crea.pendingStar = false; var sp5 = starPos(t); if(sp5){ var tx5 = Math.max(r + 8, Math.min(W - r - 8, sp5.x)); var ty5 = Math.max(r + 70, Math.min(H - r - 30, sp5.y)); var dist5 = Math.hypot(tx5 - crea.x, ty5 - crea.y); crea.hop = { fx:crea.x, fy:crea.y, tx:tx5, ty:ty5, at:now, dur:Math.max(320, Math.min(780, dist5 * 1.25)), toStar:true }; crea.waitUntil = 0; log('着地 → 指さされた粒を取りに行く'); } }
+      if(crea.pendingStar && star){ crea.pendingStar = false; var sp5 = starPos(t); if(sp5){ crea.noticePending = true; crea.noticeUntil = now + 650; crea.noticeDir = sp5.x >= crea.x ? 1 : -1; crea.waitUntil = 0; log('着地 → 指さされた粒に気づく'); } }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
       crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
@@ -235,7 +235,21 @@ function draw(now){
     if(Math.abs(crea.vx) > 2) crea.dir = crea.vx > 0 ? 1 : -1;
   }
   if(!star && starAt && now > starAt){ star = { x:0.15 + Math.random() * 0.7, y:0.28 + Math.random() * 0.44, s:1.6, p:Math.random() * 6.28, pointedUntil:0 }; starAt = 0; }
-  if(!crea.hop && now >= crea.waitUntil && crea.nextSelf && now > crea.nextSelf){
+  if(crea.noticePending && !crea.hop && now >= crea.noticeUntil){
+    /* 気づく一拍が明けた：粒を見た後で、取りに行く */
+    crea.noticePending = false;
+    if(star){
+      var spN = starPos(t);
+      if(spN){
+        var txN = Math.max(r + 8, Math.min(W - r - 8, spN.x));
+        var tyN = Math.max(r + 70, Math.min(H - r - 30, spN.y));
+        var distN = Math.hypot(txN - crea.x, tyN - crea.y);
+        crea.hop = { fx:crea.x, fy:crea.y, tx:txN, ty:tyN, at:now, dur:Math.max(320, Math.min(780, distN * 1.25)), toStar:true };
+        log('気づいた → 取りに行く');
+      }
+    }
+  }
+  if(!crea.hop && !crea.noticePending && now >= crea.waitUntil && crea.nextSelf && now > crea.nextSelf){
     /* 世界の側から動く：目立つ粒を取りに行く時だけ。行き先＝粒の今の場所 */
     var sp3 = starPos(t);
     if(sp3){
@@ -257,7 +271,7 @@ function draw(now){
     lift = Math.pow(Math.max(0, sn), 1.4) * params.waitHop;
     crouch = Math.max(0, -sn) * 0.09;
   }
-  crea.lookC += (((waiting || now < crea.attendUntil) ? 0 : crea.dir) - crea.lookC) * Math.min(1, dt * 7);
+  crea.lookC += (((now < crea.noticeUntil) ? crea.noticeDir : ((waiting || now < crea.attendUntil) ? 0 : crea.dir)) - crea.lookC) * Math.min(1, dt * 7);
   var startled = crea.startleAt && (now - crea.startleAt) < 460;
   var sLift = 0;
   if(startled){
@@ -328,13 +342,11 @@ cv.addEventListener('pointerdown', function(ev){
       star.pointedUntil = now + 2600;
       ripples.push({ x:spT.x, y:spT.y, at:now });
       if(!crea.hop){
-        var txp = Math.max(params.size + 8, Math.min(W - params.size - 8, spT.x));
-        var typ = Math.max(params.size + 70, Math.min(H - params.size - 30, spT.y));
-        var distp = Math.hypot(txp - crea.x, typ - crea.y);
-        crea.hop = { fx:crea.x, fy:crea.y, tx:txp, ty:typ, at:now, dur:Math.max(320, Math.min(780, distp * 1.25)), toStar:true };
+        crea.noticePending = true;
+        crea.noticeUntil = now + 650;
+        crea.noticeDir = spT.x >= crea.x ? 1 : -1;
         crea.waitUntil = 0;
-        state.hops++;
-        log('粒を指さした → 気づいて取りに行く');
+        log('粒を指さした → 気づく');
       } else {
         crea.pendingStar = true;
         log('粒を指さした → 着地したら取りに行く');
@@ -344,6 +356,7 @@ cv.addEventListener('pointerdown', function(ev){
   }
   /* 本人へのタップ：距離ゼロの「寄る」は見える返しにならない。驚いてその場で跳ね、こちらを見る */
   if(!crea.hop && Math.hypot(ev.clientX - crea.x, ev.clientY - crea.y) < params.size + 12){
+    crea.noticePending = false; crea.pendingStar = false;
     crea.startleAt = now;
     crea.attendUntil = now + 1600;
     crea.waitUntil = 0;
@@ -352,6 +365,7 @@ cv.addEventListener('pointerdown', function(ev){
     log('本人タップ → 驚いて跳ねる');
     return;
   }
+  crea.noticePending = false; crea.pendingStar = false;
   var tx = Math.max(params.size + 8, Math.min(W - params.size - 8, ev.clientX));
   var ty = Math.max(params.size + 70, Math.min(H - params.size - 30, ev.clientY));
   var dist = Math.hypot(tx - crea.x, ty - crea.y);
