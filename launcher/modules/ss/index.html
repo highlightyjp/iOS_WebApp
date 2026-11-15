@@ -116,7 +116,18 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss2';
+var SS_BUILD = '2026-11-15-ss3';
+/* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
+(function(){
+  fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
+    var m = t.match(/build:\s*(\S+)/);
+    if(!m) return;
+    var remote = m[1];
+    if(remote === SS_BUILD) return;
+    if(location.search.indexOf('v=' + encodeURIComponent(remote)) >= 0) return; /* 読み直し済み。それでも旧い場合は Pages 側の反映待ち */
+    location.replace(location.pathname + '?v=' + encodeURIComponent(remote) + location.hash);
+  }).catch(function(){});
+})();
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 document.getElementById('freshPill').textContent = 'build ' + SS_BUILD;
 document.getElementById('buildNote').textContent = 'モジュール build ' + SS_BUILD + '／データ契約 ss-data/v1（本部が生成・差し替え）';
@@ -219,7 +230,7 @@ function renderShelf(){
   });
 }
 function loadIndex(){
-  fetch('data/index.json').then(function(r){ return r.json(); }).then(function(idx){
+  fetch('data/index.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(idx){
     INDEX = idx;
     $('freshMeta').textContent = '回収済み ' + Number(idx.pages_done || 0).toLocaleString() + ' / 全 ' + Number(idx.pages_total || 0).toLocaleString() + ' ページ・' + idx.stories.length + ' 物語（データ生成 ' + String(idx.generated_at || '').replace('T', ' ') + '）';
     renderTags(); renderShelf();
@@ -247,7 +258,7 @@ function applyTextStyle(){
 function openStory(id, resume){
   var story = INDEX.stories.filter(function(s){ return s.id === id; })[0];
   if(!story) return;
-  fetch('data/texts/' + encodeURIComponent(id) + '.json').then(function(r){ return r.json(); }).then(function(doc){
+  fetch('data/texts/' + encodeURIComponent(id) + '.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(doc){
     cur = { story: story, seq: buildSequence(story, doc.parts || []) };
     $('shelfView').style.display = 'none';
     $('readerView').style.display = 'block';
