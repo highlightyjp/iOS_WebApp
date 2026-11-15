@@ -196,7 +196,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss11';
+var SS_BUILD = '2026-11-15-ss12';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -526,6 +526,15 @@ function isAALine(line){
   if(spaces / line.length >= 0.3 && drawGlyphs >= 1 && !/[ぁ-んァ-ヶ一-龥]{3,}/.test(line)) return true;
   return false;
 }
+/* 文の行（AAの境界）：行の「始まり方」で見る。AAの右端に文がくっついた行はAA側に残すため、
+   行全体に文が含まれていても、始まりが記号・空白なら境界にしない */
+function isProseLine(line){
+  var t = line.replace(/^[ 　]+/, '');
+  if(/^\d{4}\/\d{2}\/\d{2}/.test(t)) return true;
+  if(/[ぁ-んァ-ヶ一-龥]{4,}/.test(t.slice(0, 12))) return true;
+  if(t.indexOf('「') >= 0 && t.indexOf('「') <= 6) return true; /* 名前「…」型のセリフ行 */
+  return false;
+}
 function segmentize(text){
   var lines = String(text || '').split('\n');
   var raw = lines.map(isAALine);
@@ -555,7 +564,16 @@ function segmentize(text){
   var lastEnd = -99;
   runs.forEach(function(r){
     var ok = (r.len >= 6 && r.ratio >= 0.6) || (r.len >= 3 && r.ratio >= 0.6 && r.start - lastEnd <= 3);
-    if(ok){ qualified[r.start] = r.len; lastEnd = r.start + r.len; }
+    if(!ok) return;
+    /* 塊を文の行にぶつかるまで前後へ伸ばす：検出から漏れたAAの行（英字や引用符を含む行）も
+       1つのAAに含め、箱が途中で割れて別々にスクロールする状態を作らない */
+    var s = r.start, e = r.start + r.len;
+    var back = 0;
+    while(s > 0 && back < 2 && !isProseLine(lines[s-1])){ s--; back++; }
+    var fwd = 0;
+    while(e < lines.length && fwd < 8 && !isProseLine(lines[e])){ e++; fwd++; }
+    qualified[s] = e - s;
+    lastEnd = e;
   });
   var segs = [];
   i = 0;
