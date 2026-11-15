@@ -68,8 +68,8 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .story .row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; align-items:center; }
 .pbar{ height:6px; border-radius:3px; background:var(--fill); margin-top:9px; overflow:hidden; }
 .pbar i{ display:block; height:100%; background:var(--tint); border-radius:3px; }
-.bar{ position:sticky; top:calc(8px + env(safe-area-inset-top)); z-index:20; border-radius:999px;
-  padding:8px 10px; display:flex; gap:6px; align-items:center; justify-content:space-between; }
+.bar{ position:sticky; top:calc(8px + env(safe-area-inset-top)); z-index:20; border-radius:26px;
+  padding:8px 10px; display:flex; gap:6px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
 .bar .grp{ display:flex; gap:6px; align-items:center; }
 .bar button{ border:none; cursor:pointer; border-radius:999px; padding:8px 13px; font-size:13.5px; font-weight:700;
   background:var(--fill); color:var(--label); white-space:nowrap; }
@@ -88,7 +88,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 </head>
 <body>
 <div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
-<div class="topbar"><div class="pill glass"><span>のくす書庫</span><span class="sub" id="freshPill"></span></div></div>
+<div class="topbar" id="topbar"><div class="pill glass"><span>のくす書庫</span><span class="sub" id="freshPill"></span></div></div>
 
 <div id="shelfView">
   <header><h1>のくす書庫</h1><div class="meta" id="freshMeta">読み込み中…</div></header>
@@ -116,7 +116,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss3';
+var SS_BUILD = '2026-11-15-ss4';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -261,6 +261,7 @@ function openStory(id, resume){
   fetch('data/texts/' + encodeURIComponent(id) + '.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(doc){
     cur = { story: story, seq: buildSequence(story, doc.parts || []) };
     $('shelfView').style.display = 'none';
+    $('topbar').style.display = 'none';
     $('readerView').style.display = 'block';
     $('rTitle').textContent = story.title;
     $('rMeta').textContent = (story.tags || []).join('／') + '・' + story.parts + ' 編／' + Number(story.chars || 0).toLocaleString() + ' 字' + ((story.gaps && story.gaps.length) ? '・欠け ' + story.gaps.length + ' 編' : '');
@@ -327,6 +328,7 @@ $('backBtn').addEventListener('click', function(){
   saveProgress();
   cur = null;
   $('readerView').style.display = 'none';
+  $('topbar').style.display = '';
   $('shelfView').style.display = 'block';
   renderShelf();
   window.scrollTo(0, 0);
