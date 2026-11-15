@@ -137,7 +137,7 @@ function log(s){
   if(el) el.textContent = logs.join('\n');
 }
 /* 誰か：丸い体。無操作でもさまよい、まばたきする。タップへの返しは「跳ねて寄る」1つ */
-var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0 };
+var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1, nextSelf:0, absorbAt:0 };
 var ripples = [];
 var star = null;      /* 目立つ粒：1つだけ。そいつが取りに行く相手 */
 var starAt = 0;       /* 次に目立つ粒が出る時刻 */
@@ -198,7 +198,7 @@ function draw(now){
     var hp = crea.hop;
     var k2 = (now - hp.at) / hp.dur;
     if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ');
-      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; log('粒を取り込んだ'); } } }
+      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); } } }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
       crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
@@ -247,11 +247,25 @@ function draw(now){
   if(now > crea.nextBlink){ crea.blinkUntil = now + 130; crea.nextBlink = now + params.blinkSec * 1000 * (0.7 + Math.random() * 0.6); }
   var blinking = now < crea.blinkUntil;
   var hopping = !!crea.hop;
+  /* 取り込む瞬間の1拍（300ms）：光の返し。出すのはこの瞬間だけ */
+  var abK = crea.absorbAt ? (now - crea.absorbAt) / 300 : 9;
+  if(abK >= 0 && abK < 1){
+    var abGlow = Math.sin(abK * Math.PI);
+    var gg = ctx.createRadialGradient(crea.x, crea.y - lift, 2, crea.x, crea.y - lift, r * (1.6 + abK * 1.6));
+    gg.addColorStop(0, 'rgba(255,230,150,' + (0.5 * abGlow).toFixed(3) + ')');
+    gg.addColorStop(1, 'rgba(255,230,150,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.arc(crea.x, crea.y - lift, r * (1.6 + abK * 1.6), 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,230,150,' + (0.65 * (1 - abK)).toFixed(3) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(crea.x, crea.y - lift, r * (1.05 + abK * 0.9), 0, Math.PI * 2); ctx.stroke();
+  }
   /* 体 */
   var sq = crea.squash * 0.18 + crouch;
   ctx.save();
   ctx.translate(crea.x, crea.y - lift);
   ctx.scale(1 + sq, 1 - sq);
+  if(abK >= 0 && abK < 1){ var us = 1 + Math.sin(abK * Math.PI) * 0.13; ctx.scale(us, us); }
   var bg = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.2, 0, 0, r * 1.15);
   bg.addColorStop(0, '#ffe9a8'); bg.addColorStop(1, '#f5b942');
   ctx.fillStyle = bg;
