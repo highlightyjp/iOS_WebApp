@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>資格工房 試作「パイプライン」</title>
+<style>
+:root{
+  --bg:#eef3fa; --ink:#1c2733; --label2:#5b6a78; --label3:#8b98a5;
+  --glass:rgba(255,255,255,.62); --stroke:rgba(255,255,255,.85);
+  --accent:#0a6cff; --good:#1d9e5f; --bad:#d64541; --warn:#b97d10;
+  color-scheme:light;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(64,156,255,.28), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(120,90,255,.16), transparent 60%),
+    var(--bg);
+  color:var(--ink); min-height:100vh; padding-bottom:60px;
+}
+.glass{
+  background:var(--glass); border:1px solid var(--stroke); border-radius:22px;
+  -webkit-backdrop-filter:blur(18px) saturate(1.5); backdrop-filter:blur(18px) saturate(1.5);
+  box-shadow:0 10px 30px rgba(31,52,84,.10);
+}
+header{ padding:18px 22px 0; max-width:720px; margin:0 auto; }
+h1{ font-size:24px; margin:0 0 4px; letter-spacing:.01em; }
+.meta{ color:var(--label2); font-size:13px; line-height:1.6; }
+main{ max-width:720px; margin:0 auto; padding:14px 16px 0; display:flex; flex-direction:column; gap:14px; }
+.card{ padding:16px 18px; }
+.card h2{ font-size:16px; margin:0 0 8px; }
+.small{ font-size:12.5px; color:var(--label2); line-height:1.6; }
+.navi{ font-size:14px; line-height:1.7; }
+.navi b{ color:var(--accent); }
+button{
+  font:inherit; font-size:14px; font-weight:600; border-radius:999px; border:1px solid var(--stroke);
+  background:rgba(255,255,255,.75); color:var(--ink); padding:9px 16px; cursor:pointer;
+}
+button.primary{ background:var(--accent); color:#fff; border-color:transparent; }
+button:disabled{ opacity:.45; cursor:default; }
+button.sel{ background:var(--accent); color:#fff; border-color:transparent; }
+.row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.slots{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+.slot{
+  min-width:104px; flex:1 1 104px; border-radius:14px; padding:10px 12px; text-align:left;
+  background:rgba(255,255,255,.8); border:1.5px dashed rgba(90,110,140,.4); font-size:13.5px;
+}
+.slot.filled{ border-style:solid; border-color:var(--accent); background:rgba(255,255,255,.95); }
+.slot .nm{ font-weight:700; display:block; }
+.slot .ds{ color:var(--label2); font-size:11.5px; line-height:1.5; display:block; margin-top:2px; }
+.slot.off{ opacity:.38; }
+.chipbtn{ font-size:13px; padding:8px 12px; }
+.chipbtn small{ color:var(--label2); font-weight:500; }
+.chipbtn.sel small{ color:#dceaff; }
+.kv{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13.5px; }
+.kv b{ font-variant-numeric:tabular-nums; }
+.log{ font-size:13px; line-height:1.75; white-space:pre-wrap; background:rgba(255,255,255,.55); border-radius:14px; padding:10px 14px; }
+.win{ color:var(--good); font-weight:700; } .lose{ color:var(--bad); font-weight:700; }
+.warnTx{ color:var(--warn); font-weight:600; }
+.choice{ display:block; width:100%; text-align:left; margin:6px 0; border-radius:14px; padding:12px 14px; font-weight:500; }
+.choice.correct{ background:var(--good); color:#fff; border-color:transparent; }
+.choice.wrong{ background:var(--bad); color:#fff; border-color:transparent; }
+select{ font:inherit; font-size:14px; padding:8px 10px; border-radius:12px; border:1px solid rgba(90,110,140,.35); background:rgba(255,255,255,.9); max-width:100%; }
+footer{ max-width:720px; margin:22px auto 0; padding:0 22px; color:var(--label3); font-size:12px; line-height:1.7; }
+.hidden{ display:none; }
+.tag{ display:inline-block; font-size:11.5px; font-weight:700; border-radius:999px; padding:2px 9px; background:rgba(10,108,255,.12); color:var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>資格工房 試作「パイプライン」</h1>
+  <div class="meta">チップを並べると、パケットが左から右へ通って姿を変える。問題は戦闘の外の「コンパイル」でだけ出る。DESIGN v0.3 確定版の試作。</div>
+  <div class="meta" id="buildNote"></div>
+</header>
+
+<main>
+  <section class="card glass">
+    <div class="navi"><b>相棒ナビ</b>　<span id="naviLine">「並びが全てだよ。同じチップでも、順番で結果が変わる。」</span></div>
+    <div class="kv" style="margin-top:8px">
+      <span>段階：<b id="stageTx">見習い</b></span>
+      <span>勝利：<b id="winsTx">0</b></span>
+      <span>基礎倍率ボーナス：<b id="growthTx">+0.0</b></span>
+      <span>過学習カウンタ：<b id="overTx">0 / 10</b></span>
+      <span>戦闘 <b id="tBattle">0秒</b>／コンパイル <b id="tCompile">0秒</b></span>
+    </div>
+  </section>
+
+  <section class="card glass" id="sessionCard">
+    <h2 id="sessionTitle">セッション</h2>
+    <div class="small" id="bossNote"></div>
+    <div class="kv" style="margin-top:6px"><span>相手：<b id="enemyTx"></b></span><span id="enemyDesc"></span></div>
+  </section>
+
+  <section class="card glass" id="battleCard">
+    <h2>編成と見通し</h2>
+    <div class="small">スロット（タップで外す）</div>
+    <div class="slots" id="slots"></div>
+    <div class="small">フォルダ（タップで空きスロットへ）</div>
+    <div class="row" id="folder" style="margin:8px 0"></div>
+    <div class="small" style="margin-top:10px">常駐チップ（ナビ組み込み・最大2つ）</div>
+    <div class="row" id="residents" style="margin:8px 0"></div>
+    <div class="row" id="synthRow" style="margin:8px 0"></div>
+    <div class="row" id="styleRow" style="margin:8px 0"></div>
+    <div class="kv" style="margin:10px 0">
+      <span>中央：<b id="pvMedian">-</b></span>
+      <span>下側（最悪側）：<b id="pvLower">-</b></span>
+      <span>幅：<b id="pvWidth">-</b></span>
+      <span>タグ：<b id="pvTags">なし</b></span>
+      <span>判定：<b id="pvJudge">-</b></span>
+    </div>
+    <div class="log hidden" id="battleLog"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="fightBtn">この編成で戦う</button>
+      <button id="clearBtn">スロットを空にする</button>
+    </div>
+  </section>
+
+  <section class="card glass hidden" id="compileCard">
+    <h2>コンパイル</h2>
+    <div class="small">強化したいチップを選ぶと、その論点から1問出る。正解で段位+1と安定度の改善、不正解でも安定度は少し改善する（資源は半分）。チップが弱くなることはない。</div>
+    <div class="row" style="margin:10px 0">
+      <select id="compileSel"></select>
+      <button id="askBtn">出題する</button>
+    </div>
+    <div id="qArea"></div>
+  </section>
+
+  <section class="card glass">
+    <h2>管理</h2>
+    <div class="row">
+      <button id="resetBtn">記録を消して最初から</button>
+    </div>
+    <div class="small" style="margin-top:8px">保存は2系統（実測＝回答の記録／ゲーム＝育ちの記録）。合成した「強さ」の数字は作っていない。</div>
+  </section>
+</main>
+
+<footer id="footNote"></footer>
+
+<script src="questions-pipe.js"></script>
+<script>
+'use strict';
+var QP_BUILD = '2026-11-15-pipe1';
+function $(id){ return document.getElementById(id); }
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+function fmt(n){ return Math.round(n * 10) / 10; }
+
+/* ---------- チップ定義 ---------- */
+var CHIPS = [
+  { id:'hash',      name:'ハッシュ',     field:'基盤',         desc:'量+15、タグ「索引付」', add:15 },
+  { id:'cache',     name:'キャッシュ',   field:'基盤',         desc:'直前のチップを再発動（索引付なら2回）' },
+  { id:'locality',  name:'局所性',       field:'基盤',         desc:'再発動1回につき倍率×1.5' },
+  { id:'mutex',     name:'排他制御',     field:'基盤',         desc:'タグ「制御」。1本なら倍率×1.6、複数本なら量×1.3' },
+  { id:'normalize', name:'正規化',       field:'DB',           desc:'パケットを2本に分割（総量は同じ）' },
+  { id:'index',     name:'インデックス', field:'DB',           desc:'1本ごとに量+12', addPer:12 },
+  { id:'join',      name:'結合',         field:'DB',           desc:'全てを1本にまとめ、倍率×本数' },
+  { id:'pubkey',    name:'公開鍵暗号',   field:'セキュリティ', desc:'タグ「暗号化」、倍率×2、次のチップを1枚飛ばす', mult:2 },
+  { id:'symkey',    name:'共通鍵暗号',   field:'セキュリティ', desc:'タグ「暗号化」、量+20', add:20 },
+  { id:'sign',      name:'デジタル署名', field:'セキュリティ', desc:'タグ「署名」。暗号化があれば中間者の奪取を反射' },
+  { id:'reg',       name:'正則化',       field:'G検定',        desc:'倍率×1.2、幅を25%狭める', mult:1.2, narrow:0.75 },
+  { id:'xval',      name:'交差検証',     field:'G検定',        desc:'量+8、幅を30%狭める', add:8, narrow:0.7 }
+];
+var RESIDENTS = [
+  { id:'gd',   name:'勾配降下',     desc:'戦闘のたび基礎倍率ボーナス+0.2（恒久）' },
+  { id:'lr',   name:'学習率',       desc:'勾配降下の成長が2倍。過学習も2倍進む' },
+  { id:'bn',   name:'バッチ正規化', desc:'過学習カウンタが進まなくなる' },
+  { id:'drop', name:'ドロップアウト', desc:'右端スロット無効と引き換えに、過学習を0へ戻す' }
+];
+var ALL = CHIPS.concat(RESIDENTS.map(function(r){ return { id:r.id, name:r.name, field:'G検定', desc:r.desc }; }));
+function chipById(id){ for (var i=0;i<ALL.length;i++) if (ALL[i].id===id) return ALL[i]; return null; }
+function isResident(id){ return RESIDENTS.some(function(r){ return r.id===id; }); }
+
+var ENEMIES = [
+  { id:'guard',   name:'守衛',         read:'worst',  req:60,  desc:'最悪側（下側）を見る。要：下側 60 以上' },
+  { id:'worm',    name:'過学習ワーム', read:'worst',  req:40,  widthCap:30, desc:'最悪側と幅の上限を見る。要：下側 40 以上 かつ 幅 30% 以下' },
+  { id:'auditor', name:'監査官',       read:'median', req:120, desc:'中央を見る。要：中央 120 以上' },
+  { id:'mitm',    name:'中間者',       read:'boss',   req:80,  needTag:'暗号化', boss:true, desc:'ボス。暗号化タグ必須（なければ結果の半分を奪う）。署名＋暗号化で奪取分を反射' }
+];
+var OVER_CAP = 10;
+
+/* ---------- 保存（2系統） ---------- */
+var MKEY = 'qualpipe.measured.v1', GKEY = 'qualpipe.game.v1';
+var measured = { p:{}, ans:0, correct:0 };
+var game = { dan:{}, growth:0, overfit:0, wins:0, battles:0, sessions:1, seen:{}, firstSynth:false, bestLower:0,
+             styleOn:false, clause2:false, tBattle:0, tCompile:0 };
+try { var m0 = JSON.parse(localStorage.getItem(MKEY) || 'null'); if (m0) measured = m0; } catch(e){}
+try { var g0 = JSON.parse(localStorage.getItem(GKEY) || 'null'); if (g0) game = g0; } catch(e){}
+function save(){ try { localStorage.setItem(MKEY, JSON.stringify(measured)); localStorage.setItem(GKEY, JSON.stringify(game)); } catch(e){} }
+function pOf(id){ return measured.p[id] || 0; }
+function wOf(id){ return 50 * (1 - pOf(id)); }
+function stageOf(){ return game.wins >= 8 ? '番頭' : (game.wins >= 3 ? '一人前' : '見習い'); }
+function slotCount(){
+  var fields = {}, settled = 0, sums = {}, cnts = {};
+  CHIPS.forEach(function(c){ sums[c.field] = (sums[c.field]||0) + pOf(c.id); cnts[c.field] = (cnts[c.field]||0) + 1; });
+  Object.keys(sums).forEach(function(f){ if (sums[f]/cnts[f] >= 0.6) settled++; });
+  return clamp(4 + settled, 4, 7);
+}
+
+/* ---------- 対戦状態 ---------- */
+var slots = [];           /* スロット数ぶんの chipId or null */
+var residentsOn = [];     /* 最大2 */
+var folded = false;
+var battleIdx = 0;        /* 0,1,2 */
+var phaseStart = Date.now();
+var phase = 'battle';
+function enemyFor(idx){
+  if (idx === 2) return ENEMIES[3];
+  if (idx === 1) return (game.sessions % 2 === 1) ? ENEMIES[1] : ENEMIES[2];
+  return ENEMIES[0];
+}
+function syncSlots(){ var n = slotCount(); while (slots.length < n) slots.push(null); slots = slots.slice(0, n); }
+
+/* ---------- パイプラインエンジン ---------- */
+function runPipeline(slotIds, opts){
+  opts = opts || {};
+  var growth = opts.growth || 0;
+  var pkt = { amt:10, mult:1 + growth, count:1, tags:{}, repeats:0, signed:false, log:[], narrowF:1, styleExtra:0 };
+  var ids = slotIds.slice();
+  if (opts.dropRight && ids.length) { ids[ids.length-1] = null; pkt.log.push('ドロップアウト：右端スロットは無効'); }
+  var synth = false;
+  for (var i=0;i<ids.length;i++){
+    if (ids[i]==='pubkey' && ids[i+1]==='symkey') synth = true;
+  }
+  var skipNext = false;
+  function applyChip(c, isRepeat){
+    var dan = (opts.dan && opts.dan[c.id]) || 0;
+    var addBonus = dan * 2;
+    if (c.id === 'cache'){
+      if (isRepeat) { pkt.log.push('キャッシュ：再発動先がない'); return; }
+      var prev = null;
+      for (var j = arguments[2] - 1; j >= 0; j--){ if (ids[j] && ids[j] !== 'cache'){ prev = chipById(ids[j]); break; } }
+      if (!prev){ pkt.log.push('キャッシュ：直前が空'); return; }
+      var times = pkt.tags['索引付'] ? 2 : 1;
+      for (var t=0;t<times;t++){ pkt.repeats++; pkt.log.push('キャッシュ→' + prev.name + ' 再発動'); applyChip(prev, true, -1); }
+      return;
+    }
+    if (c.add || c.addPer){
+      var addVal = (c.add || 0) + (c.addPer ? c.addPer * pkt.count : 0) + addBonus * (c.addPer ? pkt.count : 1);
+      if (opts.styleOn){
+        pkt.amt = pkt.amt * (1 + ((c.add || c.addPer || 0) / 100));
+        pkt.styleExtra += (c.add || c.addPer || 0) / 10;
+        pkt.log.push(c.name + '（スタイル書き換え：加算せず ×(1+' + ((c.add || c.addPer || 0)/100) + ')、幅は広がる）→ 量 ' + fmt(pkt.amt));
+      } else {
+        pkt.amt += addVal;
+        pkt.log.push(c.name + '：量+' + fmt(addVal) + ' → 量 ' + fmt(pkt.amt));
+      }
+    }
+    if (c.id === 'normalize'){ pkt.count *= 2; pkt.log.push('正規化：分割 → ' + pkt.count + '本（総量 ' + fmt(pkt.amt) + '）'); }
+    if (c.id === 'join'){ pkt.mult *= pkt.count; pkt.log.push('結合：倍率×' + pkt.count + ' → 倍率 ' + fmt(pkt.mult) + '、1本に統合'); pkt.count = 1; }
+    if (c.id === 'locality'){ var f = Math.pow(1.5, pkt.repeats); pkt.mult *= f; pkt.log.push('局所性：再発動 ' + pkt.repeats + ' 回 → 倍率×' + fmt(f) + ' = ' + fmt(pkt.mult)); }
+    if (c.mult){ pkt.mult *= c.mult; pkt.log.push(c.name + '：倍率×' + c.mult + ' → ' + fmt(pkt.mult)); }
+    if (c.id === 'pubkey'){
+      pkt.tags['暗号化'] = true;
+      if (!synth) skipNext = true; else pkt.log.push('公開鍵暗号：共通鍵との合成で「飛ばす」が消えた');
+    }
+    if (c.id === 'symkey'){ pkt.tags['暗号化'] = true; }
+    if (c.id === 'hash'){ pkt.tags['索引付'] = true; }
+    if (c.id === 'sign'){ pkt.tags['署名'] = true; pkt.signed = true; pkt.log.push('デジタル署名：タグ「署名」'); }
+    if (c.id === 'mutex'){
+      pkt.tags['制御'] = true;
+      if (pkt.count === 1){ pkt.mult *= 1.6; pkt.log.push('排他制御：1本 → 倍率×1.6 = ' + fmt(pkt.mult)); }
+      else { pkt.amt *= 1.3; pkt.log.push('排他制御：複数本を揃える → 量×1.3 = ' + fmt(pkt.amt)); }
+    }
+    if (c.narrow){ pkt.narrowF *= c.narrow; }
+  }
+  for (var k=0;k<ids.length;k++){
+    if (!ids[k]) continue;
+    if (skipNext){ skipNext = false; pkt.log.push(chipById(ids[k]).name + '：公開鍵に飛ばされた'); continue; }
+    applyChip(chipById(ids[k]), false, k);
+  }
+  var median = opts.invert ? (pkt.amt / pkt.mult) : (pkt.amt * pkt.mult);
+  if (opts.invert) pkt.log.push('過学習：初見の敵に倍率が反転（割り算）した');
+  var used = ids.filter(Boolean);
+  var W = used.length ? used.reduce(function(s,id){ return s + wOf(id); }, 0) / used.length : 50;
+  W = W * pkt.narrowF + pkt.styleExtra;
+  if (synth && opts.folded){ W *= 0.8; }
+  if (opts.clause2){ W *= 0.9; }
+  W = clamp(W, 0, 80);
+  return { median:median, lower:median * (1 - W/100), upper:median * (1 + W/100), width:W,
+           tags:Object.keys(pkt.tags), signed:pkt.signed, synth:synth, log:pkt.log,
+           amt:pkt.amt, mult:pkt.mult, inverted:!!opts.invert };
+}
+function judge(res, enemy, overCapped){
+  var eff = res.median, readVal = null, note = '';
+  if (enemy.read === 'boss'){
+    if (res.tags.indexOf(enemy.needTag) < 0){ eff = res.median * 0.5; note = '暗号化タグがなく、半分を奪われた'; }
+    else if (res.signed){ eff = res.median * 1.5; note = '署名が奪取分を反射した'; }
+    readVal = eff;
+  } else if (enemy.read === 'worst'){ readVal = res.lower; }
+  else { readVal = res.median; }
+  if (overCapped){ eff = eff; note += (note ? '／' : '') + '過学習で初見の敵には効果が反転している'; }
+  var win = readVal >= enemy.req;
+  if (enemy.widthCap && res.width > enemy.widthCap) win = false;
+  return { win:win, readVal:readVal, eff:eff, note:note };
+}
+</script>
+<script>
+'use strict';
+/* ---------- 画面 ---------- */
+function naviSay(t){ $('naviLine').textContent = '「' + t + '」'; }
+function currentOpts(){
+  return { growth:game.growth, dan:game.dan, styleOn:game.styleOn && stageOf() !== '見習い',
+           folded:folded, clause2:stageOf() === '番頭', dropRight:residentsOn.indexOf('drop') >= 0,
+           invert: game.overfit >= OVER_CAP && !game.seen[enemyFor(battleIdx).id] };
+}
+function render(){
+  syncSlots();
+  $('stageTx').textContent = stageOf();
+  $('winsTx').textContent = game.wins;
+  $('growthTx').textContent = '+' + fmt(game.growth);
+  $('overTx').textContent = game.overfit + ' / ' + OVER_CAP + (game.overfit >= OVER_CAP ? '（上限：初見の敵に反転）' : '');
+  $('tBattle').textContent = Math.round(game.tBattle) + '秒';
+  $('tCompile').textContent = Math.round(game.tCompile) + '秒';
+  var en = enemyFor(battleIdx);
+  $('sessionTitle').textContent = 'セッション ' + game.sessions + ' ─ 戦闘 ' + (battleIdx + 1) + ' / 3';
+  $('bossNote').innerHTML = 'ボス予告：最終戦の相手「中間者」はタグ「<b>暗号化</b>」を要求する（セッション開始時に予告済み）。';
+  $('enemyTx').textContent = en.name;
+  $('enemyDesc').textContent = en.desc;
+  /* slots */
+  var sl = $('slots'); sl.innerHTML = '';
+  slots.forEach(function(cid, i){
+    var b = document.createElement('button');
+    var off = residentsOn.indexOf('drop') >= 0 && i === slots.length - 1;
+    b.className = 'slot' + (cid ? ' filled' : '') + (off ? ' off' : '');
+    if (cid){ var c = chipById(cid); b.innerHTML = '<span class="nm">' + c.name + '</span><span class="ds">' + c.desc + '（安定度 ±' + Math.round(wOf(cid)) + '%）' + (off ? ' ※ドロップアウトで無効' : '') + '</span>'; }
+    else { b.innerHTML = '<span class="nm">空き</span><span class="ds">' + (off ? 'ドロップアウトで無効' : 'フォルダから選ぶ') + '</span>'; }
+    b.onclick = function(){ if (slots[i]){ slots[i] = null; render(); } };
+    sl.appendChild(b);
+  });
+  /* folder */
+  var fo = $('folder'); fo.innerHTML = '';
+  CHIPS.forEach(function(c){
+    var used = slots.indexOf(c.id) >= 0;
+    var b = document.createElement('button');
+    b.className = 'chipbtn' + (used ? ' sel' : '');
+    b.innerHTML = c.name + ' <small>' + c.field + '・段位' + (game.dan[c.id] || 0) + '</small>';
+    b.onclick = function(){
+      var ui = slots.indexOf(c.id);
+      if (ui >= 0){ slots[ui] = null; }
+      else { var ei = slots.indexOf(null); if (ei < 0){ naviSay('スロットが一杯だよ。'); return; } slots[ei] = c.id; }
+      render();
+    };
+    fo.appendChild(b);
+  });
+  /* residents */
+  var rs = $('residents'); rs.innerHTML = '';
+  RESIDENTS.forEach(function(r){
+    var on = residentsOn.indexOf(r.id) >= 0;
+    var b = document.createElement('button');
+    b.className = 'chipbtn' + (on ? ' sel' : '');
+    b.innerHTML = r.name + ' <small>' + r.desc + '</small>';
+    b.onclick = function(){
+      var i = residentsOn.indexOf(r.id);
+      if (i >= 0) residentsOn.splice(i, 1);
+      else { if (residentsOn.length >= 2){ naviSay('常駐枠は2つまでだよ。'); return; } residentsOn.push(r.id); }
+      render();
+    };
+    rs.appendChild(b);
+  });
+  /* preview */
+  var res = runPipeline(slots, currentOpts());
+  var sy = $('synthRow'); sy.innerHTML = '';
+  if (res.synth){
+    if (!game.firstSynth){ game.firstSynth = true; save(); naviSay('合成、初めて成立した。この並び、覚えておく。'); }
+    var lab = document.createElement('span'); lab.className = 'tag'; lab.textContent = '合成：ハイブリッド暗号（板）';
+    var fb = document.createElement('button'); fb.className = 'chipbtn' + (folded ? ' sel' : '');
+    fb.textContent = folded ? '折りたたみ中（1演算子・幅×0.8）' : '折りたたむ（板にする）';
+    fb.onclick = function(){ folded = !folded; render(); };
+    var ib = document.createElement('span'); ib.className = 'small'; ib.textContent = folded ? '板として実行中。ばらすと個別の効果に戻る。' : 'ばらしたまま個別に実行中。折りたたむと幅が狭まる。';
+    sy.appendChild(lab); sy.appendChild(fb); sy.appendChild(ib);
+  }
+  var st = $('styleRow'); st.innerHTML = '';
+  var stage = stageOf();
+  if (stage === '見習い'){
+    st.innerHTML = '<span class="small">スタイル：未解禁（相棒が一人前になると条項1つ目が開く。成長段階と1対1）</span>';
+  } else {
+    var sb = document.createElement('button'); sb.className = 'chipbtn' + (game.styleOn ? ' sel' : '');
+    sb.textContent = game.styleOn ? 'スタイル適用中：加算→乗算に書き換え' : 'スタイルを使う（条項：加算の書き換え）';
+    sb.onclick = function(){ game.styleOn = !game.styleOn; save(); render(); };
+    st.appendChild(sb);
+    var si = document.createElement('span'); si.className = 'small';
+    si.textContent = '元の文：「量に M を加算する」→ 書き換え後：「加算しない。量＝量×(1＋M/100) とし、幅は広がる」' + (stage === '番頭' ? '／条項2：幅をさらに10%狭める' : '');
+    st.appendChild(si);
+  }
+  $('pvMedian').textContent = fmt(res.median);
+  $('pvLower').textContent = fmt(res.lower);
+  $('pvWidth').textContent = '±' + fmt(res.width) + '%';
+  $('pvTags').textContent = res.tags.length ? res.tags.join('・') : 'なし';
+  var jd = judge(res, en, res.inverted);
+  $('pvJudge').innerHTML = jd.win ? '<span class="win">届く見込み</span>' : '<span class="lose">届かない見込み</span>';
+  if (res.inverted) $('pvJudge').innerHTML += ' <span class="warnTx">過学習で反転中</span>';
+  /* compile select */
+  var sel = $('compileSel');
+  if (!sel.options.length){
+    ALL.forEach(function(c){ var o = document.createElement('option'); o.value = c.id; o.textContent = c.name + '（' + c.field + '）'; sel.appendChild(o); });
+  }
+}
+function phaseTick(){
+  var now = Date.now();
+  var d = (now - phaseStart) / 1000;
+  if (phase === 'battle') game.tBattle += d; else game.tCompile += d;
+  phaseStart = now;
+}
+$('fightBtn').onclick = function(){
+  if (!slots.some(Boolean)){ naviSay('チップを1枚は置いて。'); return; }
+  phaseTick(); phase = 'compile';
+  var en = enemyFor(battleIdx);
+  var res = runPipeline(slots, currentOpts());
+  var jd = judge(res, en, res.inverted);
+  game.battles++;
+  var lowerImproved = res.lower > game.bestLower;
+  if (jd.win){
+    game.wins++;
+    if (!game.seen[en.id]) game.seen[en.id] = true;
+    if (en.boss) naviSay('ボスを落とした。予告どおりの論点が効いたね。');
+    else if (lowerImproved) naviSay('下側が伸びた。安定してきた証拠だよ。');
+    else naviSay('届いた。その並び、悪くない。');
+  } else {
+    naviSay('届かなかった。並びを変えるか、コンパイルで幅を狭めよう。');
+  }
+  if (lowerImproved) game.bestLower = res.lower;
+  /* 常駐チップの戦闘後処理 */
+  var hasGd = residentsOn.indexOf('gd') >= 0, hasLr = residentsOn.indexOf('lr') >= 0,
+      hasBn = residentsOn.indexOf('bn') >= 0, hasDrop = residentsOn.indexOf('drop') >= 0;
+  var extra = [];
+  if (hasGd){ var g = 0.2 * (hasLr ? 2 : 1); game.growth = Math.round((game.growth + g) * 10) / 10; extra.push('勾配降下：基礎倍率ボーナス +' + fmt(g) + '（現在 +' + fmt(game.growth) + '）'); }
+  if (hasDrop){ game.overfit = 0; extra.push('ドロップアウト：過学習カウンタを 0 に戻した'); }
+  else if ((hasGd || hasLr) && !hasBn){ game.overfit = clamp(game.overfit + (hasLr ? 2 : 1), 0, OVER_CAP); extra.push('過学習カウンタ → ' + game.overfit); }
+  else if (hasBn && (hasGd || hasLr)){ extra.push('バッチ正規化：過学習は進まなかった'); }
+  save();
+  var log = $('battleLog'); log.classList.remove('hidden');
+  log.textContent = res.log.join('\n') + '\n─\n中央 ' + fmt(res.median) + '／下側 ' + fmt(res.lower) + '（幅 ±' + fmt(res.width) + '%）\n相手「' + en.name + '」の読む値：' + fmt(jd.readVal) + '（要 ' + en.req + (en.widthCap ? '・幅 ' + en.widthCap + '%以下' : '') + '）' + (jd.note ? '\n' + jd.note : '') + (extra.length ? '\n' + extra.join('\n') : '') + '\n結果：' + (jd.win ? '勝利' : '届かなかった');
+  $('fightBtn').disabled = true;
+  $('compileCard').classList.remove('hidden');
+  render();
+};
+$('clearBtn').onclick = function(){ slots = slots.map(function(){ return null; }); render(); };
+$('askBtn').onclick = function(){
+  var cid = $('compileSel').value;
+  var pool = (window.QP_QUESTIONS || {})[cid] || [];
+  var area = $('qArea'); area.innerHTML = '';
+  if (!pool.length){ area.innerHTML = '<div class="small">この論点の問題は未収録。</div>'; return; }
+  var q = pool[Math.floor(Math.random() * pool.length)];
+  var c = chipById(cid);
+  var before = wOf(cid);
+  var afterOk = 50 * (1 - (pOf(cid) + (1 - pOf(cid)) * 0.4));
+  var head = document.createElement('div');
+  head.innerHTML = '<div class="small">論点：' + c.name + '（' + c.field + '）／正解すると、このチップの安定度は ±' + Math.round(before) + '% → ±' + Math.round(afterOk) + '% になる</div><p style="line-height:1.7">' + q.stem + '</p>';
+  area.appendChild(head);
+  q.choices.forEach(function(text, i){
+    var b = document.createElement('button');
+    b.className = 'choice'; b.textContent = 'ABCD'[i] + '．' + text;
+    b.onclick = function(){
+      phaseTick(); phase = 'battle';
+      var ok = i === q.answer;
+      measured.ans++;
+      if (ok){ measured.correct++; measured.p[cid] = pOf(cid) + (1 - pOf(cid)) * 0.4; game.dan[cid] = (game.dan[cid] || 0) + 1; }
+      else { measured.p[cid] = pOf(cid) + (1 - pOf(cid)) * 0.15; }
+      save();
+      area.querySelectorAll('.choice').forEach(function(x, xi){
+        x.disabled = true;
+        if (xi === q.answer) x.classList.add('correct');
+        else if (xi === i) x.classList.add('wrong');
+      });
+      var ex = document.createElement('div');
+      ex.innerHTML = '<p>' + (ok ? '<span class="win">正解。</span>' : '<span class="lose">不正解。</span>') + ' ' + q.explanation + '</p>' +
+        '<p class="small">' + c.name + ' の安定度は ±' + Math.round(wOf(cid)) + '% になった' + (ok ? '（段位 ' + game.dan[cid] + '）' : '（資源は半分もらえた）') + '</p>';
+      var nb = document.createElement('button');
+      nb.className = 'primary'; nb.textContent = battleIdx >= 2 ? 'セッションを終える' : '次の戦闘へ';
+      nb.onclick = function(){
+        battleIdx++;
+        if (battleIdx >= 3){ battleIdx = 0; game.sessions++; slots = slots.map(function(){ return null; }); naviSay('新しいセッション。ボスの要求タグは予告どおり「暗号化」。'); }
+        save();
+        $('compileCard').classList.add('hidden');
+        $('battleLog').classList.add('hidden');
+        $('fightBtn').disabled = false;
+        area.innerHTML = '';
+        render();
+      };
+      ex.appendChild(nb);
+      area.appendChild(ex);
+      render();
+    };
+    area.appendChild(b);
+  });
+};
+$('resetBtn').onclick = function(){
+  if (!confirm('実測とゲームの記録を両方消します。よいですか。')) return;
+  localStorage.removeItem(MKEY); localStorage.removeItem(GKEY);
+  location.reload();
+};
+/* 版の自己確認（ss と同型） */
+(function(){
+  try {
+    fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
+      var m = /build:\s*(\S+)/.exec(t || '');
+      if (m && m[1] !== QP_BUILD && !/[?&]v=/.test(location.search)) location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+    }).catch(function(){});
+  } catch(e){}
+})();
+$('buildNote').textContent = '試作 build ' + QP_BUILD + '（DESIGN v0.3 確定版・最小セット）';
+$('footNote').textContent = '資格工房 試作「パイプライン」 build ' + QP_BUILD + '／問題は全て自作（qual-question/v1 準拠）／保存は端末内のみ';
+render();
+</script>
+</body>
+</html>
