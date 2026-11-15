@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>資格工房 試作場面「霧の中の僚艦」</title>
+<style>
+:root{
+  --label:#1c1c1e; --label2:rgba(60,60,67,.66); --label3:rgba(60,60,67,.42);
+  --tint:#007AFF; --red:#FF3B30; --orange:#FF9500; --green:#34C759; --purple:#AF52DE;
+  --glass:rgba(255,255,255,.52); --glass-strong:rgba(255,255,255,.68); --glass-edge:rgba(255,255,255,.65);
+  --sep:rgba(60,60,67,.14); --card:#FFFFFF; --fill:rgba(120,120,128,.14);
+  --shadow:0 10px 34px rgba(31,38,135,.14),0 2px 8px rgba(31,38,135,.08);
+  --spec:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -0.5px 0 rgba(255,255,255,.25);
+  --radius:24px; --spring:cubic-bezier(.34,1.35,.44,1);
+  --motion-spatial-fast:.18s cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --label:#fff; --label2:rgba(235,235,245,.62); --label3:rgba(235,235,245,.38);
+    --tint:#0A84FF; --red:#FF453A; --orange:#FF9F0A; --green:#30D158; --purple:#BF5AF2;
+    --glass:rgba(38,38,44,.46); --glass-strong:rgba(44,44,52,.62); --glass-edge:rgba(255,255,255,.22);
+    --sep:rgba(255,255,255,.14); --card:#1E1E24; --fill:rgba(120,120,128,.26);
+    --shadow:0 12px 36px rgba(0,0,0,.5),0 2px 10px rgba(0,0,0,.35);
+    --spec:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -0.5px 0 rgba(255,255,255,.06); }
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html{ touch-action:manipulation; }
+body{ margin:0; color:var(--label); background:#EDF1F8;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Hiragino Sans","Noto Sans CJK JP",sans-serif;
+  font-size:16px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
+@media (prefers-color-scheme: dark){ body{ background:#05060A; } }
+.aurora{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+.aurora i{ position:absolute; border-radius:50%; filter:blur(70px); opacity:.55; }
+.aurora .a1{ width:340px;height:340px;background:#8EC5FF;top:-110px;left:-90px; }
+.aurora .a2{ width:300px;height:300px;background:#D8B4FE;top:16%;right:-120px;opacity:.45; }
+.aurora .a3{ width:280px;height:280px;background:#A7F3EA;bottom:6%;left:-100px;opacity:.4; }
+.aurora .a4{ width:220px;height:220px;background:#FFD1A9;bottom:-80px;right:-40px;opacity:.35; }
+@media (prefers-color-scheme: dark){ .aurora i{ opacity:.28; } }
+.glass{ background:var(--glass); border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
+  box-shadow:var(--shadow),var(--spec); }
+.topbar{ position:sticky; top:calc(10px + env(safe-area-inset-top)); z-index:30; display:flex; justify-content:center; pointer-events:none; padding:0 12px; }
+.topbar .pill{ pointer-events:auto; display:flex; align-items:center; gap:8px; border-radius:999px; padding:8px 16px; font-size:14px; font-weight:600; }
+.topbar .sub{ color:var(--label2); font-weight:500; font-size:12.5px; }
+header{ padding:14px 22px 0; max-width:720px; margin:0 auto; }
+h1{ font-size:28px; font-weight:800; letter-spacing:-.022em; margin:0; }
+.meta{ color:var(--label2); font-size:13px; margin-top:3px; }
+main{ padding:4px 16px 8px; max-width:720px; margin:0 auto; }
+h2{ font-size:13.5px; font-weight:600; color:var(--label2); margin:22px 8px 8px; letter-spacing:.02em; }
+.card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-top:12px; }
+.act{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:none; cursor:pointer;
+  border-radius:999px; padding:15px; margin-top:12px; background:var(--tint); color:#fff;
+  font-size:16.5px; font-weight:700; box-shadow:var(--shadow); transition:transform var(--motion-spatial-fast); }
+.act:active{ transform:scale(.97); }
+.act:disabled{ opacity:.45; }
+.title{ font-size:17px; font-weight:700; }
+.small{ font-size:13px; color:var(--label2); }
+.badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:12.5px; font-weight:600; white-space:nowrap; }
+.badge.ok{ background:rgba(52,199,89,.16); color:#157347; }
+.badge.warn{ background:rgba(255,149,0,.18); color:#9a5b00; }
+.badge.info{ background:rgba(0,122,255,.14); color:#0a5cd6; }
+.badge.idle{ background:var(--fill); color:var(--label2); }
+@media (prefers-color-scheme: dark){ .badge.ok{ color:#4be07f; } .badge.warn{ color:#ffb340; } .badge.info{ color:#4da3ff; } }
+.choice{ display:block; width:100%; text-align:left; padding:14px; margin:8px 0; border:1.5px solid var(--sep);
+  border-radius:16px; background:var(--card); color:var(--label); font-size:15.5px; cursor:pointer;
+  transition:transform var(--motion-spatial-fast); }
+.choice:active{ transform:scale(.98); }
+.choice.sent{ border-color:var(--tint); background:rgba(0,122,255,.10); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.chip{ padding:5px 10px; border-radius:999px; font-size:12.5px; font-weight:600; border:1.5px solid var(--sep); color:var(--label2); background:var(--card); }
+.mini{ border:none; cursor:pointer; border-radius:999px; padding:11px 18px; background:var(--tint); color:#fff; font-size:14.5px; font-weight:700; }
+.mini:disabled{ opacity:.4; }
+.mini.ghost{ background:var(--card); color:var(--tint); border:1.5px solid var(--tint); }
+.mini.placed{ background:var(--green); }
+.dots{ display:flex; gap:5px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+.dots i{ width:8px; height:8px; border-radius:50%; background:var(--fill); }
+.dots i.done{ background:var(--tint); }
+.dots i.now{ background:var(--orange); transform:scale(1.35); }
+.line{ padding:8px 0; border-bottom:1px solid var(--sep); font-size:15px; }
+.line:last-child{ border-bottom:none; }
+.stage{ border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); margin-top:12px; }
+.stage svg{ display:block; width:100%; height:auto; }
+.say{ display:flex; gap:10px; align-items:flex-start; }
+.say .face{ width:38px; height:38px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:#fff; }
+.say .who{ font-size:12.5px; color:var(--label2); font-weight:600; }
+.valves{ display:flex; gap:10px; justify-content:space-between; margin-top:10px; }
+.valve{ flex:1; border:1.5px solid var(--sep); background:var(--card); border-radius:16px; padding:12px 4px; cursor:pointer; text-align:center; }
+.valve .n{ font-size:19px; font-weight:800; }
+.valve .s{ font-size:11.5px; color:var(--label2); }
+.valve.open{ border-color:var(--green); background:rgba(52,199,89,.12); }
+.valve.shake{ animation:shake .3s; }
+@keyframes shake{ 0%,100%{transform:none} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+#boat{ transition:transform 2.8s ease; }
+#sister{ transition:opacity 1.4s ease; }
+#fogA,#fogB{ transition:opacity 1.6s ease; }
+.crew{ transition:transform 1.1s ease; }
+.beam{ transform-origin:316px 62px; animation:sweep 11s ease-in-out infinite alternate; }
+@keyframes sweep{ from{ transform:rotate(-24deg); } to{ transform:rotate(28deg); } }
+.flash{ animation:fl .45s steps(1,end) 3; }
+@keyframes fl{ 0%,100%{ opacity:.2; } 50%{ opacity:1; } }
+.ack{ animation:fl .32s steps(1,end) 4; }
+.spin{ transform-origin:150px 210px; animation:sp 1.4s ease; }
+@keyframes sp{ from{ transform:rotate(0); } to{ transform:rotate(360deg); } }
+details{ margin-top:14px; }
+summary{ font-size:13.5px; color:var(--label2); cursor:pointer; padding:6px 8px; }
+.note{ font-size:12.5px; color:var(--label3); margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i><i class="a4"></i></div>
+<div class="topbar"><div class="pill glass"><span>資格工房 試作場面</span><span class="sub" id="freshPill"></span></div></div>
+<header><h1>霧の中の僚艦</h1><div class="meta">灯台回りの作業船。霧の中で、僚艦と信号を交わす場面だけの試作。</div></header>
+<main>
+  <div class="stage"><svg id="stageSvg" viewBox="0 0 360 260" role="img" aria-label="霧の海、作業船と僚艦と灯台">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9db8d6"/><stop offset=".62" stop-color="#c3cfdd"/><stop offset="1" stop-color="#d8dee6"/>
+      </linearGradient>
+      <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5b7ea6"/><stop offset="1" stop-color="#33506e"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="360" height="178" fill="url(#sky)"/>
+    <rect x="0" y="178" width="360" height="82" fill="url(#sea)"/>
+    <!-- lighthouse -->
+    <g>
+      <path d="M298 178 L306 108 L330 108 L340 178 Z" fill="#5a4632"/>
+      <path d="M304 132 L332 132 L334 150 L302 150 Z" fill="#e8e2d4"/>
+      <rect x="308" y="86" width="20" height="22" rx="3" fill="#3c4652"/>
+      <polygon class="beam" points="318,97 150,60 150,134" fill="#ffe9a8" opacity=".34"/>
+      <circle cx="318" cy="97" r="5" fill="#ffd75e"/>
+      <rect x="292" y="176" width="58" height="10" fill="#4c3a28"/>
+    </g>
+    <!-- sister ship in fog -->
+    <g id="sister" opacity=".22">
+      <path d="M238 196 L246 182 L292 182 L298 196 Z" fill="#26313d"/>
+      <rect x="258" y="168" width="16" height="14" fill="#26313d"/>
+      <rect x="266" y="146" width="3" height="24" fill="#26313d"/>
+      <circle id="sisterLamp" cx="267" cy="142" r="4.5" fill="#ffd75e" opacity=".35"/>
+    </g>
+    <!-- passing ship -->
+    <g id="passer" opacity="0">
+      <path d="M-70 206 L-62 194 L-18 194 L-12 206 Z" fill="#3a4756"/>
+      <rect x="-52" y="182" width="13" height="12" fill="#3a4756"/>
+      <circle id="passerLamp" cx="-40" cy="178" r="3.5" fill="#ffd75e" opacity=".4"/>
+    </g>
+    <!-- pier (departure) -->
+    <g id="pier">
+      <rect x="0" y="196" width="86" height="9" fill="#6b543a"/>
+      <rect x="8" y="205" width="6" height="18" fill="#54402a"/><rect x="66" y="205" width="6" height="18" fill="#54402a"/>
+    </g>
+    <!-- work boat -->
+    <g id="boat">
+      <path d="M28 210 L38 192 L104 192 L112 210 Z" fill="#274b63"/>
+      <rect x="52" y="176" width="30" height="16" rx="2" fill="#e8e2d4"/>
+      <rect x="58" y="180" width="8" height="7" fill="#7fa6c9"/><rect x="69" y="180" width="8" height="7" fill="#7fa6c9"/>
+      <rect x="92" y="150" width="3.4" height="42" fill="#22303c"/>
+      <circle id="sigLamp" cx="93.7" cy="144" r="5" fill="#ffd75e" opacity=".3"/>
+      <rect id="sigFlag" x="95.4" y="150" width="13" height="8" fill="#f4f4f4" stroke="#98a2ad"/>
+      <g id="gear" opacity="0"><circle cx="150" cy="210" r="9" fill="none" stroke="#ffd75e" stroke-width="3" stroke-dasharray="4 3"/></g>
+      <g class="crew" id="crewRuri"><circle cx="46" cy="182" r="5" fill="#2f6fd0"/><rect x="42.5" y="187" width="7" height="9" rx="3" fill="#2f6fd0"/></g>
+      <g class="crew" id="crewTetsu"><circle cx="60" cy="182" r="5" fill="#c9403a"/><rect x="56.5" y="187" width="7" height="9" rx="3" fill="#c9403a"/></g>
+      <g class="crew" id="crewSelf"><circle cx="74" cy="182" r="5" fill="#555f6b"/><rect x="70.5" y="187" width="7" height="9" rx="3" fill="#555f6b"/></g>
+    </g>
+    <!-- fog layers -->
+    <ellipse id="fogA" cx="180" cy="120" rx="230" ry="66" fill="#eef1f4" opacity=".38"/>
+    <ellipse id="fogB" cx="120" cy="86" rx="180" ry="46" fill="#f4f6f8" opacity=".3"/>
+    <path d="M0 226 q30 -6 60 0 t60 0 t60 0 t60 0 t60 0 t60 0" stroke="#ffffff" stroke-opacity=".25" fill="none" stroke-width="2"/>
+    <path d="M0 240 q30 -6 60 0 t60 0 t60 0 t60 0 t60 0 t60 0" stroke="#ffffff" stroke-opacity=".16" fill="none" stroke-width="2"/>
+  </svg></div>
+  <div class="dots" id="beatDots"></div>
+  <div id="condStrip"></div>
+  <div class="card" id="actionCard"></div>
+  <div class="card" id="chartCard"></div>
+  <details><summary>この試作について・自己点検</summary><div class="card">
+    <div id="selfcheck"></div>
+    <button class="mini ghost" id="checkBtn" style="margin-top:8px">自己点検を回す</button>
+    <button class="mini ghost" id="chartResetBtn" style="margin-top:8px">海図の蓄積を消す</button>
+    <div class="note" id="buildNote"></div>
+  </div></details>
+</main>
+<script src="questions-g.js"></script>
+<script>
+'use strict';
+var SCENE_BUILD = '2026-11-15-scene1';
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+document.getElementById('freshPill').textContent = 'build ' + SCENE_BUILD;
+document.getElementById('buildNote').textContent = '試作場面（build ' + SCENE_BUILD + '）。本編0152・proto1 とは別の置き場・別の保存。問題は G検定の実物のプールから、信号文の拍に合う3問を選んで使っている。';
+
+/* ============ 問題（実物プールから信号の拍に合うものを選択） ============ */
+var POOL = window.QUAL_QUESTIONS_G || [];
+function poolQ(id){ return POOL.filter(function(q){ return q.id===id; })[0] || null; }
+var SIG = [
+  { beat:3, qid:'g3-04', frame:[['ruri','僚艦から信号が来た。「そちらの予測モデルの様子を知らせよ」。うちの見立てを、信号文で返す。']] },
+  { beat:6, qid:'g3-06', frame:[['ruri','今度はこちらから観測を送る。見張りの報告文として、正しいものを選ぶ。']] },
+  { beat:7, qid:'g1-02', frame:[['tetsu','無線の相手、声だけじゃ機械か人か分からんな。'],['ruri','その判定の考え方を、返答文にして送る。']] }
+];
+
+/* ============ 海図の蓄積（開くたびに残る） ============ */
+var CHART_KEY = 'qualfog.chart.v1';
+function loadChart(){
+  var c = null;
+  try{ c = JSON.parse(localStorage.getItem(CHART_KEY) || 'null'); }catch(e){}
+  if(!c || !Array.isArray(c.points)) c = { points:[], plays:0 };
+  return c;
+}
+function saveChart(){ try{ localStorage.setItem(CHART_KEY, JSON.stringify(chart)); }catch(e){} }
+var chart = loadChart();
+var SLOTS = [[20,70],[48,58],[76,48],[104,52],[132,64],[160,72],[188,62],[216,48],[244,40],[272,38],[300,42],[332,50]];
+function renderChart(){
+  var pts = '';
+  SLOTS.forEach(function(p, i){
+    var rec = chart.points[i];
+    if(!rec) pts += '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#9aa7b4"/>';
+    else if(rec.ok) pts += '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5.5" fill="#ffd75e" stroke="#a87b0a" stroke-width="1.4"/>';
+    else pts += '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5.5" fill="#ffffff" stroke="#FF9500" stroke-width="2.4"/>';
+  });
+  var clean = chart.points.filter(function(p){ return p.ok; }).length;
+  var corr = chart.points.length - clean;
+  document.getElementById('chartCard').innerHTML =
+    '<div class="row" style="display:flex;justify-content:space-between;align-items:center"><span class="title" style="font-size:16px">海図 ― 信号の記録</span>' +
+    '<span class="small">灯った所 ' + chart.points.length + ' / ' + SLOTS.length + '</span></div>' +
+    '<svg viewBox="0 0 360 96" style="width:100%;height:auto;margin-top:6px"><path d="M20 70 C 90 26, 150 88, 216 48 S 320 30, 340 50" fill="none" stroke="#8fa9c4" stroke-width="2" stroke-dasharray="5 4"/>' + pts + '</svg>' +
+    '<div class="small">通った信号 ' + clean + '／訂正して送り直した信号 ' + corr + '。この海図は、場面を閉じても残る。</div>';
+}
+function plotChart(ok){
+  if(chart.points.length < SLOTS.length){ chart.points.push({ ok: !!ok }); saveChart(); }
+  renderChart();
+}
+
+/* ============ 乗組員の調子（実測から・分離表示） ============ */
+function condStripHTML(){
+  var src = null;
+  try{ src = JSON.parse(localStorage.getItem('qual.state.v1') || 'null'); }catch(e){}
+  var SRS = [1,3,7,14,30];
+  function daysAgo(ds){ var a=new Date(), b=new Date(ds+'T00:00:00'); return Math.round((a - new Date(a.getFullYear()+'-'+String(a.getMonth()+1).padStart(2,'0')+'-'+String(a.getDate()).padStart(2,'0'))) / 86400000) + Math.round((new Date(a.getFullYear(),a.getMonth(),a.getDate()) - b)/86400000); }
+  function unitCond(unitId){
+    if(!src || !src.q) return null;
+    var vals = [];
+    POOL.filter(function(q){ return q.unit===unitId; }).forEach(function(q){
+      var r = src.q[q.id]; if(!r || !r.last) return;
+      var el = Math.max(0, Math.round((new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()) - new Date(r.last+'T00:00:00'))/86400000));
+      var iv = SRS[Math.min(r.stage||0, SRS.length-1)];
+      vals.push(Math.pow(0.5, el/(iv*2.5)));
+    });
+    if(!vals.length) return null;
+    var m = vals.reduce(function(a,b){ return a+b; },0)/vals.length;
+    return m>=0.8 ? ['好調','ok'] : (m>=0.55 ? ['普通','info'] : ['くたびれている','warn']);
+  }
+  var c1 = unitCond('g-u1'), c3 = unitCond('g-u3');
+  function row(name, c){
+    return '<div style="display:flex;justify-content:space-between;padding:5px 0"><span>' + name + '</span>' +
+      (c ? '<span class="badge ' + c[1] + '">' + c[0] + '</span>' : '<span class="badge idle">まだ測れていない</span>') + '</div>';
+  }
+  return '<div class="card"><div class="small" style="font-weight:700">乗組員の調子（本編の実測から）</div>' +
+    row('情報の担当（分野1）', c1) + row('機械の担当（分野3）', c3) +
+    '<div class="small">この表示は実測の保持から出したもので、この場面の正誤では変わらない（分離の原則）。</div></div>';
+}
+
+/* ============ 舞台の操作 ============ */
+function $(id){ return document.getElementById(id); }
+function setBoat(x){ $('boat').setAttribute('transform', 'translate(' + x + ',0)'); }
+function setFog(a, b){ $('fogA').setAttribute('opacity', a); $('fogB').setAttribute('opacity', b); }
+function setSister(o){ $('sister').setAttribute('opacity', o); }
+function flash(el, cls){
+  el.classList.remove('flash'); el.classList.remove('ack');
+  void el.getBoundingClientRect();
+  el.classList.add(cls);
+}
+function say(who, text){
+  var face = who==='ruri' ? ['ル','#2f6fd0'] : ['テ','#c9403a'];
+  var name = who==='ruri' ? 'ルリ（書庫番・信号手）' : 'テツ（機械番）';
+  return '<div class="say"><div class="face" style="background:' + face[1] + '">' + face[0] + '</div>' +
+    '<div><div class="who">' + name + '</div><div>' + text + '</div></div></div>';
+}
+function says(lines){ return lines.map(function(l){ return say(l[0], l[1]); }).join('<div style="height:8px"></div>'); }
+
+/* ============ 拍の進行 ============ */
+var BEAT_NAMES = ['開幕','配置','離桟','信号','対向船','機関室','信号','交信','係留'];
+var run = { beat:0, placed:{}, sent:0, clean:0, corrected:0, valves:[] };
+function renderDots(){
+  $('beatDots').innerHTML = BEAT_NAMES.map(function(_, i){
+    return '<i class="' + (i<run.beat ? 'done' : (i===run.beat ? 'now' : '')) + '"></i>';
+  }).join('');
+}
+function go(n){
+  run.beat = n; renderDots();
+  ({ 0:beatIntro, 1:beatPlace, 2:beatDepart, 3:beatSig1, 4:beatPasser, 5:beatEngine, 6:beatSig2, 7:beatRadio, 8:beatEnd })[n]();
+  window.scrollTo(0,0);
+}
+function card(html){ $('actionCard').innerHTML = html; }
+function nextBtn(label, n){
+  return '<button class="act" onclick="go(' + n + ')">' + label + '</button>';
+}
+
+/* ---- 拍0：開幕 ---- */
+function beatIntro(){
+  setBoat(0); setFog(.38,.3); setSister(.22);
+  $('condStrip').innerHTML = condStripHTML();
+  card(say('ruri','霧が出てる。灯台回りの途中、僚艦がこの先で待ってるはず。まず持ち場に付いて。') +
+    '<button class="act" onclick="go(1)">持ち場に付く</button>');
+}
+/* ---- 拍1：配置（操作・問題なし） ---- */
+function placeCrew(key, btn){
+  var moves = { ruri:['crewRuri','translate(47px,-32px)'], tetsu:['crewTetsu','translate(-16px,10px)'], self:['crewSelf','translate(30px,-4px)'] };
+  var m = moves[key];
+  $(m[0]).style.transform = m[1];
+  run.placed[key] = true;
+  btn.classList.add('placed'); btn.disabled = true; btn.textContent = btn.textContent + ' ― 付いた';
+  if(run.placed.ruri && run.placed.tetsu && run.placed.self){
+    $('placeNext').innerHTML = '<button class="act" onclick="go(2)">離桟の支度ができた</button>';
+  }
+}
+function beatPlace(){
+  card('<div class="title" style="font-size:16px">配置 ― 3人を器具へ</div>' +
+    '<div class="small" style="margin-top:4px">タップで持ち場に付く。問題ではない、航海の支度。</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' +
+    '<button class="mini" onclick="placeCrew(\'ruri\',this)">ルリ → 信号灯</button>' +
+    '<button class="mini" onclick="placeCrew(\'tetsu\',this)">テツ → 機関</button>' +
+    '<button class="mini" onclick="placeCrew(\'self\',this)">自分 → 見張り</button></div>' +
+    '<div id="placeNext"></div>');
+}
+/* ---- 拍2：離桟（操作・出来事） ---- */
+function depart(){
+  setBoat(70); setFog(.55,.45); setSister(.3);
+  $('departNext').innerHTML = say('ruri','桟橋が離れていく。……あ、あそこ。霧の向こうに、僚艦の灯が見える。') +
+    '<button class="act" onclick="go(3)">信号を待つ</button>';
+}
+function beatDepart(){
+  card(say('tetsu','機関は温まった。あんたの合図で離す。') +
+    '<button class="act" onclick="depart()">離桟する</button><div id="departNext" style="margin-top:10px"></div>');
+}
+/* ---- 信号の拍（四択＝信号文） ---- */
+function signalBeat(sigIdx, next){
+  var sig = SIG[sigIdx], q = poolQ(sig.qid);
+  if(!q){ card('<div>問題プールに ' + sig.qid + ' が見つからない。</div>'); return; }
+  var frame = says(sig.frame);
+  var order = q.choices.map(function(_,i){ return i; });
+  for(var i=order.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=order[i]; order[i]=order[j]; order[j]=t; }
+  var btns = order.map(function(ci){
+    return '<button class="choice" data-ci="' + ci + '">' + q.choices[ci] + '</button>';
+  }).join('');
+  card(frame +
+    '<div class="card" style="box-shadow:none;border:1px solid var(--sep);margin-top:12px">' +
+    '<div class="small">信号文の問い（' + q.unit.replace('g-u1','分野1').replace('g-u3','分野3') + '／キーワード：' + q.keyword + '／四択）</div>' +
+    '<div class="title" style="font-size:17px;margin-top:6px">' + q.stem + '</div>' +
+    '<div id="sigChoices">' + btns + '</div><div id="sigAfter"></div></div>');
+  document.querySelectorAll('#sigChoices .choice').forEach(function(b){
+    b.addEventListener('click', function(){ resolveSignal(q, parseInt(b.getAttribute('data-ci'),10), b, next); });
+  });
+}
+function resolveSignal(q, ci, btn, next){
+  if(run['lock'+q.id]) return; run['lock'+q.id] = true;
+  document.querySelectorAll('#sigChoices .choice').forEach(function(b){ b.disabled = true; });
+  btn.classList.add('sent');
+  flash($('sigLamp'), 'flash');
+  var ok = (ci === q.answer);
+  run.sent++;
+  setTimeout(function(){
+    var after = $('sigAfter'), html = '';
+    if(ok){
+      run.clean++;
+      flash($('sisterLamp'), 'ack');
+      setSister(Math.min(.78, parseFloat($('sister').getAttribute('opacity')) + .22));
+      plotChart(true);
+      html = '<div style="margin-top:10px"><b>信号が通った。</b> 僚艦の灯が二度瞬いて、姿が少し見えてきた。</div>' +
+        '<div class="small" style="margin-top:6px">' + q.explanation + '</div>';
+    } else {
+      run.corrected++;
+      $('sigFlag').setAttribute('fill', '#FF9500');
+      flash($('sisterLamp'), 'flash');
+      plotChart(false);
+      html = '<div style="margin-top:10px"><b>僚艦から「再送せよ」の灯。</b> マストの旗が訂正の色になった。</div>' +
+        '<div class="card" style="box-shadow:none;border:1px solid var(--sep);margin-top:8px"><div class="small">送り直す信号文（正しい文）</div>' +
+        '<div style="margin-top:4px">' + q.choices[q.answer] + '</div>' +
+        '<div class="small" style="margin-top:6px">' + q.explanation + '</div></div>' +
+        '<div class="small" style="margin-top:6px">送り直しの信号が通った。航海は同じ尺で進む。海図には、訂正した印で残る。</div>';
+    }
+    html += '<button class="act" onclick="go(' + next + ')">進む</button>';
+    after.innerHTML = html;
+  }, 780);
+}
+function beatSig1(){ signalBeat(0, 4); }
+/* ---- 拍4：対向船（出来事・問題なし） ---- */
+function horn(){
+  var p = $('passer');
+  p.setAttribute('opacity', '.85');
+  p.style.transition = 'transform 4.2s linear, opacity 1s';
+  p.style.transform = 'translateX(470px)';
+  flash($('passerLamp'), 'ack'); flash($('sigLamp'), 'flash');
+  $('hornBtn').disabled = true;
+  setTimeout(function(){
+    $('passerNext').innerHTML = say('tetsu','向こうも灯で返してきた。霧の中でも、合図があればぶつからん。') +
+      '<button class="act" onclick="go(5)">機関室へ</button>';
+  }, 2600);
+}
+function beatPasser(){
+  card(say('ruri','左から船影。対向船が来る。汽笛でこちらの位置を知らせる。') +
+    '<button class="act" id="hornBtn" onclick="horn()">汽笛を鳴らす</button><div id="passerNext" style="margin-top:10px"></div>');
+}
+/* ---- 拍5：機関室（手順の操作・採点なし） ---- */
+var VALVE_ORDER = [3,1,4,2];
+function tapValve(n, btn){
+  var expect = VALVE_ORDER[run.valves.length];
+  if(n === expect){
+    run.valves.push(n); btn.classList.add('open'); btn.disabled = true;
+    btn.querySelector('.s').textContent = '開いた';
+    if(run.valves.length === VALVE_ORDER.length){
+      var g = $('gear'); g.setAttribute('opacity','1'); g.classList.remove('spin'); void g.getBoundingClientRect(); g.classList.add('spin');
+      $('valveNext').innerHTML = say('tetsu','配管が通った。音が揃ったな。この手順は操作であって、試験じゃない。') +
+        '<button class="act" onclick="go(6)">甲板へ戻る</button>';
+    }
+  } else {
+    btn.classList.remove('shake'); void btn.getBoundingClientRect(); btn.classList.add('shake');
+  }
+}
+function beatEngine(){
+  run.valves = [];
+  var vs = [1,2,3,4].map(function(n){
+    return '<button class="valve" onclick="tapValve(' + n + ',this)"><div class="n">' + n + '</div><div class="s">バルブ</div></button>';
+  }).join('');
+  card(say('tetsu','機関室の配管、計器の順に開けてくれ。順は計器に出てる。') +
+    '<div class="chips"><span class="chip">計器の順：3 → 1 → 4 → 2</span><span class="chip">手順の実行（採点なし）</span></div>' +
+    '<div class="valves">' + vs + '</div><div id="valveNext" style="margin-top:10px"></div>');
+}
+/* ---- 拍6：信号2（霧の出来事をはさんで） ---- */
+function beatSig2(){
+  setBoat(120); setFog(.68,.55);
+  signalBeat(1, 7);
+}
+/* ---- 拍7：交信（受話器の四択） ---- */
+function beatRadio(){
+  setBoat(150);
+  signalBeat(2, 8);
+}
+/* ---- 拍8：係留・締め ---- */
+function beatEnd(){
+  setBoat(196); setFog(.4,.3); setSister(.85);
+  chart.plays++; saveChart(); renderChart();
+  var lines = [];
+  lines.push('信号は ' + run.sent + ' 回送り、' + run.clean + ' 回はそのまま通った。');
+  if(run.corrected>0) lines.push('訂正して送り直した信号が ' + run.corrected + ' 回。旗の色は、港に着くまで訂正のまま残った。');
+  else lines.push('訂正は一度もなかった。旗は白いまま港に着いた。');
+  lines.push('海図には今日の信号が灯った。次に開いた時も、そこから始まる。');
+  card(say('ruri', lines.join(' ')) +
+    '<button class="act" onclick="replay()">もう一度この場面を開く</button>' +
+    '<div class="note">締めの表示：この場面で変わったのは、灯・旗・僚艦の見え方・海図の点だけ。乗組員の調子（実測）は下のとおりで、この場面の正誤では動いていない。</div>');
+  $('condStrip').innerHTML = condStripHTML();
+}
+function replay(){
+  run = { beat:0, placed:{}, sent:0, clean:0, corrected:0, valves:[] };
+  ['crewRuri','crewTetsu','crewSelf'].forEach(function(id){ $(id).style.transform = ''; });
+  $('sigFlag').setAttribute('fill', '#f4f4f4');
+  $('passer').style.transform = ''; $('passer').setAttribute('opacity','0');
+  $('gear').setAttribute('opacity','0');
+  go(0);
+}
+
+/* ============ 自己点検 ============ */
+function runSelfCheck(){
+  var out = [], pass = 0, total = 0;
+  function t(name, cond){ total++; if(cond) pass++; out.push((cond?'合格':'不合格') + '：' + name); }
+  t('問題プールが読み込めている（24問）', POOL.length===24);
+  t('信号の3問がプールに実在する', SIG.every(function(s){ return !!poolQ(s.qid); }));
+  t('拍が9つ定義されている', BEAT_NAMES.length===9);
+  var rt = false;
+  try{ localStorage.setItem('qualfog.probe','1'); rt = localStorage.getItem('qualfog.probe')==='1'; localStorage.removeItem('qualfog.probe'); }catch(e){}
+  t('海図の保存が読み書きできる', rt);
+  t('海図の点が上限を超えない', chart.points.length <= SLOTS.length);
+  $('selfcheck').innerHTML = '<div class="small">自己点検 ' + pass + ' / ' + total + '</div>' +
+    out.map(function(l){ return '<div class="line">' + l + '</div>'; }).join('');
+}
+$('checkBtn').addEventListener('click', runSelfCheck);
+$('chartResetBtn').addEventListener('click', function(){
+  if(confirm('海図の蓄積を消しますか？')){ chart = { points:[], plays:0 }; saveChart(); renderChart(); }
+});
+
+/* ============ 開始 ============ */
+renderChart();
+go(0);
+</script>
+</body>
+</html>
