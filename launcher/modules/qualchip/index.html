@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>資格工房 試作「チップ編成」</title>
+<style>
+:root{
+  --label:#1c1c1e; --label2:rgba(60,60,67,.66); --label3:rgba(60,60,67,.42);
+  --tint:#007AFF; --red:#FF3B30; --orange:#FF9500; --green:#34C759; --purple:#AF52DE;
+  --glass:rgba(255,255,255,.52); --glass-edge:rgba(255,255,255,.65);
+  --sep:rgba(60,60,67,.14); --card:#FFFFFF; --fill:rgba(120,120,128,.14);
+  --shadow:0 10px 34px rgba(31,38,135,.14),0 2px 8px rgba(31,38,135,.08);
+  --spec:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -0.5px 0 rgba(255,255,255,.25);
+  --radius:24px; --motion-spatial-fast:.18s cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --label:#fff; --label2:rgba(235,235,245,.62); --label3:rgba(235,235,245,.38);
+    --tint:#0A84FF; --red:#FF453A; --orange:#FF9F0A; --green:#30D158; --purple:#BF5AF2;
+    --glass:rgba(38,38,44,.46); --glass-edge:rgba(255,255,255,.22);
+    --sep:rgba(255,255,255,.14); --card:#1E1E24; --fill:rgba(120,120,128,.26);
+    --shadow:0 12px 36px rgba(0,0,0,.5),0 2px 10px rgba(0,0,0,.35);
+    --spec:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -0.5px 0 rgba(255,255,255,.06); }
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html{ touch-action:manipulation; }
+body{ margin:0; color:var(--label); background:#EDF1F8;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Hiragino Sans","Noto Sans CJK JP",sans-serif;
+  font-size:16px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
+@media (prefers-color-scheme: dark){ body{ background:#05060A; } }
+.aurora{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+.aurora i{ position:absolute; border-radius:50%; filter:blur(70px); opacity:.55; }
+.aurora .a1{ width:340px;height:340px;background:#8EC5FF;top:-110px;left:-90px; }
+.aurora .a2{ width:300px;height:300px;background:#D8B4FE;top:16%;right:-120px;opacity:.45; }
+.aurora .a3{ width:280px;height:280px;background:#A7F3EA;bottom:6%;left:-100px;opacity:.4; }
+.aurora .a4{ width:220px;height:220px;background:#FFD1A9;bottom:-80px;right:-40px;opacity:.35; }
+@media (prefers-color-scheme: dark){ .aurora i{ opacity:.28; } }
+.glass{ background:var(--glass); border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
+  box-shadow:var(--shadow),var(--spec); }
+.topbar{ position:sticky; top:calc(10px + env(safe-area-inset-top)); z-index:30; display:flex; justify-content:center; pointer-events:none; padding:0 12px; }
+.topbar .pill{ pointer-events:auto; display:flex; align-items:center; gap:8px; border-radius:999px; padding:8px 16px; font-size:14px; font-weight:600; }
+.topbar .sub{ color:var(--label2); font-weight:500; font-size:12.5px; }
+header{ padding:14px 22px 0; max-width:720px; margin:0 auto; }
+h1{ font-size:28px; font-weight:800; letter-spacing:-.022em; margin:0; }
+.meta{ color:var(--label2); font-size:13px; margin-top:3px; }
+main{ padding:4px 16px 8px; max-width:720px; margin:0 auto; }
+h2{ font-size:13.5px; font-weight:600; color:var(--label2); margin:22px 8px 8px; letter-spacing:.02em; }
+.card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-top:12px; }
+.act{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:none; cursor:pointer;
+  border-radius:999px; padding:15px; margin-top:12px; background:var(--tint); color:#fff;
+  font-size:16.5px; font-weight:700; box-shadow:var(--shadow); transition:transform var(--motion-spatial-fast); }
+.act:active{ transform:scale(.97); }
+.act:disabled{ opacity:.45; }
+.act.sub{ background:var(--card); color:var(--tint); border:1.5px solid var(--tint); box-shadow:none; }
+.title{ font-size:17px; font-weight:700; }
+.small{ font-size:13px; color:var(--label2); }
+.badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:12.5px; font-weight:600; white-space:nowrap; }
+.badge.ok{ background:rgba(52,199,89,.16); color:#157347; }
+.badge.warn{ background:rgba(255,149,0,.18); color:#9a5b00; }
+.badge.info{ background:rgba(0,122,255,.14); color:#0a5cd6; }
+.badge.idle{ background:var(--fill); color:var(--label2); }
+.badge.bad{ background:rgba(255,59,48,.14); color:#c0271b; }
+@media (prefers-color-scheme: dark){ .badge.ok{ color:#4be07f; } .badge.warn{ color:#ffb340; } .badge.info{ color:#4da3ff; } .badge.bad{ color:#ff6f66; } }
+.mini{ border:none; cursor:pointer; border-radius:999px; padding:9px 14px; background:var(--tint); color:#fff; font-size:13.5px; font-weight:700; }
+.mini:disabled{ opacity:.4; }
+.mini.ghost{ background:var(--card); color:var(--tint); border:1.5px solid var(--tint); }
+.mini.gray{ background:var(--fill); color:var(--label); }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.tile{ border:1.5px solid var(--sep); border-radius:18px; padding:12px; background:var(--card); }
+.tile.inform{ border-color:var(--tint); background:rgba(0,122,255,.07); }
+.tile.away{ opacity:.55; }
+.tile .kw{ font-weight:700; font-size:15px; }
+.tile .row{ display:flex; justify-content:space-between; align-items:center; gap:6px; }
+.tile .ops{ display:flex; gap:6px; margin-top:9px; flex-wrap:wrap; }
+.band{ position:relative; height:12px; border-radius:6px; background:var(--fill); margin-top:8px; overflow:visible; }
+.band .seg{ position:absolute; top:2px; height:8px; border-radius:4px; background:linear-gradient(90deg,var(--orange),var(--tint)); }
+.band .seg.good{ background:linear-gradient(90deg,var(--green),var(--tint)); }
+.band .line{ position:absolute; top:-3px; width:2.5px; height:18px; background:var(--red); border-radius:2px; }
+.band.big{ height:18px; }
+.band.big .seg{ top:3px; height:12px; }
+.band.big .line{ height:26px; }
+.line{ padding:8px 0; border-bottom:1px solid var(--sep); font-size:15px; }
+.line:last-child{ border-bottom:none; }
+#overlay{ position:fixed; inset:0; z-index:60; background:var(--card); overflow-y:auto; display:none; padding:calc(18px + env(safe-area-inset-top)) 20px calc(30px + env(safe-area-inset-bottom)); }
+.choice{ display:block; width:100%; text-align:left; padding:14px; margin:8px 0; border:1.5px solid var(--sep);
+  border-radius:16px; background:var(--card); color:var(--label); font-size:15.5px; cursor:pointer; }
+.choice.right{ border-color:var(--green); background:rgba(52,199,89,.12); }
+.choice.wrong{ border-color:var(--red); background:rgba(255,59,48,.10); }
+.crossed{ border:2px solid var(--green); border-radius:16px; padding:12px; margin-top:12px; background:rgba(52,199,89,.10); font-weight:700; }
+details{ margin-top:14px; }
+summary{ font-size:13.5px; color:var(--label2); cursor:pointer; padding:6px 8px; }
+.note{ font-size:12.5px; color:var(--label3); margin-top:10px; }
+.say{ display:flex; gap:10px; align-items:flex-start; }
+.say .who{ font-size:12.5px; color:var(--label2); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i><i class="a4"></i></div>
+<div class="topbar"><div class="pill glass"><span>資格工房 試作</span><span class="sub" id="freshPill"></span></div></div>
+<header><h1>チップ編成</h1><div class="meta">論点のチップを組んで、検証して、出撃する。DESIGN v0.2 の最小セット試作。</div></header>
+<main>
+  <div id="partnerCard"></div>
+  <div id="missionCard"></div>
+  <h2>盤面 ― チップ（フォルダ <span id="folderCount"></span>）</h2>
+  <div id="board"></div>
+  <h2>帰還・拡張</h2>
+  <div id="homeCard"></div>
+  <details><summary>管理（時間の記録・自己点検）</summary><div class="card">
+    <div id="statsBox"></div>
+    <div id="selfcheck"></div>
+    <button class="mini ghost" id="checkBtn" style="margin-top:8px">自己点検を回す</button>
+    <button class="mini ghost" id="testReturnBtn" style="margin-top:8px">試験用：出撃中を全て帰還させる</button>
+    <button class="mini ghost" id="resetBtn" style="margin-top:8px">記録を消して最初から</button>
+    <div class="note" id="buildNote"></div>
+  </div></details>
+</main>
+<div id="overlay"></div>
+<script src="questions-g.js"></script>
+<script>
+'use strict';
+var DECK_BUILD = '2026-11-15-deck1';
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+document.getElementById('freshPill').textContent = 'build ' + DECK_BUILD;
+document.getElementById('buildNote').textContent = '試作（build ' + DECK_BUILD + '）。DESIGN v0.2 §8 の最小セット。本編0152・proto1・scene1 とは別の置き場・別の保存。保存は measured（実測）と game（ゲーム側）の2系統に分離。';
+
+var POOL = window.QUAL_QUESTIONS_G || [];
+var SRS = [1,3,7,14,30];
+var LINE = 0.5, MED_OK = 0.65;
+var UNITS = { 'g-u1':'分野1 人工知能の基礎', 'g-u3':'分野3 機械学習' };
+
+/* ============ 日付 ============ */
+function todayStr(d){
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function addDays(ds, n){
+  var d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() + n); return todayStr(d);
+}
+function daysBetween(a, b){ return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
+
+/* ============ 保存（2系統・分離） ============ */
+var MKEY = 'qualchip.measured.v1', GKEY = 'qualchip.game.v1';
+function loadJSON(k){ try{ return JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){ return null; } }
+function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+var measured = loadJSON(MKEY) || { q:{} };
+function saveMeasured(){ saveJSON(MKEY, measured); }
+var game = loadJSON(GKEY) || null;
+if(!game || typeof game !== 'object'){
+  game = { res:0, folderCap:30, carryCap:10, slots:4, folder:[], stock:[], formation:[],
+           away:{}, sorties:0, log:[], lastEvent:'', dayState:{ date:todayStr(), verify:[] } };
+}
+if(!game.dayState || game.dayState.date !== todayStr()) game.dayState = { date:todayStr(), verify:[] };
+function saveGame(){ saveJSON(GKEY, game); }
+
+/* ============ チップ定義（チップ＝キーワード） ============ */
+var CHIPS = [];
+POOL.forEach(function(q){ if(CHIPS.indexOf(q.keyword) < 0) CHIPS.push(q.keyword); });
+function chipQuestions(chip){ return POOL.filter(function(q){ return q.keyword === chip; }); }
+function chipUnit(chip){ var qs = chipQuestions(chip); return qs.length ? qs[0].unit : ''; }
+function chipRef(chip){ var qs = chipQuestions(chip); return qs.length ? (qs[0].syllabus_ref || '') : ''; }
+function chipCost(chip){ var qs = chipQuestions(chip); return qs.length ? (qs[0].difficulty || 1) + 1 : 2; }
+function chipCode(chip){
+  var ref = chipRef(chip), m = ref.match(/^(\d+)\.(\d+)$/);
+  if(m) return 'ABCDEFGH'[(parseInt(m[1],10)-1)*3 + parseInt(m[2],10) - 1] || 'Z';
+  var h = 0; for(var i=0;i<chip.length;i++) h = (h*31 + chip.charCodeAt(i)) >>> 0;
+  return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[h % 26];
+}
+
+/* ============ 実測モデル（measured だけから計算する） ============ */
+function qRetention(q){
+  var h = measured.q[q.id];
+  if(!h || !h.attempts) return 0;
+  var el = Math.max(0, daysBetween(h.last, todayStr()));
+  var iv = SRS[Math.min(h.stage || 0, SRS.length - 1)];
+  var dec = Math.pow(0.5, el / (iv * 2.5));
+  return h.lastOk ? dec : 0.25 * dec;
+}
+function distOf(values){
+  if(!values.length) return { med:0, p10:0 };
+  var s = values.slice().sort(function(a,b){ return a-b; });
+  var med = s[Math.floor((s.length - 1) / 2)];
+  var p10 = s[Math.floor(0.1 * (s.length - 1))];
+  return { med:med, p10:p10 };
+}
+function chipDist(chip){
+  var qs = chipQuestions(chip);
+  var d = distOf(qs.map(qRetention));
+  d.unmeasured = qs.filter(function(q){ return !(measured.q[q.id] && measured.q[q.id].attempts); }).length;
+  d.total = qs.length;
+  return d;
+}
+function pooledDist(chips){
+  var vals = [];
+  chips.forEach(function(c){ chipQuestions(c).forEach(function(q){ vals.push(qRetention(q)); }); });
+  return distOf(vals);
+}
+function chipAcquired(chip){
+  return chipQuestions(chip).some(function(q){ return measured.q[q.id] && measured.q[q.id].attempts; });
+}
+function chipState(chip){
+  if(!chipAcquired(chip)) return 'unrecovered';
+  var aw = game.away[chip];
+  if(aw) return aw.due <= todayStr() ? 'returned' : 'away';
+  if(game.folder.indexOf(chip) >= 0) return 'ready';
+  return 'stock';
+}
+function usedToday(q){ var h = measured.q[q.id]; return !!(h && h.last === todayStr()); }
+function chipUnusedQuestions(chip){
+  return chipQuestions(chip).filter(function(q){ return !usedToday(q); });
+}
+/* 出撃の成否：入力は measured 由来の分布と当日の回答だけ（game を参照しない＝分離の担保） */
+function sortieOutcome(chips, correctInSortie){
+  var d = pooledDist(chips);
+  var grade = (d.p10 >= LINE && d.med >= MED_OK) ? '成功' : (d.p10 >= LINE * 0.7 ? '辛勝' : '失敗');
+  return { grade:grade, med:d.med, p10:d.p10, correct:correctInSortie };
+}
+
+/* ============ 時間の記録（拍ごとの測定） ============ */
+var mode = 'form', modeSince = Date.now();
+function todayLog(){
+  var t = todayStr(), lg = game.log.filter(function(l){ return l.date === t; })[0];
+  if(!lg){ lg = { date:t, formMs:0, solveMs:0, crossings:0 }; game.log.push(lg); }
+  return lg;
+}
+function switchMode(next){
+  var now = Date.now(), lg = todayLog();
+  if(mode === 'solve') lg.solveMs += now - modeSince; else lg.formMs += now - modeSince;
+  mode = next; modeSince = now; saveGame();
+}
+setInterval(function(){ switchMode(mode); }, 15000);
+
+/* ============ 相棒（ゲーム側の成長だけ） ============ */
+var PARTNER_STAGES = ['見習い','一人前','番頭'];
+function partnerScore(){ return game.sorties + CHIPS.filter(chipAcquired).length; }
+function partnerStage(){ var s = partnerScore(); return s >= 16 ? 2 : (s >= 6 ? 1 : 0); }
+function partnerSay(text){ game.lastEvent = text; saveGame(); }
+</script>
+<script>
+'use strict';
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function pct(x){ return Math.round(x * 100); }
+
+/* ============ 盤面の描画 ============ */
+function bandHTML(d, big){
+  var left = pct(d.p10), width = Math.max(2, pct(d.med) - pct(d.p10));
+  var good = d.p10 >= LINE;
+  return '<div class="band' + (big ? ' big' : '') + '"><div class="seg' + (good ? ' good' : '') + '" style="left:' + left + '%;width:' + width + '%"></div>' +
+    '<div class="line" style="left:' + pct(LINE) + '%"></div></div>' +
+    '<div class="small">下側 ' + pct(d.p10) + ' ／ 中央 ' + pct(d.med) + '（赤い線＝要求ライン ' + pct(LINE) + '）</div>';
+}
+function renderPartner(){
+  var st = partnerStage(), score = partnerScore();
+  var nextAt = st === 0 ? 6 : (st === 1 ? 16 : null);
+  var deco = '';
+  if(st >= 1) deco = '<rect x="30" y="52" width="12" height="8" rx="3" fill="#FF9500"/><rect x="78" y="52" width="12" height="8" rx="3" fill="#FF9500"/>';
+  if(st >= 2) deco += '<path d="M38 96 L60 112 L82 96 L82 104 L60 120 L38 104 Z" fill="#AF52DE" opacity=".55"/>';
+  $('partnerCard').innerHTML = '<div class="card"><div style="display:flex;gap:14px;align-items:center">' +
+    '<svg viewBox="0 0 120 120" style="width:84px;height:84px;flex:none"><rect x="34" y="30" width="52" height="52" rx="16" fill="#2f6fd0"/>' +
+    '<rect x="42" y="44" width="36" height="14" rx="7" fill="#bfe0ff"/><circle cx="52" cy="51" r="3.4" fill="#123"/><circle cx="68" cy="51" r="3.4" fill="#123"/>' +
+    '<rect x="57" y="16" width="6" height="14" rx="3" fill="#2f6fd0"/><circle cx="60" cy="14" r="5" fill="#FFD75E"/>' +
+    '<rect x="44" y="82" width="32" height="18" rx="8" fill="#274b63"/>' + deco + '</svg>' +
+    '<div style="flex:1"><div class="row" style="display:flex;justify-content:space-between;align-items:center"><span class="title">相棒ナビ</span>' +
+    '<span class="badge info">' + PARTNER_STAGES[st] + '</span></div>' +
+    '<div class="small">成果（資源） ' + game.res + '／出撃 ' + game.sorties + ' 回／回収チップ ' + CHIPS.filter(chipAcquired).length + ' / ' + CHIPS.length +
+    (nextAt ? '／次の段階まで あと ' + (nextAt - score) : '／最終段階') + '</div>' +
+    (game.lastEvent ? '<div style="margin-top:6px">「' + esc(game.lastEvent) + '」</div>' : '<div class="small" style="margin-top:6px">まだ何も起きていない。チップの回収から始めよう。</div>') +
+    '</div></div></div>';
+}
+function formationCost(){ return game.formation.reduce(function(a,c){ return a + chipCost(c); }, 0); }
+function renderMission(){
+  var f = game.formation, d = pooledDist(f);
+  var cost = formationCost();
+  var preview = f.length === 0 ? '編成が空' : (d.p10 >= LINE && d.med >= MED_OK ? '成功圏' : (d.p10 >= LINE * 0.7 ? '辛勝圏' : '失敗圏'));
+  var chips = f.map(function(c, i){
+    return '<span class="badge info" style="margin:2px">' + esc(c) + '（' + chipCode(c) + '・' + chipCost(c) + '）<button onclick="removeFromFormation(' + i + ')" style="border:none;background:none;color:inherit;font-weight:800;cursor:pointer">×</button></span>';
+  }).join('');
+  var canGo = f.length > 0 && cost <= game.carryCap && f.every(function(c){ return chipState(c) === 'ready'; });
+  $('missionCard').innerHTML = '<div class="card"><div class="row" style="display:flex;justify-content:space-between;align-items:center">' +
+    '<span class="title">出撃先：定期監査</span><span class="badge ' + (preview === '成功圏' ? 'ok' : (preview === '辛勝圏' ? 'warn' : 'idle')) + '">見通し ' + preview + '</span></div>' +
+    '<div class="small">要求：編成の帯の下側がライン（' + pct(LINE) + '）以上。編成は最大 ' + game.slots + ' 枚、コスト合計 ' + cost + ' / ' + game.carryCap + '。</div>' +
+    '<div style="margin-top:8px">' + (chips || '<span class="small">盤面で「編成に入れる」を押すと、ここに並ぶ。</span>') + '</div>' +
+    (f.length ? bandHTML(d, true) : '') +
+    '<button class="act" ' + (canGo ? '' : 'disabled') + ' onclick="launchSortie()">出撃する（' + f.length + ' 枚）</button>' +
+    (f.length && !canGo ? '<div class="small" style="margin-top:6px">コスト超過か、出撃できないチップが混ざっている。</div>' : '') +
+    '</div>';
+}
+function tileHTML(chip){
+  var st = chipState(chip), d = chipDist(chip), code = chipCode(chip), cost = chipCost(chip);
+  var stateBadge = { unrecovered:'<span class="badge idle">未回収</span>', ready:'<span class="badge ok">出撃可</span>',
+    stock:'<span class="badge idle">ストック</span>', away:'<span class="badge warn">出撃中</span>', returned:'<span class="badge warn">帰還・回収待ち</span>' }[st];
+  var ops = '';
+  if(st === 'unrecovered') ops = '<button class="mini" onclick="acquireChip(\'' + esc(chip) + '\')">回収する</button>';
+  if(st === 'returned') ops = '<button class="mini" onclick="collectChip(\'' + esc(chip) + '\')">帰還回収する</button>';
+  if(st === 'ready'){
+    var inF = game.formation.indexOf(chip) >= 0;
+    ops = inF ? '<button class="mini gray" onclick="removeChipFromFormation(\'' + esc(chip) + '\')">編成から外す</button>'
+              : '<button class="mini" onclick="addToFormation(\'' + esc(chip) + '\')">編成に入れる</button>';
+    if(chipUnusedQuestions(chip).length && game.dayState.verify.indexOf(chip) < 0 && game.dayState.verify.length < 2)
+      ops += '<button class="mini ghost" onclick="verifyChip(\'' + esc(chip) + '\')">検証する</button>';
+    ops += '<button class="mini ghost" onclick="moveChip(\'' + esc(chip) + '\',false)">ストックへ</button>';
+  }
+  if(st === 'stock') ops = '<button class="mini" onclick="moveChip(\'' + esc(chip) + '\',true)">フォルダへ</button>';
+  if(st === 'away') ops = '<span class="small">帰還予定 ' + game.away[chip].due + '</span>';
+  return '<div class="tile' + (game.formation.indexOf(chip) >= 0 ? ' inform' : '') + (st === 'away' ? ' away' : '') + '">' +
+    '<div class="row"><span class="kw">' + esc(chip) + '</span>' + stateBadge + '</div>' +
+    '<div class="small">コード ' + code + '／コスト ' + cost + '／参照 ' + esc(chipRef(chip)) + '／問題 ' + d.total + ' 問' + (d.unmeasured ? '（未測定 ' + d.unmeasured + '）' : '') + '</div>' +
+    bandHTML(d, false) +
+    '<div class="ops">' + ops + '</div></div>';
+}
+function renderBoard(){
+  var html = '';
+  Object.keys(UNITS).forEach(function(u){
+    var chips = CHIPS.filter(function(c){ return chipUnit(c) === u; });
+    if(!chips.length) return;
+    html += '<div class="small" style="margin:14px 4px 0;font-weight:700">' + UNITS[u] + '</div><div class="grid">' +
+      chips.map(tileHTML).join('') + '</div>';
+  });
+  $('board').innerHTML = html;
+  $('folderCount').textContent = game.folder.length + ' / ' + game.folderCap + ' 枚';
+}
+function renderHome(){
+  var returned = CHIPS.filter(function(c){ return chipState(c) === 'returned'; });
+  var away = CHIPS.filter(function(c){ return chipState(c) === 'away'; });
+  var buy = function(label, cost, key, maxed){
+    return '<div class="line" style="display:flex;justify-content:space-between;align-items:center"><span>' + label + '</span>' +
+      '<button class="mini" ' + (maxed || game.res < cost ? 'disabled' : '') + ' onclick="buyExpand(\'' + key + '\',' + cost + ')">成果 ' + cost + '</button></div>';
+  };
+  $('homeCard').innerHTML = '<div class="card">' +
+    '<div class="line">帰還待ち：' + (returned.length ? returned.map(esc).join('、') : 'なし') + '</div>' +
+    '<div class="line">出撃中：' + (away.length ? away.map(function(c){ return esc(c) + '（' + game.away[c].due + '）'; }).join('、') : 'なし') + '</div>' +
+    buy('フォルダ容量 +6（現在 ' + game.folderCap + '）', 60, 'folderCap', false) +
+    buy('積載（コスト上限） +2（現在 ' + game.carryCap + '）', 50, 'carryCap', false) +
+    buy('出撃枠 +1（現在 ' + game.slots + '）', 120, 'slots', game.slots >= 6) +
+    '<div class="small">拡張はゲーム側の成長だけ。実測の数字はここでは動かない。</div></div>';
+}
+function renderStats(){
+  var lg = todayLog();
+  var total = lg.formMs + lg.solveMs;
+  var ratio = total > 0 ? Math.round(lg.solveMs / total * 100) : 0;
+  $('statsBox').innerHTML = '<div class="line">今日の記録：組む・見る ' + Math.round(lg.formMs/1000) + ' 秒／解く ' + Math.round(lg.solveMs/1000) + ' 秒（解く比率 ' + ratio + '%、初期値の狙い 50%・下限 40%）</div>' +
+    '<div class="line">今日「下側がラインを越えた」瞬間：' + lg.crossings + ' 回</div>' +
+    '<div class="small">プールが薄い（チップ1枚＝問題1問）ため、現状の比率は設計値より低く出る。比率は定数を動かす材料として記録している。</div>';
+}
+function renderAll(){ renderPartner(); renderMission(); renderBoard(); renderHome(); renderStats(); }
+
+/* ============ 編成の操作 ============ */
+function addToFormation(chip){
+  if(game.formation.indexOf(chip) >= 0) return;
+  if(game.formation.length >= game.slots){ partnerSay('出撃枠がいっぱいだ。'); renderPartner(); return; }
+  game.formation.push(chip); saveGame(); renderMission(); renderBoard();
+}
+function removeFromFormation(i){ game.formation.splice(i, 1); saveGame(); renderMission(); renderBoard(); }
+function removeChipFromFormation(chip){
+  var i = game.formation.indexOf(chip); if(i >= 0) removeFromFormation(i);
+}
+function moveChip(chip, toFolder){
+  if(toFolder){
+    if(game.folder.length >= game.folderCap){ partnerSay('フォルダがいっぱいだ。'); renderPartner(); return; }
+    game.stock = game.stock.filter(function(c){ return c !== chip; });
+    if(game.folder.indexOf(chip) < 0) game.folder.push(chip);
+  } else {
+    game.folder = game.folder.filter(function(c){ return c !== chip; });
+    removeChipFromFormation(chip);
+    if(game.stock.indexOf(chip) < 0) game.stock.push(chip);
+  }
+  saveGame(); renderBoard(); renderMission();
+}
+function buyExpand(key, cost){
+  if(game.res < cost) return;
+  game.res -= cost;
+  if(key === 'folderCap') game.folderCap += 6;
+  if(key === 'carryCap') game.carryCap += 2;
+  if(key === 'slots') game.slots = Math.min(6, game.slots + 1);
+  partnerSay('拡張した。盤面が少し広くなった。');
+  saveGame(); renderAll();
+}
+
+/* ============ 問題の専用画面（原文のまま・独立した時間） ============ */
+var KIND_LABEL = { acquire:'回収', verify:'検証', sortie:'出撃', collect:'帰還回収' };
+function openQuestions(kind, items, onDone){
+  switchMode('solve');
+  var ov = $('overlay'), idx = 0, correct = 0, results = [];
+  ov.style.display = 'block';
+  function step(){
+    if(idx >= items.length){ finish(); return; }
+    var it = items[idx], q = it.q;
+    var order = q.choices.map(function(_, i){ return i; });
+    for(var i = order.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = order[i]; order[i] = order[j]; order[j] = t; }
+    ov.innerHTML = '<div class="small">' + KIND_LABEL[kind] + '（' + (idx + 1) + ' / ' + items.length + '）</div>' +
+      '<div class="title" style="margin-top:4px">' + esc(it.chip) + '</div>' +
+      '<div class="small">' + (UNITS[q.unit] || q.unit) + '／キーワード：' + esc(q.keyword) + '／四択・原文のまま</div>' +
+      '<div class="title" style="font-size:19px;margin-top:14px">' + esc(q.stem) + '</div>' +
+      '<div id="ovChoices">' + order.map(function(ci){ return '<button class="choice" data-ci="' + ci + '">' + esc(q.choices[ci]) + '</button>'; }).join('') + '</div>' +
+      '<div id="ovAfter"></div>';
+    ov.querySelectorAll('.choice').forEach(function(b){
+      b.addEventListener('click', function(){ answer(parseInt(b.getAttribute('data-ci'), 10), b); });
+    });
+    ov.scrollTop = 0;
+    function answer(ci, btn){
+      var beforeP10 = kind === 'verify' ? chipDist(it.chip).p10 : null;
+      var ok = ci === q.answer;
+      var h = measured.q[q.id] || { stage:0, last:'', attempts:0, ever:false, lastOk:false };
+      h.attempts++; h.ever = h.ever || ok; h.lastOk = ok;
+      h.stage = ok ? Math.min((h.stage || 0) + 1, SRS.length - 1) : 0;
+      h.last = todayStr();
+      measured.q[q.id] = h; saveMeasured();
+      if(ok) correct++;
+      results.push({ chip:it.chip, ok:ok });
+      ov.querySelectorAll('.choice').forEach(function(b2){
+        b2.disabled = true;
+        var c2 = parseInt(b2.getAttribute('data-ci'), 10);
+        if(c2 === q.answer) b2.classList.add('right');
+        else if(b2 === btn) b2.classList.add('wrong');
+      });
+      var crossed = '';
+      if(kind === 'verify' && beforeP10 !== null){
+        var afterP10 = chipDist(it.chip).p10;
+        if(beforeP10 < LINE && afterP10 >= LINE){
+          todayLog().crossings++; saveGame();
+          crossed = '<div class="crossed">この1問で「' + esc(it.chip) + '」の下側が要求ラインを越えた。</div>';
+        }
+      }
+      $('ovAfter').innerHTML = crossed +
+        '<div style="margin-top:12px"><b>' + (ok ? '正解。' : '不正解。') + '</b></div>' +
+        '<div class="small" style="margin-top:4px">' + esc(q.explanation) + '</div>' +
+        '<button class="act" id="ovNext">' + (idx + 1 < items.length ? '次の問題へ' : '終わる') + '</button>';
+      $('ovNext').addEventListener('click', function(){ idx++; step(); });
+    }
+  }
+  function finish(){
+    ov.style.display = 'none'; ov.innerHTML = '';
+    switchMode('form');
+    if(onDone) onDone({ correct:correct, results:results });
+    renderAll();
+  }
+  step();
+}
+
+/* ============ 各拍の入口 ============ */
+function acquireChip(chip){
+  var qs = chipQuestions(chip);
+  if(!qs.length) return;
+  openQuestions('acquire', [{ q:qs[0], chip:chip }], function(){
+    if(game.folder.length < game.folderCap){ if(game.folder.indexOf(chip) < 0) game.folder.push(chip); }
+    else if(game.stock.indexOf(chip) < 0) game.stock.push(chip);
+    partnerSay('新しいチップ「' + chip + '」を回収した。');
+    saveGame();
+  });
+}
+function verifyChip(chip){
+  var qs = chipUnusedQuestions(chip).slice(0, 3);
+  if(!qs.length) return;
+  if(game.dayState.verify.indexOf(chip) < 0) game.dayState.verify.push(chip);
+  saveGame();
+  openQuestions('verify', qs.map(function(q){ return { q:q, chip:chip }; }), function(){
+    partnerSay('検証した「' + chip + '」の帯が動いた。編成の見通しを見てくれ。');
+  });
+}
+function collectChip(chip){
+  var qs = chipQuestions(chip);
+  if(!qs.length) return;
+  openQuestions('collect', [{ q:qs[0], chip:chip }], function(res){
+    delete game.away[chip];
+    partnerSay(res.correct ? '「' + chip + '」が帰ってきた。確度は保たれている。' : '「' + chip + '」は帰ってきたが、確度が落ちている。検証の候補だ。');
+    saveGame();
+  });
+}
+function launchSortie(){
+  var f = game.formation.slice();
+  if(!f.length) return;
+  var items = [];
+  f.forEach(function(chip){ chipUnusedQuestions(chip).slice(0, 2).forEach(function(q){ items.push({ q:q, chip:chip }); }); });
+  function finalize(correctCount){
+    var out = sortieOutcome(f, correctCount);
+    var codes = f.map(chipCode), hasPair = codes.some(function(c, i){ return codes.indexOf(c) !== i; });
+    var res = f.length * 10 + correctCount * 5;
+    if(hasPair) res = Math.round(res * 1.5);
+    game.res += res; game.sorties++;
+    f.forEach(function(chip){
+      var stages = chipQuestions(chip).map(function(q){ var h = measured.q[q.id]; return h ? (h.stage || 0) : 0; });
+      var iv = SRS[Math.min.apply(null, stages)];
+      if(out.grade === '失敗') iv = Math.max(1, Math.floor(iv / 2));
+      game.away[chip] = { due: addDays(todayStr(), iv) };
+    });
+    game.formation = [];
+    partnerSay('出撃は「' + out.grade + '」。成果 ' + res + ' を持ち帰る手はずになった' + (hasPair ? '（コードの連携で増えた）' : '') + '。');
+    saveGame(); renderAll();
+  }
+  if(items.length) openQuestions('sortie', items, function(res){ finalize(res.correct); });
+  else finalize(0);
+}
+
+/* ============ 管理 ============ */
+function runSelfCheck(){
+  var out = [], pass = 0, total = 0;
+  function t(name, cond){ total++; if(cond) pass++; out.push((cond ? '合格' : '不合格') + '：' + name); }
+  t('問題プールが読み込めている（24問）', POOL.length === 24);
+  t('チップが24枚そろっている', CHIPS.length === 24);
+  t('新品チップの分布は下側0・未測定つき', (function(){ var d = chipDist(CHIPS[0]); return typeof d.p10 === 'number' && d.total >= 1; })());
+  t('成否の計算が game を参照しない（関数の引数だけで決まる）', sortieOutcome.length === 2);
+  var rt = false;
+  try{ localStorage.setItem('qualchip.probe','1'); rt = localStorage.getItem('qualchip.probe') === '1'; localStorage.removeItem('qualchip.probe'); }catch(e){}
+  t('保存（2系統）が読み書きできる', rt && !!MKEY && !!GKEY && MKEY !== GKEY);
+  t('編成の制約（枠とコスト）が効いている', game.slots >= 1 && game.carryCap >= 1);
+  $('selfcheck').innerHTML = '<div class="small" style="margin-top:10px">自己点検 ' + pass + ' / ' + total + '</div>' +
+    out.map(function(l){ return '<div class="line">' + l + '</div>'; }).join('');
+}
+$('checkBtn').addEventListener('click', runSelfCheck);
+$('testReturnBtn').addEventListener('click', function(){
+  Object.keys(game.away).forEach(function(c){ game.away[c].due = todayStr(); });
+  saveGame(); renderAll();
+});
+$('resetBtn').addEventListener('click', function(){
+  if(!confirm('記録（実測とゲーム側の両方）を消して最初からにしますか？')) return;
+  localStorage.removeItem(MKEY); localStorage.removeItem(GKEY);
+  measured = { q:{} };
+  game = { res:0, folderCap:30, carryCap:10, slots:4, folder:[], stock:[], formation:[], away:{}, sorties:0, log:[], lastEvent:'', dayState:{ date:todayStr(), verify:[] } };
+  saveMeasured(); saveGame(); renderAll();
+});
+
+/* ============ 開始 ============ */
+saveGame();
+renderAll();
+</script>
+</body>
+</html>
