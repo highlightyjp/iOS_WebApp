@@ -38,6 +38,14 @@ textarea{ width:100%; border-radius:10px; border:none; background:var(--fill); c
 #exportSheet.open{ display:flex; }
 #exportSheet .sheet{ background:var(--card); width:100%; border-radius:20px 20px 0 0; padding:16px; max-height:88vh; overflow-y:auto; }
 #exportSheet img{ width:100%; border-radius:12px; }
+#logBtn{ position:fixed; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:30; background:rgba(20,28,40,.85); color:#d7e6f5; border:1px solid rgba(160,190,220,.35); border-radius:999px; padding:8px 14px; font-size:13px; display:none; }
+#logBtn.open{ display:block; }
+#logSheet{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-end; z-index:45; }
+#logSheet.open{ display:flex; }
+#logSheet .box{ background:#101623; width:100%; max-height:82%; overflow:auto; border-radius:16px 16px 0 0; padding:16px; }
+#logSheet pre{ white-space:pre-wrap; word-break:break-all; font-size:12px; line-height:1.6; color:#d7e6f5; background:#0a0f18; border-radius:10px; padding:10px; max-height:46vh; overflow:auto; }
+#logSheet .row{ display:flex; gap:8px; margin-top:10px; }
+#logSheet a.dl, #logSheet button{ flex:1; text-align:center; background:#1d2a3d; color:#eaf2fb; border:1px solid rgba(160,190,220,.35); border-radius:10px; padding:10px; font-size:14px; text-decoration:none; }
 #evStrip{ position:fixed; left:0; right:0; bottom:0; display:none; gap:6px; padding:8px; background:rgba(10,14,20,.88); z-index:35; }
 #evStrip.open{ display:flex; }
 #evStrip figure{ margin:0; flex:1; }
@@ -107,6 +115,43 @@ var OBS = /[?&]obs=1/.test(location.search);
 if(OBS){
   document.getElementById('knobBtn').style.display = 'none';
   document.getElementById('dbgBtn').style.display = 'none';
+
+  /* 観察用：セッションログの書き出し（観察の後で、自分の操作記録と突き合わせるための道具） */
+  var logBtn = document.createElement('button');
+  logBtn.id = 'logBtn'; logBtn.textContent = 'ログ書き出し'; logBtn.classList.add('open');
+  document.body.appendChild(logBtn);
+  var logSheet = document.createElement('div');
+  logSheet.id = 'logSheet';
+  var logBox = document.createElement('div'); logBox.className = 'box';
+  var logTitle = document.createElement('div');
+  logTitle.textContent = 'セッションログ（タップ・返し・状態変化）';
+  logTitle.style.cssText = 'color:#eaf2fb;font-size:15px;margin-bottom:8px;';
+  var logPre = document.createElement('pre');
+  var logRow = document.createElement('div'); logRow.className = 'row';
+  var logDl = document.createElement('a'); logDl.className = 'dl'; logDl.textContent = 'ダウンロード';
+  var logClose = document.createElement('button'); logClose.textContent = '閉じる';
+  logRow.appendChild(logDl); logRow.appendChild(logClose);
+  logBox.appendChild(logTitle); logBox.appendChild(logPre); logBox.appendChild(logRow);
+  logSheet.appendChild(logBox);
+  document.body.appendChild(logSheet);
+  logBtn.addEventListener('click', function(){
+    var taps = evLog.filter(function(e){ return e.kind === 'タップ'; });
+    var nGround = taps.filter(function(e){ return e.detail.indexOf('（地面）') === 0; }).length;
+    var nSelf = taps.filter(function(e){ return e.detail.indexOf('（本人）') === 0; }).length;
+    var nStar = taps.filter(function(e){ return e.detail.indexOf('（粒）') === 0; }).length;
+    var nSelfMove = evLog.filter(function(e){ return e.detail.indexOf('自律移動') === 0; }).length;
+    var head = '断片セッションログ（build ' + (window.__build || '不明') + '）\n'
+      + '開始：' + new Date(T0 + performance.timeOrigin).toLocaleString('ja-JP') + '\n'
+      + '時刻は、ページを開いてからの秒数です。\n\n';
+    var foot = '\n\n集計：タップ ' + taps.length + '件（地面 ' + nGround + '／本人 ' + nSelf + '／粒 ' + nStar + '）、自律移動 ' + nSelfMove + '件';
+    var text = head + evLog.map(elogLine).join('\n') + foot;
+    logPre.textContent = text;
+    var blob = new Blob([text], { type:'text/plain' });
+    logDl.href = URL.createObjectURL(blob);
+    logDl.download = 'qfrag-session-log.txt';
+    logSheet.classList.add('open');
+  });
+  logClose.addEventListener('click', function(){ logSheet.classList.remove('open'); });
 }
 var PARAM_DEFS = [
   { key:'wanderSpeed', label:'さまよう速さ', min:0, max:70, step:1 },
@@ -142,6 +187,19 @@ window.addEventListener('resize', resize);
 resize();
 
 var state = { taps:0, hops:0, startedAt:performance.now(), frames:0, fps:0 };
+
+/* ==== セッション出来事ログ（観察の道具） ====
+   タップ・返し・状態変化を時刻つきで残す。観察後に書き出して、観察者の操作記録と突き合わせる。 */
+var T0 = performance.now();
+var evLog = [];
+function elog(kind, detail){
+  if(evLog.length > 800) evLog.shift();
+  evLog.push({ s:(performance.now() - T0) / 1000, kind:kind, detail:detail });
+}
+function elogLine(e){
+  var ss = e.s.toFixed(1);
+  return '[' + ('     ' + ss).slice(-6) + 's] ' + e.kind + ' ' + e.detail;
+}
 var logs = [];
 function log(s){
   logs.unshift(new Date().toLocaleTimeString('ja-JP') + ' ' + s);
@@ -159,7 +217,7 @@ function seedCre(){
   crea.x = W * 0.5; crea.y = H * 0.55;
   crea.dir = Math.random() < 0.5 ? -1 : 1;
   crea.nextSelf = performance.now() + 6000;
-  star = { x:0.22 + Math.random() * 0.56, y:0.3 + Math.random() * 0.4, s:1.6, p:Math.random() * 6.28, pointedUntil:0 };
+  star = { x:0.22 + Math.random() * 0.56, y:0.3 + Math.random() * 0.4, s:1.6, p:Math.random() * 6.28, pointedUntil:0 }; elog('状態', '粒が出た');
   starAt = 0;
   motes = [];
   for(var i = 0; i < 40; i++) motes.push({ x:Math.random(), y:Math.random(), s:Math.random() * 2 + 0.6, p:Math.random() * 6.28 });
@@ -211,9 +269,9 @@ function draw(now){
   if(crea.hop){
     var hp = crea.hop;
     var k2 = (now - hp.at) / hp.dur;
-    if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ');
-      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); } } }
-      if(crea.pendingStar && star){ crea.pendingStar = false; var sp5 = starPos(t); if(sp5){ crea.noticePending = true; crea.noticeUntil = now + 650; crea.noticeDir = sp5.x >= crea.x ? 1 : -1; crea.waitUntil = 0; log('着地 → 指さされた粒に気づく'); } }
+    if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ'); elog('状態', '着地 → 待つ');
+      if(hp.toStar && star){ var sp4 = starPos(t); if(sp4 && Math.hypot(sp4.x - crea.x, sp4.y - crea.y) < r + 26){ star = null; starAt = now + 7000 + Math.random() * 4000; crea.absorbAt = now; log('粒を取り込んだ'); elog('状態', '粒を取り込んだ'); } } }
+      if(crea.pendingStar && star){ crea.pendingStar = false; var sp5 = starPos(t); if(sp5){ crea.noticePending = true; crea.noticeUntil = now + 650; crea.noticeDir = sp5.x >= crea.x ? 1 : -1; crea.waitUntil = 0; log('着地 → 指さされた粒に気づく'); elog('状態', '気づく一拍の開始（着地後・指さされた粒）'); } }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
       crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
@@ -234,7 +292,7 @@ function draw(now){
     if(crea.y > H - r - 30){ crea.y = H - r - 30; crea.vy = -Math.abs(crea.vy); }
     if(Math.abs(crea.vx) > 2) crea.dir = crea.vx > 0 ? 1 : -1;
   }
-  if(!star && starAt && now > starAt){ star = { x:0.15 + Math.random() * 0.7, y:0.28 + Math.random() * 0.44, s:1.6, p:Math.random() * 6.28, pointedUntil:0 }; starAt = 0; }
+  if(!star && starAt && now > starAt){ star = { x:0.15 + Math.random() * 0.7, y:0.28 + Math.random() * 0.44, s:1.6, p:Math.random() * 6.28, pointedUntil:0 }; starAt = 0; elog('状態', '粒が出た'); }
   if(crea.noticePending && !crea.hop && now >= crea.noticeUntil){
     /* 気づく一拍が明けた：粒を見た後で、取りに行く */
     crea.noticePending = false;
@@ -245,7 +303,7 @@ function draw(now){
         var tyN = Math.max(r + 70, Math.min(H - r - 30, spN.y));
         var distN = Math.hypot(txN - crea.x, tyN - crea.y);
         crea.hop = { fx:crea.x, fy:crea.y, tx:txN, ty:tyN, at:now, dur:Math.max(320, Math.min(780, distN * 1.25)), toStar:true };
-        log('気づいた → 取りに行く');
+        log('気づいた → 取りに行く'); elog('返し', '指さしへの返し（気づいてから取りに行く跳躍）');
       }
     }
   }
@@ -257,7 +315,7 @@ function draw(now){
       var ty0 = Math.max(r + 70, Math.min(H - r - 30, sp3.y));
       var dist0 = Math.hypot(tx0 - crea.x, ty0 - crea.y);
       crea.hop = { fx:crea.x, fy:crea.y, tx:tx0, ty:ty0, at:now, dur:Math.max(320, Math.min(780, dist0 * 1.25)), toStar:true };
-      log('世界から動いた（粒を取りに行く）');
+      log('世界から動いた（粒を取りに行く）'); elog('返し', '自律移動の開始（粒を取りに行く）');
     }
     crea.nextSelf = now + params.selfSec * 1000 * (0.7 + Math.random() * 0.7);
   }
@@ -339,6 +397,7 @@ cv.addEventListener('pointerdown', function(ev){
   if(star){
     var spT = starPos(now / 1000);
     if(spT && Math.hypot(ev.clientX - spT.x, ev.clientY - spT.y) < 30){
+      elog('タップ', '（粒） x=' + Math.round(spT.x) + ' y=' + Math.round(spT.y));
       star.pointedUntil = now + 2600;
       ripples.push({ x:spT.x, y:spT.y, at:now });
       if(!crea.hop){
@@ -347,6 +406,7 @@ cv.addEventListener('pointerdown', function(ev){
         crea.noticeDir = spT.x >= crea.x ? 1 : -1;
         crea.waitUntil = 0;
         log('粒を指さした → 気づく');
+        elog('状態', '気づく一拍の開始（指さされた粒）');
       } else {
         crea.pendingStar = true;
         log('粒を指さした → 着地したら取りに行く');
@@ -357,7 +417,9 @@ cv.addEventListener('pointerdown', function(ev){
   /* 本人へのタップ：距離ゼロの「寄る」は見える返しにならない。驚いてその場で跳ね、こちらを見る */
   if(!crea.hop && Math.hypot(ev.clientX - crea.x, ev.clientY - crea.y) < params.size + 12){
     crea.noticePending = false; crea.pendingStar = false;
+    elog('タップ', '（本人） x=' + Math.round(ev.clientX) + ' y=' + Math.round(ev.clientY));
     crea.startleAt = now;
+    elog('返し', '驚き（本人タップへの返し）');
     crea.attendUntil = now + 1600;
     crea.waitUntil = 0;
     ripples.push({ x:ev.clientX, y:ev.clientY, at:now });
@@ -374,6 +436,8 @@ cv.addEventListener('pointerdown', function(ev){
   ripples.push({ x:ev.clientX, y:ev.clientY, at:now });
   state.hops++;
   log('タップ → 跳ねて寄る（距離 ' + Math.round(dist) + '）');
+  elog('タップ', '（地面） x=' + Math.round(ev.clientX) + ' y=' + Math.round(ev.clientY));
+  elog('返し', '跳んで寄る（距離 ' + Math.round(dist) + '）');
 });
 
 /* ===== 証跡モード（?evidence=1・作り手用）：驚き反応のピークを撮る ===== */
