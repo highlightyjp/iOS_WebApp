@@ -71,7 +71,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .chips.rail{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; scrollbar-width:none; }
 .chips.rail::-webkit-scrollbar{ display:none; }
 .chips.rail .chip{ flex:0 0 auto; }
-.toolbar{ position:sticky; top:calc(6px + env(safe-area-inset-top)); z-index:25; background:var(--card);
+.toolbar{ position:sticky; top:6px; z-index:25; background:var(--card);
   border-radius:18px; box-shadow:var(--shadow); padding:10px 12px; margin-top:10px; }
 .toolbar input[type=search]{ margin-top:0; }
 .toolbar .chips{ margin-top:8px; }
@@ -89,7 +89,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .countLine{ text-align:center; font-size:12.5px; color:var(--label3); margin-top:10px; }
 .pbar{ height:5px; border-radius:3px; background:var(--fill); margin-top:6px; overflow:hidden; }
 .pbar i{ display:block; height:100%; background:var(--tint); border-radius:3px; }
-.bar{ position:sticky; top:calc(8px + env(safe-area-inset-top)); z-index:20; border-radius:26px;
+.bar{ position:sticky; top:8px; z-index:20; border-radius:26px;
   padding:8px 10px; display:flex; gap:6px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
 .bar .grp{ display:flex; gap:6px; align-items:center; }
 .bar button{ border:none; cursor:pointer; border-radius:999px; padding:8px 13px; font-size:13.5px; font-weight:700;
@@ -99,6 +99,9 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .part .ph{ font-size:13px; font-weight:700; color:var(--label2); border-bottom:1px solid var(--sep); padding-bottom:6px; margin-bottom:12px; }
 .gap{ margin-top:26px; border:1.5px dashed var(--sep); border-radius:16px; padding:18px; text-align:center; color:var(--label2); font-size:14px; }
 .text{ white-space:pre-wrap; word-break:break-word; line-height:1.9; }
+.aa{ font-family:ui-monospace, Menlo, "Courier New", monospace; white-space:pre; overflow-x:auto;
+  -webkit-overflow-scrolling:touch; line-height:1.25; font-size:12.5px; padding:10px 6px;
+  background:var(--fill); border-radius:12px; margin:10px 0; word-break:normal; }
 .text .ph2{ color:var(--label2); font-size:.82em; }
 .vwrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .vtext{ writing-mode:vertical-rl; height:62vh; line-height:2.0; white-space:pre-wrap; word-break:break-word; padding:6px 4px; }
@@ -190,7 +193,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss9';
+var SS_BUILD = '2026-11-15-ss10';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -504,6 +507,60 @@ function fmtText(text){
     return esc(line);
   }).join('\n');
 }
+/* AA（アスキーアート）判定：記号と空白が大半を占める行が3行以上続いたらAAブロックとして切り出す。
+   AAは等幅フォント＋折り返しなしでないと崩れるため、通常本文とは別に描く */
+function isAALine(line){
+  if(!line || !line.trim()) return false;
+  if(line.length < 6) return false;
+  if(/^\s*>>\d+/.test(line)) return false; /* アンカー（>>14）の並びはAAではない */
+  var glyphs = (line.match(/[|\/\\_\-=.,'`()<>#:+*~^＿／＼｜：；´｀＾―・…‥:;、。，．￣⌒]/g) || []).length;
+  var spaces = (line.match(/[ 　]/g) || []).length;
+  var letters = line.length - glyphs - spaces;
+  if(letters === 0 && spaces >= 4 && glyphs >= 1) return true; /* 全角空白で組まれたAAの疎な行 */
+  if(glyphs >= 3 && (glyphs + spaces) / line.length >= 0.5 && letters <= glyphs) return true;
+  /* AAの疎な行：大きく字下げされ、文らしい仮名・漢字の連なりがない（線を引く記号が要る） */
+  var drawGlyphs = glyphs - (line.match(/>/g) || []).length;
+  if(spaces / line.length >= 0.3 && drawGlyphs >= 1 && !/[ぁ-んァ-ヶ一-龥]{3,}/.test(line)) return true;
+  return false;
+}
+function segmentize(text){
+  var lines = String(text || '').split('\n');
+  var raw = lines.map(isAALine);
+  /* 橋渡し：AAに隣り合う空白行・記号だけの行だけをAA側に含める（セリフ行は絶対に巻き込まない） */
+  var ext = raw.slice();
+  for(var b = 0; b < lines.length; b++){
+    if(ext[b]) continue;
+    var ln = lines[b];
+    var symbolOnly = !ln.trim() || !/[ぁ-んァ-ヶ一-龥a-zA-Z0-9]/.test(ln);
+    if(symbolOnly && ((b > 0 && ext[b-1]) || (b + 1 < lines.length && raw[b+1]))) ext[b] = true;
+  }
+  /* AA塊の合格条件：6行以上、かつ素のAA行が6割以上（短い記号の並びや字下げセリフをAAにしない） */
+  function runAt(i){
+    if(!ext[i]) return 0;
+    var j = i;
+    while(j < lines.length && ext[j]) j++;
+    var len = j - i, real = 0;
+    for(var x = i; x < j; x++) if(raw[x]) real++;
+    return (len >= 6 && real / len >= 0.6) ? len : 0;
+  }
+  var segs = [];
+  var i = 0;
+  while(i < lines.length){
+    var r = runAt(i);
+    if(r > 0){ segs.push({ type:'aa', lines:lines.slice(i, i + r) }); i += r; continue; }
+    var buf = [];
+    while(i < lines.length && runAt(i) === 0){ buf.push(lines[i]); i++; }
+    segs.push({ type:'text', lines:buf });
+  }
+  return segs;
+}
+function renderPartText(text){
+  return segmentize(text).map(function(seg){
+    if(seg.type === 'aa') return '<div class="aa">' + esc(seg.lines.join('\n')) + '</div>';
+    var inner = '<div class="' + (settings.vertical ? 'vtext' : 'text') + '">' + fmtText(seg.lines.join('\n')) + '</div>';
+    return settings.vertical ? '<div class="vwrap">' + inner + '</div>' : inner;
+  }).join('');
+}
 function applyTextStyle(){
   var body = $('rBody');
   body.style.fontSize = settings.fontSize + 'px';
@@ -569,8 +626,7 @@ function renderReaderBody(){
     if(item.type === 'gap')
       return '<div class="gap" data-seq="' + i + '">第' + item.n + '編は回収できていません</div>';
     var inner = '<div class="ph">第' + item.n + '編' + (partSuffix(item.part) ? '（' + esc(partSuffix(item.part).replace(/^-/, '')) + '）' : '') + '</div>' +
-      '<div class="' + (settings.vertical ? 'vtext' : 'text') + '">' + fmtText(item.text) + '</div>';
-    if(settings.vertical) inner = '<div class="vwrap">' + inner + '</div>';
+      renderPartText(item.text);
     return '<div class="part" id="part-' + i + '" data-seq="' + i + '">' + inner + '</div>';
   }).join('');
   $('rBody').innerHTML = html;
