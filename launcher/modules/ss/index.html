@@ -38,9 +38,6 @@ body{ margin:0; color:var(--label); background:#EDF1F8;
 .glass{ background:var(--glass); border:1px solid var(--glass-edge);
   -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
   box-shadow:var(--shadow),var(--spec); }
-.topbar{ position:sticky; top:calc(10px + env(safe-area-inset-top)); z-index:30; display:flex; justify-content:center; pointer-events:none; padding:0 12px; }
-.topbar .pill{ pointer-events:auto; display:flex; align-items:center; gap:8px; border-radius:999px; padding:8px 16px; font-size:14px; font-weight:600; }
-.topbar .sub{ color:var(--label2); font-weight:500; font-size:12.5px; }
 header{ padding:14px 22px 0; max-width:720px; margin:0 auto; }
 h1{ font-size:28px; font-weight:800; letter-spacing:-.022em; margin:0; }
 .meta{ color:var(--label2); font-size:13px; margin-top:3px; }
@@ -106,8 +103,6 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 </head>
 <body>
 <div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
-<div class="topbar" id="topbar"><div class="pill glass"><span>のくす書庫</span><span class="sub" id="freshPill"></span></div></div>
-
 <div id="shelfView">
   <header><h1>のくす書庫</h1><div class="meta" id="freshMeta">読み込み中…</div></header>
   <main>
@@ -167,7 +162,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-15-ss6';
+var SS_BUILD = '2026-11-15-ss7';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 (function(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -180,7 +175,6 @@ var SS_BUILD = '2026-11-15-ss6';
   }).catch(function(){});
 })();
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
-document.getElementById('freshPill').textContent = 'build ' + SS_BUILD;
 document.getElementById('buildNote').textContent = 'モジュール build ' + SS_BUILD + '／データ契約 ss-data/v1（本部が生成・差し替え）';
 
 var INDEX = null;
@@ -449,7 +443,6 @@ function openStory(id, resume){
   fetch('data/texts/' + encodeURIComponent(id) + '.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(doc){
     cur = { story: story, seq: buildSequence(story, doc.parts || []) };
     $('shelfView').style.display = 'none';
-    $('topbar').style.display = 'none';
     $('readerView').style.display = 'block';
     $('rTitle').textContent = story.title;
     $('rMeta').textContent = (story.tags || []).join('／') + '・' + story.parts + ' 編／' + Number(story.chars || 0).toLocaleString() + ' 字' + ((story.gaps && story.gaps.length) ? '・欠け ' + story.gaps.length + ' 編' : '');
@@ -517,7 +510,6 @@ $('backBtn').addEventListener('click', function(){
   saveProgress();
   cur = null;
   $('readerView').style.display = 'none';
-  $('topbar').style.display = '';
   $('shelfView').style.display = 'block';
   renderShelf();
   window.scrollTo(0, 0);
