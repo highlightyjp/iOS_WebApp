@@ -87,7 +87,7 @@ textarea{ width:100%; border-radius:10px; border:none; background:var(--fill); c
 </div>
 
 <script type="application/json" id="fragParams">
-{ "wanderSpeed": 26, "hopPower": 1, "blinkSec": 3.4, "size": 30, "drift": 14 }
+{ "wanderSpeed": 26, "hopPower": 1, "blinkSec": 3.4, "size": 30, "drift": 14, "waitSec": 4.5, "waitHop": 9 }
 </script>
 <script>
 'use strict';
@@ -99,6 +99,8 @@ var PARAM_DEFS = [
   { key:'wanderSpeed', label:'さまよう速さ', min:0, max:70, step:1 },
   { key:'hopPower', label:'跳ねの強さ', min:0.3, max:2.2, step:0.1 },
   { key:'blinkSec', label:'まばたき間隔(秒)', min:1.2, max:8, step:0.2 },
+  { key:'waitSec', label:'待つ長さ(秒)', min:1.5, max:9, step:0.5 },
+  { key:'waitHop', label:'待ち跳ねの高さ', min:0, max:22, step:1 },
   { key:'size', label:'体の大きさ', min:18, max:54, step:1 },
   { key:'drift', label:'漂う粒の数', min:0, max:40, step:1 }
 ];
@@ -134,7 +136,7 @@ function log(s){
   if(el) el.textContent = logs.join('\n');
 }
 /* 誰か：丸い体。無操作でもさまよい、まばたきする。タップへの返しは「跳ねて寄る」1つ */
-var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0 };
+var crea = { x:0, y:0, vx:0, vy:0, dir:1, blinkUntil:0, nextBlink:2000, hop:null, squash:0, look:0, waitFrom:0, waitUntil:0, lookC:1 };
 var ripples = [];
 var motes = [];
 function seedCre(){
@@ -175,11 +177,14 @@ function draw(now){
   if(crea.hop){
     var hp = crea.hop;
     var k2 = (now - hp.at) / hp.dur;
-    if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; }
+    if(k2 >= 1){ crea.x = hp.tx; crea.y = hp.ty; crea.hop = null; crea.squash = 1; crea.waitFrom = now; crea.waitUntil = now + params.waitSec * 1000; log('着地 → こちらを向いて待つ'); }
     else {
       crea.x = hp.fx + (hp.tx - hp.fx) * k2;
       crea.y = hp.fy + (hp.ty - hp.fy) * k2 - Math.sin(k2 * Math.PI) * 54 * params.hopPower;
     }
+  } else if(now < crea.waitUntil){
+    /* 待つ：その場で小さく跳ねて、次を誘う（予備動作）。さまよいは止める */
+    crea.vx = 0; crea.vy = 0;
   } else {
     crea.vx += (Math.random() - 0.5) * 14 * dt;
     crea.vy += (Math.random() - 0.5) * 10 * dt;
@@ -193,21 +198,31 @@ function draw(now){
     if(Math.abs(crea.vx) > 2) crea.dir = crea.vx > 0 ? 1 : -1;
   }
   if(crea.squash > 0) crea.squash = Math.max(0, crea.squash - dt * 5);
+  /* 待つ間の予備動作：沈んで（予備）→小さく跳ねる。目は徐々にこちらを向く */
+  var waiting = !crea.hop && now < crea.waitUntil;
+  var lift = 0, crouch = 0;
+  if(waiting){
+    var ph = ((now - crea.waitFrom) % 950) / 950;
+    var sn = Math.sin(ph * Math.PI * 2);
+    lift = Math.pow(Math.max(0, sn), 1.4) * params.waitHop;
+    crouch = Math.max(0, -sn) * 0.09;
+  }
+  crea.lookC += ((waiting ? 0 : crea.dir) - crea.lookC) * Math.min(1, dt * 7);
   /* まばたき */
   if(now > crea.nextBlink){ crea.blinkUntil = now + 130; crea.nextBlink = now + params.blinkSec * 1000 * (0.7 + Math.random() * 0.6); }
   var blinking = now < crea.blinkUntil;
   var hopping = !!crea.hop;
   /* 体 */
-  var sq = crea.squash * 0.18;
+  var sq = crea.squash * 0.18 + crouch;
   ctx.save();
-  ctx.translate(crea.x, crea.y);
+  ctx.translate(crea.x, crea.y - lift);
   ctx.scale(1 + sq, 1 - sq);
   var bg = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.2, 0, 0, r * 1.15);
   bg.addColorStop(0, '#ffe9a8'); bg.addColorStop(1, '#f5b942');
   ctx.fillStyle = bg;
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
   /* 目：進む方を見る。跳ねている間は見開く */
-  var lx = crea.dir * r * 0.16, wide = hopping ? 1.5 : 1;
+  var lx = crea.lookC * r * 0.16, wide = hopping ? 1.5 : 1;
   ctx.fillStyle = '#22303f';
   if(blinking){
     ctx.fillRect(-r * 0.34 + lx - r * 0.11, -r * 0.08, r * 0.22, 2.4);
@@ -231,6 +246,7 @@ cv.addEventListener('pointerdown', function(ev){
   var ty = Math.max(params.size + 70, Math.min(H - params.size - 30, ev.clientY));
   var dist = Math.hypot(tx - crea.x, ty - crea.y);
   crea.hop = { fx:crea.x, fy:crea.y, tx:tx, ty:ty, at:now, dur:Math.max(240, Math.min(620, dist * 1.1)) };
+  crea.waitUntil = 0;
   ripples.push({ x:ev.clientX, y:ev.clientY, at:now });
   state.hops++;
   log('タップ → 跳ねて寄る（距離 ' + Math.round(dist) + '）');
