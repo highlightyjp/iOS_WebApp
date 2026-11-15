@@ -26,8 +26,8 @@
   .sub { padding: 10px; font-size: 15px; border-radius: 12px; color: #1c2430;
     background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.9);
     -webkit-backdrop-filter: blur(12px) saturate(1.5); backdrop-filter: blur(12px) saturate(1.5); }
-  #qrwrap { text-align: center; margin: 12px 0; background: #ffffff; border-radius: 8px; padding: 8px; }
-  #qrwrap canvas { width: min(92vw, 560px); height: auto; image-rendering: pixelated; }
+  #qrwrap { text-align: center; margin: 12px 0; background: #ffffff; border-radius: 8px; padding: 8px; box-sizing: border-box; }
+  #qrwrap canvas { width: 100%; max-width: 560px; height: auto; image-rendering: pixelated; }
   .status { white-space: pre-wrap; background: rgba(255,255,255,.97); padding: 10px;
     font-size: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.8);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); margin: 8px 0; }
@@ -44,7 +44,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.5</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.5.1</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -15442,7 +15442,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.5 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.5.1 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
