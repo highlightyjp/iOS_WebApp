@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>断片 d10</title>
+<title>断片 d11</title>
 <style>
 :root{ --label:#f2f2f7; --label2:rgba(235,235,245,.6); --accent:#0a84ff; --warn:#ffd60a; --bad:#ff453a;
   --fill:rgba(120,120,128,.18); --card:rgba(28,28,30,.92); --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark; }
@@ -398,7 +398,7 @@ cv.addEventListener('pointerdown', function(ev){
   /* 粒へのタップ：「指さした」ことにする。粒が強く脈打ち、そいつが気づいて取りに行く */
   if(star){
     var spT = starPos(now / 1000);
-    if(spT && Math.hypot(ev.clientX - spT.x, ev.clientY - spT.y) < Math.max(30, 18 * S)){
+    if(spT && Math.hypot(ev.clientX - spT.x, ev.clientY - spT.y) < Math.max(48, 40 * S)){
       elog('タップ', '（粒） x=' + Math.round(spT.x) + ' y=' + Math.round(spT.y));
       star.pointedUntil = now + 2600;
       ripples.push({ x:spT.x, y:spT.y, at:now });
