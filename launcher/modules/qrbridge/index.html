@@ -44,7 +44,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.4</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.5</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -15300,6 +15300,10 @@ $("btnCam").onclick = async function () {
   await video.play();
   scanning = true;
   $("btnCam").textContent = "読み取りを止める";
+  st.innerHTML = "コードを探しています\nQRと色コードの両方を自動で認識します。色コードは画面の中央に大きく写してください";
+  var c5cv = document.createElement("canvas"); c5cv.width = 1152; c5cv.height = 1152;
+  var c5ctx = c5cv.getContext("2d", { willReadFrequently: true });
+  var lastC5Try = 0, lastSig = -1;
   var cv = $("scanCanvas");
   var ctx = cv.getContext("2d", { willReadFrequently: true });
   var tick = function () {
@@ -15318,11 +15322,37 @@ $("btnCam").onclick = async function () {
         $("btnCam").textContent = "カメラで読み取る";
         return;
       }
+      var now5 = Date.now();
+      if (now5 - lastC5Try >= 500) {
+        var sig = 0;
+        for (var sy = 0; sy < 8; sy++) for (var sx = 0; sx < 8; sx++) {
+          var so = ((Math.floor(img.height * (sy + 0.5) / 8) * img.width) + Math.floor(img.width * (sx + 0.5) / 8)) * 4;
+          sig += img.data[so] + img.data[so + 1] + img.data[so + 2];
+        }
+        if (sig !== lastSig) {
+          lastSig = sig; lastC5Try = now5;
+          var side = Math.min(video.videoWidth, video.videoHeight);
+          c5ctx.drawImage(video, (video.videoWidth - side) / 2, (video.videoHeight - side) / 2, side, side, 0, 0, 1152, 1152);
+          var c5img = c5ctx.getImageData(0, 0, 1152, 1152);
+          if (qbTryC5Image(c5img.data, 1152, 1152, st)) {
+            scanning = false;
+            stream.getTracks().forEach(function (t) { t.stop(); });
+            $("btnCam").textContent = "カメラで読み取る";
+            return;
+          }
+        }
+      }
     }
     requestAnimationFrame(tick);
   };
   tick();
 };
+
+function qbTryC5Image(idata, w, h, st) {
+  try { var anyR = QB_C5.decodeC5Any(idata, w, h); handleBytes(anyR.payload, st); return true; } catch (ea) {}
+  try { var pl5l = QB_C5L.decodeC5(idata, w, h); handleBytes(pl5l, st); return true; } catch (el) {}
+  return false;
+}
 
 $("photo").onchange = function () {
   var f = $("photo").files[0];
@@ -15338,12 +15368,7 @@ $("photo").onchange = function () {
     var res = jsQR(data.data, data.width, data.height);
     if (res && res.binaryData && res.binaryData.length) handleBytes(new Uint8Array(res.binaryData), st);
     else {
-      var tryC5 = function (idata, w, h) {
-        try { var anyR = QB_C5.decodeC5Any(idata, w, h); handleBytes(anyR.payload, st); return true; } catch (ea) {}
-        try { var pl5l = QB_C5L.decodeC5(idata, w, h); handleBytes(pl5l, st); return true; } catch (el) {}
-        return false;
-      };
-      var c5done = tryC5(data.data, data.width, data.height);
+      var c5done = qbTryC5Image(data.data, data.width, data.height, st);
       if (!c5done) {
         var widths = [1600, 1152, 864];
         for (var wi = 0; wi < widths.length && !c5done; wi++) {
@@ -15353,7 +15378,7 @@ $("photo").onchange = function () {
           cv.width = tw; cv.height = th;
           ctx.drawImage(img, 0, 0, tw, th);
           var d2 = ctx.getImageData(0, 0, tw, th);
-          c5done = tryC5(d2.data, tw, th);
+          c5done = qbTryC5Image(d2.data, tw, th, st);
         }
       }
       if (!c5done) st.innerHTML = "<span class='ng'>QRも色コードも見つけられませんでした</span>\n全体が写った、明るい写真で試してください";
@@ -15417,7 +15442,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.4 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.5 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
