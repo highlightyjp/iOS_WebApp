@@ -388,6 +388,7 @@ function draw(now){
     ctx.beginPath(); ctx.arc(lx * 0.4, r * 0.18, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
   }
   ctx.restore();
+  selftestTick(now);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -464,6 +465,19 @@ if(EVIDENCE){
     setTimeout(function(){ evCap('ピーク（驚き）'); }, 210);
     setTimeout(function(){ evCap('反応後'); }, 1100);
   }, 1500);
+}
+
+/* ===== セルフテスト（作り手用）：?selftest=star で、粒へのタップ分岐の発火を合成イベントで確かめる ===== */
+var SELFTEST_STAR = /[?&]selftest=star/.test(location.search);
+var selftestDone = false;
+function selftestTick(now){
+  if(!SELFTEST_STAR || selftestDone || !star || crea.hop) return;
+  if(crea.selfAt - now < 2500) return;
+  var sp = starPos(now / 1000);
+  if(!sp) return;
+  selftestDone = true;
+  cv.dispatchEvent(new PointerEvent('pointerdown', { clientX: sp.x, clientY: sp.y, bubbles: true }));
+  elog('状態', 'セルフテスト：粒の位置へ pointerdown を合成した');
 }
 
 /* ===== 開幕の自動撮影（0秒・3秒・10秒、無操作差分） ===== */
