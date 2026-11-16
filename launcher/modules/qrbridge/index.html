@@ -42,11 +42,13 @@
     border-radius: 12px; padding: 8px 10px; margin: 8px 0; font-size: 13px; white-space: pre-wrap;
     overflow-wrap: anywhere; box-sizing: border-box; max-width: 100%; }
   .histItem button { float: right; }
+  .histItem { cursor: pointer; }
+  .histItem.sel { border: 2px solid #2563eb; background: #eaf1fe; }
 </style>
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.6.2</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.7</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -97,6 +99,7 @@
       <option value="svg">SVG .svg</option>
     </select>
     <button class="sub" id="btnSaveFile">ファイルとして保存</button>
+    <button class="sub" id="btnShareText">共有する</button>
   </div>
 </section>
 
@@ -126,6 +129,15 @@
     <button class="sub" id="btnResendDel">再送分を消す</button>
   </div>
   <div id="histList"></div>
+  <div id="histDetail" class="hidden">
+    <div class="status" id="histDetailInfo"></div>
+    <textarea id="histBody" readonly rows="10" style="user-select:text;-webkit-user-select:text"></textarea>
+    <div class="row">
+      <button class="sub" id="btnHistShare">共有する</button>
+      <button class="sub" id="btnHistSave">ファイルに保存</button>
+      <button class="sub" id="btnHistSend">送る画面へ入れる</button>
+    </div>
+  </div>
   <div class="row">
     <button class="sub" id="btnHistExport">履歴を書き出す</button>
     <button class="sub" id="btnHistClear">履歴を全て消す</button>
@@ -15482,7 +15494,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -15491,7 +15503,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.6.2 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.7 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -15722,6 +15734,13 @@ $("btnTest").onclick = function () {
     $("outText").value = prevOut14;
     QB_REPORT.items[14] = { label: "受信の保持と復元", result: ok14 ? "合格" : "不合格", detail: ok14 ? "再読み込みしても受信が戻る" : "受信が復元できなかった" };
   } catch (e) { QB_REPORT.items[14] = { label: "受信の保持と復元", result: "不合格", detail: e.message }; }
+  try {
+    var t15 = qbHistAdd("recv", "自己テスト", 5, true, "選択と詳細の確認 15");
+    qbHistSelect(t15.t);
+    var ok15 = QB_HIST_SEL === t15.t && $("histBody").value === "選択と詳細の確認 15" && typeof qbShareText === "function" && !!qbHistSelectedItem();
+    qbHistDel(t15.t); qbHistSelect(0);
+    QB_REPORT.items[15] = { label: "履歴の選択と詳細", result: ok15 ? "合格" : "不合格", detail: ok15 ? "選んだ項目の全文が詳細に出る" : "選択か詳細の表示ができなかった" };
+  } catch (e) { QB_REPORT.items[15] = { label: "履歴の選択と詳細", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
@@ -15812,16 +15831,51 @@ function qbFmtTime(t) {
   function p(n) { return ("0" + n).slice(-2); }
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
 }
+var QB_HIST_SEL = 0;
+function qbHistSelectedItem() {
+  if (!QB_HIST_SEL) return null;
+  return qbHistList().filter(function (x) { return x.t === QB_HIST_SEL; })[0] || null;
+}
+function qbHistSelect(t) {
+  QB_HIST_SEL = t || 0;
+  qbStoreSet("qrb_hist_sel", String(QB_HIST_SEL));
+  qbRenderHist();
+}
+function qbRenderHistDetail() {
+  var box = $("histDetail");
+  var it = qbHistSelectedItem();
+  if (!it) { box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  $("histDetailInfo").textContent = (it.dir === "send" ? "送信" : it.dir === "recv" ? "受信" : "テスト") + "／" + it.method + "／" + qbFmtTime(it.t) + "／" + it.bytes + "バイト";
+  $("histBody").value = it.body || ("（本文は残していません）\n冒頭：" + it.head);
+}
+function qbShareText(text, title) {
+  /* テキスト共有の梯子：共有シート→コピー→不可。戻り値 "share" | "copy" | "none" */
+  try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ title: title || "", text: text }))) {
+      navigator.share({ title: title || "", text: text }).catch(function () {});
+      return "share";
+    }
+  } catch (e) {}
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); return "copy"; }
+  } catch (e) {}
+  return "none";
+}
 function qbRenderHist() {
+  var sel0 = qbHistSelectedItem();
   var r = qbResendGet();
-  $("resendInfo").textContent = r
-    ? "再送できる送信があります（" + qbFmtTime(r.t) + "、" + [...r.text].length + "字）。次の送信が成功するか、7日たつと消えます"
-    : "再送できる送信はありません";
+  $("resendInfo").textContent = sel0
+    ? "選択中：" + qbFmtTime(sel0.t) + "／" + sel0.method + "／" + sel0.bytes + "バイト。下の欄で全文の確認・共有・保存・送る画面へ入れる、ができます"
+    : (r
+      ? "再送できる送信があります（" + qbFmtTime(r.t) + "、" + [...r.text].length + "字）。次の送信が成功するか、7日たつと消えます。履歴の項目を押すと、その内容も選べます"
+      : "再送できる送信はありません。履歴の項目を押すと選べます");
   var list = qbHistList().slice().reverse();
   var html = "";
   list.forEach(function (x) {
-    var acts = x.body ? "<button data-view='" + x.t + "'>見る</button><button data-save='" + x.t + "'>保存</button>" : "";
-    html += "<div class='histItem'><button data-del='" + x.t + "'>消す</button>" + acts +
+    var isSel = x.t === QB_HIST_SEL;
+    html += "<div class='histItem" + (isSel ? " sel" : "") + "' data-sel='" + x.t + "'><button data-del='" + x.t + "'>消す</button>" +
+      (isSel ? "【選択中】" : "") +
       (x.dir === "send" ? "送信" : x.dir === "recv" ? "受信" : "テスト") + "／" + x.method +
       "／" + x.bytes + "バイト／" + (x.ok ? "成功" : "失敗") + "\n" + qbFmtTime(x.t) +
       "\n冒頭：" + x.head.replace(/</g, "&lt;") +
@@ -15829,32 +15883,25 @@ function qbRenderHist() {
   });
   $("histList").innerHTML = html || "<div class='status'>履歴はまだありません</div>";
   var dels = $("histList").querySelectorAll("[data-del]");
-  for (var i = 0; i < dels.length; i++) dels[i].onclick = function () { qbHistDel(Number(this.getAttribute("data-del"))); qbRenderHist(); };
-  var views = $("histList").querySelectorAll("[data-view]");
-  for (var vi = 0; vi < views.length; vi++) views[vi].onclick = function () {
-    var t = Number(this.getAttribute("data-view"));
-    var it = qbHistList().filter(function (x) { return x.t === t; })[0];
-    if (!it || !it.body) return;
-    $("outText").value = it.body;
-    show("paneRecv");
-    $("recvStatus").textContent = "履歴から表示しました（" + qbFmtTime(it.t) + "）。このまま「ファイルとして保存」もできます";
+  for (var i = 0; i < dels.length; i++) dels[i].onclick = function () {
+    var t = Number(this.getAttribute("data-del"));
+    qbHistDel(t);
+    if (QB_HIST_SEL === t) QB_HIST_SEL = 0;
+    qbRenderHist();
   };
-  var saves = $("histList").querySelectorAll("[data-save]");
-  for (var si = 0; si < saves.length; si++) saves[si].onclick = function () {
-    var t = Number(this.getAttribute("data-save"));
-    var it = qbHistList().filter(function (x) { return x.t === t; })[0];
-    if (!it || !it.body) return;
-    var name = "qrbridge-" + qbFileStamp(it.t) + ".txt";
-    var how = qbSaveFile(name, it.body);
-    var hs = $("histStatus");
-    hs.classList.remove("hidden");
-    hs.textContent = qbSaveMsg(how) + "（" + name + "）";
+  var cards = $("histList").querySelectorAll("[data-sel]");
+  for (var ci = 0; ci < cards.length; ci++) cards[ci].onclick = function (ev) {
+    if (ev && ev.target && ev.target.tagName === "BUTTON") return;
+    qbHistSelect(Number(this.getAttribute("data-sel")));
   };
   var set = qbGetSet();
   $("setHold").value = String(set.hold);
   $("setFull").checked = set.full;
+  qbRenderHistDetail();
 }
 $("btnResend").onclick = function () {
+  var selIt = qbHistSelectedItem();
+  if (selIt && selIt.body) { $("inText").value = selIt.body; show("paneSend"); $("btnMake").onclick(); return; }
   var r = qbResendGet();
   if (!r) { qbRenderHist(); return; }
   $("inText").value = r.text;
@@ -15863,6 +15910,25 @@ $("btnResend").onclick = function () {
 };
 $("btnResendDel").onclick = function () { qbStoreDel("qrb_resend"); qbRenderHist(); };
 $("btnHistClear").onclick = function () { qbHistSave([]); qbRenderHist(); };
+$("btnHistShare").onclick = function () {
+  var it = qbHistSelectedItem(); if (!it || !it.body) return;
+  var how = qbShareText(it.body, "qrbridge-" + qbFileStamp(it.t) + ".txt");
+  var hs = $("histStatus"); hs.classList.remove("hidden");
+  hs.textContent = how === "share" ? "共有シートを開きました" : how === "copy" ? "本文をコピーしました" : "この環境では共有できませんでした";
+};
+$("btnHistSave").onclick = function () {
+  var it = qbHistSelectedItem(); if (!it || !it.body) return;
+  var name = "qrbridge-" + qbFileStamp(it.t) + ".txt";
+  var how = qbSaveFile(name, it.body);
+  var hs = $("histStatus"); hs.classList.remove("hidden");
+  hs.textContent = qbSaveMsg(how) + "（" + name + "）";
+};
+$("btnHistSend").onclick = function () {
+  var it = qbHistSelectedItem(); if (!it || !it.body) return;
+  $("inText").value = it.body;
+  show("paneSend");
+  $("sendStatus").textContent = "履歴から入れました（" + qbFmtTime(it.t) + "）。「QRを作る」で送れます";
+};
 $("btnHistExport").onclick = function () {
   var lines = qbHistList().map(function (x) {
     return qbFmtTime(x.t) + " " + x.dir + " " + x.method + " " + x.bytes + "B " + (x.ok ? "OK" : "NG") + " sha256:" + x.hash + " head:" + x.head.replace(/\n/g, " ");
@@ -15925,6 +15991,14 @@ $("btnSaveFile").onclick = function () {
   var how = qbSaveFile(name, text);
   st.textContent = qbSaveMsg(how) + "（" + name + "）";
 };
+$("btnShareText").onclick = function () {
+  var text = $("outText").value;
+  var st = $("recvStatus");
+  if (!text) { st.textContent = "共有するテキストがありません"; return; }
+  var how = qbShareText(text, "qrbridge-" + qbFileStamp() + ".txt");
+  st.textContent = how === "share" ? "共有シートを開きました" : how === "copy" ? "本文をコピーしました" : "この環境では共有できませんでした。「結果をコピー」を使ってください";
+};
+QB_HIST_SEL = Number(qbStoreGet("qrb_hist_sel") || 0);
 qbRestoreLastRecv();
 qbRenderTpl();
 </script>
