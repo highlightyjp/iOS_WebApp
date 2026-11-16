@@ -117,6 +117,8 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .text .ph2{ color:var(--label2); font-size:.82em; }
 .vwrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .vtext{ writing-mode:vertical-rl; height:62vh; line-height:2.0; white-space:pre-wrap; word-break:break-word; padding:6px 4px; }
+.aaImgBox{ background:#14161d; }
+.aaImg{ display:block; }
 .note{ font-size:12.5px; color:var(--label3); margin-top:10px; }
 .act{ display:flex; align-items:center; justify-content:center; width:100%; border:none; cursor:pointer;
   border-radius:999px; padding:14px; margin-top:14px; background:var(--tint); color:#fff; font-size:15.5px; font-weight:700; }
@@ -209,7 +211,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 </div>
 <script>
 'use strict';
-var SS_BUILD = '2026-11-16-ss18';
+var SS_BUILD = '2026-11-16-ss19';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -289,7 +291,7 @@ function buildSequence(story, parts){
   gaps.forEach(function(g){ if(g > maxN) maxN = g; });
   var seq = [];
   for(var n = 0; n <= maxN; n++){
-    if(byBase[n]) byBase[n].forEach(function(p){ seq.push({ type:'part', part:p.part, text:p.text, n:n }); });
+    if(byBase[n]) byBase[n].forEach(function(p){ seq.push({ type:'part', part:p.part, text:p.text, n:n, idx:p._idx }); });
     else if(gaps.indexOf(n) >= 0) seq.push({ type:'gap', n:n });
   }
   return seq;
@@ -630,7 +632,29 @@ function segmentize(text){
   }
   return segs;
 }
-function renderPartText(text){
+function renderPartText(text, aaList){
+  if(aaList && aaList.length){
+    var lines = String(text).split('\n');
+    var out = [], pos = 0;
+    aaList.slice().sort(function(a, b){ return a.line - b.line; }).forEach(function(e){
+      if(e.line < pos) return; /* 重なりは先勝ち */
+      if(e.line > pos){
+        var chunk = lines.slice(pos, e.line).join('\n');
+        if(chunk) out.push(renderPartTextPlain(chunk));
+      }
+      var dispW = Math.round(e.w * 11 / 40);
+      out.push('<div class="aaBox aaImgBox" data-img="data/' + esc(e.img) + '" data-w="' + e.w + '" data-h="' + e.h + '"><span class="aaHint">タップで拡大</span><img class="aaImg" src="data/' + esc(e.img) + '" alt="AA（画像）" style="width:' + dispW + 'px;height:auto"></div>');
+      pos = e.line + e.count;
+    });
+    if(pos < lines.length){
+      var rest = lines.slice(pos).join('\n');
+      if(rest) out.push(renderPartTextPlain(rest));
+    }
+    return out.join('');
+  }
+  return renderPartTextPlain(text);
+}
+function renderPartTextPlain(text){
   return segmentize(text).map(function(seg){
     if(seg.type === 'aa'){
       return '<div class="aaBox"><span class="aaHint">タップで拡大</span><div class="aa">' + esc(seg.lines.join('\n')) + '</div></div>';
@@ -693,6 +717,19 @@ function upgradeAABlocks(){
     }catch(e){ /* 失敗したら DOM のまま */ }
   });
 }
+function openAAImage(src, w){
+  var wrap = $('aaFullText');
+  wrap.textContent = '';
+  var img = document.createElement('img');
+  img.src = src;
+  img.alt = 'AA（画像）';
+  img.style.width = Math.round(w / 2) + 'px';
+  img.style.height = 'auto';
+  wrap.appendChild(img);
+  $('aaFull').hidden = false;
+  document.body.style.overflow = 'hidden';
+  var sc = $('aaFullScroll'); sc.scrollLeft = 0; sc.scrollTop = 0;
+}
 function openAAFull(text){
   var wrap = $('aaFullText');
   wrap.textContent = '';
@@ -750,7 +787,8 @@ function openStory(id, resume){
   if(!story) return;
   shelfScrollY = window.scrollY || 0; /* 戻った時に同じ場所へ復帰する（Baymardの指摘する離脱要因の対策） */
   fetch('data/texts/' + encodeURIComponent(id) + '.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(doc){
-    cur = { story: story, seq: buildSequence(story, doc.parts || []) };
+    (doc.parts || []).forEach(function(pt, i){ pt._idx = i; });
+    cur = { story: story, seq: buildSequence(story, doc.parts || []), aa: doc.aa || [] };
     $('shelfView').style.display = 'none';
     $('readerView').style.display = 'block';
     $('rTitle').textContent = story.title;
@@ -778,7 +816,7 @@ function renderReaderBody(){
     if(item.type === 'gap')
       return '<div class="gap" data-seq="' + i + '">第' + item.n + '編は回収できていません</div>';
     var inner = '<div class="ph">第' + item.n + '編' + (partSuffix(item.part) ? '（' + esc(partSuffix(item.part).replace(/^-/, '')) + '）' : '') + '</div>' +
-      renderPartText(item.text);
+      renderPartText(item.text, (cur.aa || []).filter(function(e){ return e.part === item.idx; }));
     return '<div class="part" id="part-' + i + '" data-seq="' + i + '">' + inner + '</div>';
   }).join('');
   $('rBody').innerHTML = html;
@@ -787,6 +825,7 @@ function renderReaderBody(){
   if(AA_FONT_STATE === '適用済み') upgradeAABlocks();
   $('rBody').querySelectorAll('.aaBox').forEach(function(box){
     box.addEventListener('click', function(){
+      if(box.dataset.img){ openAAImage(box.dataset.img, Number(box.dataset.w || 0)); return; }
       var t = box.querySelector('.aa');
       if(t) openAAFull(t.textContent);
     });
