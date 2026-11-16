@@ -24,7 +24,7 @@
       "icon": "📺",
       "id": "streamhub",
       "name": "動画と配信",
-      "status": "preparing",
+      "status": "ready",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/streamhub/index.html"
     },
     {
