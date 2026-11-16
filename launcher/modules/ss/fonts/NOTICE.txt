@@ -1,0 +1,7 @@
+aa.woff2 は、Noto Sans Mono CJK JP（Regular）を、のくす書庫のAA表示に必要な
+文字だけにサブセット化したものです。
+
+出典：https://github.com/notofonts/noto-cjk （Sans/Mono/NotoSansMonoCJKjp-Regular.otf）
+ライセンス：SIL Open Font License 1.1（https://openfontlicense.org/）
+サブセット化の手順は端末統合部の作業記録（PROJECT.md、2026-11-16 ss14）にあります。
+データ再生成でAAの使用字が増えたら、同じ手順で作り直します。
