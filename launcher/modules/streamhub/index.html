@@ -88,6 +88,7 @@
       <option value="2">2倍</option>
     </select>
     <button id="btnCaptions" disabled>字幕</button>
+    <button id="btnComments" disabled>コメント</button>
     <select id="selSleep">
       <option value="0" selected>スリープなし</option>
       <option value="15">15分で止める</option>
@@ -104,6 +105,13 @@
     </div>
     <div id="chatWrap"></div>
   </div>
+  <div id="commentsBox" class="hidden">
+    <div class="controls">
+      <span style="font-weight:700">コメント</span>
+      <button id="btnCommentsClose" class="small">閉じる</button>
+    </div>
+    <div id="commentsList"></div>
+  </div>
 </div>
 
 <nav class="tabs">
@@ -114,6 +122,14 @@
 </nav>
 
 <section class="view on" id="view-home">
+  <div class="controls">
+    <input id="searchInput" type="search" placeholder="YouTube を検索" style="flex:1">
+    <button id="btnSearch" class="primary">検索</button>
+  </div>
+  <div id="searchWrap" class="hidden">
+    <h2>検索結果</h2>
+    <div id="searchList"></div>
+  </div>
   <div id="homeLaterWrap" class="hidden">
     <h2>後で見る</h2>
     <div id="homeLater"></div>
@@ -200,9 +216,10 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-16-sh3';
+const SH_BUILD = '2026-11-16-sh4';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
+const API_HOME = FEED_HOME.replace(/\/feed$/, '');
 const FEED_TOKEN = '_32u_H07v_UGxuaqxEZXD5TxmCe1NtjU';
 const LS_STATE = 'streamhub.v1.state';
 const LS_FEED = 'streamhub.v1.feedcache';
@@ -355,8 +372,9 @@ function clearPlayer(){
   const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
   $('nowPlaying').textContent = ''; $('playState').textContent = '';
   $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true;
-  $('selRate').disabled = true; $('btnCaptions').disabled = true;
+  $('selRate').disabled = true; $('btnCaptions').disabled = true; $('btnComments').disabled = true;
   $('chatBox').classList.add('hidden'); $('chatWrap').innerHTML = '';
+  $('commentsBox').classList.add('hidden'); $('commentsList').innerHTML = '';
 }
 function playItem(item){
   currentItem = item;
@@ -379,6 +397,7 @@ function playItem(item){
   $('btnPlayPause').disabled = false; $('btnStop').disabled = false;
   $('selRate').disabled = false;
   $('btnCaptions').disabled = item.source !== 'youtube';
+  $('btnComments').disabled = !(item.source === 'youtube' && (item.video_id || (item.id && item.id.indexOf('yt:') === 0)));
   capOn = false; $('btnCaptions').textContent = '字幕';
   setupChat(item);
   $('btnNext').disabled = !(queueCursor >= 0 && queueCursor < S.queue.length - 1) && S.queue.length === 0;
@@ -521,6 +540,67 @@ function renderLater(){
     acts.appendChild(bDel);
     el.appendChild(row);
   });
+}
+async function apiGet(path){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 14000);
+  try{
+    const res = await fetch(API_HOME + path + (path.indexOf('?') >= 0 ? '&t=' : '?t=') + encodeURIComponent(FEED_TOKEN), { signal: ctl.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('http ' + res.status);
+    const d = await res.json();
+    if (!d || d.contract !== 'streamhub-data/v1' || !d.sections) throw new Error('shape');
+    return d;
+  }catch(e){ clearTimeout(timer); throw e; }
+}
+async function doSearch(){
+  const q = $('searchInput').value.trim();
+  if (!q) return;
+  $('searchWrap').classList.remove('hidden');
+  const el = $('searchList');
+  el.innerHTML = '<p class="note">検索中…</p>';
+  try{
+    const d = await apiGet('/search?q=' + encodeURIComponent(q));
+    const items = d.sections.search_results || [];
+    const err = d.errors && d.errors.search;
+    el.innerHTML = '';
+    if (!items.length){
+      el.innerHTML = '<p class="note">' + (err ? '検索できませんでした（' + err + '）。枠の上限か、キーの状態を確認してください。' : '見つかりませんでした。') + '</p>';
+      return;
+    }
+    items.forEach((it) => el.appendChild(itemRow(it, { queue: true, later: true })));
+  }catch(e){
+    el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。通信の届く場所で開き直してください。</p>';
+  }
+}
+async function loadComments(){
+  const box = $('commentsBox'), el = $('commentsList');
+  box.classList.remove('hidden');
+  const vid = currentItem && (currentItem.video_id || (currentItem.id && currentItem.id.startsWith('yt:') ? currentItem.id.slice(3) : ''));
+  if (!vid){ el.innerHTML = '<p class="note">この動画ではコメントを読めません。</p>'; return; }
+  el.innerHTML = '<p class="note">コメントを取りに行っています…</p>';
+  try{
+    const d = await apiGet('/comments?v=' + encodeURIComponent(vid));
+    const list = d.sections.comments || [];
+    const err = d.errors && d.errors.comments;
+    el.innerHTML = '';
+    if (!list.length){
+      el.innerHTML = '<p class="note">' + (err ? 'コメントを取れませんでした（' + err + '）。' : 'コメントがありません。') + '</p>';
+      return;
+    }
+    list.forEach((c) => {
+      const row = document.createElement('div'); row.className = 'row';
+      const main = document.createElement('div'); main.className = 'main';
+      const a = document.createElement('div'); a.className = 'title'; a.textContent = c.author || '';
+      const t = document.createElement('div'); t.style.whiteSpace = 'pre-wrap'; t.textContent = c.text || '';
+      const m = document.createElement('div'); m.className = 'meta';
+      m.textContent = (c.like_count ? '👍 ' + c.like_count : '') + (c.published_at ? '・' + fmtDate(c.published_at) : '');
+      main.appendChild(a); main.appendChild(t); main.appendChild(m);
+      row.appendChild(main); el.appendChild(row);
+    });
+  }catch(e){
+    el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。</p>';
+  }
 }
 function renderHome(){
   renderLater();
@@ -668,6 +748,13 @@ function wire(){
     $('btnCaptions').textContent = capOn ? '字幕（入）' : '字幕';
   });
   $('selSleep').addEventListener('change', () => setSleep(Number($('selSleep').value)));
+  $('btnSearch').addEventListener('click', doSearch);
+  $('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+  $('btnComments').addEventListener('click', () => {
+    if ($('commentsBox').classList.contains('hidden')) loadComments();
+    else $('commentsBox').classList.add('hidden');
+  });
+  $('btnCommentsClose').addEventListener('click', () => $('commentsBox').classList.add('hidden'));
   $('btnChatToggle').addEventListener('click', () => {
     const w = $('chatWrap');
     const hide = w.style.display !== 'none';
