@@ -12,11 +12,12 @@
     ?type=youtube&list=PLAYLIST_ID  … id なし。再生リストから再生する（チャンネルの投稿一覧など）
     ?type=twitch&channel=CHANNEL_NAME
     ?type=twitch&video=VIDEO_ID
+    ?type=twitch&clip=CLIP_SLUG  … クリップの埋め込み（イベント通知は ready のみ）
     ?demo=1  … 確認用（YouTube と Twitch を並べる）
   親への通知: window.parent.postMessage({contract:'streamhub-player/v1', event, provider, ...}, '*')
     events: ready / playing / paused / ended / error / online / offline / skipped
   親からの命令: postMessage({contract:'streamhub-player/v1', cmd, ...})
-    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state')
+    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state') / setRate{rate} / captions{on, lang?}
 -->
 <style>
   html,body{ margin:0; padding:0; background:#000; color:#fff; height:100%;
@@ -143,9 +144,21 @@ function initTwitch(){
   if (!wantTw) return;
   const channel = params.get('channel') || (isDemo ? 'twitchdev' : null);
   const video = params.get('video');
-  if (!channel && !video){ if (!isDemo) showMsg('チャンネルの指定がありません'); return; }
+  const clip = params.get('clip');
+  if (!channel && !video && !clip){ if (!isDemo) showMsg('チャンネルの指定がありません'); return; }
   const slot = document.getElementById('twSlot');
   slot.style.display = 'block';
+  if (clip){
+    const cf = document.createElement('iframe');
+    cf.src = 'https://clips.twitch.tv/embed?clip=' + encodeURIComponent(clip) +
+      '&parent=' + HOST + '&parent=localhost&autoplay=false&muted=false';
+    cf.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+    cf.style.cssText = 'width:100%;height:100%;border:0;display:block';
+    slot.appendChild(cf);
+    twReady = true;
+    post('ready', { provider:'twitch', clip });
+    return;
+  }
   const diag = document.getElementById('twDiag');
   const say = (t) => { if (isDemo && diag) diag.textContent += t + '\n'; };
   if (isDemo && diag){
@@ -192,6 +205,11 @@ window.addEventListener('message', (ev) => {
       if (d.cmd === 'load' && d.id){ ytPlayer.loadVideoById(d.id); loadSponsorBlock(d.id).then(startSbWatch); }
       if (d.cmd === 'getState') post('state', { provider:'youtube',
         time: ytPlayer.getCurrentTime(), duration: ytPlayer.getDuration(), state: ytPlayer.getPlayerState() });
+      if (d.cmd === 'setRate') ytPlayer.setPlaybackRate(Number(d.rate || 1));
+      if (d.cmd === 'captions'){
+        if (d.on){ ytPlayer.loadModule('captions'); ytPlayer.setOption('captions', 'track', { languageCode: d.lang || 'ja' }); }
+        else ytPlayer.unloadModule('captions');
+      }
     }
     if (target === 'twitch' && twPlayer){
       if (d.cmd === 'play') twPlayer.play();
@@ -199,6 +217,7 @@ window.addEventListener('message', (ev) => {
       if (d.cmd === 'seekTo') twPlayer.seek(Number(d.sec || 0));
       if (d.cmd === 'getState') post('state', { provider:'twitch',
         time: twPlayer.getCurrentTime(), duration: twPlayer.getDuration(), paused: twPlayer.isPaused() });
+      if (d.cmd === 'setRate' && typeof twPlayer.setPlaybackRate === 'function') twPlayer.setPlaybackRate(Number(d.rate || 1));
     }
   }catch(e){ post('error', { provider: target, message: String(e) }); }
 });
