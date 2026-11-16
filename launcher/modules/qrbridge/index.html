@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QRブリッジ</title>
 <style>
-  html, body { overflow-x: hidden; }
+  html, body { overflow-x: hidden; overflow-x: clip; }
   body { font-family: sans-serif; margin: 0; padding: 16px; color: #1c2430;
     background: linear-gradient(155deg, #b9d2ea 0%, #dbe7f3 34%, #e9efe4 62%, #f3e8d2 100%);
     background-attachment: fixed; min-height: 100vh; box-sizing: border-box; }
@@ -44,11 +44,14 @@
   .histItem button { float: right; }
   .histItem { cursor: pointer; }
   .histItem.sel { border: 2px solid #2563eb; background: #eaf1fe; }
+  .dock { position: sticky; bottom: 0; z-index: 5; background: rgba(255,255,255,.98);
+    border-top: 2px solid #2563eb; box-shadow: 0 -6px 18px rgba(15,35,70,.18);
+    padding: 8px 4px 4px; margin-top: 10px; }
 </style>
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.7</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.7.1</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -129,9 +132,9 @@
     <button class="sub" id="btnResendDel">再送分を消す</button>
   </div>
   <div id="histList"></div>
-  <div id="histDetail" class="hidden">
+  <div id="histDetail" class="hidden dock">
     <div class="status" id="histDetailInfo"></div>
-    <textarea id="histBody" readonly rows="10" style="user-select:text;-webkit-user-select:text"></textarea>
+    <textarea id="histBody" readonly rows="6" style="user-select:text;-webkit-user-select:text"></textarea>
     <div class="row">
       <button class="sub" id="btnHistShare">共有する</button>
       <button class="sub" id="btnHistSave">ファイルに保存</button>
@@ -15503,7 +15506,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.7 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.7.1 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
