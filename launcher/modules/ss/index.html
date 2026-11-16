@@ -100,7 +100,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .gap{ margin-top:26px; border:1.5px dashed var(--sep); border-radius:16px; padding:18px; text-align:center; color:var(--label2); font-size:14px; }
 .text{ white-space:pre-wrap; word-break:break-word; line-height:1.9; }
 .aa{ font-family:'SSAA','SSNoto','MS PGothic','ＭＳ Ｐゴシック',IPAMonaPGothic,monospace; white-space:pre;
-  line-height:1.2; font-size:11px; word-break:normal; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  line-height:1.0; font-size:11px; word-break:normal; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 .aaBox{ background:var(--fill); border-radius:12px; margin:10px 0; padding:10px 6px; overflow-x:auto;
   -webkit-overflow-scrolling:touch; position:relative; }
 .aaHint{ position:absolute; top:6px; right:8px; font-size:10.5px; color:var(--label3); background:var(--card);
@@ -113,6 +113,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
   border-radius:999px; padding:8px 14px; cursor:pointer; }
 #aaFullScroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:6px 10px calc(14px + env(safe-area-inset-bottom)); }
 #aaFullText{ color:#f5eeda; font-size:13px; }
+.aaCanvas{ display:block; }
 .text .ph2{ color:var(--label2); font-size:.82em; }
 .vwrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .vtext{ writing-mode:vertical-rl; height:62vh; line-height:2.0; white-space:pre-wrap; word-break:break-word; padding:6px 4px; }
@@ -208,7 +209,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 </div>
 <script>
 'use strict';
-var SS_BUILD = '2026-11-16-ss17';
+var SS_BUILD = '2026-11-16-ss18';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -247,6 +248,7 @@ function loadAAFont(){
   ff.load().then(function(){
     AA_FONT_STATE = probeAAFont() ? '適用済み' : '未適用（読めたが字幅が合わない）';
     updateBuildNotes(); fitAllAA();
+    if(AA_FONT_STATE === '適用済み') upgradeAABlocks();
   }, function(){
     AA_FONT_STATE = '読込失敗（端末フォントで表示）';
     updateBuildNotes();
@@ -643,8 +645,59 @@ function renderPartText(text){
 function fitAllAA(){
   document.querySelectorAll('.aaBox .aa').forEach(function(el){ el.style.fontSize = ''; });
 }
+/* AAの本表示は canvas（ss18）：1字ずつ実測の字幅で格子位置に描き、行ピッチは厳密に 1.0。
+   ブラウザの行レイアウト（行箱・ベースライン・端数丸め）に依存しないための方式。
+   フォント未着の間は DOM テキスト（行間 1.0）で出し、着いたら格上げする */
+function buildAACanvas(text, F, color){
+  var mctx = buildAACanvas._m || (buildAACanvas._m = document.createElement('canvas').getContext('2d'));
+  mctx.font = '100px SSAA, SSNoto, monospace';
+  var lines = String(text).split('\n');
+  var rows = lines.map(function(line){
+    var cells = [], x = 0;
+    Array.from(line).forEach(function(ch){
+      var w = mctx.measureText(ch).width / 100 * F;
+      cells.push({ ch: ch, x: x }); x += w;
+    });
+    return { cells: cells, w: x };
+  });
+  var W = 0; rows.forEach(function(r){ if(r.w > W) W = r.w; });
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var cv = document.createElement('canvas');
+  cv.className = 'aaCanvas';
+  cv.width = Math.max(1, Math.ceil(W * dpr));
+  cv.height = Math.max(1, Math.ceil(lines.length * F * dpr));
+  cv.style.width = W + 'px';
+  cv.style.height = (lines.length * F) + 'px';
+  var ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.font = F + 'px SSAA, SSNoto, monospace';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = color;
+  rows.forEach(function(r, ri){
+    r.cells.forEach(function(c){
+      if(c.ch !== ' ' && c.ch !== '　') ctx.fillText(c.ch, c.x, ri * F);
+    });
+  });
+  return cv;
+}
+function upgradeAABlocks(){
+  document.querySelectorAll('.aaBox').forEach(function(box){
+    if(box.dataset.aaCanvas) return;
+    var src = box.querySelector('.aa');
+    if(!src) return;
+    try{
+      var cv = buildAACanvas(src.textContent, 11, getComputedStyle(src).color);
+      box.insertBefore(cv, src);
+      src.style.display = 'none';
+      box.dataset.aaCanvas = '1';
+    }catch(e){ /* 失敗したら DOM のまま */ }
+  });
+}
 function openAAFull(text){
-  $('aaFullText').textContent = text;
+  var wrap = $('aaFullText');
+  wrap.textContent = '';
+  try{ wrap.appendChild(buildAACanvas(text, 15, '#f5eeda')); }
+  catch(e){ wrap.textContent = text; }
   $('aaFull').hidden = false;
   document.body.style.overflow = 'hidden';
   var sc = $('aaFullScroll'); sc.scrollLeft = 0; sc.scrollTop = 0;
@@ -731,6 +784,7 @@ function renderReaderBody(){
   $('rBody').innerHTML = html;
   fitAllAA();
   applyTextStyle();
+  if(AA_FONT_STATE === '適用済み') upgradeAABlocks();
   $('rBody').querySelectorAll('.aaBox').forEach(function(box){
     box.addEventListener('click', function(){
       var t = box.querySelector('.aa');
