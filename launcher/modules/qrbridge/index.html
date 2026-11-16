@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QRブリッジ</title>
 <style>
+  html, body { overflow-x: hidden; }
   body { font-family: sans-serif; margin: 0; padding: 16px; color: #1c2430;
     background: linear-gradient(155deg, #b9d2ea 0%, #dbe7f3 34%, #e9efe4 62%, #f3e8d2 100%);
     background-attachment: fixed; min-height: 100vh; box-sizing: border-box; }
@@ -38,13 +39,14 @@
   .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
   .row select { flex: 1; padding: 10px; font-size: 15px; border-radius: 10px; }
   .histItem { background: rgba(255,255,255,.97); border: 1px solid rgba(210,218,226,.9);
-    border-radius: 12px; padding: 8px 10px; margin: 8px 0; font-size: 13px; white-space: pre-wrap; }
+    border-radius: 12px; padding: 8px 10px; margin: 8px 0; font-size: 13px; white-space: pre-wrap;
+    overflow-wrap: anywhere; box-sizing: border-box; max-width: 100%; }
   .histItem button { float: right; }
 </style>
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.6.1</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.6.2</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -15489,7 +15491,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.6.1 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.6.2 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -15821,9 +15823,9 @@ function qbRenderHist() {
     var acts = x.body ? "<button data-view='" + x.t + "'>見る</button><button data-save='" + x.t + "'>保存</button>" : "";
     html += "<div class='histItem'><button data-del='" + x.t + "'>消す</button>" + acts +
       (x.dir === "send" ? "送信" : x.dir === "recv" ? "受信" : "テスト") + "／" + x.method +
-      "／" + x.bytes + "バイト／" + (x.ok ? "成功" : "失敗") + "\\n" + qbFmtTime(x.t) +
-      "\\n冒頭：" + x.head.replace(/</g, "&lt;") +
-      "\\n照合値：" + x.hash.slice(0, 16) + "…" + (x.body ? "" : "\\n（本文は残していません）") + "</div>";
+      "／" + x.bytes + "バイト／" + (x.ok ? "成功" : "失敗") + "\n" + qbFmtTime(x.t) +
+      "\n冒頭：" + x.head.replace(/</g, "&lt;") +
+      "\n照合値：" + x.hash.slice(0, 16) + "…" + (x.body ? "" : "\n（本文は残していません）") + "</div>";
   });
   $("histList").innerHTML = html || "<div class='status'>履歴はまだありません</div>";
   var dels = $("histList").querySelectorAll("[data-del]");
@@ -15863,10 +15865,10 @@ $("btnResendDel").onclick = function () { qbStoreDel("qrb_resend"); qbRenderHist
 $("btnHistClear").onclick = function () { qbHistSave([]); qbRenderHist(); };
 $("btnHistExport").onclick = function () {
   var lines = qbHistList().map(function (x) {
-    return qbFmtTime(x.t) + " " + x.dir + " " + x.method + " " + x.bytes + "B " + (x.ok ? "OK" : "NG") + " sha256:" + x.hash + " head:" + x.head.replace(/\\n/g, " ");
+    return qbFmtTime(x.t) + " " + x.dir + " " + x.method + " " + x.bytes + "B " + (x.ok ? "OK" : "NG") + " sha256:" + x.hash + " head:" + x.head.replace(/\n/g, " ");
   });
   var box = $("histExport");
-  box.value = lines.join("\\n");
+  box.value = lines.join("\n");
   box.classList.remove("hidden");
 };
 $("setHold").onchange = function () { var s = qbGetSet(); s.hold = Number(this.value); qbSaveSet(s); };
