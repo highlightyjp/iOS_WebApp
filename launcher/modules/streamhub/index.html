@@ -13,7 +13,7 @@
   html{ touch-action:manipulation; }
   body{ margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
-    font-size:15px; line-height:1.55; padding:0 14px 40px; }
+    font-size:15px; line-height:1.55; padding:0 14px calc(110px + env(safe-area-inset-bottom)); }
   header{ padding:14px 0 6px; }
   h1{ font-size:20px; margin:0; font-weight:800; letter-spacing:.02em; }
   #feedStatus{ color:var(--sub); font-size:12.5px; margin-top:2px; min-height:1.4em; }
@@ -34,9 +34,12 @@
   button.primary{ background:var(--accent); border-color:transparent; color:#06283d; font-weight:700; }
   button.small{ padding:5px 10px; font-size:13px; border-radius:8px; }
   button:disabled{ opacity:.45; }
-  nav.tabs{ display:flex; gap:6px; margin:10px 0 14px; }
-  nav.tabs button{ flex:1; padding:9px 0; font-weight:600; }
-  nav.tabs button.on{ background:var(--accent); color:#06283d; border-color:transparent; }
+  nav.tabs{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; gap:2px;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom)); margin:0;
+    background:rgba(14,17,22,.72); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border-top:1px solid var(--border); }
+  nav.tabs button{ flex:1; padding:9px 0; font-weight:600; background:transparent; border-color:transparent; color:var(--sub); }
+  nav.tabs button.on{ background:rgba(76,194,255,.16); color:var(--accent); }
   section.view{ display:none; }
   section.view.on{ display:block; }
   h2{ font-size:16px; margin:18px 0 8px; }
@@ -51,7 +54,7 @@
   .row .acts{ display:flex; flex-direction:column; gap:6px; flex:none; }
   .note{ color:var(--sub); font-size:13px; }
   .warn{ color:#ffd479; font-size:13px; }
-  input[type=text], textarea{ width:100%; background:rgba(255,255,255,.05); color:var(--text);
+  input[type=text], input[type=search], textarea{ width:100%; background:rgba(255,255,255,.05); color:var(--text);
     border:1px solid var(--border); border-radius:10px; padding:10px; font-size:14px; }
   textarea{ min-height:76px; }
   label.chk{ display:flex; gap:8px; align-items:flex-start; margin:10px 0; font-size:14px; }
@@ -63,6 +66,36 @@
   #chatBox{ margin-top:10px; }
   #chatWrap iframe{ width:100%; height:320px; border:1px solid var(--border); border-radius:12px; background:#000; display:block; }
   #sleepLine{ color:var(--sub); font-size:12.5px; min-height:1.2em; }
+  .card{ margin-bottom:18px; }
+  .card .thumb{ position:relative; border-radius:14px; overflow:hidden; background:#000; border:1px solid var(--border); cursor:pointer; }
+  .card .thumb img{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  .card .thumb .ph{ width:100%; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; color:var(--sub); font-size:13px; }
+  .badge{ position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.72); color:#fff; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:6px; }
+  .badge.live{ background:#e91916; }
+  .badge.viewers{ left:auto; right:8px; }
+  .card .ttl{ font-weight:600; font-size:14.5px; margin-top:8px; cursor:pointer; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .card .meta{ color:var(--sub); font-size:12.5px; margin-top:2px; overflow-wrap:anywhere; }
+  .card .acts{ display:flex; gap:8px; margin-top:6px; }
+  .card.read .ttl{ color:var(--sub); font-weight:400; }
+  .avatar{ width:40px; height:40px; border-radius:50%; flex:none; object-fit:cover; background:rgba(255,255,255,.1); }
+  .avatarTxt{ width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:rgba(76,194,255,.18); color:var(--accent); font-weight:800; font-size:17px; }
+  .livedot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#e91916; margin-right:5px; }
+  .chips{ display:flex; gap:8px; margin:2px 0 12px; overflow-x:auto; }
+  .chips button{ flex:none; border-radius:999px; padding:6px 14px; font-size:13px; }
+  .chips button.on{ background:var(--text); color:#0e1116; border-color:transparent; font-weight:700; }
+  #upNext{ margin-top:8px; }
+  #upNext .cap{ color:var(--sub); font-size:12.5px; margin-bottom:4px; }
+  #upNext .strip{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+  #upNext .chip{ flex:none; max-width:230px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:7px 10px; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+  #upNext .chip.now{ border-color:var(--accent); color:var(--accent); }
+  #miniBar{ display:none; }
+  #playerBox.mini{ position:fixed; left:10px; right:10px; bottom:calc(76px + env(safe-area-inset-bottom)); top:auto; z-index:35;
+    background:rgba(20,24,32,.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--border); border-radius:14px; padding:8px; display:flex; gap:10px; align-items:center; }
+  #playerBox.mini #playerFrameWrap{ width:104px; flex:none; margin:0; border-radius:8px; }
+  #playerBox.mini #nowPlaying{ margin:0; flex:1; font-size:13px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  #playerBox.mini #playState, #playerBox.mini .controls, #playerBox.mini #sleepLine, #playerBox.mini #chatBox, #playerBox.mini #commentsBox, #playerBox.mini #upNext{ display:none !important; }
+  #playerBox.mini #miniBar{ display:flex; gap:6px; flex:none; }
 </style>
 </head>
 <body>
@@ -81,6 +114,7 @@
     <button id="btnPlayPause" class="primary" disabled>再生</button>
     <button id="btnNext" disabled>次へ（キュー）</button>
     <button id="btnStop" disabled>閉じる</button>
+    <button id="btnMini" disabled>小さく</button>
     <select id="selRate" disabled>
       <option value="0.5">0.5倍</option>
       <option value="0.75">0.75倍</option>
@@ -114,6 +148,8 @@
     </div>
     <div id="commentsList"></div>
   </div>
+  <div id="miniBar"><button id="btnExpand" class="small">大きく戻す</button><button id="btnMiniClose" class="small">閉じる</button></div>
+  <div id="upNext" class="hidden"><div class="cap">次はこちら（キュー）</div><div class="strip" id="upNextStrip"></div></div>
 </div>
 
 <nav class="tabs">
@@ -124,6 +160,12 @@
 </nav>
 
 <section class="view on" id="view-home">
+  <div class="chips" id="homeChips">
+    <button data-f="all" class="on">すべて</button>
+    <button data-f="live">ライブ</button>
+    <button data-f="youtube">YouTube</button>
+    <button data-f="twitch">Twitch</button>
+  </div>
   <div class="controls">
     <input id="searchInput" type="search" placeholder="YouTube を検索" style="flex:1">
     <button id="btnSearch" class="primary">検索</button>
@@ -136,10 +178,14 @@
     <h2>後で見る</h2>
     <div id="homeLater"></div>
   </div>
-  <h2>Twitch</h2>
-  <div id="homeTwitch"></div>
-  <h2>YouTube の新着</h2>
-  <div id="homeFeed"></div>
+  <div id="secTwitch">
+    <h2>Twitch</h2>
+    <div id="homeTwitch"></div>
+  </div>
+  <div id="secYoutube">
+    <h2>YouTube の新着</h2>
+    <div id="homeFeed"></div>
+  </div>
 </section>
 
 <section class="view" id="view-channels">
@@ -223,7 +269,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-16-sh6';
+const SH_BUILD = '2026-11-17-sh7';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -378,13 +424,16 @@ function clearPlayer(){
   playerFrame = null; currentItem = null; queueCursor = -1; isPlaying = false;
   const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
   $('nowPlaying').textContent = ''; $('playState').textContent = '';
-  $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true;
+  $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true; $('btnMini').disabled = true;
   $('selRate').disabled = true; $('btnCaptions').disabled = true; $('btnComments').disabled = true;
   $('chatBox').classList.add('hidden'); $('chatWrap').innerHTML = '';
   $('commentsBox').classList.add('hidden'); $('commentsList').innerHTML = '';
+  $('playerBox').classList.remove('mini');
+  renderUpNext();
 }
 function playItem(item){
   currentItem = item;
+  $('playerBox').classList.remove('mini');
   let url = '';
   if (item.source === 'youtube' && item.kind === 'uploads'){
     url = PLAYER + '?type=youtube&list=' + encodeURIComponent(item.list) + '&autoplay=1';
@@ -401,13 +450,14 @@ function playItem(item){
   setPlayerSrc(url);
   $('nowPlaying').textContent = item.title || '';
   $('playState').textContent = '読み込み中…';
-  $('btnPlayPause').disabled = false; $('btnStop').disabled = false;
+  $('btnPlayPause').disabled = false; $('btnStop').disabled = false; $('btnMini').disabled = false;
   $('selRate').disabled = false;
   $('btnCaptions').disabled = item.source !== 'youtube';
   $('btnComments').disabled = !(item.source === 'youtube' && (item.video_id || (item.id && item.id.indexOf('yt:') === 0)));
   capOn = false; $('btnCaptions').textContent = '字幕';
   setupChat(item);
   $('btnNext').disabled = !(queueCursor >= 0 && queueCursor < S.queue.length - 1) && S.queue.length === 0;
+  renderUpNext();
   if (item.id){
     S.read[item.id] = Date.now();
     S.history = [{ id: item.id, title: item.title || '', at: Date.now() }].concat(S.history.filter((h) => h.id !== item.id)).slice(0, 100);
@@ -517,7 +567,7 @@ function itemRow(item, opts){
   acts.appendChild(bPlay);
   if (opts && opts.queue){
     const bQ = document.createElement('button'); bQ.className = 'small'; bQ.textContent = 'キューへ';
-    bQ.addEventListener('click', () => { S.queue.push(item); saveState(); renderQueue(); bQ.textContent = '入れた'; });
+    bQ.addEventListener('click', () => { S.queue.push(item); saveState(); renderQueue(); renderUpNext(); bQ.textContent = '入れた'; });
     acts.appendChild(bQ);
   }
   if (opts && opts.later){
@@ -535,12 +585,73 @@ function itemRow(item, opts){
   row.appendChild(acts);
   return row;
 }
+
+function cardRow(item, opts){
+  const card = document.createElement('div');
+  card.className = 'card' + (item.id && S.read[item.id] ? ' read' : '');
+  const th = document.createElement('div'); th.className = 'thumb';
+  if (item.thumbnail){
+    const img = document.createElement('img'); img.src = item.thumbnail; img.alt = ''; th.appendChild(img);
+  } else {
+    const ph = document.createElement('div'); ph.className = 'ph'; ph.textContent = item.source === 'twitch' ? 'Twitch' : 'YouTube'; th.appendChild(ph);
+  }
+  if (item.live){
+    const b = document.createElement('span'); b.className = 'badge live'; b.textContent = 'ライブ'; th.appendChild(b);
+    if (item.viewers != null){ const v = document.createElement('span'); v.className = 'badge viewers'; v.textContent = item.viewers + '人が視聴中'; th.appendChild(v); }
+  } else if (item.kind === 'short'){
+    const b = document.createElement('span'); b.className = 'badge'; b.textContent = 'Shorts'; th.appendChild(b);
+  }
+  th.addEventListener('click', () => { queueCursor = -1; playItem(item); });
+  card.appendChild(th);
+  const t = document.createElement('div'); t.className = 'ttl'; t.textContent = item.title || '';
+  t.addEventListener('click', () => { queueCursor = -1; playItem(item); });
+  card.appendChild(t);
+  const m = document.createElement('div'); m.className = 'meta';
+  m.textContent = (item.channel || '') + (item.game ? '・' + item.game : '') + (item.started_at ? '・' + fmtDate(item.started_at) : '');
+  card.appendChild(m);
+  const acts = document.createElement('div'); acts.className = 'acts';
+  const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
+  bPlay.addEventListener('click', () => { queueCursor = -1; playItem(item); });
+  acts.appendChild(bPlay);
+  if (opts && opts.queue){
+    const bQ = document.createElement('button'); bQ.className = 'small'; bQ.textContent = 'キューへ';
+    bQ.addEventListener('click', () => { S.queue.push(item); saveState(); renderQueue(); renderUpNext(); bQ.textContent = '入れた'; });
+    acts.appendChild(bQ);
+  }
+  if (opts && opts.later){
+    const bL = document.createElement('button'); bL.className = 'small'; bL.textContent = '後で見る';
+    bL.addEventListener('click', () => {
+      const key = item.id || (item.source + ':' + (item.video_id || item.clip || item.channel_name || item.title || ''));
+      if (!S.later.some((x) => (x.id || '') === key || x === item)){
+        S.later.push(Object.assign({}, item, { id: item.id || key }));
+        saveState(); renderLater();
+      }
+      bL.textContent = '入れた';
+    });
+    acts.appendChild(bL);
+  }
+  card.appendChild(acts);
+  return card;
+}
+function renderUpNext(){
+  const box = $('upNext'), strip = $('upNextStrip');
+  if (!box || !strip) return;
+  strip.innerHTML = '';
+  box.classList.toggle('hidden', !S.queue.length);
+  S.queue.forEach((item, idx) => {
+    const c = document.createElement('button');
+    c.className = 'chip' + (idx === queueCursor ? ' now' : '');
+    c.textContent = (idx + 1) + '. ' + (item.title || '');
+    c.addEventListener('click', () => playQueueAt(idx));
+    strip.appendChild(c);
+  });
+}
 function renderLater(){
   const wrap = $('homeLaterWrap'), el = $('homeLater');
   el.innerHTML = '';
   wrap.classList.toggle('hidden', !S.later.length);
   S.later.forEach((item, idx) => {
-    const row = itemRow(item, {});
+    const row = cardRow(item, {});
     const acts = row.querySelector('.acts');
     const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '外す';
     bDel.addEventListener('click', () => { S.later.splice(idx, 1); saveState(); renderLater(); });
@@ -575,7 +686,7 @@ async function doSearch(){
       el.innerHTML = '<p class="note">' + (err ? '検索できませんでした（' + err + '）。枠の上限か、キーの状態を確認してください。' : '見つかりませんでした。') + '</p>';
       return;
     }
-    items.forEach((it) => el.appendChild(itemRow(it, { queue: true, later: true })));
+    items.forEach((it) => el.appendChild(cardRow(it, { queue: true, later: true })));
   }catch(e){
     el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。通信の届く場所で開き直してください。</p>';
   }
@@ -637,8 +748,8 @@ async function importSubs(){
     let added = 0;
     for (const it of items){
       const ex = S.subs.youtube.find((c) => c.id === it.channel_id);
-      if (ex){ if (!ex.name && it.title) ex.name = it.title; }
-      else { S.subs.youtube.push({ id: it.channel_id, name: it.title || '' }); added++; }
+      if (ex){ if (!ex.name && it.title) ex.name = it.title; if (!ex.img && it.thumbnail) ex.img = it.thumbnail; }
+      else { S.subs.youtube.push({ id: it.channel_id, name: it.title || '', img: it.thumbnail || '' }); added++; }
     }
     saveState(); renderChannels(); renderHome(); fetchFeed();
     refreshOauthStatus();
@@ -663,8 +774,11 @@ async function importFollows(){
     setMsg('フォロー中を ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.twitch.length + ' 件）。');
   }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
 }
+let homeFilter = 'all';
 function renderHome(){
   renderLater();
+  $('secTwitch').classList.toggle('hidden', homeFilter === 'youtube');
+  $('secYoutube').classList.toggle('hidden', homeFilter === 'twitch' || homeFilter === 'live');
   const tw = $('homeTwitch'); tw.innerHTML = '';
   if (!S.subs.twitch.length){
     tw.innerHTML = '<p class="note">Twitch が未登録です。設定の「アカウント連携」から取り込めます。</p>';
@@ -673,13 +787,18 @@ function renderHome(){
     const la = twLive[a.toLowerCase()] ? 0 : 1, lb = twLive[b.toLowerCase()] ? 0 : 1;
     return la - lb;
   });
+  let liveCount = 0;
   for (const name of twSorted){
     const info = twLive[name.toLowerCase()];
     if (info){
-      tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name + '（ライブ中）・' + info.viewers + '人', title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, id: null }, { queue: true }));
-    }else{
+      liveCount++;
+      tw.appendChild(cardRow({ source: 'twitch', channel_name: name, channel: name, title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, viewers: info.viewers, game: info.game, live: true, id: null }, { queue: true }));
+    }else if (homeFilter !== 'live'){
       tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
     }
+  }
+  if (homeFilter === 'live' && S.subs.twitch.length && !liveCount){
+    tw.innerHTML = '<p class="note">今ライブ中のチャンネルはありません。</p>';
   }
   const hf = $('homeFeed'); hf.innerHTML = '';
   if (!S.subs.youtube.length){
@@ -701,7 +820,7 @@ function renderHome(){
     hf.innerHTML = '<p class="note">絞り込みで全部隠れています。設定のフィルタを確認してください。</p>';
     return;
   }
-  for (const item of shown.slice(0, 60)) hf.appendChild(itemRow(item, { queue: true, later: true }));
+  for (const item of shown.slice(0, 60)) hf.appendChild(cardRow(item, { queue: true, later: true }));
 }
 function channelNameYt(cid){
   const sub = S.subs.youtube.find((c) => c.id === cid);
@@ -714,6 +833,8 @@ function renderChannels(){
   if (!S.subs.youtube.length) cy.innerHTML = '<p class="note">未登録です。</p>';
   for (const c of S.subs.youtube){
     const row = document.createElement('div'); row.className = 'row';
+    if (c.img){ const av = document.createElement('img'); av.className = 'avatar'; av.src = c.img; av.alt = ''; row.appendChild(av); }
+    else { const av = document.createElement('div'); av.className = 'avatarTxt'; av.textContent = (channelNameYt(c.id) || '?').slice(0, 1); row.appendChild(av); }
     const main = document.createElement('div'); main.className = 'main';
     const t = document.createElement('div'); t.className = 'title'; t.textContent = channelNameYt(c.id);
     const m = document.createElement('div'); m.className = 'meta'; m.textContent = c.id;
@@ -731,9 +852,17 @@ function renderChannels(){
   if (!S.subs.twitch.length) ct.innerHTML = '<p class="note">未登録です。</p>';
   for (const name of S.subs.twitch){
     const row = document.createElement('div'); row.className = 'row';
+    const av = document.createElement('div'); av.className = 'avatarTxt'; av.textContent = (name || '?').slice(0, 1).toUpperCase(); row.appendChild(av);
     const main = document.createElement('div'); main.className = 'main';
     const t = document.createElement('div'); t.className = 'title'; t.textContent = name;
-    main.appendChild(t); row.appendChild(main);
+    main.appendChild(t);
+    const info = twLive[name.toLowerCase()];
+    const m = document.createElement('div'); m.className = 'meta';
+    if (info){
+      const d = document.createElement('span'); d.className = 'livedot'; m.appendChild(d);
+      m.appendChild(document.createTextNode('ライブ中・' + info.viewers + '人' + (info.title ? '・' + info.title : '')));
+    } else m.textContent = 'オフライン';
+    main.appendChild(m); row.appendChild(main);
     const acts = document.createElement('div'); acts.className = 'acts';
     const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
     bPlay.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); });
@@ -755,7 +884,7 @@ function renderQueue(){
     const bPlay = document.createElement('button'); bPlay.className = 'small'; bPlay.textContent = 'ここから再生';
     bPlay.addEventListener('click', () => playQueueAt(idx));
     const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '外す';
-    bDel.addEventListener('click', () => { S.queue.splice(idx, 1); saveState(); renderQueue(); });
+    bDel.addEventListener('click', () => { S.queue.splice(idx, 1); saveState(); renderQueue(); renderUpNext(); });
     acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); q.appendChild(row);
   });
 }
@@ -783,7 +912,7 @@ function renderBackups(){
     row.appendChild(b); el.appendChild(row);
   }
 }
-function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); }
+function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); renderUpNext(); }
 
 /* ---------- 設定まわりの操作 ---------- */
 let setMsgEl = null;
@@ -843,8 +972,18 @@ function wire(){
   $('chkHideShorts').addEventListener('change', () => { S.settings.hideShorts = $('chkHideShorts').checked; saveState(); renderHome(); });
   $('btnNext').addEventListener('click', () => { if (queueCursor >= 0) playQueueAt(queueCursor + 1); else if (S.queue.length) playQueueAt(0); });
   $('btnStop').addEventListener('click', clearPlayer);
+  $('btnMini').addEventListener('click', () => $('playerBox').classList.add('mini'));
+  $('btnExpand').addEventListener('click', () => $('playerBox').classList.remove('mini'));
+  $('btnMiniClose').addEventListener('click', clearPlayer);
+  document.querySelectorAll('#homeChips button').forEach((b) => {
+    b.addEventListener('click', () => {
+      homeFilter = b.dataset.f;
+      document.querySelectorAll('#homeChips button').forEach((x) => x.classList.toggle('on', x === b));
+      renderHome();
+    });
+  });
   $('btnQueuePlay').addEventListener('click', () => { if (S.queue.length) playQueueAt(0); });
-  $('btnQueueClear').addEventListener('click', () => { S.queue = []; saveState(); renderQueue(); });
+  $('btnQueueClear').addEventListener('click', () => { S.queue = []; saveState(); renderQueue(); renderUpNext(); });
   $('btnAddYt').addEventListener('click', () => {
     const v = $('inYtChannel').value.trim();
     const m = v.match(/UC[A-Za-z0-9_-]{10,30}/);
