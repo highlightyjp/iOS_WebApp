@@ -579,7 +579,7 @@ function prepActive(st){
   return prepId !== null && st.id === prepId && !sessionAssigned && !st.jobId && !st.restDay;
 }
 function staffTarget(st, idx){
-  if(st.restDay) return { x: 336, y: 258 };
+  if(st.restDay) return { x: 332, y: 244 };
   if(st.jobId){
     var sp = spotMap[st.id];
     if(sp) return sp;
@@ -591,7 +591,7 @@ function staffTarget(st, idx){
     var r0 = cellRect(0);
     return { x: r0.x + r0.w / 2 + 16, y: r0.y + r0.h + 10 };
   }
-  return { x: 52 + idx * 62, y: 264 };
+  return { x: 52 + idx * 62, y: 248 };
 }
 function px(x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
 function drawFacility(key, r){
