@@ -208,7 +208,7 @@
 <script>
 'use strict';
 const APP_VERSION = '1.10';
-const SHELL_BUILD = '2026-11-14-2305';
+const SHELL_BUILD = '2026-11-16-1752';
 const SHELL_BUILD_URL = 'https://highlightyjp.github.io/iOS_WebApp/launcher/shell/build.txt';
 const REMOTE_BASE = 'https://highlightyjp.github.io/iOS_WebApp/launcher/';
 const MODULES_URL = REMOTE_BASE + 'modules.json';
@@ -387,7 +387,7 @@ function openModule(mod){
   frameWrap.textContent = '';
   const iframe = document.createElement('iframe');
   iframe.src = moduleURL(mod.url);
-  iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen; web-share');
   iframe.setAttribute('allowfullscreen', '');
   iframe.setAttribute('referrerpolicy', 'origin');
   frameWrap.appendChild(iframe);
@@ -805,7 +805,7 @@ function loadIntoStage(url, timeoutMs){
   stage.textContent = '';
   return new Promise((resolve) => {
     const iframe = document.createElement('iframe');
-    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen; web-share');
     let done = false;
     const t0 = performance.now();
     iframe.addEventListener('load', () => {
