@@ -223,7 +223,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-16-sh5';
+const SH_BUILD = '2026-11-16-sh6';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -641,6 +641,7 @@ async function importSubs(){
       else { S.subs.youtube.push({ id: it.channel_id, name: it.title || '' }); added++; }
     }
     saveState(); renderChannels(); renderHome(); fetchFeed();
+    refreshOauthStatus();
     setMsg('登録チャンネルを ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.youtube.length + ' 件）。');
   }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
 }
@@ -658,6 +659,7 @@ async function importFollows(){
       if (login && !have.has(login)){ S.subs.twitch.push(login); have.add(login); added++; }
     }
     saveState(); renderChannels(); renderHome(); refreshTwitchLive();
+    refreshOauthStatus();
     setMsg('フォロー中を ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.twitch.length + ' 件）。');
   }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
 }
@@ -909,7 +911,7 @@ async function checkBuild(){
     }
   }catch(e){}
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) checkBuild(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ checkBuild(); refreshOauthStatus(); refreshTwitchLive(); } });
 
 wire();
 renderAll();
