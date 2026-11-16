@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>StreamHub</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.12);
+    --text:#e8edf5; --sub:#93a0b4; --accent:#4cc2ff; --danger:#ff8a8a; --ok:#7ee2a8;
+  }
+  *{ box-sizing:border-box; }
+  html{ touch-action:manipulation; }
+  body{ margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    font-size:15px; line-height:1.55; padding:0 14px 40px; }
+  header{ padding:14px 0 6px; }
+  h1{ font-size:20px; margin:0; font-weight:800; letter-spacing:.02em; }
+  #feedStatus{ color:var(--sub); font-size:12.5px; margin-top:2px; min-height:1.4em; }
+  #playerBox{ position:sticky; top:0; z-index:20; background:var(--bg); padding:8px 0 10px; }
+  #playerFrameWrap{ position:relative; width:100%; aspect-ratio:16/9; background:#000;
+    border-radius:14px; overflow:hidden; border:1px solid var(--border); }
+  #playerFrameWrap iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+  #playerIdle{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--sub); font-size:14px; padding:0 18px; text-align:center; }
+  #nowPlaying{ font-size:14px; font-weight:700; margin-top:8px; overflow-wrap:anywhere; }
+  #playState{ color:var(--sub); font-size:12.5px; min-height:1.4em; }
+  .controls{ display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  button{ appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text);
+    border-radius:10px; padding:8px 13px; font-size:14px; cursor:pointer; }
+  button.primary{ background:var(--accent); border-color:transparent; color:#06283d; font-weight:700; }
+  button.small{ padding:5px 10px; font-size:13px; border-radius:8px; }
+  button:disabled{ opacity:.45; }
+  nav.tabs{ display:flex; gap:6px; margin:10px 0 14px; }
+  nav.tabs button{ flex:1; padding:9px 0; font-weight:600; }
+  nav.tabs button.on{ background:var(--accent); color:#06283d; border-color:transparent; }
+  section.view{ display:none; }
+  section.view.on{ display:block; }
+  h2{ font-size:16px; margin:18px 0 8px; }
+  h2:first-child{ margin-top:2px; }
+  .row{ display:flex; gap:10px; align-items:center; background:var(--card);
+    border:1px solid var(--border); border-radius:12px; padding:9px 10px; margin-bottom:8px; }
+  .row img{ width:104px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; flex:none; background:#000; }
+  .row .main{ flex:1; min-width:0; }
+  .row .title{ font-weight:600; font-size:14px; overflow-wrap:anywhere; }
+  .row .meta{ color:var(--sub); font-size:12px; overflow-wrap:anywhere; }
+  .row.read .title{ color:var(--sub); font-weight:400; }
+  .row .acts{ display:flex; flex-direction:column; gap:6px; flex:none; }
+  .note{ color:var(--sub); font-size:13px; }
+  .warn{ color:#ffd479; font-size:13px; }
+  input[type=text], textarea{ width:100%; background:rgba(255,255,255,.05); color:var(--text);
+    border:1px solid var(--border); border-radius:10px; padding:10px; font-size:14px; }
+  textarea{ min-height:76px; }
+  label.chk{ display:flex; gap:8px; align-items:flex-start; margin:10px 0; font-size:14px; }
+  .block{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px; }
+  .block h3{ margin:0 0 8px; font-size:15px; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>StreamHub</h1>
+  <div id="feedStatus">読み込み中…</div>
+</header>
+
+<div id="playerBox">
+  <div id="playerFrameWrap">
+    <div id="playerIdle">一覧から選ぶと、ここで再生します</div>
+  </div>
+  <div id="nowPlaying"></div>
+  <div id="playState"></div>
+  <div class="controls">
+    <button id="btnPlayPause" class="primary" disabled>再生</button>
+    <button id="btnNext" disabled>次へ（キュー）</button>
+    <button id="btnStop" disabled>閉じる</button>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button data-tab="home" class="on">ホーム</button>
+  <button data-tab="channels">チャンネル</button>
+  <button data-tab="queue">キュー</button>
+  <button data-tab="settings">設定</button>
+</nav>
+
+<section class="view on" id="view-home">
+  <h2>Twitch</h2>
+  <div id="homeTwitch"></div>
+  <h2>YouTube の新着</h2>
+  <div id="homeFeed"></div>
+</section>
+
+<section class="view" id="view-channels">
+  <h2>YouTube</h2>
+  <div id="chYoutube"></div>
+  <h2>Twitch</h2>
+  <div id="chTwitch"></div>
+</section>
+
+<section class="view" id="view-queue">
+  <h2>キュー</h2>
+  <p class="note">再生が終わると、自動で次の項目へ進みます。</p>
+  <div id="queueList"></div>
+  <div class="controls">
+    <button id="btnQueuePlay" class="primary">キューの最初から再生</button>
+    <button id="btnQueueClear">キューを空にする</button>
+  </div>
+</section>
+
+<section class="view" id="view-settings">
+  <div class="block">
+    <h3>YouTube チャンネルを追加</h3>
+    <p class="note">チャンネルID（UCから始まる文字列）か、チャンネルのURLを貼ってください。ハンドル（@名前）だけのURLは、IDが分からないため追加できません。</p>
+    <input type="text" id="inYtChannel" placeholder="UC… または https://www.youtube.com/channel/UC…" />
+    <div class="controls"><button id="btnAddYt" class="primary">追加する</button></div>
+    <p class="note" style="margin-top:12px">登録チャンネルが多い時は、YouTube の「登録チャンネルの管理」から書き出したファイル（subscriptions.csv）を読み込めます。</p>
+    <input type="file" id="inCsv" accept=".csv,text/csv" />
+  </div>
+
+  <div class="block">
+    <h3>Twitch チャンネルを追加</h3>
+    <input type="text" id="inTwChannel" placeholder="チャンネル名（英数字）" />
+    <div class="controls"><button id="btnAddTw" class="primary">追加する</button></div>
+    <p class="note" style="margin-top:12px">まとめて追加（1行に1件）：</p>
+    <textarea id="inTwBulk" placeholder="channel_a&#10;channel_b"></textarea>
+    <div class="controls"><button id="btnAddTwBulk">一括で追加する</button></div>
+  </div>
+
+  <div class="block">
+    <h3>ログインの確認（YouTube / Twitch）</h3>
+    <p class="note">下のボタンで公式サイトを上の枠に開きます。そこでログインしてから、アプリを開き直してもログインが残っているかを確認してください。結果はアイリスへ教えてください（保持できるかどうかで、この先の作りが変わります）。</p>
+    <div class="controls">
+      <button id="btnLoginYt">YouTube を開く</button>
+      <button id="btnLoginTw">Twitch を開く</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>再生の設定</h3>
+    <label class="chk"><input type="checkbox" id="chkSb" /> <span>提供区間を自動で飛ばす（SponsorBlock。YouTube のみ）</span></label>
+    <label class="chk"><input type="checkbox" id="chkFallback" /> <span>自宅の経路が使えない時、予備の経路（外部の中継）で新着を取りに行く。その間は画面の上に表示します</span></label>
+  </div>
+
+  <div class="block">
+    <h3>データ</h3>
+    <p class="note">登録・キュー・履歴はこの端末の中に保存されます。変更のたびに、直近7回分の控えを自動で残します。</p>
+    <div class="controls">
+      <button id="btnExport">書き出し文を作る</button>
+      <button id="btnImport">下の文から読み込む</button>
+    </div>
+    <textarea id="ioText" placeholder="書き出し文はここに出ます。読み込む時はここへ貼ってください" style="margin-top:8px"></textarea>
+    <div id="backupList" style="margin-top:10px"></div>
+  </div>
+
+  <p class="note" id="buildLine"></p>
+</section>
+
+<script>
+'use strict';
+const SH_BUILD = '2026-11-16-sh1';
+const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
+const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
+const FEED_TOKEN = '_32u_H07v_UGxuaqxEZXD5TxmCe1NtjU';
+const LS_STATE = 'streamhub.v1.state';
+const LS_FEED = 'streamhub.v1.feedcache';
+const LS_BAK = 'streamhub.v1.bak.';
+
+const $ = (id) => document.getElementById(id);
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(iso){ if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+
+/* ---------- 状態 ---------- */
+let S = loadState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_STATE);
+    if (raw){ const s = JSON.parse(raw); if (s && s.subs) return normalizeState(s); }
+  }catch(e){}
+  return normalizeState({});
+}
+function normalizeState(s){
+  return {
+    subs: { youtube: Array.isArray(s.subs && s.subs.youtube) ? s.subs.youtube : [],
+            twitch: Array.isArray(s.subs && s.subs.twitch) ? s.subs.twitch : [] },
+    queue: Array.isArray(s.queue) ? s.queue : [],
+    read: (s.read && typeof s.read === 'object') ? s.read : {},
+    history: Array.isArray(s.history) ? s.history : [],
+    settings: Object.assign({ sb: false, fallback: true }, s.settings || {})
+  };
+}
+function saveState(){
+  try{ localStorage.setItem(LS_STATE, JSON.stringify(S)); }catch(e){}
+  backupState();
+}
+function backupState(){
+  try{
+    const key = LS_BAK + Date.now();
+    localStorage.setItem(key, JSON.stringify(S));
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(LS_BAK)).sort();
+    while (keys.length > 7){ localStorage.removeItem(keys.shift()); }
+  }catch(e){}
+}
+
+/* ---------- 新着の取得（正：自宅経由／副：外部の中継／最後：前回の分） ---------- */
+let feedItems = [];
+let feedRoute = '';
+async function fetchFeed(){
+  const ids = S.subs.youtube.map((c) => c.id);
+  const status = $('feedStatus');
+  if (!ids.length){
+    feedItems = []; feedRoute = '';
+    status.textContent = 'YouTube チャンネルが未登録です。「設定」から追加してください。';
+    renderHome(); return;
+  }
+  status.textContent = '新着を取りに行っています…';
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 14000);
+  try{
+    const url = FEED_HOME + '?t=' + encodeURIComponent(FEED_TOKEN) + '&c=' + encodeURIComponent(ids.join(','));
+    const res = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('http ' + res.status);
+    const d = await res.json();
+    if (!d || d.contract !== 'streamhub-data/v1' || !d.sections) throw new Error('shape');
+    feedItems = d.sections.youtube_videos || [];
+    feedRoute = 'home';
+    try{ localStorage.setItem(LS_FEED, JSON.stringify({ at: Date.now(), items: feedItems })); }catch(e){}
+    const errN = Object.keys(d.errors || {}).length;
+    status.textContent = '新着 ' + feedItems.length + ' 件（自宅の経路）' + (errN ? '／取れなかったチャンネル ' + errN + ' 件' : '');
+    renderHome(); renderChannels(); return;
+  }catch(e){ clearTimeout(timer); }
+  if (S.settings.fallback){
+    try{
+      feedItems = await fetchViaRelay(ids);
+      feedRoute = 'relay';
+      try{ localStorage.setItem(LS_FEED, JSON.stringify({ at: Date.now(), items: feedItems })); }catch(e){}
+      status.innerHTML = '';
+      const span = document.createElement('span'); span.className = 'warn';
+      span.textContent = '予備の経路でつないでいます（登録チャンネルが外部の中継に伝わります）。新着 ' + feedItems.length + ' 件';
+      status.appendChild(span);
+      renderHome(); renderChannels(); return;
+    }catch(e){}
+  }
+  try{
+    const c = JSON.parse(localStorage.getItem(LS_FEED) || 'null');
+    if (c && Array.isArray(c.items)){
+      feedItems = c.items; feedRoute = 'cache';
+      status.textContent = '新着を取りに行けなかったため、前回の分を表示しています（' + fmtDate(new Date(c.at).toISOString()) + ' 時点）';
+      renderHome(); renderChannels(); return;
+    }
+  }catch(e){}
+  feedItems = []; feedRoute = '';
+  status.textContent = '新着を取りに行けませんでした。通信の届く場所で開き直してください。';
+  renderHome(); renderChannels();
+}
+async function fetchViaRelay(ids){
+  const all = [];
+  for (const cid of ids){
+    const rss = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + cid;
+    const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(rss), { cache: 'no-store' });
+    if (!res.ok) continue;
+    const text = await res.text();
+    const doc = new DOMParser().parseFromString(text, 'text/xml');
+    const chan = (doc.querySelector('feed > title') || {}).textContent || '';
+    for (const en of doc.querySelectorAll('entry')){
+      const vid = en.getElementsByTagName('yt:videoId')[0];
+      if (!vid) continue;
+      const th = en.getElementsByTagName('media:thumbnail')[0];
+      all.push({ id: 'yt:' + vid.textContent, source: 'youtube', kind: 'video', video_id: vid.textContent,
+        title: (en.querySelector('title') || {}).textContent || '', channel: chan, channel_id: cid,
+        started_at: (en.querySelector('published') || {}).textContent || null,
+        thumbnail: th ? th.getAttribute('url') : null });
+    }
+  }
+  all.sort((a, b) => String(b.started_at || '').localeCompare(String(a.started_at || '')));
+  return all;
+}
+/* ---------- プレイヤー ---------- */
+let playerFrame = null;
+let currentItem = null;
+let queueCursor = -1;
+let isPlaying = false;
+
+function setPlayerSrc(url){
+  const wrap = $('playerFrameWrap');
+  wrap.querySelectorAll('iframe').forEach((f) => f.remove());
+  const idle = $('playerIdle'); if (idle) idle.style.display = 'none';
+  playerFrame = document.createElement('iframe');
+  playerFrame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  playerFrame.src = url;
+  wrap.appendChild(playerFrame);
+}
+function clearPlayer(){
+  const wrap = $('playerFrameWrap');
+  wrap.querySelectorAll('iframe').forEach((f) => f.remove());
+  playerFrame = null; currentItem = null; queueCursor = -1; isPlaying = false;
+  const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
+  $('nowPlaying').textContent = ''; $('playState').textContent = '';
+  $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true;
+}
+function playItem(item){
+  currentItem = item;
+  let url = '';
+  if (item.source === 'youtube' && item.kind === 'uploads'){
+    url = PLAYER + '?type=youtube&list=' + encodeURIComponent(item.list) + '&autoplay=1';
+  } else if (item.source === 'youtube'){
+    url = PLAYER + '?type=youtube&id=' + encodeURIComponent(item.video_id) + '&autoplay=1' + (S.settings.sb ? '&sb=1' : '');
+  } else if (item.source === 'twitch' && item.video_id){
+    url = PLAYER + '?type=twitch&video=' + encodeURIComponent(item.video_id);
+  } else if (item.source === 'twitch'){
+    url = PLAYER + '?type=twitch&channel=' + encodeURIComponent(item.channel_name || item.channel || '');
+  }
+  if (!url) return;
+  setPlayerSrc(url);
+  $('nowPlaying').textContent = item.title || '';
+  $('playState').textContent = '読み込み中…';
+  $('btnPlayPause').disabled = false; $('btnStop').disabled = false;
+  $('btnNext').disabled = !(queueCursor >= 0 && queueCursor < S.queue.length - 1) && S.queue.length === 0;
+  if (item.id){
+    S.read[item.id] = Date.now();
+    S.history = [{ id: item.id, title: item.title || '', at: Date.now() }].concat(S.history.filter((h) => h.id !== item.id)).slice(0, 100);
+    saveState();
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function playQueueAt(idx){
+  if (idx < 0 || idx >= S.queue.length) return;
+  queueCursor = idx;
+  playItem(S.queue[idx]);
+  $('btnNext').disabled = idx >= S.queue.length - 1;
+}
+function playerCmd(cmd){
+  if (!playerFrame || !playerFrame.contentWindow) return;
+  const provider = currentItem ? currentItem.source : undefined;
+  playerFrame.contentWindow.postMessage({ contract: 'streamhub-player/v1', cmd, provider }, '*');
+}
+window.addEventListener('message', (ev) => {
+  const d = ev.data;
+  if (!d || d.contract !== 'streamhub-player/v1' || !d.event) return;
+  const st = $('playState');
+  if (d.event === 'ready') st.textContent = '準備ができました';
+  if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; $('btnPlayPause').textContent = '一時停止'; }
+  if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; $('btnPlayPause').textContent = '再生'; }
+  if (d.event === 'online') st.textContent = '配信中です';
+  if (d.event === 'offline') st.textContent = 'このチャンネルは今は配信していません';
+  if (d.event === 'error') st.textContent = '再生できませんでした' + (d.code ? '（コード ' + esc(d.code) + '）' : '');
+  if (d.event === 'ended'){
+    isPlaying = false; $('btnPlayPause').textContent = '再生';
+    if (queueCursor >= 0 && queueCursor < S.queue.length - 1){
+      st.textContent = '終わりました。次へ進みます';
+      playQueueAt(queueCursor + 1);
+    } else {
+      st.textContent = '終わりました';
+    }
+  }
+});
+
+/* ---------- 描画 ---------- */
+function itemRow(item, opts){
+  const row = document.createElement('div');
+  row.className = 'row' + (item.id && S.read[item.id] ? ' read' : '');
+  if (item.thumbnail){
+    const img = document.createElement('img'); img.src = item.thumbnail; img.alt = '';
+    row.appendChild(img);
+  }
+  const main = document.createElement('div'); main.className = 'main';
+  const t = document.createElement('div'); t.className = 'title'; t.textContent = item.title || '';
+  const m = document.createElement('div'); m.className = 'meta';
+  m.textContent = (item.channel || '') + (item.started_at ? '・' + fmtDate(item.started_at) : '');
+  main.appendChild(t); main.appendChild(m); row.appendChild(main);
+  const acts = document.createElement('div'); acts.className = 'acts';
+  const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
+  bPlay.addEventListener('click', () => { queueCursor = -1; playItem(item); });
+  acts.appendChild(bPlay);
+  if (opts && opts.queue){
+    const bQ = document.createElement('button'); bQ.className = 'small'; bQ.textContent = 'キューへ';
+    bQ.addEventListener('click', () => { S.queue.push(item); saveState(); renderQueue(); bQ.textContent = '入れた'; });
+    acts.appendChild(bQ);
+  }
+  row.appendChild(acts);
+  return row;
+}
+function renderHome(){
+  const tw = $('homeTwitch'); tw.innerHTML = '';
+  if (!S.subs.twitch.length){
+    tw.innerHTML = '<p class="note">Twitch チャンネルが未登録です。「設定」から追加してください。</p>';
+  }
+  for (const name of S.subs.twitch){
+    tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
+  }
+  const hf = $('homeFeed'); hf.innerHTML = '';
+  if (!S.subs.youtube.length){
+    hf.innerHTML = '<p class="note">YouTube チャンネルが未登録です。</p>';
+    return;
+  }
+  if (!feedItems.length){
+    hf.innerHTML = '<p class="note">表示できる新着がありません。</p>';
+    return;
+  }
+  for (const item of feedItems.slice(0, 60)) hf.appendChild(itemRow(item, { queue: true }));
+}
+function channelNameYt(cid){
+  const sub = S.subs.youtube.find((c) => c.id === cid);
+  if (sub && sub.name) return sub.name;
+  const hit = feedItems.find((i) => i.channel_id === cid);
+  return hit ? hit.channel : cid;
+}
+function renderChannels(){
+  const cy = $('chYoutube'); cy.innerHTML = '';
+  if (!S.subs.youtube.length) cy.innerHTML = '<p class="note">未登録です。</p>';
+  for (const c of S.subs.youtube){
+    const row = document.createElement('div'); row.className = 'row';
+    const main = document.createElement('div'); main.className = 'main';
+    const t = document.createElement('div'); t.className = 'title'; t.textContent = channelNameYt(c.id);
+    const m = document.createElement('div'); m.className = 'meta'; m.textContent = c.id;
+    main.appendChild(t); main.appendChild(m); row.appendChild(main);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const bList = document.createElement('button'); bList.className = 'small primary'; bList.textContent = '投稿を再生';
+    bList.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'youtube', kind: 'uploads', list: 'UU' + c.id.slice(2), title: channelNameYt(c.id) + ' の投稿', channel: channelNameYt(c.id), id: null }); });
+    const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
+    bDel.addEventListener('click', () => { S.subs.youtube = S.subs.youtube.filter((x) => x.id !== c.id); saveState(); renderChannels(); renderHome(); });
+    acts.appendChild(bList); acts.appendChild(bDel); row.appendChild(acts); cy.appendChild(row);
+  }
+  const ct = $('chTwitch'); ct.innerHTML = '';
+  if (!S.subs.twitch.length) ct.innerHTML = '<p class="note">未登録です。</p>';
+  for (const name of S.subs.twitch){
+    const row = document.createElement('div'); row.className = 'row';
+    const main = document.createElement('div'); main.className = 'main';
+    const t = document.createElement('div'); t.className = 'title'; t.textContent = name;
+    main.appendChild(t); row.appendChild(main);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
+    bPlay.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); });
+    const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
+    bDel.addEventListener('click', () => { S.subs.twitch = S.subs.twitch.filter((x) => x !== name); saveState(); renderChannels(); renderHome(); });
+    acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); ct.appendChild(row);
+  }
+}
+function renderQueue(){
+  const q = $('queueList'); q.innerHTML = '';
+  if (!S.queue.length){ q.innerHTML = '<p class="note">キューは空です。ホームの「キューへ」から追加できます。</p>'; return; }
+  S.queue.forEach((item, idx) => {
+    const row = document.createElement('div'); row.className = 'row';
+    const main = document.createElement('div'); main.className = 'main';
+    const t = document.createElement('div'); t.className = 'title'; t.textContent = (idx + 1) + '. ' + (item.title || '');
+    const m = document.createElement('div'); m.className = 'meta'; m.textContent = item.channel || (item.source === 'twitch' ? 'Twitch' : 'YouTube');
+    main.appendChild(t); main.appendChild(m); row.appendChild(main);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const bPlay = document.createElement('button'); bPlay.className = 'small'; bPlay.textContent = 'ここから再生';
+    bPlay.addEventListener('click', () => playQueueAt(idx));
+    const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '外す';
+    bDel.addEventListener('click', () => { S.queue.splice(idx, 1); saveState(); renderQueue(); });
+    acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); q.appendChild(row);
+  });
+}
+function renderBackups(){
+  const el = $('backupList'); el.innerHTML = '';
+  const keys = Object.keys(localStorage).filter((k) => k.startsWith(LS_BAK)).sort().reverse();
+  if (!keys.length) return;
+  const h = document.createElement('p'); h.className = 'note'; h.textContent = '自動の控え（タップで戻せます。今の状態も控えに残してから戻します）：';
+  el.appendChild(h);
+  for (const k of keys){
+    const row = document.createElement('div'); row.className = 'row';
+    const main = document.createElement('div'); main.className = 'main';
+    const t = document.createElement('div'); t.className = 'title';
+    t.textContent = fmtDate(new Date(Number(k.slice(LS_BAK.length))).toISOString()) + ' の控え';
+    main.appendChild(t); row.appendChild(main);
+    const b = document.createElement('button'); b.className = 'small'; b.textContent = 'この控えに戻す';
+    b.addEventListener('click', () => {
+      try{
+        const data = JSON.parse(localStorage.getItem(k));
+        backupState();
+        S = normalizeState(data); saveState();
+        renderAll(); fetchFeed(); setMsg('控えから戻しました。');
+      }catch(e){ setMsg('控えを読み込めませんでした。'); }
+    });
+    row.appendChild(b); el.appendChild(row);
+  }
+}
+function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); }
+
+/* ---------- 設定まわりの操作 ---------- */
+let setMsgEl = null;
+function setMsg(t){ if (setMsgEl) setMsgEl.textContent = t; }
+function addYoutube(id, name){
+  if (!/^UC[A-Za-z0-9_-]{10,30}$/.test(id)){ setMsg('チャンネルIDの形になっていません。UCから始まるIDか、チャンネルのURLを貼ってください。'); return false; }
+  if (S.subs.youtube.some((c) => c.id === id)){ setMsg('そのチャンネルは登録済みです。'); return false; }
+  S.subs.youtube.push({ id, name: name || '' });
+  saveState(); renderChannels(); renderHome(); fetchFeed();
+  setMsg('追加しました。'); return true;
+}
+function addTwitch(name){
+  name = String(name || '').trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,25}$/.test(name)){ setMsg('Twitch のチャンネル名の形になっていません（英数字と _ 、3〜25文字）。'); return false; }
+  if (S.subs.twitch.includes(name)){ setMsg('そのチャンネルは登録済みです。'); return false; }
+  S.subs.twitch.push(name); saveState(); renderChannels(); renderHome();
+  setMsg('追加しました。'); return true;
+}
+function wire(){
+  document.querySelectorAll('nav.tabs button').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('nav.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+      document.querySelectorAll('section.view').forEach((v) => v.classList.toggle('on', v.id === 'view-' + b.dataset.tab));
+      if (b.dataset.tab === 'settings') renderBackups();
+    });
+  });
+  $('btnPlayPause').addEventListener('click', () => playerCmd(isPlaying ? 'pause' : 'play'));
+  $('btnNext').addEventListener('click', () => { if (queueCursor >= 0) playQueueAt(queueCursor + 1); else if (S.queue.length) playQueueAt(0); });
+  $('btnStop').addEventListener('click', clearPlayer);
+  $('btnQueuePlay').addEventListener('click', () => { if (S.queue.length) playQueueAt(0); });
+  $('btnQueueClear').addEventListener('click', () => { S.queue = []; saveState(); renderQueue(); });
+  $('btnAddYt').addEventListener('click', () => {
+    const v = $('inYtChannel').value.trim();
+    const m = v.match(/UC[A-Za-z0-9_-]{10,30}/);
+    if (m){ if (addYoutube(m[0], '')) $('inYtChannel').value = ''; }
+    else setMsg('IDが見つかりませんでした。チャンネルのURL（/channel/UC… の形）か、IDそのものを貼ってください。');
+  });
+  $('inCsv').addEventListener('change', () => {
+    const f = $('inCsv').files[0]; if (!f) return;
+    f.text().then((text) => {
+      let added = 0;
+      for (const line of text.split(/\r?\n/).slice(1)){
+        const i1 = line.indexOf(','), i2 = line.indexOf(',', i1 + 1);
+        if (i1 < 0) continue;
+        const id = line.slice(0, i1).trim();
+        const title = (i2 >= 0 ? line.slice(i2 + 1) : '').trim().replace(/^"|"$/g, '');
+        if (/^UC[A-Za-z0-9_-]{10,30}$/.test(id) && !S.subs.youtube.some((c) => c.id === id)){
+          S.subs.youtube.push({ id, name: title }); added++;
+        }
+      }
+      saveState(); renderChannels(); renderHome(); fetchFeed();
+      setMsg('ファイルから ' + added + ' 件を追加しました。');
+    });
+  });
+  $('btnAddTw').addEventListener('click', () => { if (addTwitch($('inTwChannel').value)) $('inTwChannel').value = ''; });
+  $('btnAddTwBulk').addEventListener('click', () => {
+    let n = 0;
+    for (const line of $('inTwBulk').value.split(/[\n,]+/)){ if (line.trim() && addTwitch(line)) n++; }
+    setMsg('一括で ' + n + ' 件を追加しました。');
+  });
+  $('btnLoginYt').addEventListener('click', () => {
+    queueCursor = -1; setPlayerSrc('https://www.youtube.com/');
+    $('nowPlaying').textContent = 'YouTube（ログインの確認）';
+    $('playState').textContent = 'ここでログインしてください。終わったら「閉じる」で戻れます。';
+    $('btnStop').disabled = false; $('btnPlayPause').disabled = true; $('btnNext').disabled = true;
+  });
+  $('btnLoginTw').addEventListener('click', () => {
+    queueCursor = -1; setPlayerSrc('https://www.twitch.tv/');
+    $('nowPlaying').textContent = 'Twitch（ログインの確認）';
+    $('playState').textContent = 'ここでログインしてください。終わったら「閉じる」で戻れます。';
+    $('btnStop').disabled = false; $('btnPlayPause').disabled = true; $('btnNext').disabled = true;
+  });
+  $('chkSb').checked = !!S.settings.sb;
+  $('chkSb').addEventListener('change', () => { S.settings.sb = $('chkSb').checked; saveState(); });
+  $('chkFallback').checked = !!S.settings.fallback;
+  $('chkFallback').addEventListener('change', () => { S.settings.fallback = $('chkFallback').checked; saveState(); });
+  $('btnExport').addEventListener('click', () => { $('ioText').value = JSON.stringify(S, null, 2); setMsg('書き出し文を作りました。'); });
+  $('btnImport').addEventListener('click', () => {
+    try{
+      const data = JSON.parse($('ioText').value);
+      backupState();
+      S = normalizeState(data); saveState();
+      $('chkSb').checked = !!S.settings.sb; $('chkFallback').checked = !!S.settings.fallback;
+      renderAll(); fetchFeed(); setMsg('読み込みました。');
+    }catch(e){ setMsg('読み込めませんでした。書き出し文の形か確認してください。'); }
+  });
+  const sv = $('view-settings');
+  setMsgEl = document.createElement('p'); setMsgEl.className = 'warn';
+  sv.insertBefore(setMsgEl, sv.firstChild);
+  $('buildLine').textContent = 'build ' + SH_BUILD;
+}
+
+/* ---------- 版の自己確認 ---------- */
+async function checkBuild(){
+  try{
+    const res = await fetch('build.txt', { cache: 'no-store' });
+    if (!res.ok) return;
+    const latest = (await res.text()).trim();
+    if (latest && latest !== SH_BUILD && sessionStorage.getItem('streamhub.reloading') !== latest){
+      sessionStorage.setItem('streamhub.reloading', latest);
+      location.href = location.pathname + '?v=' + encodeURIComponent(latest);
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkBuild(); });
+
+wire();
+renderAll();
+fetchFeed();
+checkBuild();
+setTimeout(checkBuild, 4000);
+</script>
+</body>
+</html>
