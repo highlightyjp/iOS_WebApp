@@ -100,9 +100,19 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .gap{ margin-top:26px; border:1.5px dashed var(--sep); border-radius:16px; padding:18px; text-align:center; color:var(--label2); font-size:14px; }
 .text{ white-space:pre-wrap; word-break:break-word; line-height:1.9; }
 .aa{ font-family:'SSAA','SSNoto','MS PGothic','ＭＳ Ｐゴシック',IPAMonaPGothic,monospace; white-space:pre;
-  line-height:1.2; font-size:12.5px; word-break:normal; }
+  line-height:1.2; font-size:11px; word-break:normal; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 .aaBox{ background:var(--fill); border-radius:12px; margin:10px 0; padding:10px 6px; overflow-x:auto;
-  -webkit-overflow-scrolling:touch; }
+  -webkit-overflow-scrolling:touch; position:relative; }
+.aaHint{ position:absolute; top:6px; right:8px; font-size:10.5px; color:var(--label3); background:var(--card);
+  border:1px solid var(--sep); border-radius:999px; padding:2px 8px; pointer-events:none; }
+#aaFull{ position:fixed; inset:0; z-index:80; background:#0a0d14; display:flex; flex-direction:column; }
+#aaFull[hidden]{ display:none; }
+#aaFullBar{ display:flex; justify-content:space-between; align-items:center; gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px; color:#f2ead8; font-size:13px; }
+#aaFullClose{ font-size:13.5px; font-weight:700; color:#101623; background:#ffd873; border:none;
+  border-radius:999px; padding:8px 14px; cursor:pointer; }
+#aaFullScroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:6px 10px calc(14px + env(safe-area-inset-bottom)); }
+#aaFullText{ color:#f5eeda; font-size:13px; }
 .text .ph2{ color:var(--label2); font-size:.82em; }
 .vwrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .vtext{ writing-mode:vertical-rl; height:62vh; line-height:2.0; white-space:pre-wrap; word-break:break-word; padding:6px 4px; }
@@ -192,9 +202,13 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
   </div>
 </div>
 
+<div id="aaFull" hidden>
+  <div id="aaFullBar"><span>AA を大きく見る（横スクロールできます）</span><button id="aaFullClose" type="button">✕ 閉じる</button></div>
+  <div id="aaFullScroll"><div id="aaFullText" class="aa"></div></div>
+</div>
 <script>
 'use strict';
-var SS_BUILD = '2026-11-16-ss16';
+var SS_BUILD = '2026-11-16-ss17';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -211,6 +225,7 @@ setTimeout(checkBuild, 4000);
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkBuild(); });
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 var AA_FONT_STATE = '読込中';
+$('aaFullClose').addEventListener('click', closeAAFull);
 function updateBuildNotes(){
   document.getElementById('buildNote').textContent = 'モジュール build ' + SS_BUILD + '／AAフォント：' + AA_FONT_STATE + '／データ契約 ss-data/v1（本部が生成・差し替え）';
   if(cur) renderMeta();
@@ -616,23 +631,27 @@ function segmentize(text){
 function renderPartText(text){
   return segmentize(text).map(function(seg){
     if(seg.type === 'aa'){
-      return '<div class="aaBox"><div class="aa">' + esc(seg.lines.join('\n')) + '</div></div>';
+      return '<div class="aaBox"><span class="aaHint">タップで拡大</span><div class="aa">' + esc(seg.lines.join('\n')) + '</div></div>';
     }
     var inner = '<div class="' + (settings.vertical ? 'vtext' : 'text') + '">' + fmtText(seg.lines.join('\n')) + '</div>';
     return settings.vertical ? '<div class="vwrap">' + inner + '</div>' : inner;
   }).join('');
 }
-/* AAは Mona 系の等幅フォントでそのまま流し、空白を保持して折り返さない。
-   画面幅を超えるブロックは、全体が収まるまでフォントを縮小する（下限以下は箱の横スクロールに任せる） */
+/* AAは Mona 系の等幅フォントで固定 11px のまま流し、空白を保持して折り返さない。
+   画面幅を超えるブロックは縮小せず、箱の横スクロールで見る（ss17 の方針転換：
+   126桁級のAAは全体を収める縮小では線自体が潰れて読めないため） */
 function fitAllAA(){
-  document.querySelectorAll('.aaBox .aa').forEach(function(el){
-    el.style.fontSize = '';
-    var avail = el.parentElement.clientWidth - 12; /* .aaBox の左右 padding */
-    if(avail > 0 && el.scrollWidth > avail){
-      var fs = Math.floor(12.5 * avail / el.scrollWidth * 10) / 10;
-      el.style.fontSize = Math.max(fs, 5) + 'px';
-    }
-  });
+  document.querySelectorAll('.aaBox .aa').forEach(function(el){ el.style.fontSize = ''; });
+}
+function openAAFull(text){
+  $('aaFullText').textContent = text;
+  $('aaFull').hidden = false;
+  document.body.style.overflow = 'hidden';
+  var sc = $('aaFullScroll'); sc.scrollLeft = 0; sc.scrollTop = 0;
+}
+function closeAAFull(){
+  $('aaFull').hidden = true;
+  document.body.style.overflow = '';
 }
 window.addEventListener('resize', function(){ fitAllAA(); });
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitAllAA(); });
@@ -712,6 +731,12 @@ function renderReaderBody(){
   $('rBody').innerHTML = html;
   fitAllAA();
   applyTextStyle();
+  $('rBody').querySelectorAll('.aaBox').forEach(function(box){
+    box.addEventListener('click', function(){
+      var t = box.querySelector('.aa');
+      if(t) openAAFull(t.textContent);
+    });
+  });
 }
 function currentSeqIndex(){
   var items = $('rBody').querySelectorAll('[data-seq]');
