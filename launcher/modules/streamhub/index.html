@@ -27,6 +27,8 @@
   #nowPlaying{ font-size:14px; font-weight:700; margin-top:8px; overflow-wrap:anywhere; }
   #playState{ color:var(--sub); font-size:12.5px; min-height:1.4em; }
   .controls{ display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  a.btnlink{ appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text);
+    border-radius:10px; padding:9px 14px; font-size:14px; text-decoration:none; display:inline-block; }
   button{ appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text);
     border-radius:10px; padding:8px 13px; font-size:14px; cursor:pointer; }
   button.primary{ background:var(--accent); border-color:transparent; color:#06283d; font-weight:700; }
@@ -159,7 +161,7 @@
 
 <section class="view" id="view-settings">
   <div class="block">
-    <h3>YouTube チャンネルを追加</h3>
+    <h3>YouTube チャンネルを手で追加（連携が使えない時）</h3>
     <p class="note">チャンネルID（UCから始まる文字列）か、チャンネルのURLを貼ってください。ハンドル（@名前）だけのURLは、IDが分からないため追加できません。</p>
     <input type="text" id="inYtChannel" placeholder="UC… または https://www.youtube.com/channel/UC…" />
     <div class="controls"><button id="btnAddYt" class="primary">追加する</button></div>
@@ -168,7 +170,7 @@
   </div>
 
   <div class="block">
-    <h3>Twitch チャンネルを追加</h3>
+    <h3>Twitch チャンネルを手で追加（連携が使えない時）</h3>
     <input type="text" id="inTwChannel" placeholder="チャンネル名（英数字）" />
     <div class="controls"><button id="btnAddTw" class="primary">追加する</button></div>
     <p class="note" style="margin-top:12px">まとめて追加（1行に1件）：</p>
@@ -177,11 +179,16 @@
   </div>
 
   <div class="block">
-    <h3>ログインの確認（YouTube / Twitch）</h3>
-    <p class="note">下のボタンで公式サイトを上の枠に開きます。そこでログインしてから、アプリを開き直してもログインが残っているかを確認してください。結果はアイリスへ教えてください（保持できるかどうかで、この先の作りが変わります）。</p>
+    <h3>アカウント連携</h3>
+    <p class="note">連携すると、YouTube の登録チャンネルと Twitch のフォロー中を、全部まとめて取り込めます。連携のリンクはブラウザで開いてください（アプリの枠の中ではログイン画面が出ません）。許可は読み取りだけです。</p>
+    <p class="note" id="oauthStatus">連携の状態を確認しています…</p>
     <div class="controls">
-      <button id="btnLoginYt">YouTube を開く</button>
-      <button id="btnLoginTw">Twitch を開く</button>
+      <a id="lnkGoogle" class="btnlink" href="#" target="_blank" rel="noopener">YouTube と連携する</a>
+      <button id="btnImportSubs">登録チャンネルを取り込む</button>
+    </div>
+    <div class="controls">
+      <a id="lnkTwitch" class="btnlink" href="#" target="_blank" rel="noopener">Twitch と連携する</a>
+      <button id="btnImportFollows">フォロー中を取り込む</button>
     </div>
   </div>
 
@@ -216,7 +223,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-16-sh4';
+const SH_BUILD = '2026-11-16-sh5';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -602,18 +609,79 @@ async function loadComments(){
     el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。</p>';
   }
 }
+let twLive = {};
+async function refreshTwitchLive(){
+  try{
+    const d = await apiGet('/twitchlive');
+    twLive = d.sections.twitch_live || {};
+    renderHome();
+  }catch(e){}
+}
+async function refreshOauthStatus(){
+  const el = $('oauthStatus');
+  try{
+    const d = await apiGet('/oauth/status');
+    const st = (d.sections && d.sections.oauth_status) || {};
+    el.textContent = 'YouTube：' + (st.google ? '連携済み' : '未連携') + '　／　Twitch：' + (st.twitch ? '連携済み' : '未連携');
+  }catch(e){
+    el.textContent = '連携の状態を取れませんでした（自宅の基盤に届いていません）。';
+  }
+}
+async function importSubs(){
+  try{
+    const d = await apiGet('/subs');
+    const err = d.errors && d.errors.subs;
+    if (err === 'not-linked'){ setMsg('YouTube と未連携です。先に「YouTube と連携する」から許可してください。'); return; }
+    if (err){ setMsg('取り込めませんでした（' + err + '）。'); return; }
+    const items = d.sections.subscriptions || [];
+    let added = 0;
+    for (const it of items){
+      const ex = S.subs.youtube.find((c) => c.id === it.channel_id);
+      if (ex){ if (!ex.name && it.title) ex.name = it.title; }
+      else { S.subs.youtube.push({ id: it.channel_id, name: it.title || '' }); added++; }
+    }
+    saveState(); renderChannels(); renderHome(); fetchFeed();
+    setMsg('登録チャンネルを ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.youtube.length + ' 件）。');
+  }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
+}
+async function importFollows(){
+  try{
+    const d = await apiGet('/follows');
+    const err = d.errors && d.errors.follows;
+    if (err === 'not-linked'){ setMsg('Twitch と未連携です。先に「Twitch と連携する」から許可してください。'); return; }
+    if (err){ setMsg('取り込めませんでした（' + err + '）。'); return; }
+    const items = d.sections.follows || [];
+    let added = 0;
+    const have = new Set(S.subs.twitch.map((x) => x.toLowerCase()));
+    for (const it of items){
+      const login = (it.login || '').toLowerCase();
+      if (login && !have.has(login)){ S.subs.twitch.push(login); have.add(login); added++; }
+    }
+    saveState(); renderChannels(); renderHome(); refreshTwitchLive();
+    setMsg('フォロー中を ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.twitch.length + ' 件）。');
+  }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
+}
 function renderHome(){
   renderLater();
   const tw = $('homeTwitch'); tw.innerHTML = '';
   if (!S.subs.twitch.length){
-    tw.innerHTML = '<p class="note">Twitch チャンネルが未登録です。「設定」から追加してください。</p>';
+    tw.innerHTML = '<p class="note">Twitch が未登録です。設定の「アカウント連携」から取り込めます。</p>';
   }
-  for (const name of S.subs.twitch){
-    tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
+  const twSorted = S.subs.twitch.slice().sort((a, b) => {
+    const la = twLive[a.toLowerCase()] ? 0 : 1, lb = twLive[b.toLowerCase()] ? 0 : 1;
+    return la - lb;
+  });
+  for (const name of twSorted){
+    const info = twLive[name.toLowerCase()];
+    if (info){
+      tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name + '（ライブ中）・' + info.viewers + '人', title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, id: null }, { queue: true }));
+    }else{
+      tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
+    }
   }
   const hf = $('homeFeed'); hf.innerHTML = '';
   if (!S.subs.youtube.length){
-    hf.innerHTML = '<p class="note">YouTube チャンネルが未登録です。</p>';
+    hf.innerHTML = '<p class="note">YouTube が未登録です。設定の「アカウント連携」から取り込めます。</p>';
     return;
   }
   if (!feedItems.length){
@@ -804,18 +872,10 @@ function wire(){
     for (const line of $('inTwBulk').value.split(/[\n,]+/)){ if (line.trim() && addTwitch(line)) n++; }
     setMsg('一括で ' + n + ' 件を追加しました。');
   });
-  $('btnLoginYt').addEventListener('click', () => {
-    queueCursor = -1; setPlayerSrc('https://www.youtube.com/');
-    $('nowPlaying').textContent = 'YouTube（ログインの確認）';
-    $('playState').textContent = 'ここでログインしてください。終わったら「閉じる」で戻れます。';
-    $('btnStop').disabled = false; $('btnPlayPause').disabled = true; $('btnNext').disabled = true;
-  });
-  $('btnLoginTw').addEventListener('click', () => {
-    queueCursor = -1; setPlayerSrc('https://www.twitch.tv/');
-    $('nowPlaying').textContent = 'Twitch（ログインの確認）';
-    $('playState').textContent = 'ここでログインしてください。終わったら「閉じる」で戻れます。';
-    $('btnStop').disabled = false; $('btnPlayPause').disabled = true; $('btnNext').disabled = true;
-  });
+  $('lnkGoogle').href = API_HOME + '/oauth/google/start?t=' + encodeURIComponent(FEED_TOKEN);
+  $('lnkTwitch').href = API_HOME + '/oauth/twitch/start?t=' + encodeURIComponent(FEED_TOKEN);
+  $('btnImportSubs').addEventListener('click', importSubs);
+  $('btnImportFollows').addEventListener('click', importFollows);
   $('chkSb').checked = !!S.settings.sb;
   $('chkSb').addEventListener('change', () => { S.settings.sb = $('chkSb').checked; saveState(); });
   $('chkFallback').checked = !!S.settings.fallback;
@@ -854,6 +914,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 wire();
 renderAll();
 fetchFeed();
+refreshOauthStatus();
+refreshTwitchLive();
 checkBuild();
 setTimeout(checkBuild, 4000);
 </script>
