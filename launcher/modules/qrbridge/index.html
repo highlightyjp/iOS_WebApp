@@ -44,7 +44,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.6</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.6.1</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -14897,8 +14897,9 @@ $("tabPrompt").onclick = function () { show("panePrompt"); };
 $("tabHist").onclick = function () { show("paneHist"); qbRenderHist(); };
 
 function qbSaveFile(name, text) {
-  /* 保存の梯子：(1) 共有シート（iPhoneでは「ファイルに保存」が出る） (2) ダウンロード (3) 不可。
-     戻り値は使えた経路："share" | "download" | "none" */
+  /* 保存の梯子 v2：(1) ファイルの共有シート (2) テキストの共有シート
+     (3) 隠しiframeへのダウンロード（本体ページは遷移させない） (4) 不可。
+     戻り値："share" | "sharetext" | "download" | "none" */
   try {
     var file = new File([text], name, { type: "text/plain;charset=utf-8" });
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -14907,18 +14908,39 @@ function qbSaveFile(name, text) {
     }
   } catch (e) {}
   try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ title: name, text: text }))) {
+      navigator.share({ title: name, text: text }).catch(function () {});
+      return "sharetext";
+    }
+  } catch (e) {}
+  try {
     var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = name;
-    document.body.appendChild(a); a.click();
-    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 400);
+    var fr = document.getElementById("qbDlFrame");
+    if (!fr) {
+      fr = document.createElement("iframe");
+      fr.id = "qbDlFrame";
+      fr.style.display = "none";
+      document.body.appendChild(fr);
+    }
+    fr.src = url;
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
     return "download";
   } catch (e) { return "none"; }
 }
 function qbDownload(name, text) { return qbSaveFile(name, text); }
+function qbLastRecvSet(text) { qbStoreSet("qrb_last_recv", JSON.stringify({ t: Date.now(), text: text })); }
+function qbRestoreLastRecv() {
+  try {
+    var r = JSON.parse(qbStoreGet("qrb_last_recv") || "null");
+    if (!r || !r.text || $("outText").value) return;
+    $("outText").value = r.text;
+    $("recvStatus").textContent = "前回の受信を表示しました（" + qbFmtTime(r.t) + "）。「ファイルとして保存」もできます";
+  } catch (e) {}
+}
 function qbSaveMsg(how) {
   if (how === "share") return "共有シートを開きました。「ファイルに保存」を選んでください";
+  if (how === "sharetext") return "共有シートを開きました。送り先のアプリ（メモなど）で保存してください";
   if (how === "download") return "保存を開始しました";
   return "この環境ではファイル保存が始まりませんでした。「結果をコピー」を使ってください";
 }
@@ -15286,6 +15308,7 @@ function handleBytes(bytes, st) {
     st.innerHTML = "<span class='ok'>復元しました</span>\n" + [...text].length + " 字";
     QB_RXP = { t0: 0, r0: 0 };
     qbHistAdd("recv", "受信", bytes.length, true, text);
+    qbLastRecvSet(text);
     var QB_DONE = true;
     if (QB_SCAN_TEST) {
       QB_SCAN_TEST = false;
@@ -15457,7 +15480,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -15466,7 +15489,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.6 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.6.1 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -15686,6 +15709,17 @@ $("btnTest").onclick = function () {
     qbHistDel(t13a.t); qbHistDel(t13b.t);
     QB_REPORT.items[13] = { label: "保存と履歴の本文", result: ok13 ? "合格" : "不合格", detail: ok13 ? "受信の本文が履歴に残り、後から見て保存できる" : "受信の本文が履歴に残っていない" };
   } catch (e) { QB_REPORT.items[13] = { label: "保存と履歴の本文", result: "不合格", detail: e.message }; }
+  try {
+    var prev14 = qbStoreGet("qrb_last_recv");
+    var prevOut14 = $("outText").value;
+    qbLastRecvSet("受信の保持確認 14");
+    $("outText").value = "";
+    qbRestoreLastRecv();
+    var ok14 = $("outText").value === "受信の保持確認 14";
+    if (prev14) qbStoreSet("qrb_last_recv", prev14); else qbStoreDel("qrb_last_recv");
+    $("outText").value = prevOut14;
+    QB_REPORT.items[14] = { label: "受信の保持と復元", result: ok14 ? "合格" : "不合格", detail: ok14 ? "再読み込みしても受信が戻る" : "受信が復元できなかった" };
+  } catch (e) { QB_REPORT.items[14] = { label: "受信の保持と復元", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
@@ -15889,6 +15923,7 @@ $("btnSaveFile").onclick = function () {
   var how = qbSaveFile(name, text);
   st.textContent = qbSaveMsg(how) + "（" + name + "）";
 };
+qbRestoreLastRecv();
 qbRenderTpl();
 </script>
 </body>
