@@ -10,63 +10,88 @@
   html,body{ margin:0; padding:0; }
   body{
     font-family:-apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-    background:#141210; color:#f2ead9; min-height:100vh;
-    padding:calc(10px + env(safe-area-inset-top)) 12px calc(18px + env(safe-area-inset-bottom));
+    background:#241a10; color:#f5eeda; min-height:100vh;
+    padding:calc(8px + env(safe-area-inset-top)) 10px calc(86px + env(safe-area-inset-bottom));
   }
+  /* ===== ステータス帯（常時表示） ===== */
   .bar{
-    position:sticky; top:0; z-index:5; margin:-10px -12px 10px; padding:calc(10px + env(safe-area-inset-top)) 12px 8px;
-    background:rgba(20,18,16,.92); backdrop-filter:blur(14px); border-bottom:1px solid rgba(255,255,255,.08);
+    position:sticky; top:0; z-index:6; margin:-8px -10px 8px; padding:calc(8px + env(safe-area-inset-top)) 10px 7px;
+    background:rgba(30,21,12,.95); border-bottom:2px solid #0f0a05;
   }
-  .bar .row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .shop-name{ font-size:17px; font-weight:700; letter-spacing:.04em; }
-  .rank{ font-size:12px; color:#ffd873; border:1px solid rgba(255,216,115,.45); padding:2px 8px; border-radius:999px; }
-  .res{ display:flex; gap:12px; font-size:14px; margin-top:6px; flex-wrap:wrap; }
-  .res b{ color:#ffd873; font-weight:700; }
+  .bar .row{ display:flex; align-items:center; gap:8px; }
+  .shop-name{ font-size:16px; font-weight:800; letter-spacing:.05em; color:#ffe1a0; text-shadow:0 2px 0 #0f0a05; }
+  .rank{ font-size:11.5px; color:#2a1e0e; background:#ffd873; border:2px solid #0f0a05; padding:1px 8px; border-radius:6px; font-weight:800; box-shadow:0 2px 0 #0f0a05; }
+  .res{ display:flex; gap:11px; font-size:13.5px; margin-top:6px; flex-wrap:wrap; }
+  .res b{ color:#ffd873; font-weight:800; }
   .tools{ display:flex; gap:6px; margin-left:auto; }
+  /* ===== ボタン（カイロ文法：太い枠＋影＋押下で沈む） ===== */
   button{
-    font:inherit; font-size:13px; color:#f2ead9; background:rgba(255,255,255,.09);
-    border:1px solid rgba(255,255,255,.16); border-radius:10px; padding:6px 10px; cursor:pointer;
+    font:inherit; font-size:13px; font-weight:700; color:#2a1e0e; background:#f5eeda;
+    border:2px solid #0f0a05; border-radius:10px; padding:6px 10px; cursor:pointer; box-shadow:0 2px 0 #0f0a05;
   }
-  button:active{ transform:scale(.97); }
-  button:disabled{ opacity:.38; }
-  button.primary{ background:#b97f26; border-color:#d99b35; color:#fff8ea; font-weight:700; }
-  button.warn{ background:#7a3b2e; border-color:#a05240; }
-  h2{ font-size:13px; color:#cbbd97; letter-spacing:.12em; margin:16px 2px 8px; font-weight:700; }
-  .cards{ display:grid; gap:8px; }
-  .card{
-    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:10px 12px;
-  }
-  .card .ttl{ font-size:15px; font-weight:700; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
-  .tag{ font-size:11px; padding:1px 7px; border-radius:999px; border:1px solid rgba(255,255,255,.25); color:#e8dfc8; }
-  .tag.tech{ border-color:#7ec8ff; color:#a8dcff; } .tag.sense{ border-color:#ffb1d9; color:#ffc7e6; } .tag.bal{ border-color:#b6f0c0; color:#c9f5d2; }
-  .meta{ font-size:12.5px; color:#d8cfb4; margin-top:3px; line-height:1.55; }
-  .pbar{ height:8px; border-radius:99px; background:rgba(255,255,255,.12); overflow:hidden; margin-top:7px; }
-  .pbar i{ display:block; height:100%; background:linear-gradient(90deg,#d99b35,#ffd873); border-radius:99px; }
-  .pbar.stam i{ background:linear-gradient(90deg,#4f9e57,#8fe388); }
-  .pbar.stam.low i{ background:linear-gradient(90deg,#b04a3a,#e07a5f); }
-  .rowbtns{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center; }
-  select{ font:inherit; font-size:13px; background:#2a251d; color:#f2ead9; border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:5px 6px; }
-  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .cell{
-    aspect-ratio:1.35; border-radius:12px; border:1px dashed rgba(255,255,255,.22);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    font-size:13px; color:#9d9377; background:rgba(255,255,255,.03); cursor:pointer; text-align:center; padding:4px;
-  }
-  .cell.filled{ border-style:solid; border-color:rgba(255,216,115,.4); background:rgba(217,155,53,.13); color:#f2ead9; }
-  .cell .eff{ font-size:10.5px; color:#cbbd97; }
-  .cell.sel{ outline:2px solid #ffd873; }
-  .shopitem{ display:flex; gap:8px; align-items:center; }
-  .shopitem .grow{ flex:1; }
-  .log{ font-size:12.5px; line-height:1.7; color:#d8cfb4; }
-  .log div b{ color:#ffd873; font-weight:600; }
+  button:active{ transform:translateY(2px); box-shadow:0 0 0 #0f0a05; }
+  button:disabled{ opacity:.4; }
+  button.primary{ background:#ffb62e; }
+  button.blue{ background:#7ec8ff; }
+  button.warn{ background:#e07a5f; color:#fff5ea; }
+  button.mini{ font-size:11.5px; padding:4px 8px; border-radius:8px; }
+  .bar button{ background:#4a3820; color:#f5eeda; border-color:#0f0a05; }
+  /* ===== 見晴らし（ジオラマ） ===== */
+  .scene-wrap{ position:relative; border:2px solid #0f0a05; border-radius:12px; overflow:hidden; box-shadow:0 3px 0 #0f0a05; background:#57462e; }
+  canvas#scene{ display:block; width:100%; height:auto; image-rendering:pixelated; }
   .banner{
-    display:none; margin:10px 0; padding:12px; border-radius:14px; text-align:center;
-    background:linear-gradient(135deg, rgba(217,155,53,.35), rgba(255,216,115,.15)); border:1px solid rgba(255,216,115,.55);
-    font-size:16px; font-weight:700; color:#ffe9ad;
+    display:none; position:absolute; left:50%; top:12px; transform:translateX(-50%); z-index:4;
+    padding:8px 16px; border-radius:10px; text-align:center; white-space:nowrap;
+    background:#fff3cf; border:2px solid #0f0a05; box-shadow:0 3px 0 #0f0a05;
+    font-size:15px; font-weight:800; color:#2a1e0e;
   }
   .banner.show{ display:block; }
-  .small{ font-size:11px; color:#9d9377; }
-  .challenge{ border-color:rgba(255,150,90,.6); background:rgba(255,150,90,.1); }
+  .scene-hint{
+    display:none; position:absolute; left:50%; bottom:8px; transform:translateX(-50%); z-index:4;
+    background:rgba(15,10,5,.88); color:#ffe1a0; font-size:12.5px; font-weight:700;
+    padding:5px 12px; border-radius:999px; border:1px solid #ffd873; white-space:nowrap;
+  }
+  .scene-hint.show{ display:block; }
+  /* ===== パネル（クリーム色の帳面） ===== */
+  .panel{
+    margin-top:10px; background:#f5eeda; color:#2a1e0e; border:2px solid #0f0a05; border-radius:12px;
+    box-shadow:0 3px 0 #0f0a05; padding:10px; min-height:180px;
+  }
+  .panel h2{ font-size:13px; letter-spacing:.1em; margin:0 0 8px; color:#7a5a1e; font-weight:800; }
+  .cards{ display:grid; gap:8px; }
+  .card{ background:#fffaf0; border:2px solid #cbbd97; border-radius:10px; padding:8px 10px; }
+  .card.challenge{ border-color:#e07a2e; background:#fff1de; }
+  .card .ttl{ font-size:14.5px; font-weight:800; display:flex; gap:7px; align-items:baseline; flex-wrap:wrap; }
+  .tag{ font-size:10.5px; font-weight:800; padding:1px 6px; border-radius:5px; border:1.5px solid #2a1e0e; background:#e8dfc8; color:#2a1e0e; }
+  .tag.tech{ background:#bfe3ff; } .tag.sense{ background:#ffd7ec; } .tag.bal{ background:#d2f2d8; }
+  .meta{ font-size:12.5px; color:#5c4c2c; margin-top:2px; line-height:1.55; }
+  .pbar{ height:9px; border-radius:99px; background:#e3d7b8; border:1.5px solid #2a1e0e; overflow:hidden; margin-top:6px; }
+  .pbar i{ display:block; height:100%; background:repeating-linear-gradient(45deg,#ffb62e 0 8px,#f59d16 8px 16px); }
+  .pbar.stam i{ background:repeating-linear-gradient(45deg,#69b96f 0 8px,#4f9e57 8px 16px); }
+  .pbar.stam.low i{ background:repeating-linear-gradient(45deg,#e07a5f 0 8px,#c85a41 8px 16px); }
+  .pbar.rep i{ background:repeating-linear-gradient(45deg,#7ec8ff 0 8px,#4aa8e8 8px 16px); }
+  .rowbtns{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center; }
+  select{ font:inherit; font-size:13px; font-weight:700; background:#fffaf0; color:#2a1e0e; border:2px solid #0f0a05; border-radius:8px; padding:5px 6px; }
+  .log{ font-size:12.5px; line-height:1.75; color:#5c4c2c; }
+  .log b{ color:#2a1e0e; }
+  .small{ font-size:11px; color:#8a7648; }
+  /* ===== 下部コマンド列 ===== */
+  .cmdbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:7;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    background:rgba(30,21,12,.97); border-top:2px solid #0f0a05;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+  }
+  .cmdbar button{
+    font-size:15px; padding:10px 4px; border-radius:12px; background:#4a3820; color:#f5eeda; position:relative;
+  }
+  .cmdbar button.on{ background:#ffb62e; color:#2a1e0e; }
+  .cmdbar button .mark{ display:block; font-size:9px; line-height:1; height:10px; color:#ffd873; }
+  .cmdbar button.on .mark{ color:#2a1e0e; }
+  .cmdbar .bdg{
+    position:absolute; top:-7px; right:-4px; background:#e0492e; color:#fff; border:2px solid #0f0a05;
+    font-size:11px; font-weight:800; border-radius:999px; min-width:22px; height:22px; line-height:18px; text-align:center; padding:0 4px;
+  }
 </style>
 </head>
 <body>
@@ -75,43 +100,37 @@
     <span class="shop-name">資格工房</span>
     <span class="rank" id="rankLabel"></span>
     <div class="tools">
-      <button id="pauseBtn">⏸ 止める</button>
-      <button id="speedBtn">速度 ×1</button>
-      <button id="obsLogBtn" style="display:none">ログ書き出し</button>
+      <button id="pauseBtn" class="mini">⏸ 止める</button>
+      <button id="speedBtn" class="mini">速度 ×1</button>
+      <button id="obsLogBtn" class="mini" style="display:none">ログ書き出し</button>
     </div>
   </div>
   <div class="res">
     <span id="dayLabel"></span>
-    <span>お金 <b id="goldLabel"></b></span>
-    <span>研究 <b id="rpLabel"></b></span>
-    <span>評判 <b id="repLabel"></b></span>
+    <span>💰 <b id="goldLabel"></b></span>
+    <span>🔬 <b id="rpLabel"></b></span>
+    <span>⭐ <b id="repLabel"></b></span>
   </div>
 </div>
 
-<div class="banner" id="banner"></div>
-
-<h2>依頼</h2>
-<div class="cards" id="jobs"></div>
-
-<h2>職人</h2>
-<div class="cards" id="staff"></div>
-
-<h2>工房（設備）</h2>
-<div class="grid" id="grid"></div>
-<div class="cards" id="shop" style="margin-top:8px"></div>
-<div class="small" id="comboLabel" style="margin-top:6px"></div>
-
-<h2>出来事</h2>
-<div class="log card" id="log"></div>
-
-<div class="rowbtns" style="margin-top:14px">
-  <button id="resetBtn" class="warn">最初からやり直す</button>
-  <span class="small" id="buildLabel"></span>
+<div class="scene-wrap">
+  <canvas id="scene" width="384" height="288"></canvas>
+  <div class="banner" id="banner"></div>
+  <div class="scene-hint" id="sceneHint"></div>
 </div>
 
-<div id="exportSheet" style="display:none; position:fixed; inset:0; z-index:30; background:rgba(10,8,6,.9); padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); overflow:auto;">
-  <h2 style="margin-top:0">セッションログ</h2>
-  <pre id="exportText" style="white-space:pre-wrap; font-size:11.5px; line-height:1.6; background:rgba(255,255,255,.06); border-radius:12px; padding:10px;"></pre>
+<div class="panel" id="panel"></div>
+
+<nav class="cmdbar">
+  <button data-tab="jobs"><span class="mark" data-mark="jobs"></span>📋 依頼<span class="bdg" id="bdgJobs" style="display:none"></span></button>
+  <button data-tab="staff"><span class="mark" data-mark="staff"></span>🧑‍🔧 職人</button>
+  <button data-tab="shop"><span class="mark" data-mark="shop"></span>🏠 設備</button>
+  <button data-tab="info"><span class="mark" data-mark="info"></span>ℹ️ 情報</button>
+</nav>
+
+<div id="exportSheet" style="display:none; position:fixed; inset:0; z-index:30; background:rgba(10,8,6,.92); padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); overflow:auto;">
+  <h2 style="margin:0 0 8px; font-size:14px; color:#ffe1a0;">セッションログ</h2>
+  <pre id="exportText" style="white-space:pre-wrap; font-size:11.5px; line-height:1.6; background:rgba(255,255,255,.06); border-radius:12px; padding:10px; color:#f5eeda;"></pre>
   <div class="rowbtns">
     <button id="exportDl">ダウンロード</button>
     <button id="exportClose">閉じる</button>
@@ -120,9 +139,11 @@
 
 <script>
 "use strict";
-/* ===== 資格工房：経営の核（カイロ型ループの最小実装） =====
+/* ===== 資格工房：経営の核（カイロ型ループ）＋カイロ文法のUI =====
    循環：依頼を受ける → 担当を付けて日々作業 → 完成・評価 → お金と評判
-        → 育成／設備へ再投資 → 評判で格が上がり、大きな仕事が解禁される。 */
+        → 育成／設備へ再投資 → 評判で格が上がり、大きな仕事が解禁される。
+   見た目：工房の見晴らし（キャンバス）＋下部コマンド列＋クリーム色のパネル。
+   状態は人の上の吹き出しと浮かぶ数字で出す。意味は色＋記号＋文言で持つ。 */
 
 var OBS_MODE = /[?&]obs=1/.test(location.search);
 var SAVE_KEY = "kobo.save.v1";
@@ -154,6 +175,14 @@ var HIREABLE = [
   { rank: 3, name: "ゴロウ", tech: 14, sense: 7, price: 700 },
   { rank: 3, name: "ソラ", tech: 7, sense: 14, price: 700 }
 ];
+var LOOKS = {
+  "テツ":   { shirt: "#4a7fb5", hair: "#2b2b30", style: "short" },
+  "ルリ":   { shirt: "#b5546e", hair: "#7a3b26", style: "long" },
+  "ハナ":   { shirt: "#5d9163", hair: "#8a6a34", style: "bob" },
+  "ミナ":   { shirt: "#7a5fa0", hair: "#3a3a44", style: "bob" },
+  "ゴロウ": { shirt: "#96683c", hair: "#1f1f24", style: "short" },
+  "ソラ":   { shirt: "#4f8f8a", hair: "#565064", style: "long" }
+};
 
 var uid = 1;
 function newStaff(name, tech, sense){
@@ -165,7 +194,7 @@ function defaultState(){
     day: 1, gold: 800, rp: 0, rep: 0, rank: 0,
     staff: [ newStaff("テツ", 12, 6), newStaff("ルリ", 6, 12), newStaff("ハナ", 9, 9) ],
     jobs: [], grid: [null,null,null,null,null,null,null,null,null],
-    hired: [], month: 1, over: false
+    hired: [], month: 1
   };
 }
 var G = defaultState();
@@ -186,6 +215,13 @@ var uiLog = [];
 function say(html){
   uiLog.unshift({ day: G.day, html: html });
   if(uiLog.length > 30) uiLog.pop();
+}
+
+/* ===== 浮かぶ数字（見晴らしの演出） ===== */
+var floaters = [];
+function spawnFloat(x, y, text, color, size){
+  floaters.push({ x: x, y: y, text: text, color: color, size: size || 13, born: performance.now() / 1000 });
+  if(floaters.length > 24) floaters.shift();
 }
 
 /* ===== 設備の効果 ===== */
@@ -230,10 +266,6 @@ function genJob(){
   };
 }
 function ensureJobs(){
-  var offers = G.jobs.filter(function(j){ return !j.assignee; }).length;
-  while(G.jobs.length < 3 + G.jobs.filter(function(j){ return j.assignee; }).length && offers < 3){
-    G.jobs.push(genJob()); offers++;
-  }
   while(G.jobs.filter(function(j){ return !j.assignee; }).length < 3) G.jobs.push(genJob());
 }
 
@@ -247,7 +279,6 @@ function showBanner(text){
 }
 function endDay(){
   G.day++;
-  /* 作業の進行 */
   G.jobs.slice().forEach(function(job){
     if(!job.assignee) return;
     var st = G.staff.find(function(s){ return s.id === job.assignee; });
@@ -262,7 +293,6 @@ function endDay(){
     }
     if(job.done >= job.work) completeJob(job, st);
   });
-  /* 期限 */
   G.jobs.slice().forEach(function(job){
     if(!job.assignee) return;
     job.limit--;
@@ -276,21 +306,18 @@ function endDay(){
       elog("出来事", "期限切れ（" + job.name + "）評判-3");
     }
   });
-  /* 給料 */
   var wages = G.staff.reduce(function(a, s){ return a + salaryOf(s); }, 0);
   if(G.gold >= wages){ G.gold -= wages; }
   else { if(G.gold > 0) say("⚠ お金が足りず、給料を満額払えなかった"); G.gold = 0; }
-  /* 体力の回復 */
   var rec = facCount("rest") >= 1 ? 55 : 38;
   G.staff.forEach(function(st){
     if(st.restDay){ st.stamina = 100; st.restDay = false; }
     else {
       st.stamina = Math.min(100, st.stamina + rec);
-      if(st.stamina <= 12 && st.jobId) st.restDay = true; /* 翌日は休ませる */
+      if(st.stamina <= 12 && st.jobId) st.restDay = true;
     }
     if(st.stamina <= 0) st.restDay = true;
   });
-  /* 依頼の補充と格 */
   ensureJobs();
   var nr = G.rank;
   while(nr + 1 < RANKS.length && G.rep >= RANKS[nr + 1].rep) nr++;
@@ -299,6 +326,7 @@ function endDay(){
     showBanner("🎉 工房の格が上がった：「" + RANKS[nr].name + "」");
     say("🎉 格が上がって <b>" + RANKS[nr].name + "</b> になった。新しい仕事と設備が解禁された");
     elog("節目", "昇格 → " + RANKS[nr].name);
+    spawnFloat(192, 96, RANKS[nr].name + "！", "#ffd873", 20);
   }
   if(G.day % 30 === 1 && G.day > 1){
     G.month++;
@@ -319,7 +347,14 @@ function completeJob(job, st){
   rep += Math.min(2, facCount("show"));
   var rp = job.rp + (grade === "S" ? 3 : 0);
   G.gold += gold; G.rep += rep; G.rp += rp;
-  if(st) st.jobId = null;
+  if(st){
+    var pos = staffDisp[st.id];
+    var fx = pos ? pos.x : 192, fy = pos ? pos.y : 200;
+    spawnFloat(fx, fy - 52, "+" + gold + " お金", "#ffd873", 15);
+    spawnFloat(fx, fy - 34, "+" + rep + " 評判", "#bfe3ff", 11);
+    spawnFloat(fx, fy - 76, "評価 " + grade, grade === "S" ? "#ff9d2e" : "#fff3cf", 19);
+    st.jobId = null;
+  }
   G.jobs = G.jobs.filter(function(j){ return j.id !== job.id; });
   say("✔ <b>" + job.name + "</b> が完成。評価 <b>" + grade + "</b>（お金 +" + gold + "／評判 +" + rep + "／研究 +" + rp + "）");
   elog("完成", job.name + " 評価" + grade + " お金+" + gold + " 評判+" + rep);
@@ -327,7 +362,7 @@ function completeJob(job, st){
 }
 
 /* ===== 操作 ===== */
-var placing = null; /* 買って置く最中の設備キー */
+var placing = null;
 function assignJob(jobId, staffId){
   var job = G.jobs.find(function(j){ return j.id === jobId; });
   var st = G.staff.find(function(s){ return s.id === staffId; });
@@ -358,8 +393,9 @@ function train(staffId, kind){
   var st = G.staff.find(function(s){ return s.id === staffId; });
   if(!st || G.gold < 120 || st.stamina < 35) return;
   G.gold -= 120; st.stamina -= 35;
-  if(kind === "tech") st.tech += 3;
-  else if(kind === "sense") st.sense += 3;
+  if(kind === "tech") st.tech += 3; else st.sense += 3;
+  var pos = staffDisp[st.id];
+  if(pos) spawnFloat(pos.x, pos.y - 52, (kind === "tech" ? "技術" : "感性") + " +3", "#d2f2d8", 13);
   say("📚 <b>" + st.name + "</b> が研修を受けた（" + (kind === "tech" ? "技術" : "感性") + " +3）");
   elog("育成", st.name + " " + kind + "+3");
   save(); render();
@@ -368,6 +404,8 @@ function levelUp(staffId){
   var st = G.staff.find(function(s){ return s.id === staffId; });
   if(!st || G.rp < 10) return;
   G.rp -= 10; st.level++; st.tech += 2; st.sense += 2;
+  var pos = staffDisp[st.id];
+  if(pos) spawnFloat(pos.x, pos.y - 56, "レベル " + st.level + "！", "#ffd873", 15);
   say("⬆ <b>" + st.name + "</b> がレベル " + st.level + " になった（全能力 +2、給料も少し上がる）");
   elog("育成", st.name + " レベル" + st.level);
   save(); render();
@@ -385,19 +423,198 @@ function buyFacility(key){
   if(G.gold < f.price || facCount(key) >= f.max) return;
   placing = key; render();
 }
+function cancelPlacing(){ placing = null; render(); }
 function placeAt(idx){
   if(!placing) return;
   if(G.grid[idx]) return;
   var f = FACILITIES[placing];
-  if(G.gold < f.price) { placing = null; render(); return; }
+  if(G.gold < f.price){ placing = null; render(); return; }
   G.gold -= f.price; G.grid[idx] = placing;
   say("🏠 <b>" + f.name + "</b> を置いた");
   elog("設備", f.name + " を設置");
   placing = null;
   save(); render();
 }
+</script>
 
-/* ===== 描画 ===== */
+<script>
+"use strict";
+/* ===== 見晴らし（工房のジオラマ） ===== */
+var cv = document.getElementById("scene");
+var ctx = cv.getContext("2d");
+var staffDisp = {};
+function cellRect(i){
+  return { x: 18 + (i % 3) * 116, y: 88 + Math.floor(i / 3) * 52, w: 116, h: 52 };
+}
+function staffTarget(st, idx){
+  if(st.restDay) return { x: 336, y: 258 };
+  if(st.jobId){
+    var workers = G.staff.filter(function(s){ return s.jobId && !s.restDay; });
+    var wi = workers.indexOf(st);
+    return { x: 82 + wi * 74, y: 240 };
+  }
+  return { x: 52 + idx * 62, y: 264 };
+}
+function px(x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
+function drawFacility(key, r){
+  var cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  if(key === "desk"){
+    px(cx - 17, cy - 3, 15, 8, "#f5eeda"); px(cx - 17, cy - 3, 15, 2, "#cbbd97");
+    px(cx + 6, cy - 6, 11, 3, "#b07a3f"); px(cx + 14, cy - 9, 6, 8, "#9aa3ad");
+    px(cx - 31, cy - 5, 10, 10, "#7a4a26"); px(cx - 31, cy - 1, 10, 2, "#5d3717");
+    px(cx - 30, cy + 5, 60, 8, "#a06a35"); px(cx - 30, cy + 5, 60, 3, "#bd8040");
+    px(cx - 26, cy + 13, 5, 11, "#6e4520"); px(cx + 21, cy + 13, 5, 11, "#6e4520");
+  } else if(key === "shelf"){
+    px(cx - 20, cy - 23, 40, 47, "#6e4520");
+    px(cx - 17, cy - 20, 34, 41, "#54340f");
+    var cols = ["#b5546e", "#4a7fb5", "#5d9163", "#d99b35", "#7a5fa0", "#7ec8ff"];
+    for(var row = 0; row < 3; row++){
+      var by = cy - 18 + row * 14, bx = cx - 15;
+      while(bx < cx + 10){
+        var bw = 4 + ((bx * 7 + row * 13) % 3), bh = 9 + ((bx + row) % 3);
+        px(bx, by + (11 - bh), bw, bh, cols[Math.abs(bx + row * 3) % cols.length]);
+        bx += bw + 1;
+      }
+      px(cx - 17, by + 11, 34, 2, "#6e4520");
+    }
+  } else if(key === "show"){
+    px(cx - 22, cy - 21, 44, 43, "#8a6a34");
+    px(cx - 19, cy - 18, 38, 37, "rgba(190,225,245,.4)");
+    px(cx - 9, cy + 7, 18, 9, "#6e4520");
+    ctx.fillStyle = "#ffd873";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 13); ctx.lineTo(cx + 7, cy - 2); ctx.lineTo(cx, cy + 6); ctx.lineTo(cx - 7, cy - 2);
+    ctx.closePath(); ctx.fill();
+    px(cx - 2, cy - 10, 3, 3, "#fff3cf");
+    ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 14, cy + 12); ctx.lineTo(cx + 4, cy - 16); ctx.stroke();
+  } else if(key === "rest"){
+    px(cx - 28, cy - 9, 56, 15, "#4f7a52");
+    px(cx - 28, cy + 3, 56, 10, "#5d9163");
+    px(cx - 32, cy - 3, 7, 17, "#4f7a52"); px(cx + 25, cy - 3, 7, 17, "#4f7a52");
+    px(cx - 28, cy + 13, 56, 3, "#3c5f3f");
+    px(cx + 38, cy + 6, 9, 9, "#a05240");
+    px(cx + 41, cy - 4, 3, 10, "#4f7a52"); px(cx + 36, cy - 7, 13, 5, "#5d9163");
+  }
+}
+function drawPerson(st, x, y, t){
+  var look = LOOKS[st.name] || { shirt: "#888888", hair: "#333333", style: "short" };
+  var working = !!st.jobId && !st.restDay;
+  var bob = working ? Math.sin(t * 7 + st.id * 1.7) * 1.6 : Math.sin(t * 1.8 + st.id) * 0.7;
+  y += bob;
+  ctx.fillStyle = "rgba(0,0,0,.25)";
+  ctx.beginPath(); ctx.ellipse(x, y + 3 - bob, 13, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  px(x - 8, y - 9, 5, 9, "#3c4658"); px(x + 3, y - 9, 5, 9, "#333c4c");
+  px(x - 10, y - 23, 3, 11, look.shirt); px(x + 7, y - 23, 3, 11, look.shirt);
+  px(x - 8, y - 24, 16, 15, look.shirt);
+  px(x - 6, y - 36, 12, 12, "#f2c79b");
+  if(look.style === "long"){ px(x - 8, y - 38, 4, 20, look.hair); px(x + 4, y - 38, 4, 20, look.hair); }
+  if(look.style === "bob"){ px(x - 7, y - 38, 14, 9, look.hair); }
+  else px(x - 7, y - 38, 14, 6, look.hair);
+  if(st.restDay){ px(x - 4, y - 31, 3, 1.6, "#26221c"); px(x + 2, y - 31, 3, 1.6, "#26221c"); }
+  else { px(x - 4, y - 31, 2.2, 2.6, "#26221c"); px(x + 2, y - 31, 2.2, 2.6, "#26221c"); }
+  /* 吹き出し：状態は人の上に出す */
+  var bubble = null;
+  if(st.restDay) bubble = "💤";
+  else if(st.jobId){
+    var job = G.jobs.find(function(j){ return j.id === st.jobId; });
+    if(job && job.chOffer > 0) bubble = "！";
+  }
+  if(bubble){
+    ctx.fillStyle = "#fffaf0";
+    ctx.strokeStyle = "#0f0a05"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x + 6, y - 56 + bob, 20, 16, 5); else ctx.rect(x + 6, y - 56 + bob, 20, 16);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#2a1e0e"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(bubble, x + 16, y - 44 + bob);
+  }
+  if(working && ((t * 1.3 + st.id * 0.37) % 1) < 0.14){
+    ctx.strokeStyle = "#ffd873"; ctx.lineWidth = 1.6;
+    var sx = x + 13, sy = y - 26 + bob;
+    ctx.beginPath();
+    ctx.moveTo(sx - 4, sy); ctx.lineTo(sx + 4, sy);
+    ctx.moveTo(sx, sy - 4); ctx.lineTo(sx, sy + 4);
+    ctx.stroke();
+  }
+  ctx.font = "9px sans-serif"; ctx.textAlign = "center";
+  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(15,10,5,.85)";
+  ctx.strokeText(st.name, x, y + 13);
+  ctx.fillStyle = "#fff3cf"; ctx.fillText(st.name, x, y + 13);
+}
+function drawScene(){
+  var t = performance.now() / 1000;
+  /* 壁と床 */
+  px(0, 0, 384, 64, "#5d4930"); px(0, 54, 384, 10, "#4a3823");
+  for(var fy = 64; fy < 288; fy += 16){
+    px(0, fy, 384, 16, ((fy / 16) % 2 === 0) ? "#7d5c34" : "#75552e");
+    px(0, fy, 384, 1, "rgba(0,0,0,.18)");
+  }
+  /* 窓 */
+  px(14, 9, 52, 38, "#2e2113"); px(17, 12, 46, 32, "#a8d4e8");
+  px(38, 12, 3, 32, "#2e2113"); px(17, 26, 46, 3, "#2e2113");
+  px(22, 16, 12, 8, "rgba(255,255,255,.5)");
+  /* 看板：店名と格 */
+  px(120, 7, 144, 46, "#2e2113");
+  ctx.strokeStyle = "#ffd873"; ctx.lineWidth = 2; ctx.strokeRect(122, 9, 140, 42);
+  ctx.fillStyle = "#ffd873"; ctx.font = "800 16px sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("資格工房", 192, 28);
+  ctx.fillStyle = "#f5eeda"; ctx.font = "10px sans-serif";
+  ctx.fillText(RANKS[G.rank].name, 192, 44);
+  /* 時計 */
+  ctx.fillStyle = "#f5eeda"; ctx.beginPath(); ctx.arc(342, 27, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#2a1e0e"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(342, 27); ctx.lineTo(342 + 7 * Math.cos(t * 0.5), 27 + 7 * Math.sin(t * 0.5)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(342, 27); ctx.lineTo(342 + 5 * Math.cos(t * 0.08 + 2), 27 + 5 * Math.sin(t * 0.08 + 2)); ctx.stroke();
+  /* 区画と設備 */
+  for(var i = 0; i < 9; i++){
+    var r = cellRect(i), c = G.grid[i];
+    if(!c){
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = placing ? "rgba(255,216,115," + (0.55 + 0.4 * Math.sin(t * 5)) + ")" : "rgba(255,240,200,.28)";
+      ctx.lineWidth = placing ? 2 : 1.2;
+      ctx.strokeRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6);
+      ctx.setLineDash([]);
+    } else {
+      px(r.x + 3, r.y + r.h - 8, r.w - 6, 4, "rgba(0,0,0,.15)");
+      drawFacility(c, r);
+    }
+  }
+  /* 職人 */
+  G.staff.forEach(function(st, idx){
+    var d = staffDisp[st.id];
+    var target = staffTarget(st, idx);
+    if(!d){ d = staffDisp[st.id] = { x: target.x, y: target.y }; }
+    d.x += (target.x - d.x) * 0.1; d.y += (target.y - d.y) * 0.1;
+    drawPerson(st, d.x, d.y, t);
+  });
+  /* 浮かぶ数字 */
+  var now = performance.now() / 1000;
+  floaters = floaters.filter(function(f){ return now - f.born < 1.6; });
+  floaters.forEach(function(f){
+    var age = now - f.born;
+    ctx.globalAlpha = Math.max(0, 1 - age / 1.6);
+    ctx.font = "800 " + f.size + "px sans-serif"; ctx.textAlign = "center";
+    ctx.lineWidth = 4; ctx.strokeStyle = "rgba(15,10,5,.9)";
+    var yy = f.y - age * 24;
+    ctx.strokeText(f.text, f.x, yy); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, yy);
+    ctx.globalAlpha = 1;
+  });
+  requestAnimationFrame(drawScene);
+}
+cv.addEventListener("click", function(ev){
+  if(!placing) return;
+  var rect = cv.getBoundingClientRect();
+  var lx = (ev.clientX - rect.left) * (384 / rect.width);
+  var ly = (ev.clientY - rect.top) * (288 / rect.height);
+  for(var i = 0; i < 9; i++){
+    var r = cellRect(i);
+    if(lx >= r.x && lx < r.x + r.w && ly >= r.y && ly < r.y + r.h){ placeAt(i); return; }
+  }
+});
+
+/* ===== パネル（下部コマンド列で切り替える） ===== */
+var tab = "jobs";
 function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
 function typeTag(t){ return t === "tech" ? '<span class="tag tech">技術</span>' : t === "sense" ? '<span class="tag sense">感性</span>' : '<span class="tag bal">バランス</span>'; }
 function render(){
@@ -407,89 +624,119 @@ function render(){
   document.getElementById("rpLabel").textContent = G.rp;
   var next = RANKS[G.rank + 1];
   document.getElementById("repLabel").textContent = G.rep + (next ? "（次の格まで " + (next.rep - G.rep) + "）" : "（最高位）");
-  /* 依頼 */
-  var jh = "";
-  G.jobs.forEach(function(job){
-    var pct = Math.min(100, Math.round(job.done / job.work * 100));
-    jh += '<div class="card' + (job.chOffer > 0 ? " challenge" : "") + '"><div class="ttl">' + esc(job.name) + " " + typeTag(job.type) + "</div>";
-    if(job.assignee){
-      var st = G.staff.find(function(s){ return s.id === job.assignee; });
-      jh += '<div class="meta">担当：' + esc(st ? st.name : "?") + "／期限 あと" + job.limit + "日／報酬 お金" + job.gold + "・評判" + job.rep + "・研究" + job.rp + "</div>";
-      jh += '<div class="pbar"><i style="width:' + pct + '%"></i></div>';
-      if(job.chOffer > 0){
-        jh += '<div class="rowbtns"><span class="meta">💡 ひと工夫を試す？（研究4、出来が上がるか作業が増える）</span><button data-act="challenge" data-id="' + job.id + '"' + (G.rp < 4 ? " disabled" : "") + ">試す</button></div>";
-      }
-    } else {
-      jh += '<div class="meta">作業量 ' + job.work + "／期限 " + job.limit + "日／報酬 お金" + job.gold + "・評判" + job.rep + "・研究" + job.rp + "</div>";
-      var free = G.staff.filter(function(s){ return !s.jobId && !s.restDay; });
-      if(free.length){
-        jh += '<div class="rowbtns"><select id="sel-' + job.id + '">' + free.map(function(s){
-          return '<option value="' + s.id + '">' + esc(s.name) + "（技術" + s.tech + "・感性" + s.sense + "）</option>";
-        }).join("") + '</select><button class="primary" data-act="assign" data-id="' + job.id + '">受注する</button></div>';
+  document.querySelectorAll(".cmdbar button").forEach(function(b){
+    var on = b.getAttribute("data-tab") === tab;
+    b.classList.toggle("on", on);
+    b.querySelector("[data-mark]").textContent = on ? "▲" : "";
+  });
+  var chCount = G.jobs.filter(function(j){ return j.assignee && j.chOffer > 0; }).length;
+  var bdg = document.getElementById("bdgJobs");
+  bdg.style.display = chCount ? "" : "none";
+  bdg.textContent = chCount ? "！" + chCount : "";
+  var hint = document.getElementById("sceneHint");
+  if(placing){ hint.textContent = "🏠 「" + FACILITIES[placing].name + "」を置く場所を、上の工房でタップ"; hint.classList.add("show"); }
+  else hint.classList.remove("show");
+  var P = document.getElementById("panel"), h = "";
+  if(tab === "jobs"){
+    h = "<h2>📋 依頼（作業中のものは上に）</h2><div class='cards'>";
+    var sorted = G.jobs.slice().sort(function(a, b){ return (b.assignee ? 1 : 0) - (a.assignee ? 1 : 0); });
+    sorted.forEach(function(job){
+      var pct = Math.min(100, Math.round(job.done / job.work * 100));
+      h += '<div class="card' + (job.chOffer > 0 ? " challenge" : "") + '"><div class="ttl">' + esc(job.name) + " " + typeTag(job.type) + "</div>";
+      if(job.assignee){
+        var st = G.staff.find(function(s){ return s.id === job.assignee; });
+        h += '<div class="meta">担当：' + esc(st ? st.name : "?") + "／期限 あと" + job.limit + "日／報酬 お金" + job.gold + "・評判" + job.rep + "・研究" + job.rp + "</div>";
+        h += '<div class="pbar"><i style="width:' + pct + '%"></i></div>';
+        if(job.chOffer > 0){
+          h += '<div class="rowbtns"><span class="meta">💡 ひと工夫を試す？（研究4：出来が上がるか、作業が増える）</span><button class="primary" data-act="challenge" data-id="' + job.id + '"' + (G.rp < 4 ? " disabled" : "") + ">試す</button></div>";
+        }
       } else {
-        jh += '<div class="meta">（空いている職人がいない）</div>';
+        h += '<div class="meta">作業量 ' + job.work + "／期限 " + job.limit + "日／報酬 お金" + job.gold + "・評判" + job.rep + "・研究" + job.rp + "</div>";
+        var free = G.staff.filter(function(s){ return !s.jobId && !s.restDay; });
+        if(free.length){
+          h += '<div class="rowbtns"><select id="sel-' + job.id + '">' + free.map(function(s){
+            return '<option value="' + s.id + '">' + esc(s.name) + "（技術" + s.tech + "・感性" + s.sense + "）</option>";
+          }).join("") + '</select><button class="primary" data-act="assign" data-id="' + job.id + '">受注する</button></div>';
+        } else h += '<div class="meta">（空いている職人がいない）</div>';
       }
-    }
-    jh += "</div>";
-  });
-  document.getElementById("jobs").innerHTML = jh || '<div class="card">依頼がない</div>';
-  /* 職人 */
-  var sh = "";
-  G.staff.forEach(function(st){
-    var job = st.jobId ? G.jobs.find(function(j){ return j.id === st.jobId; }) : null;
-    sh += '<div class="card"><div class="ttl">' + esc(st.name) + ' <span class="tag">Lv' + st.level + "</span></div>";
-    sh += '<div class="meta">技術 ' + st.tech + "／感性 " + st.sense + "／給料 " + salaryOf(st) + "/日" +
-      (st.restDay ? "／<b>今日は休み</b>" : job ? "／作業中：「" + esc(job.name) + "」" : "／待機中") + "</div>";
-    sh += '<div class="pbar stam' + (st.stamina <= 30 ? " low" : "") + '"><i style="width:' + st.stamina + '%"></i></div>';
-    sh += '<div class="rowbtns">' +
-      '<button data-act="train-tech" data-id="' + st.id + '"' + (G.gold < 120 || st.stamina < 35 ? " disabled" : "") + ">技術研修（金120）</button>" +
-      '<button data-act="train-sense" data-id="' + st.id + '"' + (G.gold < 120 || st.stamina < 35 ? " disabled" : "") + ">感性研修（金120）</button>" +
-      '<button data-act="levelup" data-id="' + st.id + '"' + (G.rp < 10 ? " disabled" : "") + ">レベルアップ（研究10）</button></div>";
-    sh += "</div>";
-  });
-  HIREABLE.forEach(function(h){
-    if(G.rank >= h.rank && G.hired.indexOf(h.name) < 0 && G.staff.length < staffCap()){
-      sh += '<div class="card"><div class="ttl">' + esc(h.name) + ' <span class="tag">雇える</span></div><div class="meta">技術 ' + h.tech + "／感性 " + h.sense + '</div><div class="rowbtns"><button class="primary" data-act="hire" data-name="' + esc(h.name) + '"' + (G.gold < h.price ? " disabled" : "") + ">雇う（金" + h.price + "）</button></div></div>";
-    }
-  });
-  document.getElementById("staff").innerHTML = sh;
-  /* 工房 */
-  var gh = "";
-  G.grid.forEach(function(c, i){
-    if(c){ var f = FACILITIES[c]; gh += '<div class="cell filled">' + f.name + '<span class="eff">' + f.desc + "</span></div>"; }
-    else gh += '<div class="cell' + (placing ? " sel" : "") + '" data-cell="' + i + '">' + (placing ? "ここに置く" : "空き") + "</div>";
-  });
-  document.getElementById("grid").innerHTML = gh;
-  var fh = "";
-  Object.keys(FACILITIES).forEach(function(key){
-    var f = FACILITIES[key];
-    if(f.rank && G.rank < f.rank) return;
-    var n = facCount(key);
-    fh += '<div class="card shopitem"><div class="grow"><div class="ttl">' + f.name + ' <span class="tag">' + n + "/" + f.max + '</span></div><div class="meta">' + f.desc + '</div></div><button data-act="buy" data-id="' + key + '"' + (G.gold < f.price || n >= f.max ? " disabled" : "") + ">買う（金" + f.price + "）</button></div>";
-  });
-  document.getElementById("shop").innerHTML = fh;
-  document.getElementById("comboLabel").textContent = comboActive() ? "コンボ：作業台×本棚（技術・感性の仕事 +10%）" : "（作業台と本棚を隣り合わせに置くとコンボ）";
-  /* ログ */
-  document.getElementById("log").innerHTML = uiLog.slice(0, 6).map(function(e){ return "<div>" + e.day + "日目：" + e.html + "</div>"; }).join("") || "<div>まだ何も起きていない</div>";
-  /* ボタンの配線 */
-  document.querySelectorAll("[data-act]").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      var act = btn.getAttribute("data-act"), id = btn.getAttribute("data-id");
-      if(act === "assign"){ var sel = document.getElementById("sel-" + id); assignJob(parseInt(id, 10), parseInt(sel.value, 10)); }
-      else if(act === "challenge") tryChallenge(parseInt(id, 10));
-      else if(act === "train-tech") train(parseInt(id, 10), "tech");
-      else if(act === "train-sense") train(parseInt(id, 10), "sense");
-      else if(act === "levelup") levelUp(parseInt(id, 10));
-      else if(act === "buy") buyFacility(id);
-      else if(act === "hire"){ var h = HIREABLE.find(function(x){ return x.name === btn.getAttribute("data-name"); }); if(h) hire(h); }
+      h += "</div>";
     });
-  });
-  document.querySelectorAll("[data-cell]").forEach(function(cell){
-    cell.addEventListener("click", function(){ placeAt(parseInt(cell.getAttribute("data-cell"), 10)); });
-  });
+    h += "</div>";
+  }
+  else if(tab === "staff"){
+    h = "<h2>🧑‍🔧 職人（育てる・休ませる）</h2><div class='cards'>";
+    G.staff.forEach(function(st){
+      var job = st.jobId ? G.jobs.find(function(j){ return j.id === st.jobId; }) : null;
+      h += '<div class="card"><div class="ttl">' + esc(st.name) + ' <span class="tag">Lv' + st.level + "</span></div>";
+      h += '<div class="meta">技術 ' + st.tech + "／感性 " + st.sense + "／給料 " + salaryOf(st) + "/日" +
+        (st.restDay ? "／<b>今日は休み💤</b>" : job ? "／作業中🔨：「" + esc(job.name) + "」" : "／待機中") + "</div>";
+      h += '<div class="pbar stam' + (st.stamina <= 30 ? " low" : "") + '"><i style="width:' + st.stamina + '%"></i></div>';
+      h += '<div class="rowbtns">' +
+        '<button data-act="train-tech" data-id="' + st.id + '"' + (G.gold < 120 || st.stamina < 35 ? " disabled" : "") + ">技術研修（金120）</button>" +
+        '<button data-act="train-sense" data-id="' + st.id + '"' + (G.gold < 120 || st.stamina < 35 ? " disabled" : "") + ">感性研修（金120）</button>" +
+        '<button class="blue" data-act="levelup" data-id="' + st.id + '"' + (G.rp < 10 ? " disabled" : "") + ">レベルアップ（研究10）</button></div>";
+      h += "</div>";
+    });
+    HIREABLE.forEach(function(hb){
+      if(G.rank >= hb.rank && G.hired.indexOf(hb.name) < 0 && G.staff.length < staffCap()){
+        h += '<div class="card"><div class="ttl">' + esc(hb.name) + ' <span class="tag">雇える</span></div><div class="meta">技術 ' + hb.tech + "／感性 " + hb.sense + '</div><div class="rowbtns"><button class="primary" data-act="hire" data-name="' + esc(hb.name) + '"' + (G.gold < hb.price ? " disabled" : "") + ">雇う（金" + hb.price + "）</button></div></div>";
+      }
+    });
+    h += "</div>";
+  }
+  else if(tab === "shop"){
+    h = "<h2>🏠 設備（買って、工房に置く）</h2>";
+    if(placing) h += '<div class="card challenge"><div class="meta">「' + FACILITIES[placing].name + '」を置く場所を、上の工房の空き区画でタップしてください。</div><div class="rowbtns"><button data-act="cancel-place">やめる</button></div></div>';
+    h += "<div class='cards'>";
+    Object.keys(FACILITIES).forEach(function(key){
+      var f = FACILITIES[key];
+      if(f.rank && G.rank < f.rank) return;
+      var n = facCount(key);
+      h += '<div class="card"><div class="ttl">' + f.name + ' <span class="tag">' + n + "/" + f.max + '</span></div><div class="meta">' + f.desc + '</div><div class="rowbtns"><button class="primary" data-act="buy" data-id="' + key + '"' + (G.gold < f.price || n >= f.max ? " disabled" : "") + ">買う（金" + f.price + "）</button></div></div>";
+    });
+    h += "</div>";
+    h += '<div class="meta" style="margin-top:8px">いまの効き目：技術の仕事 ×' + typeMult("tech").toFixed(2) + "／感性の仕事 ×" + typeMult("sense").toFixed(2) +
+      (comboActive() ? "<br>コンボ発動中：作業台×本棚（隣り合わせ）" : "<br>（作業台と本棚を隣り合わせに置くとコンボ）") + "</div>";
+  }
+  else {
+    var nx = RANKS[G.rank + 1];
+    h = "<h2>ℹ️ 情報</h2>";
+    h += '<div class="card"><div class="ttl">格：' + RANKS[G.rank].name + "</div>";
+    if(nx){
+      var base = RANKS[G.rank].rep, span = nx.rep - base;
+      h += '<div class="meta">次の格「' + nx.name + "」まで評判あと " + (nx.rep - G.rep) + "</div>";
+      h += '<div class="pbar rep"><i style="width:' + Math.min(100, Math.round((G.rep - base) / span * 100)) + '%"></i></div>';
+    } else h += '<div class="meta">最高位に到達している</div>';
+    h += '<div class="meta">' + G.month + "か月目／職人 " + G.staff.length + "人／設備 " + G.grid.filter(Boolean).length + "つ</div></div>";
+    h += '<div class="card" style="margin-top:8px"><div class="ttl">出来事</div><div class="log">' +
+      (uiLog.slice(0, 8).map(function(e){ return "<div>" + e.day + "日目：" + e.html + "</div>"; }).join("") || "<div>まだ何も起きていない</div>") + "</div></div>";
+    h += '<div class="rowbtns"><button class="warn" data-act="reset">最初からやり直す</button><span class="small" id="buildLabel">' + (window.__build || "") + "</span></div>";
+  }
+  P.innerHTML = h;
 }
+document.addEventListener("click", function(ev){
+  var tabBtn = ev.target.closest ? ev.target.closest(".cmdbar button") : null;
+  if(tabBtn){ tab = tabBtn.getAttribute("data-tab"); render(); return; }
+  var btn = ev.target.closest ? ev.target.closest("[data-act]") : null;
+  if(!btn) return;
+  var act = btn.getAttribute("data-act"), id = btn.getAttribute("data-id");
+  if(act === "assign"){ var sel = document.getElementById("sel-" + id); if(sel) assignJob(parseInt(id, 10), parseInt(sel.value, 10)); }
+  else if(act === "challenge") tryChallenge(parseInt(id, 10));
+  else if(act === "train-tech") train(parseInt(id, 10), "tech");
+  else if(act === "train-sense") train(parseInt(id, 10), "sense");
+  else if(act === "levelup") levelUp(parseInt(id, 10));
+  else if(act === "buy") buyFacility(id);
+  else if(act === "cancel-place") cancelPlacing();
+  else if(act === "hire"){ var hb = HIREABLE.find(function(x){ return x.name === btn.getAttribute("data-name"); }); if(hb) hire(hb); }
+  else if(act === "reset"){
+    G = defaultState(); uiLog = []; evLog = []; floaters = []; staffDisp = {}; T0 = performance.now(); placing = null;
+    ensureJobs(); save(); render();
+    say("新しい工房が始まった");
+    elog("節目", "開始");
+  }
+});
 
-/* ===== 時間 ===== */
+/* ===== 時間と初期化 ===== */
 var paused = false, speed = 1, timer = null;
 function setTimer(){
   clearInterval(timer);
@@ -503,12 +750,6 @@ document.getElementById("speedBtn").addEventListener("click", function(){
   speed = speed === 1 ? 2 : speed === 2 ? 4 : 1;
   this.textContent = "速度 ×" + speed;
   setTimer();
-});
-document.getElementById("resetBtn").addEventListener("click", function(){
-  G = defaultState(); uiLog = []; evLog = []; T0 = performance.now(); placing = null;
-  ensureJobs(); save(); render();
-  say("新しい工房が始まった");
-  elog("節目", "開始");
 });
 if(OBS_MODE){
   var lb = document.getElementById("obsLogBtn");
@@ -531,7 +772,7 @@ if(OBS_MODE){
 fetch("build.txt", { cache: "no-store" }).then(function(r){ return r.text(); }).then(function(tx){
   var m = tx.match(/build:\s*(\S+)/);
   window.__build = m ? m[1] : tx.trim();
-  document.getElementById("buildLabel").textContent = window.__build;
+  if(tab === "info") render();
 }).catch(function(){});
 
 ensureJobs();
@@ -539,6 +780,7 @@ say("工房が開いた。依頼を選んで、職人に付けよう");
 elog("節目", "開始（お金800／職人3人）");
 render();
 setTimer();
+requestAnimationFrame(drawScene);
 </script>
 </body>
 </html>
