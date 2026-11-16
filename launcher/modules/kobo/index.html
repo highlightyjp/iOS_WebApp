@@ -443,6 +443,7 @@ function placeAt(idx){
 var cv = document.getElementById("scene");
 var ctx = cv.getContext("2d");
 var staffDisp = {};
+var wander = {};
 function cellRect(i){
   return { x: 18 + (i % 3) * 116, y: 88 + Math.floor(i / 3) * 52, w: 116, h: 52 };
 }
@@ -501,19 +502,21 @@ function drawPerson(st, x, y, t){
   var look = LOOKS[st.name] || { shirt: "#888888", hair: "#333333", style: "short" };
   var working = !!st.jobId && !st.restDay;
   var bob = working ? Math.sin(t * 7 + st.id * 1.7) * 1.6 : Math.sin(t * 1.8 + st.id) * 0.7;
-  y += bob;
+  ctx.save();
+  ctx.translate(x, y);
   ctx.fillStyle = "rgba(0,0,0,.25)";
-  ctx.beginPath(); ctx.ellipse(x, y + 3 - bob, 13, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-  px(x - 8, y - 9, 5, 9, "#3c4658"); px(x + 3, y - 9, 5, 9, "#333c4c");
-  px(x - 10, y - 23, 3, 11, look.shirt); px(x + 7, y - 23, 3, 11, look.shirt);
-  px(x - 8, y - 24, 16, 15, look.shirt);
-  px(x - 6, y - 36, 12, 12, "#f2c79b");
-  if(look.style === "long"){ px(x - 8, y - 38, 4, 20, look.hair); px(x + 4, y - 38, 4, 20, look.hair); }
-  if(look.style === "bob"){ px(x - 7, y - 38, 14, 9, look.hair); }
-  else px(x - 7, y - 38, 14, 6, look.hair);
-  if(st.restDay){ px(x - 4, y - 31, 3, 1.6, "#26221c"); px(x + 2, y - 31, 3, 1.6, "#26221c"); }
-  else { px(x - 4, y - 31, 2.2, 2.6, "#26221c"); px(x + 2, y - 31, 2.2, 2.6, "#26221c"); }
-  /* 吹き出し：状態は人の上に出す */
+  ctx.beginPath(); ctx.ellipse(0, 3, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.scale(1.22, 1.22);
+  var oy = bob;
+  px(-8, -9 + oy, 5, 9, "#3c4658"); px(3, -9 + oy, 5, 9, "#333c4c");
+  px(-10, -23 + oy, 3, 11, look.shirt); px(7, -23 + oy, 3, 11, look.shirt);
+  px(-8, -24 + oy, 16, 15, look.shirt);
+  px(-6, -36 + oy, 12, 12, "#f2c79b");
+  if(look.style === "long"){ px(-8, -38 + oy, 4, 20, look.hair); px(4, -38 + oy, 4, 20, look.hair); }
+  if(look.style === "bob"){ px(-7, -38 + oy, 14, 9, look.hair); }
+  else px(-7, -38 + oy, 14, 6, look.hair);
+  if(st.restDay){ px(-4, -31 + oy, 3, 1.6, "#26221c"); px(2, -31 + oy, 3, 1.6, "#26221c"); }
+  else { px(-4, -31 + oy, 2.2, 2.6, "#26221c"); px(2, -31 + oy, 2.2, 2.6, "#26221c"); px(-2, -27 + oy, 4, 1.4, "#b5764a"); }
   var bubble = null;
   if(st.restDay) bubble = "💤";
   else if(st.jobId){
@@ -524,36 +527,40 @@ function drawPerson(st, x, y, t){
     ctx.fillStyle = "#fffaf0";
     ctx.strokeStyle = "#0f0a05"; ctx.lineWidth = 1.5;
     ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(x + 6, y - 56 + bob, 20, 16, 5); else ctx.rect(x + 6, y - 56 + bob, 20, 16);
+    if(ctx.roundRect) ctx.roundRect(6, -58 + oy, 20, 16, 5); else ctx.rect(6, -58 + oy, 20, 16);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#2a1e0e"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(bubble, x + 16, y - 44 + bob);
+    ctx.fillText(bubble, 16, -46 + oy);
   }
   if(working && ((t * 1.3 + st.id * 0.37) % 1) < 0.14){
     ctx.strokeStyle = "#ffd873"; ctx.lineWidth = 1.6;
-    var sx = x + 13, sy = y - 26 + bob;
+    var sx = 13, sy = -26 + oy;
     ctx.beginPath();
     ctx.moveTo(sx - 4, sy); ctx.lineTo(sx + 4, sy);
     ctx.moveTo(sx, sy - 4); ctx.lineTo(sx, sy + 4);
     ctx.stroke();
   }
-  ctx.font = "9px sans-serif"; ctx.textAlign = "center";
+  ctx.restore();
+  ctx.font = "9.5px sans-serif"; ctx.textAlign = "center";
   ctx.lineWidth = 3; ctx.strokeStyle = "rgba(15,10,5,.85)";
-  ctx.strokeText(st.name, x, y + 13);
-  ctx.fillStyle = "#fff3cf"; ctx.fillText(st.name, x, y + 13);
+  ctx.strokeText(st.name, x, y + 14);
+  ctx.fillStyle = "#fff3cf"; ctx.fillText(st.name, x, y + 14);
 }
 function drawScene(){
   var t = performance.now() / 1000;
-  /* 壁と床 */
-  px(0, 0, 384, 64, "#5d4930"); px(0, 54, 384, 10, "#4a3823");
+  /* 壁と床（明るめの温かい色へ） */
+  px(0, 0, 384, 64, "#6d543a"); px(0, 54, 384, 10, "#59432a");
   for(var fy = 64; fy < 288; fy += 16){
-    px(0, fy, 384, 16, ((fy / 16) % 2 === 0) ? "#7d5c34" : "#75552e");
-    px(0, fy, 384, 1, "rgba(0,0,0,.18)");
+    px(0, fy, 384, 16, ((fy / 16) % 2 === 0) ? "#8a683f" : "#7f6136");
+    px(0, fy, 384, 1, "rgba(0,0,0,.15)");
   }
-  /* 窓 */
-  px(14, 9, 52, 38, "#2e2113"); px(17, 12, 46, 32, "#a8d4e8");
+  /* 窓（カーテンと、床に落ちる光） */
+  px(14, 9, 52, 38, "#2e2113"); px(17, 12, 46, 32, "#aedcf2");
   px(38, 12, 3, 32, "#2e2113"); px(17, 26, 46, 3, "#2e2113");
-  px(22, 16, 12, 8, "rgba(255,255,255,.5)");
+  px(22, 16, 12, 8, "rgba(255,255,255,.55)");
+  px(14, 9, 9, 38, "#b5546e"); px(57, 9, 9, 38, "#b5546e"); px(14, 9, 52, 6, "#a04a61");
+  ctx.fillStyle = "rgba(255,236,170,.12)";
+  ctx.beginPath(); ctx.moveTo(24, 47); ctx.lineTo(62, 47); ctx.lineTo(128, 158); ctx.lineTo(64, 158); ctx.closePath(); ctx.fill();
   /* 看板：店名と格 */
   px(120, 7, 144, 46, "#2e2113");
   ctx.strokeStyle = "#ffd873"; ctx.lineWidth = 2; ctx.strokeRect(122, 9, 140, 42);
@@ -561,17 +568,37 @@ function drawScene(){
   ctx.fillText("資格工房", 192, 28);
   ctx.fillStyle = "#f5eeda"; ctx.font = "10px sans-serif";
   ctx.fillText(RANKS[G.rank].name, 192, 44);
-  /* 時計 */
-  ctx.fillStyle = "#f5eeda"; ctx.beginPath(); ctx.arc(342, 27, 12, 0, Math.PI * 2); ctx.fill();
+  /* 壁の棚（壺）と道具と時計：店の装い */
+  px(278, 40, 44, 4, "#4a3823");
+  px(283, 29, 8, 11, "#7a9a8c"); px(283, 27, 8, 3, "#5d7a6e");
+  px(296, 31, 7, 9, "#c2a15c"); px(296, 29, 7, 3, "#a3853f");
+  px(307, 28, 9, 12, "#a06844"); px(307, 26, 9, 3, "#7d4f30");
+  px(332, 12, 3, 16, "#2e2113"); px(328, 8, 11, 6, "#3a2c1a");
+  px(346, 14, 8, 3, "#2e2113"); px(352, 10, 3, 12, "#2e2113");
+  ctx.fillStyle = "#f5eeda"; ctx.beginPath(); ctx.arc(366, 34, 10, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = "#2a1e0e"; ctx.lineWidth = 1.6;
-  ctx.beginPath(); ctx.moveTo(342, 27); ctx.lineTo(342 + 7 * Math.cos(t * 0.5), 27 + 7 * Math.sin(t * 0.5)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(342, 27); ctx.lineTo(342 + 5 * Math.cos(t * 0.08 + 2), 27 + 5 * Math.sin(t * 0.08 + 2)); ctx.stroke();
-  /* 区画と設備 */
+  ctx.beginPath(); ctx.moveTo(366, 34); ctx.lineTo(366 + 6 * Math.cos(t * 0.5), 34 + 6 * Math.sin(t * 0.5)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(366, 34); ctx.lineTo(366 + 4 * Math.cos(t * 0.08 + 2), 34 + 4 * Math.sin(t * 0.08 + 2)); ctx.stroke();
+  /* 旗（壁の下端の飾り） */
+  var flagCols = ["#e07a5f", "#ffd873", "#7ec8ff", "#5d9163"];
+  for(var fi = 0; fi < 12; fi++){
+    ctx.fillStyle = flagCols[fi % 4];
+    ctx.beginPath();
+    ctx.moveTo(fi * 32 + 2, 64); ctx.lineTo(fi * 32 + 30, 64); ctx.lineTo(fi * 32 + 16, 75);
+    ctx.closePath(); ctx.fill();
+  }
+  /* 前の絨毯（人が集まる場所） */
+  px(96, 250, 192, 34, "#8a3b34"); px(100, 254, 184, 26, "#7c352f");
+  ctx.strokeStyle = "#c46a5e"; ctx.lineWidth = 1.5; ctx.strokeRect(104, 257, 176, 20);
+  /* 区画と設備（空きは木の台として見せる） */
   for(var i = 0; i < 9; i++){
     var r = cellRect(i), c = G.grid[i];
     if(!c){
+      px(r.x + 3, r.y + 3, r.w - 6, r.h - 6, "rgba(255,240,200,.08)");
+      px(r.x + 3, r.y + 16, r.w - 6, 1, "rgba(0,0,0,.1)");
+      px(r.x + 3, r.y + 32, r.w - 6, 1, "rgba(0,0,0,.1)");
       ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = placing ? "rgba(255,216,115," + (0.55 + 0.4 * Math.sin(t * 5)) + ")" : "rgba(255,240,200,.28)";
+      ctx.strokeStyle = placing ? "rgba(255,216,115," + (0.55 + 0.4 * Math.sin(t * 5)) + ")" : "rgba(255,240,200,.22)";
       ctx.lineWidth = placing ? 2 : 1.2;
       ctx.strokeRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6);
       ctx.setLineDash([]);
@@ -580,12 +607,41 @@ function drawScene(){
       drawFacility(c, r);
     }
   }
-  /* 職人 */
+  /* 隅の荷物と植木（装い） */
+  px(6, 256, 20, 20, "#7a4a26"); px(6, 265, 20, 2, "#5d3717"); px(15, 256, 2, 20, "#5d3717");
+  px(10, 242, 15, 14, "#8a5a2e"); px(10, 248, 15, 2, "#6e4520");
+  px(348, 258, 16, 18, "#a05240"); px(352, 252, 8, 7, "#b5634e");
+  px(349, 238, 14, 6, "#5d9163"); px(354, 232, 6, 8, "#4f7a52"); px(346, 244, 20, 5, "#69a56d");
+  /* 看板猫（丸まって寝る。時々しっぽと💤） */
+  var catX = 318, catY = 272;
+  ctx.fillStyle = "rgba(0,0,0,.2)";
+  ctx.beginPath(); ctx.ellipse(catX, catY + 6, 17, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ddd2b8";
+  ctx.beginPath(); ctx.ellipse(catX, catY, 16, 8, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(catX - 13, catY - 3, 6.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ddd2b8";
+  ctx.beginPath(); ctx.moveTo(catX - 18, catY - 8); ctx.lineTo(catX - 15, catY - 13); ctx.lineTo(catX - 12, catY - 8); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(catX - 11, catY - 8); ctx.lineTo(catX - 8, catY - 13); ctx.lineTo(catX - 6, catY - 8); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "#c9bb9c"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(catX + 12, catY + 2, 7, Math.PI * 0.9, Math.PI * (1.5 + 0.18 * Math.sin(t * 1.4))); ctx.stroke();
+  px(catX - 17, catY - 4, 4, 1.4, "#8a7a5c"); px(catX - 10, catY - 4, 4, 1.4, "#8a7a5c");
+  if((t % 8) < 3){
+    ctx.globalAlpha = 0.75 * (1 - ((t % 8) / 3) * 0.5);
+    ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#fff3cf";
+    ctx.fillText("💤", catX - 16, catY - 18 - (t % 8) * 2);
+    ctx.globalAlpha = 1;
+  }
+  /* 職人（待機中は少し歩き回る） */
   G.staff.forEach(function(st, idx){
     var d = staffDisp[st.id];
     var target = staffTarget(st, idx);
+    if(!st.jobId && !st.restDay){
+      var w = wander[st.id];
+      if(!w || t > w.until){ w = wander[st.id] = { dx: Math.random() * 30 - 15, dy: Math.random() * 6 - 3, until: t + 2.5 + Math.random() * 3 }; }
+      target = { x: target.x + w.dx, y: target.y + w.dy };
+    }
     if(!d){ d = staffDisp[st.id] = { x: target.x, y: target.y }; }
-    d.x += (target.x - d.x) * 0.1; d.y += (target.y - d.y) * 0.1;
+    d.x += (target.x - d.x) * 0.08; d.y += (target.y - d.y) * 0.08;
     drawPerson(st, d.x, d.y, t);
   });
   /* 浮かぶ数字 */
@@ -729,7 +785,7 @@ document.addEventListener("click", function(ev){
   else if(act === "cancel-place") cancelPlacing();
   else if(act === "hire"){ var hb = HIREABLE.find(function(x){ return x.name === btn.getAttribute("data-name"); }); if(hb) hire(hb); }
   else if(act === "reset"){
-    G = defaultState(); uiLog = []; evLog = []; floaters = []; staffDisp = {}; T0 = performance.now(); placing = null;
+    G = defaultState(); uiLog = []; evLog = []; floaters = []; staffDisp = {}; wander = {}; T0 = performance.now(); placing = null;
     ensureJobs(); save(); render();
     say("新しい工房が始まった");
     elog("節目", "開始");
