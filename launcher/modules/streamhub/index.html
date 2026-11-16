@@ -18,7 +18,8 @@
   h1{ font-size:20px; margin:0; font-weight:800; letter-spacing:.02em; }
   #feedStatus{ color:var(--sub); font-size:12.5px; margin-top:2px; min-height:1.4em; }
   #playerBox{ position:sticky; top:0; z-index:20; background:var(--bg); padding:8px 0 10px; }
-  #playerFrameWrap{ position:relative; width:100%; aspect-ratio:16/9; background:#000;
+  #playerFrameWrap{ position:relative; width:min(100%, calc((100dvh - 240px) * 16 / 9)); margin:0 auto;
+    aspect-ratio:16/9; background:#000;
     border-radius:14px; overflow:hidden; border:1px solid var(--border); }
   #playerFrameWrap iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   #playerIdle{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
@@ -157,7 +158,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-16-sh1';
+const SH_BUILD = '2026-11-16-sh2';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const FEED_TOKEN = '_32u_H07v_UGxuaqxEZXD5TxmCe1NtjU';
@@ -253,13 +254,24 @@ async function fetchFeed(){
   status.textContent = '新着を取りに行けませんでした。通信の届く場所で開き直してください。';
   renderHome(); renderChannels();
 }
+const RELAYS = [
+  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
+];
 async function fetchViaRelay(ids){
   const all = [];
+  let okChannels = 0;
   for (const cid of ids){
     const rss = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + cid;
-    const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(rss), { cache: 'no-store' });
-    if (!res.ok) continue;
-    const text = await res.text();
+    let text = null;
+    for (const make of RELAYS){
+      try{
+        const res = await fetch(make(rss), { cache: 'no-store' });
+        if (res.ok){ text = await res.text(); break; }
+      }catch(e){}
+    }
+    if (text == null) continue;
+    okChannels++;
     const doc = new DOMParser().parseFromString(text, 'text/xml');
     const chan = (doc.querySelector('feed > title') || {}).textContent || '';
     for (const en of doc.querySelectorAll('entry')){
@@ -272,6 +284,7 @@ async function fetchViaRelay(ids){
         thumbnail: th ? th.getAttribute('url') : null });
     }
   }
+  if (!okChannels || !all.length) throw new Error('relay-empty');
   all.sort((a, b) => String(b.started_at || '').localeCompare(String(a.started_at || '')));
   return all;
 }
