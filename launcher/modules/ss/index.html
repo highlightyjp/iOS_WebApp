@@ -99,7 +99,6 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .part .ph{ font-size:13px; font-weight:700; color:var(--label2); border-bottom:1px solid var(--sep); padding-bottom:6px; margin-bottom:12px; }
 .gap{ margin-top:26px; border:1.5px dashed var(--sep); border-radius:16px; padding:18px; text-align:center; color:var(--label2); font-size:14px; }
 .text{ white-space:pre-wrap; word-break:break-word; line-height:1.9; }
-@font-face{ font-family:'SSAA'; src:url('fonts/aa.woff2') format('woff2'); font-display:swap; }
 .aa{ font-family:'SSAA','MS PGothic','ＭＳ Ｐゴシック',IPAMonaPGothic,monospace; white-space:pre;
   line-height:1.2; font-size:12.5px; word-break:normal; }
 .aaBox{ background:var(--fill); border-radius:12px; margin:10px 0; padding:10px 6px; overflow-x:auto;
@@ -195,9 +194,9 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-16-ss14';
+var SS_BUILD = '2026-11-16-ss15';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
-(function(){
+function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
     var m = t.match(/build:\s*(\S+)/);
     if(!m) return;
@@ -206,9 +205,36 @@ var SS_BUILD = '2026-11-16-ss14';
     if(location.search.indexOf('v=' + encodeURIComponent(remote)) >= 0) return; /* 読み直し済み。それでも旧い場合は Pages 側の反映待ち */
     location.replace(location.pathname + '?v=' + encodeURIComponent(remote) + location.hash);
   }).catch(function(){});
-})();
+}
+checkBuild();
+setTimeout(checkBuild, 4000);
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkBuild(); });
 document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
-document.getElementById('buildNote').textContent = 'モジュール build ' + SS_BUILD + '／データ契約 ss-data/v1（本部が生成・差し替え）';
+var AA_FONT_STATE = '読込中';
+function updateBuildNotes(){
+  document.getElementById('buildNote').textContent = 'モジュール build ' + SS_BUILD + '／AAフォント：' + AA_FONT_STATE + '／データ契約 ss-data/v1（本部が生成・差し替え）';
+  if(cur) renderMeta();
+}
+function probeAAFont(){
+  try{
+    var c = document.createElement('canvas').getContext('2d');
+    c.font = '20px SSAA';
+    return Math.abs(c.measureText('＿'.repeat(10)).width - 200) < 3 && Math.abs(c.measureText('A'.repeat(20)).width - 200) < 3; /* SSAAなら全角10字＝半角20字＝200px */
+  }catch(e){ return false; }
+}
+function loadAAFont(){
+  if(!('FontFace' in window)){ AA_FONT_STATE = '未対応（端末フォントで表示）'; updateBuildNotes(); return; }
+  var ff = new FontFace('SSAA', "url('fonts/aa.woff2?v=" + SS_BUILD + "')");
+  document.fonts.add(ff);
+  ff.load().then(function(){
+    AA_FONT_STATE = probeAAFont() ? '適用済み' : '未適用（読めたが字幅が合わない）';
+    updateBuildNotes(); fitAllAA();
+  }, function(){
+    AA_FONT_STATE = '読込失敗（端末フォントで表示）';
+    updateBuildNotes();
+  });
+}
+loadAAFont();
 
 var INDEX = null;
 var settings = loadObj('ss.settings.v1') || {};
@@ -653,7 +679,7 @@ function openStory(id, resume){
     $('shelfView').style.display = 'none';
     $('readerView').style.display = 'block';
     $('rTitle').textContent = story.title;
-    $('rMeta').textContent = (story.tags || []).join('／') + '・' + story.parts + ' 編／' + Number(story.chars || 0).toLocaleString() + ' 字' + ((story.gaps && story.gaps.length) ? '・欠け ' + story.gaps.length + ' 編' : '');
+    renderMeta();
     renderReaderBody();
     renderRelated();
     var p = progress[id];
@@ -666,6 +692,11 @@ function openStory(id, resume){
   }).catch(function(){
     alert('本文データが読めなかった。');
   });
+}
+function renderMeta(){
+  if(!cur) return;
+  var story = cur.story;
+  $('rMeta').textContent = (story.tags || []).join('／') + '・' + story.parts + ' 編／' + Number(story.chars || 0).toLocaleString() + ' 字' + ((story.gaps && story.gaps.length) ? '・欠け ' + story.gaps.length + ' 編' : '') + '／build ' + SS_BUILD + '・AAフォント' + AA_FONT_STATE;
 }
 function renderReaderBody(){
   var html = cur.seq.map(function(item, i){
