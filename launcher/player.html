@@ -9,6 +9,7 @@
   置き場所: https://highlightyjp.github.io/iOS_WebApp/launcher/player.html
   使い方（URLパラメータ）:
     ?type=youtube&id=VIDEO_ID[&list=PLAYLIST_ID][&sb=1][&autoplay=1][&start=秒]
+    ?type=youtube&list=PLAYLIST_ID  … id なし。再生リストから再生する（チャンネルの投稿一覧など）
     ?type=twitch&channel=CHANNEL_NAME
     ?type=twitch&video=VIDEO_ID
     ?demo=1  … 確認用（YouTube と Twitch を並べる）
@@ -102,26 +103,25 @@ window.onYouTubeIframeAPIReady = function(){
   const wantYt = isDemo || params.get('type') === 'youtube';
   if (!wantYt) return;
   const videoId = params.get('id') || (isDemo ? 'aqz-KE-bpKQ' : null);
-  if (!videoId){ showMsg('動画の指定がありません'); return; }
+  const listId = params.get('list') || null;
+  if (!videoId && !listId){ showMsg('動画の指定がありません'); return; }
   const holder = document.createElement('div');
   holder.id = 'ytHolder';
   document.getElementById('ytSlot').appendChild(holder);
-  ytPlayer = new YT.Player('ytHolder', {
+  const playerVars = {
+    playsinline: 1, rel: 0, modestbranding: 1,
+    origin: 'https://' + HOST,
+    autoplay: params.get('autoplay') === '1' ? 1 : 0,
+    start: Number(params.get('start') || 0) || undefined
+  };
+  if (listId){ playerVars.list = listId; playerVars.listType = 'playlist'; }
+  const playerCfg = {
     width: '100%', height: '100%',
-    videoId,
-    playerVars: {
-      playsinline: 1, rel: 0, modestbranding: 1,
-      origin: 'https://' + HOST,
-      autoplay: params.get('autoplay') === '1' ? 1 : 0,
-      start: Number(params.get('start') || 0) || undefined,
-      list: params.get('list') || undefined,
-      listType: params.get('list') ? 'playlist' : undefined
-    },
+    playerVars,
     events: {
       onReady: async () => {
         ytReady = true;
-        await loadSponsorBlock(videoId);
-        startSbWatch();
+        if (videoId){ await loadSponsorBlock(videoId); startSbWatch(); }
         post('ready', { provider:'youtube', videoId });
       },
       onStateChange: (e) => {
@@ -131,7 +131,9 @@ window.onYouTubeIframeAPIReady = function(){
       },
       onError: (e) => post('error', { provider:'youtube', code: e.data })
     }
-  });
+  };
+  if (videoId) playerCfg.videoId = videoId;
+  ytPlayer = new YT.Player('ytHolder', playerCfg);
 };
 
 /* ---------- Twitch ---------- */
