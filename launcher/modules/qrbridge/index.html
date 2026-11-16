@@ -51,7 +51,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.7.1</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.8</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -90,6 +90,7 @@
   </label>
   <canvas id="scanCanvas" class="hidden"></canvas>
   <div class="status" id="recvStatus">未受信</div>
+  <div class="status">画面に大きく、明るく映すほど読みやすくなります。読めない時は近づけて、表示側の明るさを最大にしてください</div>
   <textarea id="outText" rows="10" readonly placeholder="復元されたテキストがここに出ます"></textarea>
   <button class="big" id="btnCopy">結果をコピーする</button>
   <div class="row">
@@ -14897,6 +14898,94 @@ function makeQCSession(K, blockSize, totalLen) {
 return { makeQCSender, makeQCSession, parseQC, QC_BLOCK };
 
 })();
+var QB_QCL = (function () {
+'use strict';
+// QCライブ：C5フレームの放送（同期QCS＋枠時計パリティ＋QCセッション集積）
+const C5 = QB_C5;
+const QC = QB_QC;
+const sha256 = QB_QL.sha256;
+const crc16ccitt = QB_FOUNTAIN.crc16ccitt;
+
+const SYNC_LEN = 38;
+function buildSync(o) {
+  const b = new Uint8Array(SYNC_LEN);
+  b[0] = 0x51; b[1] = 0x43; b[2] = 0x53; b[3] = 1; // 'Q','C','S', ver
+  const dv = new DataView(b.buffer);
+  dv.setUint32(4, o.msgId >>> 0);
+  dv.setUint16(8, o.K); dv.setUint16(10, o.blockSize);
+  dv.setUint32(12, o.totalLen);
+  b.set(o.sha128.slice(0, 16), 16);
+  dv.setUint16(32, o.cycleFrames); dv.setUint16(34, o.holdMs);
+  dv.setUint16(36, crc16ccitt(b.subarray(0, 36)));
+  return b;
+}
+function parseSync(b) {
+  if (!b || b.length !== SYNC_LEN || b[0] !== 0x51 || b[1] !== 0x43 || b[2] !== 0x53 || b[3] !== 1) return null;
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  if (dv.getUint16(36) !== crc16ccitt(b.subarray(0, 36))) return null;
+  return { msgId: dv.getUint32(4), K: dv.getUint16(8), blockSize: dv.getUint16(10), totalLen: dv.getUint32(12),
+    sha128: Array.from(b.subarray(16, 32)), cycleFrames: dv.getUint16(32), holdMs: dv.getUint16(34) };
+}
+function sha128Of(bytes) { return sha256(bytes).slice(0, 16); }
+
+function makeLiveSender(payload, opts) {
+  opts = opts || {};
+  const holdMs = opts.holdMs || 500;
+  const snd = QC.makeQCSender(payload);
+  const M = Math.ceil(snd.K * 1.3);
+  const cycleFrames = 1 + M;
+  const sync = buildSync({ msgId: snd.msgId, K: snd.K, blockSize: snd.blockSize, totalLen: snd.totalLen,
+    sha128: sha128Of(payload), cycleFrames, holdMs });
+  return {
+    K: snd.K, blockSize: snd.blockSize, totalLen: snd.totalLen, msgId: snd.msgId, cycleFrames, holdMs,
+    frameAt(i) {
+      const pos = i % cycleFrames;
+      if (pos === 0) return { kind: 'sync', payload: sync, parity: i % 2 };
+      return { kind: 'data', payload: snd.next(), parity: i % 2 };
+    },
+  };
+}
+function makeLiveReceiver() {
+  let sync = null, ses = null, restored = null, verified = false, lastCount = 0, sesK = 0;
+  return {
+    addPayload(pl) {
+      const s = parseSync(pl);
+      if (s) {
+        if (!sync) { sync = s; if (!ses) { ses = QC.makeQCSession(s.K, s.blockSize, s.totalLen); sesK = s.K; } }
+        if (restored && !verified) { const h = sha128Of(restored); verified = h.every((v, i) => v === sync.sha128[i]); }
+        return { kind: 'sync' };
+      }
+      const head = QC.parseQC(pl);
+      if (!head) return { kind: 'junk' };
+      if (!ses) { ses = QC.makeQCSession(head.K, head.blockSize, head.totalLen); sesK = head.K; }
+      const r = ses.add(pl);
+      if (r && typeof r.count === 'number') lastCount = r.count;
+      if (r && r.done && !restored) { lastCount = sesK;
+        restored = r.frame;
+        if (sync) {
+          const h = sha128Of(restored);
+          verified = h.every((v, i) => v === sync.sha128[i]);
+        }
+      }
+      return { kind: 'data', count: lastCount, K: sesK, done: !!restored, verified };
+    },
+    status() { return { hasSync: !!sync, count: lastCount, K: sesK || (sync ? sync.K : 0), done: !!restored, verified }; },
+    result() { return restored; },
+  };
+}
+// 帯パリティ：画像の外周2%の帯の平均輝度。0寄り=黒帯（偶数）、1寄り=白帯（奇数）、中間=混ざり
+function parityOf(rgba, W, H) {
+  const bx = Math.max(1, Math.floor(W * 0.02)), by = Math.max(1, Math.floor(H * 0.02));
+  let sum = 0, n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (x >= bx && x < W - bx && y >= by && y < H - by) continue;
+    const o = (y * W + x) * 4; sum += (rgba[o] + rgba[o + 1] + rgba[o + 2]) / 3; n++;
+  }
+  return sum / n / 255;
+}
+return { buildSync, parseSync, makeLiveSender, makeLiveReceiver, parityOf, SYNC_LEN };
+
+})();
 </script>
 <script>
 "use strict";
@@ -15210,9 +15299,29 @@ function qbCarStop() {
   if (QB_CAR && QB_CAR.timer) clearInterval(QB_CAR.timer);
   QB_CAR = null;
   $("carCtl").classList.add("hidden");
+  var w = $("qrwrap");
+  if (w) { w.style.border = ""; w.style.outline = ""; }
 }
 function qbCarShow() {
   if (!QB_CAR) return;
+  if (QB_CAR.qcl) {
+    var fq = QB_CAR.qcl.frameAt(QB_CAR.i);
+    var bq = QB_C5.buildC5(fq.payload);
+    var rq = QB_C5.renderC5(bq.grid, 8);
+    var cvq = document.createElement("canvas");
+    cvq.width = rq.W; cvq.height = rq.W;
+    cvq.style.width = "100%"; cvq.style.maxWidth = "560px"; cvq.style.imageRendering = "pixelated";
+    var cxq = cvq.getContext("2d");
+    var idq = cxq.createImageData(rq.W, rq.W);
+    for (var pq = 0; pq < rq.W * rq.W; pq++) { idq.data[pq * 4] = rq.img[pq * 3]; idq.data[pq * 4 + 1] = rq.img[pq * 3 + 1]; idq.data[pq * 4 + 2] = rq.img[pq * 3 + 2]; idq.data[pq * 4 + 3] = 255; }
+    cxq.putImageData(idq, 0, 0);
+    var wq = $("qrwrap");
+    wq.innerHTML = ""; wq.appendChild(cvq);
+    wq.style.border = fq.parity ? "14px solid #ffffff" : "14px solid #000000";
+    wq.style.outline = "2px solid #999999";
+    $("carLabel").textContent = (fq.kind === "sync" ? "同期フレーム" : "色コードの流れ " + (QB_CAR.i + 1) + " 枚目") + "（復元の目安は約 " + QB_CAR.qcl.K + " 枚＋同期）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
+    return;
+  }
   if (QB_CAR.ql) {
     var fr = QB_CAR.ql.frameAt(QB_CAR.i);
     var n = qbDrawQR(fr.bytes, $("qrwrap"));
@@ -15244,7 +15353,14 @@ $("btnMake").onclick = function () {
     var gridSel = $("c5Grid") ? parseInt($("c5Grid").value, 10) : 144;
     var C5X = QB_C5.makeC5(gridSel);
     if (frame.length > C5X.PAYLOAD_CAP) {
-      st.innerHTML = "<span class='ng'>色コードの上限を超えています</span>\n符号化後 " + frame.length + " バイト（色コードの上限 " + C5X.PAYLOAD_CAP + " バイト）。大きさを上げるか、チェックを外して灯台方式で送るか、文章を分けてください";
+      var qcl = QB_QCL.makeLiveSender(frame, { holdMs: 500 });
+      QB_CAR = { qcl: qcl, i: 0, timer: null, holdMs: qcl.holdMs };
+      $("carCtl").classList.remove("hidden");
+      $("btnCarPause").textContent = "一時停止";
+      QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, QB_CAR.holdMs);
+      qbCarShow();
+      st.innerHTML = "<span class='ok'>作成しました（色コードの流れ）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（色コード1枚の上限を超えたため、流れ表示にしました）\n色コードが切り替わります。受け側は受取画面のカメラで読み続けてください。画面の明るさを最大にしてください";
+      qbHistAdd("send", "色コードの流れ QCL", frame.length, true, text); qbResendSet(text);
       return;
     }
     var built = C5X.buildC5(frame);
@@ -15367,7 +15483,7 @@ $("btnCam").onclick = async function () {
   st.innerHTML = "コードを探しています\nQRと色コードの両方を自動で認識します。色コードは画面の中央に大きく写してください";
   var c5cv = document.createElement("canvas"); c5cv.width = 1152; c5cv.height = 1152;
   var c5ctx = c5cv.getContext("2d", { willReadFrequently: true });
-  var lastC5Try = 0, lastSig = -1;
+  var lastC5Try = 0, lastSig = -1, failStreak = 0;
   var cv = $("scanCanvas");
   var ctx = cv.getContext("2d", { willReadFrequently: true });
   var tick = function () {
@@ -15398,11 +15514,20 @@ $("btnCam").onclick = async function () {
           var side = Math.min(video.videoWidth, video.videoHeight);
           c5ctx.drawImage(video, (video.videoWidth - side) / 2, (video.videoHeight - side) / 2, side, side, 0, 0, 1152, 1152);
           var c5img = c5ctx.getImageData(0, 0, 1152, 1152);
-          if (qbTryC5Image(c5img.data, 1152, 1152, st)) {
+          var c5res = qbTryC5Image(c5img.data, 1152, 1152, st);
+          if (c5res === "done") {
             scanning = false;
             stream.getTracks().forEach(function (t) { t.stop(); });
             $("btnCam").textContent = "カメラで読み取る";
             return;
+          }
+          if (c5res === "progress") { failStreak = 0; }
+          else {
+            failStreak++;
+            if (failStreak >= 20) {
+              failStreak = 0;
+              st.innerHTML = "まだ読めていません\nコードを画面の中央に大きく映して、近づけてください。表示側の画面の明るさを最大にすると読みやすくなります";
+            }
           }
         }
       }
@@ -15412,9 +15537,34 @@ $("btnCam").onclick = async function () {
   tick();
 };
 
+var QB_QCL_RX = null;
+function qbQclReset() { QB_QCL_RX = QB_QCL.makeLiveReceiver(); }
+function qbTryQCL(pl, st) {
+  /* 色コードの流れ（QCL）の1フレームを受け付ける。戻り値 "done" | "progress" | false */
+  var isSync = pl.length === QB_QCL.SYNC_LEN && pl[0] === 0x51 && pl[1] === 0x43 && pl[2] === 0x53;
+  var isData = pl.length > 20 && pl[0] === 0x51 && pl[1] === 0x43 && pl[2] !== 0x53;
+  if (!isSync && !isData) return false;
+  if (!QB_QCL_RX) qbQclReset();
+  if (QB_QCL_RX.status().verified && isSync) qbQclReset();
+  var r = QB_QCL_RX.addPayload(pl);
+  if (r.kind === "junk") return false;
+  var s2 = QB_QCL_RX.status();
+  if (s2.verified) {
+    var frame = QB_QCL_RX.result();
+    qbQclReset();
+    handleBytes(frame, st);
+    return "done";
+  }
+  if (s2.done && !s2.verified) {
+    st.innerHTML = "<span class='ng'>色コードの流れ：復元しましたが照合が一致しません</span>\nそのまま読み続けてください";
+    return "progress";
+  }
+  st.innerHTML = "<span class='ok'>色コードの流れを受信中</span>\n復元の進み具合 " + s2.count + " / " + s2.K + " 枚" + (s2.hasSync ? "" : "（同期待ち）") + "。そのまま読み続けてください";
+  return "progress";
+}
 function qbTryC5Image(idata, w, h, st) {
-  try { var anyR = QB_C5.decodeC5Any(idata, w, h); handleBytes(anyR.payload, st); return true; } catch (ea) {}
-  try { var pl5l = QB_C5L.decodeC5(idata, w, h); handleBytes(pl5l, st); return true; } catch (el) {}
+  try { var anyR = QB_C5.decodeC5Any(idata, w, h); var q = qbTryQCL(anyR.payload, st); if (q) return q; handleBytes(anyR.payload, st); return "done"; } catch (ea) {}
+  try { var pl5l = QB_C5L.decodeC5(idata, w, h); handleBytes(pl5l, st); return "done"; } catch (el) {}
   return false;
 }
 
@@ -15497,7 +15647,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -15506,7 +15656,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.7.1 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.8 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -15744,6 +15894,29 @@ $("btnTest").onclick = function () {
     qbHistDel(t15.t); qbHistSelect(0);
     QB_REPORT.items[15] = { label: "履歴の選択と詳細", result: ok15 ? "合格" : "不合格", detail: ok15 ? "選んだ項目の全文が詳細に出る" : "選択か詳細の表示ができなかった" };
   } catch (e) { QB_REPORT.items[15] = { label: "履歴の選択と詳細", result: "不合格", detail: e.message }; }
+  try {
+    var src16 = "";
+    for (var i16 = 0; i16 < 1300; i16++) src16 += "色コードの流れの確認。文書番号" + i16 + "、金額" + (i16 * 37 % 10000) + "円。";
+    var fr16 = qbPack(src16, QB_SEED, QB_DICT);
+    var snd16 = QB_QCL.makeLiveSender(fr16, { holdMs: 500 });
+    var rx16 = QB_QCL.makeLiveReceiver();
+    var ok16 = false, used16 = 0;
+    for (var f16 = 0; f16 < snd16.cycleFrames * 2 && !ok16; f16++) {
+      var one16 = snd16.frameAt(f16);
+      var b16 = QB_C5.buildC5(one16.payload);
+      var r16 = QB_C5.renderC5(b16.grid, 8);
+      var rgba16 = new Uint8ClampedArray(r16.W * r16.W * 4);
+      for (var p16 = 0; p16 < r16.W * r16.W; p16++) { rgba16[p16 * 4] = r16.img[p16 * 3]; rgba16[p16 * 4 + 1] = r16.img[p16 * 3 + 1]; rgba16[p16 * 4 + 2] = r16.img[p16 * 3 + 2]; rgba16[p16 * 4 + 3] = 255; }
+      var back16 = QB_C5.decodeC5(rgba16, r16.W, r16.W);
+      var rr16 = rx16.addPayload(back16);
+      used16++;
+      var st16 = rx16.status();
+      if (st16.verified) ok16 = true;
+    }
+    var out16 = ok16 ? rx16.result() : null;
+    var textOk16 = !!out16 && out16.length === fr16.length && qbCrc32(out16) === qbCrc32(fr16);
+    QB_REPORT.items[16] = { label: "色コードの流れ（QCL）の往復", result: (ok16 && textOk16) ? "合格" : "不合格", detail: fr16.length + "バイト／K=" + snd16.K + "、投入 " + used16 + " 枚で照合まで一致" };
+  } catch (e) { QB_REPORT.items[16] = { label: "色コードの流れ（QCL）の往復", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
