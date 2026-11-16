@@ -1,7 +1,22 @@
-aa.woff2 は、Noto Sans Mono CJK JP（Regular）を、のくす書庫のAA表示に必要な
-文字だけにサブセット化したものです。
+のくす書庫 AA表示用フォント（出典とライセンス）
 
-出典：https://github.com/notofonts/noto-cjk （Sans/Mono/NotoSansMonoCJKjp-Regular.otf）
-ライセンス：SIL Open Font License 1.1（https://openfontlicense.org/）
-サブセット化の手順は端末統合部の作業記録（PROJECT.md、2026-11-16 ss14）にあります。
-データ再生成でAAの使用字が増えたら、同じ手順で作り直します。
+1. aa-mona.woff2（主フォント／ss16から）
+   元フォント：IPAMonaGothic（ipag-mona.ttf、IPAモナーフォント 1.0.8）
+   取得元：GitHub のミラー ghost-of-freedom/font-ipamona（原配布は ipa_mona／opfc）
+   ライセンス：IPAフォントライセンス v1.0
+   加工：のくす書庫のAAブロック使用字＋予備範囲でサブセット化し、WOFF2化。
+   内部ファミリー名は 'SSAA' として読み込む（予約フォント名は使っていない）。
+   備考：候補だった IPAMonaPGothic は、このミラーの実物がプロポーショナル
+   （全角スペースや かな の字幅が格子と合わない）だったため不採用。
+   等幅版の IPAMonaGothic は全角1000／半角500（unitsPerEm 1000）の
+   完全な 2:1 格子で、＿／＼｜ の字形が隣と繋がる AA 本来の描き方。
+
+2. aa.woff2（予備フォント）
+   元フォント：Noto Sans Mono CJK JP Regular
+   出典：https://github.com/notofonts/noto-cjk（Sans/Mono/NotoSansMonoCJKjp-Regular.otf）
+   ライセンス：SIL Open Font License 1.1
+   加工：同範囲でサブセット化し、WOFF2化。内部名 'SSNoto'。
+   役割：主フォントに無い字（NBSP等）の受け皿。
+
+どちらにも無い字：◕（U+25D5）・‿（U+203F）の2字のみ（全コーパス中）。
+この2字は端末フォントで表示される。

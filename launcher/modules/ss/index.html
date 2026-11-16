@@ -99,7 +99,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .part .ph{ font-size:13px; font-weight:700; color:var(--label2); border-bottom:1px solid var(--sep); padding-bottom:6px; margin-bottom:12px; }
 .gap{ margin-top:26px; border:1.5px dashed var(--sep); border-radius:16px; padding:18px; text-align:center; color:var(--label2); font-size:14px; }
 .text{ white-space:pre-wrap; word-break:break-word; line-height:1.9; }
-.aa{ font-family:'SSAA','MS PGothic','ＭＳ Ｐゴシック',IPAMonaPGothic,monospace; white-space:pre;
+.aa{ font-family:'SSAA','SSNoto','MS PGothic','ＭＳ Ｐゴシック',IPAMonaPGothic,monospace; white-space:pre;
   line-height:1.2; font-size:12.5px; word-break:normal; }
 .aaBox{ background:var(--fill); border-radius:12px; margin:10px 0; padding:10px 6px; overflow-x:auto;
   -webkit-overflow-scrolling:touch; }
@@ -194,7 +194,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 
 <script>
 'use strict';
-var SS_BUILD = '2026-11-16-ss15';
+var SS_BUILD = '2026-11-16-ss16';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -224,7 +224,10 @@ function probeAAFont(){
 }
 function loadAAFont(){
   if(!('FontFace' in window)){ AA_FONT_STATE = '未対応（端末フォントで表示）'; updateBuildNotes(); return; }
-  var ff = new FontFace('SSAA', "url('fonts/aa.woff2?v=" + SS_BUILD + "')");
+  var ffSub = new FontFace('SSNoto', "url('fonts/aa.woff2?v=" + SS_BUILD + "')");
+  document.fonts.add(ffSub);
+  ffSub.load().then(function(){ fitAllAA(); }, function(){});
+  var ff = new FontFace('SSAA', "url('fonts/aa-mona.woff2?v=" + SS_BUILD + "')");
   document.fonts.add(ff);
   ff.load().then(function(){
     AA_FONT_STATE = probeAAFont() ? '適用済み' : '未適用（読めたが字幅が合わない）';
