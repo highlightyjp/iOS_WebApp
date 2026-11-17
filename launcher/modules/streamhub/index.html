@@ -149,15 +149,57 @@
   #playerBox.mini #nowPlaying{ margin:0; flex:1; font-size:13px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   #playerBox.mini #playState, #playerBox.mini .controls, #playerBox.mini #sleepLine, #playerBox.mini #chatBox, #playerBox.mini #commentsBox, #playerBox.mini #chaptersBox, #playerBox.mini #transcriptBox, #playerBox.mini #upNext{ display:none !important; }
   #playerBox.mini #miniBar{ display:flex; gap:6px; flex:none; }
+  /* sh28 theme: flat surfaces, the current YouTube app's language. */
+  :root{ --card:#1f1f1f; --border:rgba(255,255,255,.09); --accent:#ff0033; }
+  h1{ font-size:17.5px; font-weight:700; letter-spacing:0; display:flex; align-items:center; gap:8px; }
+  .logoMark{ width:27px; height:20px; border-radius:6px; background:#ff0033; position:relative; flex:none; }
+  .logoMark::after{ content:''; position:absolute; left:10.5px; top:5.5px; border-left:8px solid #fff; border-top:4.5px solid transparent; border-bottom:4.5px solid transparent; }
+  #feedStatus{ font-size:11.5px; color:#909090; }
+  button{ border:none; background:#272727; border-radius:999px; padding:9px 15px; font-weight:500; }
+  button.small{ border-radius:999px; padding:6px 12px; }
+  button.primary{ background:#f1f1f1; color:#0f0f0f; }
+  a.btnlink{ border:none; background:#272727; border-radius:999px; }
+  select{ border:none; background:#272727; }
+  input[type=text], input[type=search], textarea{ background:#1f1f1f; border:none; border-radius:12px; }
+  input[type=search]{ border-radius:999px; }
+  .block{ background:#1f1f1f; border:none; border-radius:14px; padding:14px; }
+  .chips button{ background:#272727; }
+  .chips button.on{ background:#f1f1f1; color:#0f0f0f; }
+  nav.tabs{ background:rgba(18,18,18,.95); border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 26px rgba(0,0,0,.5); }
+  nav.tabs button{ padding:8px 0; background:transparent; }
+  nav.tabs button.on{ background:rgba(255,255,255,.14); }
+  nav.tabs button svg.tic{ width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  #btnSearchToggle{ display:flex; align-items:center; }
+  #btnSearchToggle svg{ width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
+  .card{ margin-bottom:26px; }
+  .card .ttl{ font-size:15px; font-weight:500; line-height:1.35; }
+  .card .below{ margin-top:10px; gap:10px; }
+  .card .thumb .dur{ border-radius:4px; }
+  .badge{ border-radius:4px; }
+  .card.playing .below{ background:rgba(255,255,255,.05); }
+  #nowPlaying{ font-size:17px; font-weight:600; margin-top:12px; }
+  #playerBox .controls{ flex-wrap:wrap; overflow-x:visible; }
+  #playerBox .controls button{ background:#272727; min-height:40px; }
+  #playerBox .controls button.primary{ background:#f1f1f1; }
+  #chatWrap iframe{ border:none; border-radius:14px; }
+  #playerBox.mini{ background:rgba(26,26,26,.97); border:none; box-shadow:0 10px 30px rgba(0,0,0,.55); }
+  #sheet{ background:#1f1f1f; }
+  #sheet button{ padding:14px 22px; font-size:15.5px; }
+  h2{ font-size:18px; }
+  #view-home h2{ font-size:19px; font-weight:700; }
+  .row img{ border-radius:8px; }
+  .row{ padding:10px 0; }
+  .row .acts{ flex-direction:row; flex-wrap:wrap; justify-content:flex-end; max-width:48%; }
+  .rowdots{ flex:none; background:none; border:none; color:var(--text); font-size:19px; line-height:1; padding:8px 4px; cursor:pointer; }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>StreamHub</h1>
+    <h1><span class="logoMark"></span>StreamHub</h1>
     <div id="feedStatus">読み込み中…</div>
   </div>
-  <button id="btnSearchToggle" aria-label="検索">⌕</button>
+  <button id="btnSearchToggle" aria-label="検索"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20.8 20.8l-4.3-4.3"/></svg></button>
 </header>
 
 <div id="playerBox">
@@ -241,10 +283,10 @@
 </div>
 
 <nav class="tabs">
-  <button data-tab="home" class="on" aria-label="ホーム"><span class="tic">⌂</span></button>
-  <button data-tab="channels" aria-label="チャンネル"><span class="tic">◎</span></button>
-  <button data-tab="queue" aria-label="キュー"><span class="tic">☰</span></button>
-  <button data-tab="settings" aria-label="設定"><span class="tic">⚙</span></button>
+  <button data-tab="home" class="on" aria-label="ホーム"><svg class="tic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5.5h4V20"/></svg></button>
+  <button data-tab="channels" aria-label="チャンネル"><svg class="tic" viewBox="0 0 24 24"><path d="M7.5 4h9"/><rect x="3.5" y="7.5" width="17" height="12.5" rx="3"/><path d="M10.3 10.8l4.7 3-4.7 3z" fill="currentColor" stroke="none"/></svg></button>
+  <button data-tab="queue" aria-label="キュー"><svg class="tic" viewBox="0 0 24 24"><path d="M8.5 6.5h11M8.5 12h11M8.5 17.5h11"/><circle cx="4.3" cy="6.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="4.3" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="4.3" cy="17.5" r="1.15" fill="currentColor" stroke="none"/></svg></button>
+  <button data-tab="settings" aria-label="設定"><svg class="tic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12.2 2.2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.1.2a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.1.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.1-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.1-.2a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7v-.2a2 2 0 0 0-2-2z"/></svg></button>
 </nav>
 
 <div id="sheetOverlay" class="hidden"><div id="sheet"></div></div>
@@ -396,7 +438,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-18-sh27';
+const SH_BUILD = '2026-11-18-sh28';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -1457,6 +1499,26 @@ function channelNameYt(cid){
   const hit = feedItems.find((i) => i.channel_id === cid);
   return hit ? hit.channel : cid;
 }
+function openActionSheet(titleText, pairs){
+  const sh = $('sheet');
+  sh.innerHTML = '';
+  const title = document.createElement('div');
+  title.className = 'sheetTitle';
+  title.textContent = titleText || '';
+  sh.appendChild(title);
+  pairs.forEach(([label, fn]) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.addEventListener('click', () => { closeSheet(); fn(); });
+    sh.appendChild(b);
+  });
+  const cancel = document.createElement('button');
+  cancel.textContent = 'キャンセル';
+  cancel.style.color = 'var(--sub)';
+  cancel.addEventListener('click', closeSheet);
+  sh.appendChild(cancel);
+  $('sheetOverlay').classList.remove('hidden');
+}
 function renderChannels(){
   const cy = $('chYoutube'); cy.innerHTML = '';
   if (!S.subs.youtube.length) cy.innerHTML = '<p class="note">未登録です。</p>';
@@ -1468,16 +1530,15 @@ function renderChannels(){
     const t = document.createElement('div'); t.className = 'title'; t.textContent = channelNameYt(c.id);
     const m = document.createElement('div'); m.className = 'meta'; m.textContent = c.id;
     main.appendChild(t); main.appendChild(m); row.appendChild(main);
-    const acts = document.createElement('div'); acts.className = 'acts';
-    const bOpen = document.createElement('button'); bOpen.className = 'small'; bOpen.textContent = '開く';
-    bOpen.addEventListener('click', () => openChannelYt(c));
-    const bList = document.createElement('button'); bList.className = 'small primary'; bList.textContent = '投稿を再生';
-    bList.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'youtube', kind: 'uploads', list: 'UU' + c.id.slice(2), title: channelNameYt(c.id) + ' の投稿', channel: channelNameYt(c.id), id: null }); });
-    const bMute = document.createElement('button'); bMute.className = 'small'; bMute.textContent = c.muted ? 'ミュート中' : 'ミュート';
-    bMute.addEventListener('click', () => { c.muted = !c.muted; saveState(); renderChannels(); renderHome(); });
-    const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
-    bDel.addEventListener('click', () => { S.subs.youtube = S.subs.youtube.filter((x) => x.id !== c.id); saveState(); renderChannels(); renderHome(); });
-    acts.appendChild(bOpen); acts.appendChild(bList); acts.appendChild(bMute); acts.appendChild(bDel); row.appendChild(acts); cy.appendChild(row);
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => openChannelYt(c));
+    const dots = document.createElement('button'); dots.className = 'rowdots'; dots.textContent = '⋯'; dots.setAttribute('aria-label', 'チャンネルの操作');
+    dots.addEventListener('click', (ev) => { ev.stopPropagation(); openActionSheet(channelNameYt(c.id), [
+      ['投稿を再生', () => { queueCursor = -1; playItem({ source: 'youtube', kind: 'uploads', list: 'UU' + c.id.slice(2), title: channelNameYt(c.id) + ' の投稿', channel: channelNameYt(c.id), id: null }); }],
+      [c.muted ? 'ミュートを外す' : 'ミュートにする', () => { c.muted = !c.muted; saveState(); renderChannels(); renderHome(); }],
+      ['削除', () => { S.subs.youtube = S.subs.youtube.filter((x) => x.id !== c.id); saveState(); renderChannels(); renderHome(); }],
+    ]); });
+    row.appendChild(dots); cy.appendChild(row);
   }
   const ct = $('chTwitch'); ct.innerHTML = '';
   if (!S.subs.twitch.length) ct.innerHTML = '<p class="note">未登録です。</p>';
@@ -1494,14 +1555,14 @@ function renderChannels(){
       m.appendChild(document.createTextNode('ライブ中・' + info.viewers + '人' + (info.title ? '・' + info.title : '')));
     } else m.textContent = 'オフライン';
     main.appendChild(m); row.appendChild(main);
-    const acts = document.createElement('div'); acts.className = 'acts';
-    const bOpenT = document.createElement('button'); bOpenT.className = 'small'; bOpenT.textContent = '開く';
-    bOpenT.addEventListener('click', () => openChannelTw(name));
-    const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
-    bPlay.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); });
-    const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
-    bDel.addEventListener('click', () => { S.subs.twitch = S.subs.twitch.filter((x) => x !== name); saveState(); renderChannels(); renderHome(); });
-    acts.appendChild(bOpenT); acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); ct.appendChild(row);
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => openChannelTw(name));
+    const dots = document.createElement('button'); dots.className = 'rowdots'; dots.textContent = '⋯'; dots.setAttribute('aria-label', 'チャンネルの操作');
+    dots.addEventListener('click', (ev) => { ev.stopPropagation(); openActionSheet(name, [
+      ['再生', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); }],
+      ['削除', () => { S.subs.twitch = S.subs.twitch.filter((x) => x !== name); saveState(); renderChannels(); renderHome(); }],
+    ]); });
+    row.appendChild(dots); ct.appendChild(row);
   }
 }
 function channelDetailShow(show){
