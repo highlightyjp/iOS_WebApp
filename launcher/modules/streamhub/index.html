@@ -456,7 +456,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-18-sh30';
+const SH_BUILD = '2026-11-18-sh31';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -1345,7 +1345,7 @@ async function loadChapters(){
     }
     chapters.forEach((c) => {
       const row = document.createElement('div'); row.className = 'row';
-      const chip = document.createElement('button'); chip.className = 'small primary'; chip.textContent = fmtClock(c.sec);
+      const chip = document.createElement('button'); chip.className = 'small'; chip.textContent = fmtClock(c.sec);
       chip.addEventListener('click', () => { playerCmd('seekTo', { sec: c.sec }); });
       const main = document.createElement('div'); main.className = 'main';
       const t = document.createElement('div'); t.className = 'title'; t.textContent = c.title;
@@ -1556,9 +1556,10 @@ function openActionSheet(titleText, pairs){
   title.className = 'sheetTitle';
   title.textContent = titleText || '';
   sh.appendChild(title);
-  pairs.forEach(([label, fn]) => {
+  pairs.forEach(([label, fn, kind]) => {
     const b = document.createElement('button');
     b.textContent = label;
+    if (kind === 'danger') b.style.color = 'var(--danger)';
     b.addEventListener('click', () => { closeSheet(); fn(); });
     sh.appendChild(b);
   });
@@ -1586,7 +1587,7 @@ function renderChannels(){
     dots.addEventListener('click', (ev) => { ev.stopPropagation(); openActionSheet(channelNameYt(c.id), [
       ['投稿を再生', () => { queueCursor = -1; playItem({ source: 'youtube', kind: 'uploads', list: 'UU' + c.id.slice(2), title: channelNameYt(c.id) + ' の投稿', channel: channelNameYt(c.id), id: null }); }],
       [c.muted ? 'ミュートを外す' : 'ミュートにする', () => { c.muted = !c.muted; saveState(); renderChannels(); renderHome(); }],
-      ['削除', () => { S.subs.youtube = S.subs.youtube.filter((x) => x.id !== c.id); saveState(); renderChannels(); renderHome(); }],
+      ['削除', () => { S.subs.youtube = S.subs.youtube.filter((x) => x.id !== c.id); saveState(); renderChannels(); renderHome(); }, 'danger'],
     ]); });
     row.appendChild(dots); cy.appendChild(row);
   }
@@ -1610,7 +1611,7 @@ function renderChannels(){
     const dots = document.createElement('button'); dots.className = 'rowdots'; dots.textContent = '⋯'; dots.setAttribute('aria-label', 'チャンネルの操作');
     dots.addEventListener('click', (ev) => { ev.stopPropagation(); openActionSheet(name, [
       ['再生', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); }],
-      ['削除', () => { S.subs.twitch = S.subs.twitch.filter((x) => x !== name); saveState(); renderChannels(); renderHome(); }],
+      ['削除', () => { S.subs.twitch = S.subs.twitch.filter((x) => x !== name); saveState(); renderChannels(); renderHome(); }, 'danger'],
     ]); });
     row.appendChild(dots); ct.appendChild(row);
   }
