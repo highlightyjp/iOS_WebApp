@@ -17,7 +17,7 @@
   親への通知: window.parent.postMessage({contract:'streamhub-player/v1', event, provider, ...}, '*')
     events: ready / playing / paused / ended / error / online / offline / skipped
   親からの命令: postMessage({contract:'streamhub-player/v1', cmd, ...})
-    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state') / setRate{rate} / captions{on, lang?}
+    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state') / setRate{rate} / captions{on, lang?} / setQuality{quality} (Twitch)
 -->
 <style>
   html,body{ margin:0; padding:0; background:#000; color:#fff; height:100%;
@@ -139,6 +139,12 @@ window.onYouTubeIframeAPIReady = function(){
 
 /* ---------- Twitch ---------- */
 let twPlayer = null, twReady = false;
+let twQuality = params.get('quality') || 'auto';
+function applyTwQuality(){
+  if (twPlayer && twQuality && twQuality !== 'auto' && typeof twPlayer.setQuality === 'function'){
+    try{ twPlayer.setQuality(twQuality); }catch(e){}
+  }
+}
 function initTwitch(){
   const wantTw = isDemo || params.get('type') === 'twitch';
   if (!wantTw) return;
@@ -180,7 +186,7 @@ function initTwitch(){
     post('error', { provider:'twitch', message: String(e) });
     return;
   }
-  twPlayer.addEventListener(Twitch.Player.READY, () => { twReady = true; say('診断: READY'); post('ready', { provider:'twitch' }); });
+  twPlayer.addEventListener(Twitch.Player.READY, () => { twReady = true; applyTwQuality(); say('診断: READY'); post('ready', { provider:'twitch' }); });
   twPlayer.addEventListener(Twitch.Player.PLAY, () => post('playing', { provider:'twitch' }));
   twPlayer.addEventListener(Twitch.Player.PAUSE, () => post('paused', { provider:'twitch' }));
   twPlayer.addEventListener(Twitch.Player.ENDED, () => post('ended', { provider:'twitch' }));
@@ -218,6 +224,7 @@ window.addEventListener('message', (ev) => {
       if (d.cmd === 'getState') post('state', { provider:'twitch',
         time: twPlayer.getCurrentTime(), duration: twPlayer.getDuration(), paused: twPlayer.isPaused() });
       if (d.cmd === 'setRate' && typeof twPlayer.setPlaybackRate === 'function') twPlayer.setPlaybackRate(Number(d.rate || 1));
+      if (d.cmd === 'setQuality'){ twQuality = String(d.quality || 'auto'); applyTwQuality(); }
     }
   }catch(e){ post('error', { provider: target, message: String(e) }); }
 });

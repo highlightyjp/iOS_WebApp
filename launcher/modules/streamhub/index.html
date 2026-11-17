@@ -142,6 +142,14 @@
       <option value="1.5">1.5倍</option>
       <option value="2">2倍</option>
     </select>
+    <select id="selQuality" disabled>
+      <option value="auto">画質 自動</option>
+      <option value="chunked">画質 最高</option>
+      <option value="720p">720p</option>
+      <option value="480p">480p</option>
+      <option value="360p">360p</option>
+      <option value="160p">160p</option>
+    </select>
     <button id="btnCaptions" disabled>字幕</button>
     <select id="selCapLang" disabled><option value="ja">日本語字幕</option><option value="en">英語字幕</option></select>
     <button id="btnComments" disabled>コメント</button>
@@ -342,7 +350,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh18';
+const SH_BUILD = '2026-11-17-sh19';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -380,7 +388,7 @@ function normalizeState(s){
     read: (s.read && typeof s.read === 'object') ? s.read : {},
     positions: (s.positions && typeof s.positions === 'object') ? s.positions : {},
     history: Array.isArray(s.history) ? s.history : [],
-    settings: Object.assign({ sb: false, fallback: true, hideRead: false, hideShorts: false, capLang: 'ja' }, s.settings || {})
+    settings: Object.assign({ sb: false, fallback: true, hideRead: false, hideShorts: false, capLang: 'ja', twQuality: 'auto' }, s.settings || {})
   };
 }
 function saveState(){
@@ -530,7 +538,7 @@ function clearPlayer(){
   const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
   $('nowPlaying').textContent = ''; $('playState').textContent = '';
   $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true; $('btnMini').disabled = true;
-  $('selRate').disabled = true; $('btnCaptions').disabled = true; $('selCapLang').disabled = true; $('btnComments').disabled = true; $('btnChapters').disabled = true;
+  $('selRate').disabled = true; $('selQuality').disabled = true; $('btnCaptions').disabled = true; $('selCapLang').disabled = true; $('btnComments').disabled = true; $('btnChapters').disabled = true;
   $('chatBox').classList.add('hidden'); $('chatWrap').innerHTML = '';
   $('commentsBox').classList.add('hidden'); $('commentsList').innerHTML = '';
   $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
@@ -558,6 +566,9 @@ function playItem(item){
     url = PLAYER + '?type=twitch&channel=' + encodeURIComponent(item.channel_name || item.channel || '');
   }
   if (!url) return;
+  if (item.source === 'twitch' && S.settings.twQuality && S.settings.twQuality !== 'auto'){
+    url += (url.indexOf('?') >= 0 ? '&' : '?') + 'quality=' + encodeURIComponent(S.settings.twQuality);
+  }
   setPlayerSrc(url);
   $('nowPlaying').textContent = (item.title || '') + (savedResume(item) ? '（続きから）' : '');
   $('playState').textContent = '読み込み中…';
@@ -566,6 +577,8 @@ function playItem(item){
   $('btnCaptions').disabled = item.source !== 'youtube';
   $('selCapLang').disabled = item.source !== 'youtube';
   $('selCapLang').value = S.settings.capLang || 'ja';
+  $('selQuality').disabled = item.source !== 'twitch';
+  $('selQuality').value = S.settings.twQuality || 'auto';
   $('btnComments').disabled = !(item.source === 'youtube' && (item.video_id || (item.id && item.id.indexOf('yt:') === 0)));
   $('btnChapters').disabled = $('btnComments').disabled;
   $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
@@ -1400,6 +1413,10 @@ function wire(){
   $('selCapLang').addEventListener('change', () => {
     S.settings.capLang = $('selCapLang').value; saveState();
     if (capOn) playerCmd('captions', { on: true, lang: S.settings.capLang });
+  });
+  $('selQuality').addEventListener('change', () => {
+    S.settings.twQuality = $('selQuality').value; saveState();
+    playerCmd('setQuality', { quality: S.settings.twQuality });
   });
   $('selSleep').addEventListener('change', () => setSleep(Number($('selSleep').value)));
   $('btnSearch').addEventListener('click', doSearch);
