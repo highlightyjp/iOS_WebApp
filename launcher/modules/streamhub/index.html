@@ -368,7 +368,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh21';
+const SH_BUILD = '2026-11-17-sh22';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -1001,6 +1001,40 @@ async function toggleTranscript(forceLang){
     list.innerHTML = '<div class="warn">字幕を取得できませんでした（' + (e.message || e) + '）</div>';
   }
 }
+let asrPollTimer = null;
+function stopAsrPoll(){ if (asrPollTimer){ clearInterval(asrPollTimer); asrPollTimer = null; } }
+async function checkAsr(vid, wantRequest){
+  const list = $('transcriptList');
+  try{
+    const d = await apiGet('asr', wantRequest ? { v: vid, req: 1 } : { v: vid });
+    const a = (d.sections && d.sections.asr) || {};
+    if (a.state === 'done'){
+      stopAsrPoll();
+      const cues = a.cues || [];
+      transcriptCache[vid + ':ja'] = cues;
+      transcriptLang = 'ja';
+      $('btnTranscriptLang').textContent = '英語にする';
+      renderTranscript(cues);
+      return;
+    }
+    if (a.state === 'error'){
+      stopAsrPoll();
+      list.innerHTML = '<div class="warn">文字起こしに失敗しました（' + (a.error || '不明') + '）。時間をおいてもう一度どうぞ。</div>';
+      return;
+    }
+    if (a.state && a.state !== 'none'){
+      list.innerHTML = '<div class="note">文字起こしを製作中です。数分かかります。この画面を開いたままお待ちください。</div>';
+      if (!asrPollTimer){
+        asrPollTimer = setInterval(() => {
+          if ($('transcriptBox').classList.contains('hidden') || !currentItem || currentItem.video_id !== vid){ stopAsrPoll(); return; }
+          checkAsr(vid, false);
+        }, 15000);
+      }
+    }
+  }catch(e){
+    list.innerHTML = '<div class="warn">文字起こしの状態を確認できませんでした（' + (e.message || e) + '）</div>';
+  }
+}
 function renderTranscript(cues){
   const list = $('transcriptList');
   list.innerHTML = '';
@@ -1008,6 +1042,14 @@ function renderTranscript(cues){
     const nd = document.createElement('div'); nd.className = 'note';
     nd.textContent = 'この動画に' + (transcriptLang === 'ja' ? '日本語' : '英語') + 'の字幕トラックはありません。';
     list.appendChild(nd);
+    if (transcriptLang === 'ja' && currentItem && currentItem.video_id){
+      const vid = currentItem.video_id;
+      const b = document.createElement('button'); b.textContent = '音声から文字起こしを作る';
+      b.style.marginTop = '8px';
+      b.addEventListener('click', () => { b.disabled = true; checkAsr(vid, true); });
+      list.appendChild(b);
+      checkAsr(vid, false);
+    }
     return;
   }
   for (const c of cues){
@@ -1540,7 +1582,7 @@ function wire(){
   });
   $('btnChaptersClose').addEventListener('click', () => $('chaptersBox').classList.add('hidden'));
   $('btnTranscript').addEventListener('click', () => toggleTranscript());
-  $('btnTranscriptClose').addEventListener('click', () => $('transcriptBox').classList.add('hidden'));
+  $('btnTranscriptClose').addEventListener('click', () => { $('transcriptBox').classList.add('hidden'); stopAsrPoll(); });
   $('btnTranscriptLang').addEventListener('click', () => toggleTranscript(transcriptLang === 'ja' ? 'en' : 'ja'));
   $('btnChatToggle').addEventListener('click', () => {
     const w = $('chatWrap');
