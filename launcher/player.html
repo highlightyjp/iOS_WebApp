@@ -239,6 +239,10 @@ window.addEventListener('message', (ev) => {
       if (d.cmd === 'seekTo') twPlayer.seek(Number(d.sec || 0));
       if (d.cmd === 'getState') post('state', { provider:'twitch',
         time: twPlayer.getCurrentTime(), duration: twPlayer.getDuration(), paused: twPlayer.isPaused() });
+      if (d.cmd === 'load'){
+        if (d.channel){ try{ twPlayer.setChannel(String(d.channel)); }catch(e){} setTimeout(applyTwQuality, 1500); }
+        else if (d.video){ try{ twPlayer.setVideo(String(d.video)); }catch(e){} setTimeout(applyTwQuality, 1500); }
+      }
       if (d.cmd === 'setRate' && typeof twPlayer.setPlaybackRate === 'function') twPlayer.setPlaybackRate(Number(d.rate || 1));
       if (d.cmd === 'setQuality'){ twQuality = String(d.quality || 'auto'); applyTwQuality(); }
     }

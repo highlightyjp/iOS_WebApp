@@ -147,7 +147,7 @@
     border:1px solid var(--border); border-radius:14px; padding:8px; display:flex; gap:10px; align-items:center; }
   #playerBox.mini #playerFrameWrap{ width:104px; flex:none; margin:0; border-radius:8px; }
   #playerBox.mini #nowPlaying{ margin:0; flex:1; font-size:13px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  #playerBox.mini #playState, #playerBox.mini .controls, #playerBox.mini #sleepLine, #playerBox.mini #chatBox, #playerBox.mini #commentsBox, #playerBox.mini #chaptersBox, #playerBox.mini #transcriptBox, #playerBox.mini #upNext{ display:none !important; }
+  #playerBox.mini #playState, #playerBox.mini #watchMeta, #playerBox.mini #watchPanels, #playerBox.mini .controls, #playerBox.mini #sleepLine, #playerBox.mini #chatBox, #playerBox.mini #commentsBox, #playerBox.mini #chaptersBox, #playerBox.mini #transcriptBox, #playerBox.mini #upNext{ display:none !important; }
   #playerBox.mini #miniBar{ display:flex; gap:6px; flex:none; }
   /* sh28 theme: flat surfaces, the current YouTube app's language. */
   :root{ --card:#1f1f1f; --border:rgba(255,255,255,.09); --accent:#ff0033; }
@@ -201,6 +201,10 @@
   #watchPanels{ margin-top:12px; display:flex; flex-direction:column; gap:10px; }
   #watchPanels button{ background:#1f1f1f; border-radius:12px; padding:13px 14px; text-align:left; font-size:14.5px; font-weight:500; width:100%; display:flex; justify-content:space-between; align-items:center; }
   #watchPanels button::after{ content:'\203A'; color:var(--sub); font-size:19px; line-height:1; }
+  /* sh30: labelled icon row; mini hides the sh29 additions. */
+  #playerBox .controls button{ flex-direction:column; gap:3px; width:60px; height:54px; }
+  #playerBox .controls button svg{ width:23px; height:23px; }
+  #playerBox .controls .clabel{ font-size:10.5px; color:var(--sub); line-height:1.1; }
   .row{ padding:10px 0; }
   .row .acts{ flex-direction:row; flex-wrap:wrap; justify-content:flex-end; max-width:48%; }
   .rowdots{ flex:none; background:none; border:none; color:var(--text); font-size:19px; line-height:1; padding:8px 4px; cursor:pointer; }
@@ -223,11 +227,11 @@
   <div id="watchMeta"></div>
   <div id="playState"></div>
   <div class="controls">
-    <button id="btnPlayPause" disabled aria-label="再生・一時停止"><svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg></button>
-    <button id="btnNext" disabled aria-label="次へ"><svg viewBox="0 0 24 24"><path class="f" d="M6 5.5v13l8.5-6.5z"/><rect class="f" x="16" y="5" width="2.6" height="14" rx="1"/></svg></button>
-    <button id="btnMini" disabled aria-label="小さく"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><rect class="f" x="12.5" y="12" width="6" height="4.5" rx="1"/></svg></button>
-    <button id="btnPlayerSettings" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12.2 2.2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.1.2a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.1.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.1-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.1-.2a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7v-.2a2 2 0 0 0-2-2z"/></svg></button>
-    <button id="btnStop" disabled aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button id="btnPlayPause" disabled aria-label="再生・一時停止"><svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg><span class="clabel">再生</span></button>
+    <button id="btnNext" disabled aria-label="次へ"><svg viewBox="0 0 24 24"><path class="f" d="M6 5.5v13l8.5-6.5z"/><rect class="f" x="16" y="5" width="2.6" height="14" rx="1"/></svg><span class="clabel">次へ</span></button>
+    <button id="btnMini" disabled aria-label="小さく"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><rect class="f" x="12.5" y="12" width="6" height="4.5" rx="1"/></svg><span class="clabel">小さく</span></button>
+    <button id="btnPlayerSettings" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12.2 2.2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.1.2a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.1.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.1-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.1-.2a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7v-.2a2 2 0 0 0-2-2z"/></svg><span class="clabel">設定</span></button>
+    <button id="btnStop" disabled aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="clabel">閉じる</span></button>
   </div>
   <div id="watchPanels">
     <button id="btnComments" disabled>コメント</button>
@@ -452,7 +456,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-18-sh29';
+const SH_BUILD = '2026-11-18-sh30';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -616,6 +620,15 @@ function savePositions(){
   try{ localStorage.setItem(LS_STATE, JSON.stringify(S)); }catch(e){}
 }
 let pendingSeek = 0;
+let pendingAfterLoad = null;
+function consumeAfterLoad(){
+  const p = pendingAfterLoad; if (!p) return; pendingAfterLoad = null;
+  if (p.seek) playerCmd('seekTo', { sec: p.seek });
+  playerCmd('setRate', { rate: Number($('selRate').value || 1) });
+  if (currentItem && currentItem.source === 'youtube' && ytQualitySel !== 'default') playerCmd('setQuality', { quality: ytQualitySel });
+  if (currentItem && currentItem.source === 'twitch' && S.settings.twQuality && S.settings.twQuality !== 'auto') playerCmd('setQuality', { quality: S.settings.twQuality });
+  if (capOn) playerCmd('captions', { on: true, lang: S.settings.capLang || 'ja' });
+}
 setInterval(() => { if (currentItem && isPlaying && posTrackable(currentItem)) playerCmd('getState'); }, 5000);
 
 /* ---------- プレイヤー ---------- */
@@ -624,23 +637,26 @@ let currentItem = null;
 let queueCursor = -1;
 let isPlaying = false;
 
-function setPlayerSrc(url){
+let playerSig = '';
+function setPlayerSrc(url, sig){
   const wrap = $('playerFrameWrap');
-  wrap.querySelectorAll('iframe').forEach((f) => f.remove());
   const idle = $('playerIdle'); if (idle) idle.style.display = 'none';
+  if (playerFrame && sig && sig === playerSig){ playerFrame.style.display = ''; return true; }
+  wrap.querySelectorAll('iframe').forEach((f) => f.remove());
   playerFrame = document.createElement('iframe');
   playerFrame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
   playerFrame.src = url;
   wrap.appendChild(playerFrame);
+  playerSig = sig || '';
+  return false;
 }
 function syncScrollLock(){
   const pb = $('playerBox');
   document.body.style.overflow = (pb.classList.contains('open') && !pb.classList.contains('mini')) ? 'hidden' : '';
 }
 function clearPlayer(){
-  const wrap = $('playerFrameWrap');
-  wrap.querySelectorAll('iframe').forEach((f) => f.remove());
-  playerFrame = null; currentItem = null; queueCursor = -1; isPlaying = false;
+  if (playerFrame){ try{ playerCmd('pause'); }catch(e){} playerFrame.style.display = 'none'; }
+  currentItem = null; queueCursor = -1; isPlaying = false;
   const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
   $('nowPlaying').textContent = ''; $('playState').textContent = '';
   $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true; $('btnMini').disabled = true;
@@ -681,7 +697,10 @@ function playItem(item, keepMode){
   if (item.source === 'twitch' && S.settings.twQuality && S.settings.twQuality !== 'auto'){
     url += (url.indexOf('?') >= 0 ? '&' : '?') + 'quality=' + encodeURIComponent(S.settings.twQuality);
   }
-  setPlayerSrc(url);
+  const sig = (item.source === 'youtube' && item.video_id) ? 'yt' : (item.source === 'twitch' && !item.clip) ? 'tw' : '';
+  const reused = setPlayerSrc(url, sig);
+  if (reused && sig === 'yt'){ pendingAfterLoad = { seek: savedResume(item) || 0 }; playerCmd('load', { id: item.video_id }); }
+  if (reused && sig === 'tw'){ pendingAfterLoad = { seek: pendingSeek || 0 }; if (item.video_id) playerCmd('load', { video: String(item.video_id) }); else playerCmd('load', { channel: item.channel_name || item.channel || '' }); }
   $('nowPlaying').textContent = (item.title || '') + (savedResume(item) ? '（続きから）' : '');
   $('nowPlaying').classList.remove('expanded');
   setPpIcon(false);
@@ -786,8 +805,8 @@ window.addEventListener('message', (ev) => {
   const d = ev.data;
   if (!d || d.contract !== 'streamhub-player/v1' || !d.event) return;
   const st = $('playState');
-  if (d.event === 'ready'){ st.textContent = '準備ができました'; if (pendingSeek > 0){ playerCmd('seekTo', { sec: pendingSeek }); pendingSeek = 0; } if (currentItem && currentItem.source === 'youtube' && ytQualitySel !== 'default') playerCmd('setQuality', { quality: ytQualitySel }); }
-  if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; setPpIcon(true); }
+  if (d.event === 'ready'){ st.textContent = '準備ができました'; if (pendingSeek > 0){ playerCmd('seekTo', { sec: pendingSeek }); pendingSeek = 0; } if (currentItem && currentItem.source === 'youtube' && ytQualitySel !== 'default') playerCmd('setQuality', { quality: ytQualitySel }); consumeAfterLoad(); }
+  if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; setPpIcon(true); consumeAfterLoad(); }
   if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; setPpIcon(false); if (currentItem && posTrackable(currentItem)) playerCmd('getState'); }
   if (d.event === 'state'){
     if (currentItem && posTrackable(currentItem) && typeof d.time === 'number' && typeof d.duration === 'number' && d.duration > 0){
@@ -887,8 +906,8 @@ function toast(msg){
   clearTimeout(t._tm);
   t._tm = setTimeout(() => t.classList.add('hidden'), 2200);
 }
-const SVG_PP_PLAY = '<svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg>';
-const SVG_PP_PAUSE = '<svg viewBox="0 0 24 24"><rect class="f" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="f" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg>';
+const SVG_PP_PLAY = '<svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg><span class="clabel">再生</span>';
+const SVG_PP_PAUSE = '<svg viewBox="0 0 24 24"><rect class="f" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="f" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg><span class="clabel">一時停止</span>';
 function setPpIcon(playing){ const b = $('btnPlayPause'); if (b) b.innerHTML = playing ? SVG_PP_PAUSE : SVG_PP_PLAY; }
 function closeSheet(){ $('sheetOverlay').classList.add('hidden'); $('sheet').innerHTML = ''; }
 function openSheet(item, opts){
