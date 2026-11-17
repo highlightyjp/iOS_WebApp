@@ -182,6 +182,20 @@
     <input id="searchInput" type="search" placeholder="YouTube を検索" style="flex:1">
     <button id="btnSearch" class="primary">検索</button>
   </div>
+  <div class="controls">
+    <select id="selSearchOrder">
+      <option value="relevance">関連度順</option>
+      <option value="date">新しい順</option>
+      <option value="viewCount">再生数順</option>
+      <option value="rating">評価順</option>
+    </select>
+    <select id="selSearchDur">
+      <option value="any">長さ指定なし</option>
+      <option value="short">短い（4分未満）</option>
+      <option value="medium">普通（4〜20分）</option>
+      <option value="long">長い（20分超）</option>
+    </select>
+  </div>
   <div id="searchWrap" class="hidden">
     <h2>検索結果</h2>
     <div id="searchList"></div>
@@ -307,7 +321,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh14';
+const SH_BUILD = '2026-11-17-sh15';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -776,19 +790,41 @@ async function doSearch(){
   if (!q) return;
   $('searchWrap').classList.remove('hidden');
   const el = $('searchList');
-  el.innerHTML = '<p class="note">検索中…</p>';
+  el.innerHTML = '';
+  const ql = q.toLowerCase();
+  const twHits = S.subs.twitch.filter((n) => n.toLowerCase().includes(ql));
+  if (twHits.length){
+    const h = document.createElement('h2'); h.textContent = 'Twitch のフォローチャンネル'; el.appendChild(h);
+    twHits.forEach((name) => {
+      const row = document.createElement('div'); row.className = 'row';
+      const av = document.createElement('div'); av.className = 'avatarTxt'; av.textContent = (name || '?').slice(0, 1).toUpperCase(); row.appendChild(av);
+      const main = document.createElement('div'); main.className = 'main';
+      const t = document.createElement('div'); t.className = 'title'; t.textContent = name;
+      const info = twLive[name.toLowerCase()];
+      const m = document.createElement('div'); m.className = 'meta'; m.textContent = info ? 'ライブ中・' + info.viewers + '人' : 'オフライン';
+      main.appendChild(t); main.appendChild(m); row.appendChild(main);
+      const acts = document.createElement('div'); acts.className = 'acts';
+      const bOpen = document.createElement('button'); bOpen.className = 'small'; bOpen.textContent = '開く';
+      bOpen.addEventListener('click', () => { document.querySelector('nav.tabs button[data-tab="channels"]').click(); openChannelTw(name); });
+      acts.appendChild(bOpen); row.appendChild(acts); el.appendChild(row);
+    });
+    const h2 = document.createElement('h2'); h2.textContent = 'YouTube'; el.appendChild(h2);
+  }
+  const status = document.createElement('p'); status.className = 'note'; status.textContent = '検索中…'; el.appendChild(status);
   try{
-    const d = await apiGet('/search?q=' + encodeURIComponent(q));
+    const d = await apiGet('/search?q=' + encodeURIComponent(q) + '&o=' + $('selSearchOrder').value + '&d=' + $('selSearchDur').value);
     const items = d.sections.search_results || [];
     const err = d.errors && d.errors.search;
-    el.innerHTML = '';
+    status.remove();
     if (!items.length){
-      el.innerHTML = '<p class="note">' + (err ? '検索できませんでした（' + err + '）。枠の上限か、キーの状態を確認してください。' : '見つかりませんでした。') + '</p>';
+      const p = document.createElement('p'); p.className = 'note';
+      p.textContent = err ? ('検索できませんでした（' + err + '）。枠の上限か、キーの状態を確認してください。') : 'YouTube では見つかりませんでした。';
+      el.appendChild(p);
       return;
     }
     items.forEach((it) => el.appendChild(cardRow(it, { queue: true, later: true })));
   }catch(e){
-    el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。通信の届く場所で開き直してください。</p>';
+    status.textContent = '自宅の基盤に届きませんでした。通信の届く場所で開き直してください。';
   }
 }
 function parseChapters(desc){
