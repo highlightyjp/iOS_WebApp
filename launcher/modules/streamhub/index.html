@@ -220,6 +220,13 @@
     <button id="btnQueuePlay" class="primary">キューの最初から再生</button>
     <button id="btnQueueClear">キューを空にする</button>
   </div>
+  <h2>名前つきリスト</h2>
+  <p class="note">今のキューを名前を付けて残せます。読み込むとキューが置き換わります（「追加」は末尾へ足します）。</p>
+  <div class="controls">
+    <input type="text" id="inpListName" placeholder="リストの名前" />
+    <button id="btnListSave" class="small">今のキューを保存</button>
+  </div>
+  <div id="playlistsBox"></div>
 </section>
 
 <section class="view" id="view-settings">
@@ -300,7 +307,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh13';
+const SH_BUILD = '2026-11-17-sh14';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -327,6 +334,7 @@ function normalizeState(s){
     subs: { youtube: Array.isArray(s.subs && s.subs.youtube) ? s.subs.youtube : [],
             twitch: Array.isArray(s.subs && s.subs.twitch) ? s.subs.twitch : [] },
     queue: Array.isArray(s.queue) ? s.queue : [],
+    playlists: Array.isArray(s.playlists) ? s.playlists : [],
     later: Array.isArray(s.later) ? s.later : [],
     read: (s.read && typeof s.read === 'object') ? s.read : {},
     positions: (s.positions && typeof s.positions === 'object') ? s.positions : {},
@@ -638,6 +646,12 @@ function itemRow(item, opts){
     const bQ = document.createElement('button'); bQ.className = 'small'; bQ.textContent = 'キューへ';
     bQ.addEventListener('click', () => { S.queue.push(item); saveState(); renderQueue(); renderUpNext(); bQ.textContent = '入れた'; });
     acts.appendChild(bQ);
+    const bN = document.createElement('button'); bN.className = 'small'; bN.textContent = '次に再生';
+    bN.addEventListener('click', () => {
+      const at = (queueCursor >= 0 && queueCursor < S.queue.length) ? queueCursor + 1 : 0;
+      S.queue.splice(at, 0, item); saveState(); renderQueue(); renderUpNext(); bN.textContent = '入れた';
+    });
+    acts.appendChild(bN);
   }
   if (opts && opts.later){
     const bL = document.createElement('button'); bL.className = 'small'; bL.textContent = '後で見る';
@@ -1139,9 +1153,13 @@ function renderQueue(){
     const acts = document.createElement('div'); acts.className = 'acts';
     const bPlay = document.createElement('button'); bPlay.className = 'small'; bPlay.textContent = 'ここから再生';
     bPlay.addEventListener('click', () => playQueueAt(idx));
+    const bUp = document.createElement('button'); bUp.className = 'small'; bUp.textContent = '↑'; bUp.disabled = idx === 0;
+    bUp.addEventListener('click', () => moveQueue(idx, idx - 1));
+    const bDown = document.createElement('button'); bDown.className = 'small'; bDown.textContent = '↓'; bDown.disabled = idx === S.queue.length - 1;
+    bDown.addEventListener('click', () => moveQueue(idx, idx + 1));
     const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '外す';
-    bDel.addEventListener('click', () => { S.queue.splice(idx, 1); saveState(); renderQueue(); renderUpNext(); });
-    acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); q.appendChild(row);
+    bDel.addEventListener('click', () => { S.queue.splice(idx, 1); if (queueCursor === idx) queueCursor = -1; else if (queueCursor > idx) queueCursor--; saveState(); renderQueue(); renderUpNext(); });
+    acts.appendChild(bPlay); acts.appendChild(bUp); acts.appendChild(bDown); acts.appendChild(bDel); row.appendChild(acts); q.appendChild(row);
   });
 }
 function renderBackups(){
@@ -1168,7 +1186,40 @@ function renderBackups(){
     row.appendChild(b); el.appendChild(row);
   }
 }
-function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); renderUpNext(); }
+function moveQueue(i, j){
+  if (j < 0 || j >= S.queue.length) return;
+  const tmp = S.queue[i]; S.queue[i] = S.queue[j]; S.queue[j] = tmp;
+  if (queueCursor === i) queueCursor = j; else if (queueCursor === j) queueCursor = i;
+  saveState(); renderQueue(); renderUpNext();
+}
+function renderPlaylists(){
+  const box = $('playlistsBox'); if (!box) return;
+  box.innerHTML = '';
+  if (!S.playlists.length){ box.innerHTML = '<p class="note">保存したリストはまだありません。</p>'; return; }
+  S.playlists.forEach((pl, idx) => {
+    const row = document.createElement('div'); row.className = 'row';
+    const main = document.createElement('div'); main.className = 'main';
+    const t = document.createElement('div'); t.className = 'title'; t.textContent = pl.name || ('リスト ' + (idx + 1));
+    const m = document.createElement('div'); m.className = 'meta'; m.textContent = (pl.items || []).length + ' 件' + (pl.at ? '・' + fmtDate(new Date(pl.at).toISOString()) : '');
+    main.appendChild(t); main.appendChild(m); row.appendChild(main);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const bLoad = document.createElement('button'); bLoad.className = 'small primary'; bLoad.textContent = '読み込む';
+    bLoad.addEventListener('click', () => { S.queue = (pl.items || []).slice(); queueCursor = -1; saveState(); renderQueue(); renderUpNext(); bLoad.textContent = '読み込んだ'; });
+    const bAdd = document.createElement('button'); bAdd.className = 'small'; bAdd.textContent = '追加';
+    bAdd.addEventListener('click', () => { S.queue = S.queue.concat(pl.items || []); saveState(); renderQueue(); renderUpNext(); bAdd.textContent = '追加した'; });
+    const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
+    bDel.addEventListener('click', () => { S.playlists.splice(idx, 1); saveState(); renderPlaylists(); });
+    acts.appendChild(bLoad); acts.appendChild(bAdd); acts.appendChild(bDel); row.appendChild(acts); box.appendChild(row);
+  });
+}
+function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); renderUpNext(); renderPlaylists(); }
+$('btnListSave').addEventListener('click', () => {
+  if (!S.queue.length){ $('inpListName').placeholder = 'キューが空です'; return; }
+  const name = ($('inpListName').value || '').trim() || ('リスト ' + new Date().toLocaleDateString('ja-JP'));
+  S.playlists.push({ name, items: S.queue.slice(), at: Date.now() });
+  $('inpListName').value = '';
+  saveState(); renderPlaylists();
+});
 $('btnChannelBack').addEventListener('click', closeChannel);
 
 /* ---------- 設定まわりの操作 ---------- */
