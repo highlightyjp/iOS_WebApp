@@ -89,6 +89,7 @@
   #btnSearchToggle{ background:none; border:none; color:var(--text); font-size:23px; padding:8px 10px; cursor:pointer; }
   #playerBox .controls{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   #playerBox .controls > *{ flex:none; }
+  #playerBox .controls button{ min-height:42px; padding:10px 16px; font-size:14px; }
   #sheetOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:80; display:flex; align-items:flex-end; }
   #sheet{ background:#212121; width:100%; border-radius:16px 16px 0 0; padding:10px 0 calc(14px + env(safe-area-inset-bottom)); max-height:82vh; overflow-y:auto; }
   #sheet button{ display:block; width:100%; text-align:left; background:none; border:none; color:var(--text); font-size:15px; padding:13px 22px; cursor:pointer; }
@@ -167,9 +168,17 @@
   <div id="playState"></div>
   <div class="controls">
     <button id="btnPlayPause" class="primary" disabled>再生</button>
-    <button id="btnNext" disabled>次へ（キュー）</button>
-    <button id="btnStop" disabled>閉じる</button>
+    <button id="btnNext" disabled>次へ</button>
     <button id="btnMini" disabled>小さく</button>
+    <button id="btnStop" disabled>閉じる</button>
+  </div>
+  <div class="controls">
+    <button id="btnComments" disabled>コメント</button>
+    <button id="btnChapters" disabled>チャプター</button>
+    <button id="btnTranscript" disabled>字幕テキスト</button>
+    <button id="btnPlayerSettings">設定</button>
+  </div>
+  <div class="hidden">
     <select id="selRate" disabled>
       <option value="0.5">0.5倍</option>
       <option value="0.75">0.75倍</option>
@@ -188,9 +197,6 @@
     </select>
     <button id="btnCaptions" disabled>字幕</button>
     <select id="selCapLang" disabled><option value="ja">日本語字幕</option><option value="en">英語字幕</option></select>
-    <button id="btnComments" disabled>コメント</button>
-    <button id="btnChapters" disabled>チャプター</button>
-    <button id="btnTranscript" disabled>字幕テキスト</button>
     <select id="selSleep">
       <option value="0" selected>スリープなし</option>
       <option value="15">15分で止める</option>
@@ -390,7 +396,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-18-sh26';
+const SH_BUILD = '2026-11-18-sh27';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -633,6 +639,7 @@ function playItem(item, keepMode){
   $('btnChapters').disabled = $('btnComments').disabled;
   $('btnTranscript').disabled = $('btnComments').disabled;
   $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
+  ytLevels = []; twLevels = []; qualityPending = false;
   capOn = false; $('btnCaptions').textContent = '字幕';
   setupChat(item);
   $('btnNext').disabled = !(queueCursor >= 0 && queueCursor < S.queue.length - 1) && S.queue.length === 0;
@@ -710,7 +717,7 @@ window.addEventListener('message', (ev) => {
   const d = ev.data;
   if (!d || d.contract !== 'streamhub-player/v1' || !d.event) return;
   const st = $('playState');
-  if (d.event === 'ready'){ st.textContent = '準備ができました'; if (pendingSeek > 0){ playerCmd('seekTo', { sec: pendingSeek }); pendingSeek = 0; } }
+  if (d.event === 'ready'){ st.textContent = '準備ができました'; if (pendingSeek > 0){ playerCmd('seekTo', { sec: pendingSeek }); pendingSeek = 0; } if (currentItem && currentItem.source === 'youtube' && ytQualitySel !== 'default') playerCmd('setQuality', { quality: ytQualitySel }); }
   if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; $('btnPlayPause').textContent = '一時停止'; }
   if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; $('btnPlayPause').textContent = '再生'; if (currentItem && posTrackable(currentItem)) playerCmd('getState'); }
   if (d.event === 'state'){
@@ -718,6 +725,14 @@ window.addEventListener('message', (ev) => {
       if (d.time >= d.duration - 10){ if (S.positions[currentItem.id]){ delete S.positions[currentItem.id]; savePositions(); } }
       else if (d.time > 0){ S.positions[currentItem.id] = { t: Math.floor(d.time), d: Math.floor(d.duration), at: Date.now() }; savePositions(); }
     }
+  }
+  if (d.event === 'qualityLevels'){
+    if (d.provider === 'youtube') ytLevels = d.levels || [];
+    else if (d.provider === 'twitch') twLevels = d.levels || [];
+  }
+  if (d.event === 'quality' && qualityPending){
+    qualityPending = false;
+    toast('画質は ' + ytQualityLabel(d.quality) + ' で再生中です');
   }
   if (d.event === 'online') st.textContent = '配信中です';
   if (d.event === 'offline') st.textContent = 'このチャンネルは今は配信していません';
@@ -865,6 +880,69 @@ function openSheet(item, opts){
   if (item.source === 'twitch' && item.channel_name){
     add('チャンネルを開く', () => { document.querySelector('nav.tabs button[data-tab="channels"]').click(); openChannelTw(item.channel_name); });
   }
+  const cancel = document.createElement('button');
+  cancel.textContent = 'キャンセル';
+  cancel.style.color = 'var(--sub)';
+  cancel.addEventListener('click', closeSheet);
+  sh.appendChild(cancel);
+  $('sheetOverlay').classList.remove('hidden');
+}
+const YT_QUALITY_LABELS = { highres: '2160p以上', hd2160: '2160p', hd1440: '1440p', hd1080: '1080p', hd720: '720p', large: '480p', medium: '360p', small: '240p', tiny: '144p', default: '自動' };
+let ytLevels = [], twLevels = [], ytQualitySel = 'default', qualityPending = false;
+function ytQualityLabel(q){ return YT_QUALITY_LABELS[q] || q || '自動'; }
+function sheetSection(title){
+  const h = document.createElement('div');
+  h.className = 'sheetTitle';
+  h.textContent = title;
+  $('sheet').appendChild(h);
+}
+function sheetChoice(label, on, fn){
+  const b = document.createElement('button');
+  b.textContent = (on ? '\u2713 ' : '\u3000') + label;
+  b.addEventListener('click', () => { closeSheet(); fn(); });
+  $('sheet').appendChild(b);
+}
+function setSelectValue(sel, v){ sel.value = v; sel.dispatchEvent(new Event('change')); }
+function openPlayerSettings(){
+  if (!currentItem) return;
+  const sh = $('sheet');
+  sh.innerHTML = '';
+  const title = document.createElement('div');
+  title.className = 'sheetTitle';
+  title.textContent = '再生の設定';
+  sh.appendChild(title);
+  const src = currentItem.source;
+  if (src === 'twitch'){
+    sheetSection('画質（Twitch）');
+    const cur = S.settings.twQuality || 'auto';
+    const opts = twLevels.length
+      ? twLevels.map((g) => ({ v: g, l: g === 'chunked' ? '最高（ソース）' : g }))
+      : [{ v: 'chunked', l: '最高' }, { v: '720p', l: '720p' }, { v: '480p', l: '480p' }, { v: '360p', l: '360p' }, { v: '160p', l: '160p' }];
+    sheetChoice('自動', cur === 'auto', () => { setSelectValue($('selQuality'), 'auto'); toast('画質は自動です'); });
+    opts.forEach((o) => sheetChoice(o.l, cur === o.v, () => { setSelectValue($('selQuality'), o.v); toast('画質を ' + o.l + ' にしました'); }));
+  }
+  if (src === 'youtube'){
+    sheetSection('画質（YouTube）');
+    sheetChoice('自動', ytQualitySel === 'default', () => { ytQualitySel = 'default'; playerCmd('setQuality', { quality: 'default' }); toast('画質は自動です'); });
+    if (ytLevels.length){
+      ytLevels.filter((q) => q !== 'auto').forEach((q) => sheetChoice(ytQualityLabel(q), ytQualitySel === q, () => { ytQualitySel = q; qualityPending = true; playerCmd('setQuality', { quality: q }); }));
+    } else {
+      const n = document.createElement('div');
+      n.className = 'sheetTitle';
+      n.textContent = '候補は再生が始まると出ます';
+      sh.appendChild(n);
+    }
+  }
+  sheetSection('再生速度');
+  ['0.5', '0.75', '1', '1.25', '1.5', '2'].forEach((v) => sheetChoice(v + '倍', $('selRate').value === v, () => { setSelectValue($('selRate'), v); toast('速度は ' + v + '倍です'); }));
+  if (src === 'youtube'){
+    sheetSection('字幕');
+    sheetChoice('オフ', !capOn, () => { if (capOn) $('btnCaptions').click(); });
+    sheetChoice('日本語', capOn && $('selCapLang').value === 'ja', () => { setSelectValue($('selCapLang'), 'ja'); if (!capOn) $('btnCaptions').click(); });
+    sheetChoice('英語', capOn && $('selCapLang').value === 'en', () => { setSelectValue($('selCapLang'), 'en'); if (!capOn) $('btnCaptions').click(); });
+  }
+  sheetSection('スリープタイマー');
+  [['0', 'なし'], ['15', '15分'], ['30', '30分'], ['45', '45分'], ['60', '60分']].forEach(([v, l]) => sheetChoice(l, $('selSleep').value === v, () => { setSelectValue($('selSleep'), v); toast(v === '0' ? 'スリープは切りました' : v + '分で止まります'); }));
   const cancel = document.createElement('button');
   cancel.textContent = 'キャンセル';
   cancel.style.color = 'var(--sub)';
@@ -1665,6 +1743,7 @@ function wire(){
     if (show) $('searchInput').focus();
   });
   $('sheetOverlay').addEventListener('click', (ev) => { if (ev.target === $('sheetOverlay')) closeSheet(); });
+  $('btnPlayerSettings').addEventListener('click', openPlayerSettings);
   $('btnTranscriptLang').addEventListener('click', () => toggleTranscript(transcriptLang === 'ja' ? 'en' : 'ja'));
   $('btnChatToggle').addEventListener('click', () => {
     const w = $('chatWrap');

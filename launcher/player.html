@@ -17,7 +17,8 @@
   親への通知: window.parent.postMessage({contract:'streamhub-player/v1', event, provider, ...}, '*')
     events: ready / playing / paused / ended / error / online / offline / skipped
   親からの命令: postMessage({contract:'streamhub-player/v1', cmd, ...})
-    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state') / setRate{rate} / captions{on, lang?} / setQuality{quality} (Twitch)
+    cmds: play / pause / seekTo{sec} / load{id} / getState(→ event:'state') / setRate{rate} / captions{on, lang?} / setQuality{quality}
+    events out: qualityLevels{levels} / quality{quality} (actual, after a change)
 -->
 <style>
   html,body{ margin:0; padding:0; background:#000; color:#fff; height:100%;
@@ -124,18 +125,27 @@ window.onYouTubeIframeAPIReady = function(){
         ytReady = true;
         if (videoId){ await loadSponsorBlock(videoId); startSbWatch(); }
         post('ready', { provider:'youtube', videoId });
+        setTimeout(reportYtLevels, 1500);
       },
       onStateChange: (e) => {
         if (e.data === YT.PlayerState.PLAYING) post('playing', { provider:'youtube' });
         if (e.data === YT.PlayerState.PAUSED) post('paused', { provider:'youtube' });
         if (e.data === YT.PlayerState.ENDED) post('ended', { provider:'youtube' });
       },
+      onPlaybackQualityChange: (e) => post('quality', { provider:'youtube', quality: e.data }),
       onError: (e) => post('error', { provider:'youtube', code: e.data })
     }
   };
   if (videoId) playerCfg.videoId = videoId;
   ytPlayer = new YT.Player('ytHolder', playerCfg);
 };
+
+function reportYtLevels(){
+  try{
+    const lv = ytPlayer && ytPlayer.getAvailableQualityLevels ? ytPlayer.getAvailableQualityLevels() : [];
+    if (lv && lv.length) post('qualityLevels', { provider:'youtube', levels: lv });
+  }catch(e){}
+}
 
 /* ---------- Twitch ---------- */
 let twPlayer = null, twReady = false;
@@ -186,7 +196,9 @@ function initTwitch(){
     post('error', { provider:'twitch', message: String(e) });
     return;
   }
-  twPlayer.addEventListener(Twitch.Player.READY, () => { twReady = true; applyTwQuality(); say('診断: READY'); post('ready', { provider:'twitch' }); });
+  twPlayer.addEventListener(Twitch.Player.READY, () => { twReady = true; applyTwQuality(); say('診断: READY'); post('ready', { provider:'twitch' });
+    try{ const qs = twPlayer.getQualities ? twPlayer.getQualities() : []; if (qs && qs.length) post('qualityLevels', { provider:'twitch', levels: qs.map((q) => q.group) }); }catch(e){}
+  });
   twPlayer.addEventListener(Twitch.Player.PLAY, () => post('playing', { provider:'twitch' }));
   twPlayer.addEventListener(Twitch.Player.PAUSE, () => post('paused', { provider:'twitch' }));
   twPlayer.addEventListener(Twitch.Player.ENDED, () => post('ended', { provider:'twitch' }));
@@ -212,6 +224,10 @@ window.addEventListener('message', (ev) => {
       if (d.cmd === 'getState') post('state', { provider:'youtube',
         time: ytPlayer.getCurrentTime(), duration: ytPlayer.getDuration(), state: ytPlayer.getPlayerState() });
       if (d.cmd === 'setRate') ytPlayer.setPlaybackRate(Number(d.rate || 1));
+      if (d.cmd === 'setQuality'){
+        try{ ytPlayer.setPlaybackQualityRange(String(d.quality || 'default')); }catch(e){}
+        setTimeout(() => { try{ post('quality', { provider:'youtube', quality: ytPlayer.getPlaybackQuality() }); }catch(e){} }, 1500);
+      }
       if (d.cmd === 'captions'){
         if (d.on){ ytPlayer.loadModule('captions'); ytPlayer.setOption('captions', 'track', { languageCode: d.lang || 'ja' }); }
         else ytPlayer.unloadModule('captions');
