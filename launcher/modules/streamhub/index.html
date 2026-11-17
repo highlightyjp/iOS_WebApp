@@ -6,8 +6,8 @@
 <title>StreamHub</title>
 <style>
   :root{
-    --bg:#0e1116; --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.12);
-    --text:#e8edf5; --sub:#93a0b4; --accent:#4cc2ff; --danger:#ff8a8a; --ok:#7ee2a8;
+    --bg:#0f0f0f; --card:rgba(255,255,255,.05); --border:rgba(255,255,255,.12);
+    --text:#f1f1f1; --sub:#a8a8a8; --accent:#a970ff; --danger:#ff8a8a; --ok:#7ee2a8;
   }
   *{ box-sizing:border-box; }
   html{ touch-action:manipulation; }
@@ -18,35 +18,40 @@
   h1{ font-size:20px; margin:0; font-weight:800; letter-spacing:.02em; }
   #feedStatus{ color:var(--sub); font-size:12.5px; margin-top:2px; min-height:1.4em; }
   #playerBox{ position:sticky; top:0; z-index:20; background:var(--bg); padding:8px 0 10px; }
-  #playerFrameWrap{ position:relative; width:min(100%, calc((100dvh - 240px) * 16 / 9)); margin:0 auto;
+  #playerFrameWrap{ position:relative; width:calc(100% + 28px); margin:0 -14px;
     aspect-ratio:16/9; background:#000;
-    border-radius:14px; overflow:hidden; border:1px solid var(--border); }
+    overflow:hidden; }
   #playerFrameWrap iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   #playerIdle{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--sub); font-size:14px; padding:0 18px; text-align:center; }
   #nowPlaying{ font-size:14px; font-weight:700; margin-top:8px; overflow-wrap:anywhere; }
   #playState{ color:var(--sub); font-size:12.5px; min-height:1.4em; }
-  .controls{ display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .controls{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; align-items:center; }
+  .controls button, .controls select{ border-radius:999px; background:rgba(255,255,255,.09); border-color:transparent; padding:8px 14px; }
+  .controls button.primary{ background:#f1f1f1; color:#0f0f0f; }
   a.btnlink{ appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text);
     border-radius:10px; padding:9px 14px; font-size:14px; text-decoration:none; display:inline-block; }
   button{ appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text);
     border-radius:10px; padding:8px 13px; font-size:14px; cursor:pointer; }
-  button.primary{ background:var(--accent); border-color:transparent; color:#06283d; font-weight:700; }
+  button.primary{ background:#f1f1f1; border-color:transparent; color:#0f0f0f; font-weight:700; }
   button.small{ padding:5px 10px; font-size:13px; border-radius:8px; }
   button:disabled{ opacity:.45; }
   nav.tabs{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; gap:2px;
-    padding:8px 10px calc(8px + env(safe-area-inset-bottom)); margin:0;
-    background:rgba(14,17,22,.72); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-    border-top:1px solid var(--border); }
-  nav.tabs button{ flex:1; padding:9px 0; font-weight:600; background:transparent; border-color:transparent; color:var(--sub); }
-  nav.tabs button.on{ background:rgba(76,194,255,.16); color:var(--accent); }
+    padding:6px 10px calc(6px + env(safe-area-inset-bottom)); margin:0;
+    background:#0f0f0f;
+    border-top:1px solid rgba(255,255,255,.14); }
+  nav.tabs button{ flex:1; padding:4px 0 2px; font-weight:500; background:transparent; border-color:transparent; color:var(--sub);
+    display:flex; flex-direction:column; align-items:center; gap:1px; font-size:10.5px; border-radius:0; }
+  nav.tabs button .tic{ font-size:19px; line-height:1.1; }
+  nav.tabs button.on{ color:#fff; }
+  nav.tabs button.on .tic{ color:var(--accent); }
   section.view{ display:none; }
   section.view.on{ display:block; }
-  h2{ font-size:16px; margin:18px 0 8px; }
+  h2{ font-size:17px; margin:22px 0 10px; font-weight:700; }
   h2:first-child{ margin-top:2px; }
-  .row{ display:flex; gap:10px; align-items:center; background:var(--card);
-    border:1px solid var(--border); border-radius:12px; padding:9px 10px; margin-bottom:8px; }
-  .row img{ width:104px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; flex:none; background:#000; }
+  .row{ display:flex; gap:12px; align-items:center; background:transparent;
+    border:none; border-radius:0; padding:8px 0; margin-bottom:2px; }
+  .row img{ width:104px; aspect-ratio:16/9; object-fit:cover; border-radius:10px; flex:none; background:#000; }
   .row .main{ flex:1; min-width:0; }
   .row .title{ font-weight:600; font-size:14px; overflow-wrap:anywhere; }
   .row .meta{ color:var(--sub); font-size:12px; overflow-wrap:anywhere; }
@@ -66,8 +71,8 @@
   #chatBox{ margin-top:10px; }
   #chatWrap iframe{ width:100%; height:320px; border:1px solid var(--border); border-radius:12px; background:#000; display:block; }
   #sleepLine{ color:var(--sub); font-size:12.5px; min-height:1.2em; }
-  .card{ margin-bottom:18px; }
-  .card .thumb{ position:relative; border-radius:14px; overflow:hidden; background:#000; border:1px solid var(--border); cursor:pointer; }
+  .card{ margin-bottom:24px; }
+  .card .thumb{ position:relative; overflow:hidden; background:#000; cursor:pointer; margin:0 -14px; }
   .card .thumb img{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
   .card .thumb .ph{ width:100%; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; color:var(--sub); font-size:13px; }
   .card .thumb .pbar{ position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(255,255,255,.28); }
@@ -76,12 +81,23 @@
   .badge{ position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.72); color:#fff; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:6px; }
   .badge.live{ background:#e91916; }
   .badge.viewers{ left:auto; right:8px; }
-  .card .ttl{ font-weight:600; font-size:14.5px; margin-top:8px; cursor:pointer; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
-  .card .meta{ color:var(--sub); font-size:12.5px; margin-top:2px; overflow-wrap:anywhere; }
-  .card .acts{ display:flex; gap:8px; margin-top:6px; }
+  .card .below{ display:flex; gap:12px; margin-top:12px; }
+  .card .below .txt{ flex:1; min-width:0; }
+  .card .avatarTxt{ width:36px; height:36px; font-size:15px; color:#fff; }
+  .card .ttl{ font-weight:600; font-size:15px; line-height:1.4; cursor:pointer; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .card .meta{ color:var(--sub); font-size:12.5px; margin-top:3px; overflow-wrap:anywhere; }
+  .card .acts{ display:flex; gap:8px; margin-top:10px; margin-left:48px; flex-wrap:wrap; }
+  .card .acts button{ border-radius:999px; background:rgba(255,255,255,.09); border-color:transparent; padding:6px 13px; font-size:12.5px; }
+  .card .acts button.primary{ background:#f1f1f1; color:#0f0f0f; font-weight:700; }
   .card.read .ttl{ color:var(--sub); font-weight:400; }
   .avatar{ width:40px; height:40px; border-radius:50%; flex:none; object-fit:cover; background:rgba(255,255,255,.1); }
-  .avatarTxt{ width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:rgba(76,194,255,.18); color:var(--accent); font-weight:800; font-size:17px; }
+  .avatarTxt{ width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:#3a3a3a; color:#fff; font-weight:700; font-size:17px; }
+  .rail{ display:flex; gap:16px; overflow-x:auto; padding:2px 2px 12px; }
+  .rail .rItem{ flex:none; width:64px; text-align:center; cursor:pointer; }
+  .rail .rAv{ width:58px; height:58px; margin:0 auto; border-radius:50%; border:2.5px solid #9146FF; padding:2.5px; }
+  .rail .rAv .in{ width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:20px; }
+  .rail .rName{ font-size:11px; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rail .rView{ font-size:10.5px; color:var(--sub); }
   .livedot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#e91916; margin-right:5px; }
   .chips{ display:flex; gap:8px; margin:2px 0 12px; overflow-x:auto; }
   .chips button{ flex:none; border-radius:999px; padding:6px 14px; font-size:13px; }
@@ -89,8 +105,8 @@
   #upNext{ margin-top:8px; }
   #upNext .cap{ color:var(--sub); font-size:12.5px; margin-bottom:4px; }
   #upNext .strip{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
-  #upNext .chip{ flex:none; max-width:230px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:7px 10px; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
-  #upNext .chip.now{ border-color:var(--accent); color:var(--accent); }
+  #upNext .chip{ flex:none; max-width:230px; background:rgba(255,255,255,.08); border:none; border-radius:999px; padding:7px 12px; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+  #upNext .chip.now{ background:#f1f1f1; color:#0f0f0f; font-weight:700; }
   #miniBar{ display:none; }
   #playerBox.mini{ position:fixed; left:10px; right:10px; bottom:calc(76px + env(safe-area-inset-bottom)); top:auto; z-index:35;
     background:rgba(20,24,32,.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
@@ -166,10 +182,10 @@
 </div>
 
 <nav class="tabs">
-  <button data-tab="home" class="on">ホーム</button>
-  <button data-tab="channels">チャンネル</button>
-  <button data-tab="queue">キュー</button>
-  <button data-tab="settings">設定</button>
+  <button data-tab="home" class="on"><span class="tic">⌂</span><span class="tlabel">ホーム</span></button>
+  <button data-tab="channels"><span class="tic">◎</span><span class="tlabel">チャンネル</span></button>
+  <button data-tab="queue"><span class="tic">☰</span><span class="tlabel">キュー</span></button>
+  <button data-tab="settings"><span class="tic">⚙</span><span class="tlabel">設定</span></button>
 </nav>
 
 <section class="view on" id="view-home">
@@ -207,6 +223,7 @@
   </div>
   <div id="secTwitch">
     <h2>Twitch <span id="twLiveCount"></span></h2>
+    <div id="liveRail" class="rail hidden"></div>
     <div id="homeTwitch"></div>
   </div>
   <div id="secYoutube">
@@ -325,7 +342,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh17';
+const SH_BUILD = '2026-11-17-sh18';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -336,6 +353,12 @@ const LS_BAK = 'streamhub.v1.bak.';
 
 const $ = (id) => document.getElementById(id);
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function hueFor(name){
+  let h = 0;
+  const str = String(name || '?');
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360;
+  return h;
+}
 function fmtDate(iso){ if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 
 /* ---------- 状態 ---------- */
@@ -716,12 +739,20 @@ function cardRow(item, opts){
   }
   th.addEventListener('click', () => { queueCursor = -1; playItem(item); });
   card.appendChild(th);
+  const below = document.createElement('div'); below.className = 'below';
+  const av = document.createElement('div'); av.className = 'avatarTxt';
+  av.textContent = (item.channel || '?').slice(0, 1).toUpperCase();
+  av.style.background = 'hsl(' + hueFor(item.channel || '') + ',42%,40%)';
+  below.appendChild(av);
+  const txt = document.createElement('div'); txt.className = 'txt';
   const t = document.createElement('div'); t.className = 'ttl'; t.textContent = item.title || '';
   t.addEventListener('click', () => { queueCursor = -1; playItem(item); });
-  card.appendChild(t);
+  txt.appendChild(t);
   const m = document.createElement('div'); m.className = 'meta';
   m.textContent = (item.channel || '') + (item.game ? '・' + item.game : '') + (item.started_at ? '・' + fmtDate(item.started_at) : '');
-  card.appendChild(m);
+  txt.appendChild(m);
+  below.appendChild(txt);
+  card.appendChild(below);
   const acts = document.createElement('div'); acts.className = 'acts';
   const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
   bPlay.addEventListener('click', () => { queueCursor = -1; playItem(item); });
@@ -1061,18 +1092,30 @@ function renderHome(){
     return la - lb;
   });
   let liveCount = 0;
+  const rail = $('liveRail'); rail.innerHTML = '';
   for (const name of twSorted){
     const info = twLive[name.toLowerCase()];
     if (info){
       liveCount++;
-      tw.appendChild(cardRow({ source: 'twitch', channel_name: name, channel: name, title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, viewers: info.viewers, game: info.game, live: true, fresh: freshLive.has(name.toLowerCase()), id: null }, { queue: true }));
+      const liveItem = { source: 'twitch', channel_name: name, channel: name, title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, viewers: info.viewers, game: info.game, live: true, fresh: freshLive.has(name.toLowerCase()), id: null };
+      tw.appendChild(cardRow(liveItem, { queue: true }));
+      const ri = document.createElement('div'); ri.className = 'rItem';
+      const rAv = document.createElement('div'); rAv.className = 'rAv';
+      const rIn = document.createElement('div'); rIn.className = 'in'; rIn.textContent = (name || '?').slice(0, 1).toUpperCase();
+      rIn.style.background = 'hsl(' + hueFor(name) + ',42%,40%)';
+      rAv.appendChild(rIn); ri.appendChild(rAv);
+      const rNm = document.createElement('div'); rNm.className = 'rName'; rNm.textContent = name; ri.appendChild(rNm);
+      const rVw = document.createElement('div'); rVw.className = 'rView'; rVw.textContent = info.viewers != null ? info.viewers + '人' : ''; ri.appendChild(rVw);
+      ri.addEventListener('click', () => { queueCursor = -1; playItem(liveItem); });
+      rail.appendChild(ri);
     }else if (homeFilter !== 'live'){
       tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
     }
   }
   const lcEl = $('twLiveCount'); if (lcEl) lcEl.textContent = liveCount ? '（ライブ ' + liveCount + '）' : '';
-  const tabBtn = document.querySelector('nav.tabs button[data-tab="channels"]');
-  if (tabBtn) tabBtn.textContent = liveCount ? ('チャンネル（ライブ' + liveCount + '）') : 'チャンネル';
+  rail.classList.toggle('hidden', !liveCount);
+  const tabLbl = document.querySelector('nav.tabs button[data-tab="channels"] .tlabel');
+  if (tabLbl) tabLbl.textContent = liveCount ? ('ライブ' + liveCount) : 'チャンネル';
   if (homeFilter === 'live' && S.subs.twitch.length && !liveCount){
     tw.innerHTML = '<p class="note">今ライブ中のチャンネルはありません。</p>';
   }
