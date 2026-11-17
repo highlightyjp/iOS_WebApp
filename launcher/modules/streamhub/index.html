@@ -239,6 +239,14 @@
   </div>
 
   <div class="block">
+    <h3>基盤キー</h3>
+    <p class="note">登録チャンネルとフォローの取り込み、それと連携の状態の表示は、あなたの一覧を守るため、自宅基盤のキーが必要です。新着・検索・コメントはキーなしで動きます。キーはこの端末の中にだけ保存されます。</p>
+    <input type="password" id="inApiKey" placeholder="自宅基盤のキー" autocomplete="off" />
+    <div class="controls"><button id="btnSaveApiKey">キーを保存する</button></div>
+    <p class="note" id="apiKeyState"></p>
+  </div>
+
+  <div class="block">
     <h3>URL で開く</h3>
     <p class="note">YouTube（動画・Shorts・ライブ）と Twitch（チャンネル・録画・クリップ）の URL を貼ると、そのまま再生します。</p>
     <input type="text" id="inOpenUrl" placeholder="https://…" />
@@ -269,11 +277,11 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh7';
+const SH_BUILD = '2026-11-17-sh8';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
-const FEED_TOKEN = '_32u_H07v_UGxuaqxEZXD5TxmCe1NtjU';
+const FEED_TOKEN = 'a6ced9317eb1250d203d9acb82b93532';
 const LS_STATE = 'streamhub.v1.state';
 const LS_FEED = 'streamhub.v1.feedcache';
 const LS_BAK = 'streamhub.v1.bak.';
@@ -659,11 +667,21 @@ function renderLater(){
     el.appendChild(row);
   });
 }
+const KEY_PATHS = ['/oauth/status', '/subs', '/follows', '/twitchlive'];
+function storedApiKey(){ try{ return localStorage.getItem('streamhub.v1.apikey') || ''; }catch(e){ return ''; } }
 async function apiGet(path){
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 14000);
   try{
-    const res = await fetch(API_HOME + path + (path.indexOf('?') >= 0 ? '&t=' : '?t=') + encodeURIComponent(FEED_TOKEN), { signal: ctl.signal, cache: 'no-store' });
+    let url;
+    if (KEY_PATHS.some((p) => path === p || path.startsWith(p + '?'))){
+      const k = storedApiKey();
+      if (!k) throw new Error('need-key');
+      url = API_HOME + path + (path.indexOf('?') >= 0 ? '&k=' : '?k=') + encodeURIComponent(k);
+    }else{
+      url = API_HOME + path + (path.indexOf('?') >= 0 ? '&t=' : '?t=') + encodeURIComponent(FEED_TOKEN);
+    }
+    const res = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
     clearTimeout(timer);
     if (!res.ok) throw new Error('http ' + res.status);
     const d = await res.json();
@@ -735,7 +753,7 @@ async function refreshOauthStatus(){
     const st = (d.sections && d.sections.oauth_status) || {};
     el.textContent = 'YouTube：' + (st.google ? '連携済み' : '未連携') + '　／　Twitch：' + (st.twitch ? '連携済み' : '未連携');
   }catch(e){
-    el.textContent = '連携の状態を取れませんでした（自宅の基盤に届いていません）。';
+    el.textContent = (e && e.message === 'need-key') ? '連携の状態は未確認です（基盤キーが未設定のため）。取り込みと状態の表示には、設定の「基盤キー」が必要です。' : '連携の状態を取れませんでした（自宅の基盤に届いていません）。';
   }
 }
 async function importSubs(){
@@ -754,7 +772,7 @@ async function importSubs(){
     saveState(); renderChannels(); renderHome(); fetchFeed();
     refreshOauthStatus();
     setMsg('登録チャンネルを ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.youtube.length + ' 件）。');
-  }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
+  }catch(e){ setMsg((e && e.message === 'need-key') ? '基盤キーが未設定です。設定の「基盤キー」に自宅基盤のキーを入れてから取り込んでください。' : '自宅の基盤に届きませんでした。'); }
 }
 async function importFollows(){
   try{
@@ -772,7 +790,7 @@ async function importFollows(){
     saveState(); renderChannels(); renderHome(); refreshTwitchLive();
     refreshOauthStatus();
     setMsg('フォロー中を ' + items.length + ' 件取り込みました（新規 ' + added + ' 件、合計 ' + S.subs.twitch.length + ' 件）。');
-  }catch(e){ setMsg('自宅の基盤に届きませんでした。'); }
+  }catch(e){ setMsg((e && e.message === 'need-key') ? '基盤キーが未設定です。設定の「基盤キー」に自宅基盤のキーを入れてから取り込んでください。' : '自宅の基盤に届きませんでした。'); }
 }
 let homeFilter = 'all';
 function renderHome(){
@@ -1015,6 +1033,15 @@ function wire(){
   });
   $('lnkGoogle').href = API_HOME + '/oauth/google/start?t=' + encodeURIComponent(FEED_TOKEN);
   $('lnkTwitch').href = API_HOME + '/oauth/twitch/start?t=' + encodeURIComponent(FEED_TOKEN);
+  $('inApiKey').value = storedApiKey();
+  $('apiKeyState').textContent = storedApiKey() ? '基盤キーは保存済みです。' : '基盤キーは未設定です。';
+  $('btnSaveApiKey').addEventListener('click', () => {
+    const v = $('inApiKey').value.trim();
+    try{ if (v) localStorage.setItem('streamhub.v1.apikey', v); else localStorage.removeItem('streamhub.v1.apikey'); }catch(e){}
+    $('apiKeyState').textContent = v ? '基盤キーは保存済みです。' : '基盤キーは未設定です。';
+    setMsg(v ? '基盤キーを保存しました。' : '基盤キーを消しました。');
+    refreshOauthStatus(); refreshTwitchLive();
+  });
   $('btnImportSubs').addEventListener('click', importSubs);
   $('btnImportFollows').addEventListener('click', importFollows);
   $('chkSb').checked = !!S.settings.sb;

@@ -662,7 +662,7 @@ details.x{margin-top:16px;border-top:1px solid var(--gray-420)}
   const jpDate = (s) => { const d = new Date(s + "T00:00:00+09:00"); return new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", month: "long", day: "numeric", weekday: "short" }).format(d); };
   const hhmm = (d = new Date()) => d.toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
   const yen = (n) => "¥" + Number(n).toLocaleString("ja-JP");
-  const DEFAULT_LOC = { key: "home", name: "自宅", address: "東京都板橋区高島平", lat: 35.789, lon: 139.661, jma: { office: "130000", area: "東京地方" } };
+  const DEFAULT_LOC = { key: "home", name: "自宅", address: "東京都板橋区", lat: 35.77, lon: 139.68, jma: { office: "130000", area: "東京地方" } };
 
   const state = {
     db: null, col: null, sample: null, mcp: null, canImages: false,
