@@ -127,6 +127,7 @@
       <option value="2">2倍</option>
     </select>
     <button id="btnCaptions" disabled>字幕</button>
+    <select id="selCapLang" disabled><option value="ja">日本語字幕</option><option value="en">英語字幕</option></select>
     <button id="btnComments" disabled>コメント</button>
     <button id="btnChapters" disabled>チャプター</button>
     <select id="selSleep">
@@ -205,7 +206,7 @@
     <div id="homeLater"></div>
   </div>
   <div id="secTwitch">
-    <h2>Twitch</h2>
+    <h2>Twitch <span id="twLiveCount"></span></h2>
     <div id="homeTwitch"></div>
   </div>
   <div id="secYoutube">
@@ -321,7 +322,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh15';
+const SH_BUILD = '2026-11-17-sh16';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -353,7 +354,7 @@ function normalizeState(s){
     read: (s.read && typeof s.read === 'object') ? s.read : {},
     positions: (s.positions && typeof s.positions === 'object') ? s.positions : {},
     history: Array.isArray(s.history) ? s.history : [],
-    settings: Object.assign({ sb: false, fallback: true, hideRead: false, hideShorts: false }, s.settings || {})
+    settings: Object.assign({ sb: false, fallback: true, hideRead: false, hideShorts: false, capLang: 'ja' }, s.settings || {})
   };
 }
 function saveState(){
@@ -503,7 +504,7 @@ function clearPlayer(){
   const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
   $('nowPlaying').textContent = ''; $('playState').textContent = '';
   $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true; $('btnMini').disabled = true;
-  $('selRate').disabled = true; $('btnCaptions').disabled = true; $('btnComments').disabled = true; $('btnChapters').disabled = true;
+  $('selRate').disabled = true; $('btnCaptions').disabled = true; $('selCapLang').disabled = true; $('btnComments').disabled = true; $('btnChapters').disabled = true;
   $('chatBox').classList.add('hidden'); $('chatWrap').innerHTML = '';
   $('commentsBox').classList.add('hidden'); $('commentsList').innerHTML = '';
   $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
@@ -535,6 +536,8 @@ function playItem(item){
   $('btnPlayPause').disabled = false; $('btnStop').disabled = false; $('btnMini').disabled = false;
   $('selRate').disabled = false;
   $('btnCaptions').disabled = item.source !== 'youtube';
+  $('selCapLang').disabled = item.source !== 'youtube';
+  $('selCapLang').value = S.settings.capLang || 'ja';
   $('btnComments').disabled = !(item.source === 'youtube' && (item.video_id || (item.id && item.id.indexOf('yt:') === 0)));
   $('btnChapters').disabled = $('btnComments').disabled;
   $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
@@ -694,6 +697,7 @@ function cardRow(item, opts){
   }
   if (item.live){
     const b = document.createElement('span'); b.className = 'badge live'; b.textContent = 'ライブ'; th.appendChild(b);
+    if (item.fresh){ const nb = document.createElement('span'); nb.className = 'badge viewers'; nb.textContent = 'NEW'; th.appendChild(nb); }
     if (item.viewers != null){ const v = document.createElement('span'); v.className = 'badge viewers'; v.textContent = item.viewers + '人が視聴中'; th.appendChild(v); }
   } else if (item.kind === 'short'){
     const b = document.createElement('span'); b.className = 'badge'; b.textContent = 'Shorts'; th.appendChild(b);
@@ -934,10 +938,17 @@ async function loadComments(){
   }
 }
 let twLive = {};
+let prevLiveKeys = null;
+let freshLive = new Set();
 async function refreshTwitchLive(){
   try{
     const d = await apiGet('/twitchlive');
     twLive = d.sections.twitch_live || {};
+    const keys = new Set(Object.keys(twLive));
+    if (prevLiveKeys){
+      freshLive = new Set([...keys].filter((k) => !prevLiveKeys.has(k)));
+    }
+    prevLiveKeys = keys;
     renderHome();
   }catch(e){}
 }
@@ -1035,11 +1046,14 @@ function renderHome(){
     const info = twLive[name.toLowerCase()];
     if (info){
       liveCount++;
-      tw.appendChild(cardRow({ source: 'twitch', channel_name: name, channel: name, title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, viewers: info.viewers, game: info.game, live: true, id: null }, { queue: true }));
+      tw.appendChild(cardRow({ source: 'twitch', channel_name: name, channel: name, title: info.title || name, started_at: info.started_at, thumbnail: info.thumbnail, viewers: info.viewers, game: info.game, live: true, fresh: freshLive.has(name.toLowerCase()), id: null }, { queue: true }));
     }else if (homeFilter !== 'live'){
       tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
     }
   }
+  const lcEl = $('twLiveCount'); if (lcEl) lcEl.textContent = liveCount ? '（ライブ ' + liveCount + '）' : '';
+  const tabBtn = document.querySelector('nav.tabs button[data-tab="channels"]');
+  if (tabBtn) tabBtn.textContent = liveCount ? ('チャンネル（ライブ' + liveCount + '）') : 'チャンネル';
   if (homeFilter === 'live' && S.subs.twitch.length && !liveCount){
     tw.innerHTML = '<p class="note">今ライブ中のチャンネルはありません。</p>';
   }
@@ -1287,8 +1301,12 @@ function wire(){
   $('selRate').addEventListener('change', () => playerCmd('setRate', { rate: Number($('selRate').value) }));
   $('btnCaptions').addEventListener('click', () => {
     capOn = !capOn;
-    playerCmd('captions', { on: capOn, lang: 'ja' });
+    playerCmd('captions', { on: capOn, lang: $('selCapLang').value || 'ja' });
     $('btnCaptions').textContent = capOn ? '字幕（入）' : '字幕';
+  });
+  $('selCapLang').addEventListener('change', () => {
+    S.settings.capLang = $('selCapLang').value; saveState();
+    if (capOn) playerCmd('captions', { on: true, lang: S.settings.capLang });
   });
   $('selSleep').addEventListener('change', () => setSleep(Number($('selSleep').value)));
   $('btnSearch').addEventListener('click', doSearch);
