@@ -370,7 +370,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh23';
+const SH_BUILD = '2026-11-17-sh24';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -1046,7 +1046,7 @@ function renderTranscript(cues){
     list.appendChild(nd);
     if (transcriptLang === 'ja' && currentItem && currentItem.video_id){
       const vid = currentItem.video_id;
-      const b = document.createElement('button'); b.textContent = '音声から文字起こしを作る';
+      const b = document.createElement('button'); b.textContent = '音声から文字起こしを作る（日本語の音声向け）';
       b.style.marginTop = '8px';
       b.addEventListener('click', () => { b.disabled = true; checkAsr(vid, true); });
       list.appendChild(b);
