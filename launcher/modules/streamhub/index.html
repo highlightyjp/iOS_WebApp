@@ -97,7 +97,7 @@
     border:1px solid var(--border); border-radius:14px; padding:8px; display:flex; gap:10px; align-items:center; }
   #playerBox.mini #playerFrameWrap{ width:104px; flex:none; margin:0; border-radius:8px; }
   #playerBox.mini #nowPlaying{ margin:0; flex:1; font-size:13px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  #playerBox.mini #playState, #playerBox.mini .controls, #playerBox.mini #sleepLine, #playerBox.mini #chatBox, #playerBox.mini #commentsBox, #playerBox.mini #upNext{ display:none !important; }
+  #playerBox.mini #playState, #playerBox.mini .controls, #playerBox.mini #sleepLine, #playerBox.mini #chatBox, #playerBox.mini #commentsBox, #playerBox.mini #chaptersBox, #playerBox.mini #upNext{ display:none !important; }
   #playerBox.mini #miniBar{ display:flex; gap:6px; flex:none; }
 </style>
 </head>
@@ -128,6 +128,7 @@
     </select>
     <button id="btnCaptions" disabled>字幕</button>
     <button id="btnComments" disabled>コメント</button>
+    <button id="btnChapters" disabled>チャプター</button>
     <select id="selSleep">
       <option value="0" selected>スリープなし</option>
       <option value="15">15分で止める</option>
@@ -150,6 +151,13 @@
       <button id="btnCommentsClose" class="small">閉じる</button>
     </div>
     <div id="commentsList"></div>
+  </div>
+  <div id="chaptersBox" class="hidden">
+    <div class="controls">
+      <span style="font-weight:700">チャプター</span>
+      <button id="btnChaptersClose" class="small">閉じる</button>
+    </div>
+    <div id="chaptersList"></div>
   </div>
   <div id="miniBar"><button id="btnExpand" class="small">大きく戻す</button><button id="btnMiniClose" class="small">閉じる</button></div>
   <div id="upNext" class="hidden"><div class="cap">次はこちら（キュー）</div><div class="strip" id="upNextStrip"></div></div>
@@ -286,7 +294,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh10';
+const SH_BUILD = '2026-11-17-sh11';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -467,9 +475,10 @@ function clearPlayer(){
   const idle = $('playerIdle'); if (idle) idle.style.display = 'flex';
   $('nowPlaying').textContent = ''; $('playState').textContent = '';
   $('btnPlayPause').disabled = true; $('btnNext').disabled = true; $('btnStop').disabled = true; $('btnMini').disabled = true;
-  $('selRate').disabled = true; $('btnCaptions').disabled = true; $('btnComments').disabled = true;
+  $('selRate').disabled = true; $('btnCaptions').disabled = true; $('btnComments').disabled = true; $('btnChapters').disabled = true;
   $('chatBox').classList.add('hidden'); $('chatWrap').innerHTML = '';
   $('commentsBox').classList.add('hidden'); $('commentsList').innerHTML = '';
+  $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
   $('playerBox').classList.remove('mini');
   renderUpNext();
 }
@@ -499,6 +508,8 @@ function playItem(item){
   $('selRate').disabled = false;
   $('btnCaptions').disabled = item.source !== 'youtube';
   $('btnComments').disabled = !(item.source === 'youtube' && (item.video_id || (item.id && item.id.indexOf('yt:') === 0)));
+  $('btnChapters').disabled = $('btnComments').disabled;
+  $('chaptersBox').classList.add('hidden'); $('chaptersList').innerHTML = '';
   capOn = false; $('btnCaptions').textContent = '字幕';
   setupChat(item);
   $('btnNext').disabled = !(queueCursor >= 0 && queueCursor < S.queue.length - 1) && S.queue.length === 0;
@@ -758,6 +769,52 @@ async function doSearch(){
     items.forEach((it) => el.appendChild(cardRow(it, { queue: true, later: true })));
   }catch(e){
     el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。通信の届く場所で開き直してください。</p>';
+  }
+}
+function parseChapters(desc){
+  const out = [];
+  String(desc || '').split(/\r?\n/).forEach((line) => {
+    const m = line.match(/^\s*(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)\s+(.+)$/);
+    if (!m) return;
+    const sec = (m[1] ? parseInt(m[1], 10) * 3600 : 0) + parseInt(m[2], 10) * 60 + parseInt(m[3], 10);
+    const title = m[4].replace(/^[-\u2013\u2014:\uFF1A]\s*/, '').trim();
+    if (!title) return;
+    if (out.length && sec <= out[out.length - 1].sec) return;
+    out.push({ sec, title });
+  });
+  return out.length >= 2 ? out : [];
+}
+async function loadChapters(){
+  const box = $('chaptersBox'), el = $('chaptersList');
+  box.classList.remove('hidden');
+  const vid = currentItem && (currentItem.video_id || (currentItem.id && currentItem.id.startsWith('yt:') ? currentItem.id.slice(3) : ''));
+  if (!vid){ el.innerHTML = '<p class="note">この動画ではチャプターを読めません。</p>'; return; }
+  el.innerHTML = '<p class="note">チャプターを取りに行っています…</p>';
+  try{
+    const d = await apiGet('/video?v=' + encodeURIComponent(vid));
+    const video = (d.sections && d.sections.video) || null;
+    const err = d.errors && d.errors.video;
+    el.innerHTML = '';
+    if (!video){
+      el.innerHTML = '<p class="note">' + (err ? '動画の情報を取れませんでした（' + err + '）。' : '動画の情報を取れませんでした。') + '</p>';
+      return;
+    }
+    const chapters = parseChapters(video.description);
+    if (!chapters.length){
+      el.innerHTML = '<p class="note">この動画にはチャプターがありません。</p>';
+      return;
+    }
+    chapters.forEach((c) => {
+      const row = document.createElement('div'); row.className = 'row';
+      const chip = document.createElement('button'); chip.className = 'small primary'; chip.textContent = fmtClock(c.sec);
+      chip.addEventListener('click', () => { playerCmd('seekTo', { sec: c.sec }); });
+      const main = document.createElement('div'); main.className = 'main';
+      const t = document.createElement('div'); t.className = 'title'; t.textContent = c.title;
+      main.appendChild(t);
+      row.appendChild(chip); row.appendChild(main); el.appendChild(row);
+    });
+  }catch(e){
+    el.innerHTML = '<p class="note">自宅の基盤に届きませんでした。</p>';
   }
 }
 async function loadComments(){
@@ -1053,6 +1110,11 @@ function wire(){
     else $('commentsBox').classList.add('hidden');
   });
   $('btnCommentsClose').addEventListener('click', () => $('commentsBox').classList.add('hidden'));
+  $('btnChapters').addEventListener('click', () => {
+    if ($('chaptersBox').classList.contains('hidden')) loadChapters();
+    else $('chaptersBox').classList.add('hidden');
+  });
+  $('btnChaptersClose').addEventListener('click', () => $('chaptersBox').classList.add('hidden'));
   $('btnChatToggle').addEventListener('click', () => {
     const w = $('chatWrap');
     const hide = w.style.display !== 'none';
