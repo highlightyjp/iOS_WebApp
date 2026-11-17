@@ -51,7 +51,7 @@
 </head>
 <body>
 <h1>QRブリッジ</h1>
-<div class="ver"><span style="white-space:nowrap">版 2.8</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
+<div class="ver"><span style="white-space:nowrap">版 2.9</span> ・ <span style="white-space:nowrap">1枚で送れる量：ふつう 約2,900バイト</span>／<span style="white-space:nowrap">色コード 約16,000バイト</span></div>
 <details class="spec"><summary>仕様の詳細</summary>モデル版 6 ・ 誤り訂正レベル L ・ 上限：通常 2,953バイト／色コード 大 16,003バイト・互換 11,701バイト・最大 21,022バイト（条件つき）</details>
 <div class="tabs">
   <button id="tabSend" class="active">送る</button>
@@ -69,6 +69,7 @@
     <button class="sub" id="btnTplSave">今の入力を定型文に保存</button>
   </div>
   <label style="display:block;margin:8px 0"><input type="checkbox" id="chkC5"> 色コード（C5）で送る ─ 受け側は写真から読み取ります</label>
+  <label style="display:block;margin:8px 0"><input type="checkbox" id="chkMux"> 色コードの流れを多重表示（2×2）にする ─ 大きい荷物向け</label>
   <div class="row"><span>色コードの大きさ</span><select id="c5Grid"><option value="168">大：約16,000バイト</option><option value="144">互換：約11,700バイト</option><option value="192">最大：約21,000バイト（条件つき）</option></select></div>
   <div style="font-size:12px;color:#5a6472;margin:2px 0 6px">「最大」は近距離で明るく、大きく写せる時だけにしてください。それ以外は「大」が確実です</div>
   <button class="big" id="btnMake">QRを作る</button>
@@ -15302,8 +15303,40 @@ function qbCarStop() {
   var w = $("qrwrap");
   if (w) { w.style.border = ""; w.style.outline = ""; }
 }
+function qbMuxScreen(qcl, screenIdx) {
+  /* 2x2 多重：4フレームを 864px ずつ敷き詰めた 1728px の RGB 画像を返す */
+  var CELL = 864, W = CELL * 2;
+  var img = new Uint8Array(W * W * 3).fill(245);
+  for (var q = 0; q < 4; q++) {
+    var fr = qcl.frameAt(screenIdx * 4 + q);
+    var b = QB_C5.buildC5(fr.payload);
+    var r = QB_C5.renderC5(b.grid, 6);
+    var gx = (q % 2) * CELL, gy = Math.floor(q / 2) * CELL;
+    for (var y = 0; y < CELL; y++) for (var x = 0; x < CELL; x++) {
+      var so = (y * CELL + x) * 3, o = ((gy + y) * W + (gx + x)) * 3;
+      img[o] = r.img[so]; img[o + 1] = r.img[so + 1]; img[o + 2] = r.img[so + 2];
+    }
+  }
+  return { img: img, W: W };
+}
 function qbCarShow() {
   if (!QB_CAR) return;
+  if (QB_CAR.qcl && QB_CAR.mux) {
+    var ms = qbMuxScreen(QB_CAR.qcl, QB_CAR.i);
+    var cvm = document.createElement("canvas");
+    cvm.width = ms.W; cvm.height = ms.W;
+    cvm.style.width = "100%"; cvm.style.maxWidth = "560px"; cvm.style.imageRendering = "pixelated";
+    var cxm = cvm.getContext("2d");
+    var idm = cxm.createImageData(ms.W, ms.W);
+    for (var pm = 0; pm < ms.W * ms.W; pm++) { idm.data[pm * 4] = ms.img[pm * 3]; idm.data[pm * 4 + 1] = ms.img[pm * 3 + 1]; idm.data[pm * 4 + 2] = ms.img[pm * 3 + 2]; idm.data[pm * 4 + 3] = 255; }
+    cxm.putImageData(idm, 0, 0);
+    var wm = $("qrwrap");
+    wm.innerHTML = ""; wm.appendChild(cvm);
+    wm.style.border = QB_CAR.i % 2 ? "14px solid #ffffff" : "14px solid #000000";
+    wm.style.outline = "2px solid #999999";
+    $("carLabel").textContent = "色コードの流れ（多重） " + (QB_CAR.i + 1) + " 画面目（復元の目安は約 " + QB_CAR.qcl.K + " 枚＋同期）" + (QB_CAR.timer ? " 自動で切り替わります" : " 停止中");
+    return;
+  }
   if (QB_CAR.qcl) {
     var fq = QB_CAR.qcl.frameAt(QB_CAR.i);
     var bq = QB_C5.buildC5(fq.payload);
@@ -15354,12 +15387,13 @@ $("btnMake").onclick = function () {
     var C5X = QB_C5.makeC5(gridSel);
     if (frame.length > C5X.PAYLOAD_CAP) {
       var qcl = QB_QCL.makeLiveSender(frame, { holdMs: 500 });
-      QB_CAR = { qcl: qcl, i: 0, timer: null, holdMs: qcl.holdMs };
+      var useMux = !!($("chkMux") && $("chkMux").checked);
+      QB_CAR = { qcl: qcl, i: 0, timer: null, holdMs: qcl.holdMs, mux: useMux };
       $("carCtl").classList.remove("hidden");
       $("btnCarPause").textContent = "一時停止";
       QB_CAR.timer = setInterval(function () { QB_CAR.i++; qbCarShow(); }, QB_CAR.holdMs);
       qbCarShow();
-      st.innerHTML = "<span class='ok'>作成しました（色コードの流れ）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（色コード1枚の上限を超えたため、流れ表示にしました）\n色コードが切り替わります。受け側は受取画面のカメラで読み続けてください。画面の明るさを最大にしてください";
+      st.innerHTML = "<span class='ok'>作成しました（色コードの流れ）</span>\n文字数 " + chars + " / 符号化後 " + frame.length + " バイト（色コード1枚の上限を超えたため、流れ表示にしました）\n色コードが切り替わります。受け側は受取画面のカメラで読み続けてください。画面の明るさを最大にしてください" + (useMux ? "\n多重表示（2×2）です。画面いっぱいに大きく映してください" : "");
       qbHistAdd("send", "色コードの流れ QCL", frame.length, true, text); qbResendSet(text);
       return;
     }
@@ -15562,9 +15596,30 @@ function qbTryQCL(pl, st) {
   st.innerHTML = "<span class='ok'>色コードの流れを受信中</span>\n復元の進み具合 " + s2.count + " / " + s2.K + " 枚" + (s2.hasSync ? "" : "（同期待ち）") + "。そのまま読み続けてください";
   return "progress";
 }
+function qbTryC5Quadrants(idata, w, h, st) {
+  /* 2x2 多重の受け：象限ごとに切り出して 1152 へ寄せてから復号する（正規化なしでは落ちる） */
+  if (w !== h) return false;
+  var CELL = Math.floor(w / 2), W2 = 1152, best = false;
+  for (var q = 0; q < 4; q++) {
+    var gx = (q % 2) * CELL, gy = Math.floor(q / 2) * CELL;
+    var quad = new Uint8ClampedArray(W2 * W2 * 4);
+    for (var y = 0; y < W2; y++) for (var x = 0; x < W2; x++) {
+      var sx = gx + Math.floor(x * CELL / W2), sy = gy + Math.floor(y * CELL / W2);
+      var so = (sy * w + sx) * 4, o = (y * W2 + x) * 4;
+      quad[o] = idata[so]; quad[o + 1] = idata[so + 1]; quad[o + 2] = idata[so + 2]; quad[o + 3] = 255;
+    }
+    var r = false;
+    try { var anyQ = QB_C5.decodeC5Any(quad, W2, W2); var qq = qbTryQCL(anyQ.payload, st); r = qq ? qq : (handleBytes(anyQ.payload, st), "done"); } catch (eq) {}
+    if (r === "done") return "done";
+    if (r === "progress") best = "progress";
+  }
+  return best;
+}
 function qbTryC5Image(idata, w, h, st) {
   try { var anyR = QB_C5.decodeC5Any(idata, w, h); var q = qbTryQCL(anyR.payload, st); if (q) return q; handleBytes(anyR.payload, st); return "done"; } catch (ea) {}
   try { var pl5l = QB_C5L.decodeC5(idata, w, h); handleBytes(pl5l, st); return "done"; } catch (el) {}
+  var quadR = qbTryC5Quadrants(idata, w, h, st);
+  if (quadR) return quadR;
   return false;
 }
 
@@ -15647,7 +15702,7 @@ $("btnScanTest").onclick = function () {
 var QB_REPORT = { items: {}, at: null };
 function renderReport() {
   var st = $("testStatus");
-  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
   var lines = [];
   var pass = 0, judged = 0;
   order.forEach(function (k) {
@@ -15656,7 +15711,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.8 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 2.9 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -15917,6 +15972,21 @@ $("btnTest").onclick = function () {
     var textOk16 = !!out16 && out16.length === fr16.length && qbCrc32(out16) === qbCrc32(fr16);
     QB_REPORT.items[16] = { label: "色コードの流れ（QCL）の往復", result: (ok16 && textOk16) ? "合格" : "不合格", detail: fr16.length + "バイト／K=" + snd16.K + "、投入 " + used16 + " 枚で照合まで一致" };
   } catch (e) { QB_REPORT.items[16] = { label: "色コードの流れ（QCL）の往復", result: "不合格", detail: e.message }; }
+  try {
+    var src17 = "";
+    for (var i17 = 0; i17 < 1500; i17++) src17 += "多重表示の確認。文書番号" + i17 + "、金額" + (i17 * 53 % 10000) + "円。";
+    var fr17 = qbPack(src17, QB_SEED, QB_DICT);
+    var snd17 = QB_QCL.makeLiveSender(fr17, { holdMs: 500 });
+    qbQclReset();
+    var scr17 = qbMuxScreen(snd17, 0);
+    var rgba17 = new Uint8ClampedArray(scr17.W * scr17.W * 4);
+    for (var p17 = 0; p17 < scr17.W * scr17.W; p17++) { rgba17[p17 * 4] = scr17.img[p17 * 3]; rgba17[p17 * 4 + 1] = scr17.img[p17 * 3 + 1]; rgba17[p17 * 4 + 2] = scr17.img[p17 * 3 + 2]; rgba17[p17 * 4 + 3] = 255; }
+    var before17 = $("outText").value;
+    var r17 = qbTryC5Quadrants(rgba17, scr17.W, scr17.W, $("recvStatus"));
+    var ok17 = r17 === "done" && $("outText").value === src17;
+    if (!ok17) { $("outText").value = before17; qbQclReset(); }
+    QB_REPORT.items[17] = { label: "多重表示（2×2）の往復", result: ok17 ? "合格" : "不合格", detail: fr17.length + "バイト／K=" + snd17.K + "、1画面で復元" };
+  } catch (e) { QB_REPORT.items[17] = { label: "多重表示（2×2）の往復", result: "不合格", detail: e.message }; }
   if (!QB_REPORT.items[5]) QB_REPORT.items[5] = { label: "テストQRの実読み取り", result: "取得できない", detail: "実読み取り待ち。「テストQRを読み取る」から実施" };
   renderReport();
 };
