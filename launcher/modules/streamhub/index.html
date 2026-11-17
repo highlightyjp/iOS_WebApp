@@ -188,6 +188,19 @@
   h2{ font-size:18px; }
   #view-home h2{ font-size:19px; font-weight:700; }
   .row img{ border-radius:8px; }
+  /* sh29: watch page after the real app's layout. */
+  #nowPlaying{ font-size:16.5px; font-weight:600; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+  #nowPlaying.expanded{ -webkit-line-clamp:unset; }
+  #watchMeta{ color:var(--sub); font-size:13px; margin-top:4px; overflow-wrap:anywhere; }
+  #playState{ font-size:12px; margin-top:2px; }
+  #playerBox .controls{ justify-content:space-between; padding:4px 2px 0; gap:0; }
+  #playerBox .controls button{ background:none; width:54px; height:46px; min-height:46px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:10px; }
+  #playerBox .controls button:disabled{ opacity:.35; }
+  #playerBox .controls button svg{ width:25px; height:25px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  #playerBox .controls button svg .f{ fill:currentColor; stroke:none; }
+  #watchPanels{ margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+  #watchPanels button{ background:#1f1f1f; border-radius:12px; padding:13px 14px; text-align:left; font-size:14.5px; font-weight:500; width:100%; display:flex; justify-content:space-between; align-items:center; }
+  #watchPanels button::after{ content:'\203A'; color:var(--sub); font-size:19px; line-height:1; }
   .row{ padding:10px 0; }
   .row .acts{ flex-direction:row; flex-wrap:wrap; justify-content:flex-end; max-width:48%; }
   .rowdots{ flex:none; background:none; border:none; color:var(--text); font-size:19px; line-height:1; padding:8px 4px; cursor:pointer; }
@@ -207,18 +220,19 @@
     <div id="playerIdle">一覧から選ぶと、ここで再生します</div>
   </div>
   <div id="nowPlaying"></div>
+  <div id="watchMeta"></div>
   <div id="playState"></div>
   <div class="controls">
-    <button id="btnPlayPause" class="primary" disabled>再生</button>
-    <button id="btnNext" disabled>次へ</button>
-    <button id="btnMini" disabled>小さく</button>
-    <button id="btnStop" disabled>閉じる</button>
+    <button id="btnPlayPause" disabled aria-label="再生・一時停止"><svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg></button>
+    <button id="btnNext" disabled aria-label="次へ"><svg viewBox="0 0 24 24"><path class="f" d="M6 5.5v13l8.5-6.5z"/><rect class="f" x="16" y="5" width="2.6" height="14" rx="1"/></svg></button>
+    <button id="btnMini" disabled aria-label="小さく"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><rect class="f" x="12.5" y="12" width="6" height="4.5" rx="1"/></svg></button>
+    <button id="btnPlayerSettings" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12.2 2.2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.1.2a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.1.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.1-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.1-.2a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7v-.2a2 2 0 0 0-2-2z"/></svg></button>
+    <button id="btnStop" disabled aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-  <div class="controls">
+  <div id="watchPanels">
     <button id="btnComments" disabled>コメント</button>
     <button id="btnChapters" disabled>チャプター</button>
     <button id="btnTranscript" disabled>字幕テキスト</button>
-    <button id="btnPlayerSettings">設定</button>
   </div>
   <div class="hidden">
     <select id="selRate" disabled>
@@ -438,7 +452,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-18-sh28';
+const SH_BUILD = '2026-11-18-sh29';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -669,6 +683,19 @@ function playItem(item, keepMode){
   }
   setPlayerSrc(url);
   $('nowPlaying').textContent = (item.title || '') + (savedResume(item) ? '（続きから）' : '');
+  $('nowPlaying').classList.remove('expanded');
+  setPpIcon(false);
+  { const mp = [];
+    if (item.channel) mp.push(item.channel);
+    else if (item.channel_name) mp.push(item.channel_name);
+    if (item.source === 'twitch' && item.channel_name){
+      const li = twLive[item.channel_name.toLowerCase()];
+      if (li) mp.push(li.viewers + '人が視聴中');
+      if (li && li.game) mp.push(li.game);
+    }
+    if (item.started_at) mp.push(fmtDate(item.started_at));
+    $('watchMeta').textContent = mp.join('・');
+  }
   $('playState').textContent = '読み込み中…';
   $('btnPlayPause').disabled = false; $('btnStop').disabled = false; $('btnMini').disabled = false;
   $('selRate').disabled = false;
@@ -760,8 +787,8 @@ window.addEventListener('message', (ev) => {
   if (!d || d.contract !== 'streamhub-player/v1' || !d.event) return;
   const st = $('playState');
   if (d.event === 'ready'){ st.textContent = '準備ができました'; if (pendingSeek > 0){ playerCmd('seekTo', { sec: pendingSeek }); pendingSeek = 0; } if (currentItem && currentItem.source === 'youtube' && ytQualitySel !== 'default') playerCmd('setQuality', { quality: ytQualitySel }); }
-  if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; $('btnPlayPause').textContent = '一時停止'; }
-  if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; $('btnPlayPause').textContent = '再生'; if (currentItem && posTrackable(currentItem)) playerCmd('getState'); }
+  if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; setPpIcon(true); }
+  if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; setPpIcon(false); if (currentItem && posTrackable(currentItem)) playerCmd('getState'); }
   if (d.event === 'state'){
     if (currentItem && posTrackable(currentItem) && typeof d.time === 'number' && typeof d.duration === 'number' && d.duration > 0){
       if (d.time >= d.duration - 10){ if (S.positions[currentItem.id]){ delete S.positions[currentItem.id]; savePositions(); } }
@@ -780,7 +807,7 @@ window.addEventListener('message', (ev) => {
   if (d.event === 'offline') st.textContent = 'このチャンネルは今は配信していません';
   if (d.event === 'error') st.textContent = '再生できませんでした' + (d.code ? '（コード ' + esc(d.code) + '）' : '');
   if (d.event === 'ended'){
-    isPlaying = false; $('btnPlayPause').textContent = '再生';
+    isPlaying = false; setPpIcon(false);
     if (currentItem && currentItem.id && S.positions[currentItem.id]){ delete S.positions[currentItem.id]; savePositions(); }
     if (queueCursor >= 0 && queueCursor < S.queue.length - 1){
       st.textContent = '終わりました。次へ進みます';
@@ -860,6 +887,9 @@ function toast(msg){
   clearTimeout(t._tm);
   t._tm = setTimeout(() => t.classList.add('hidden'), 2200);
 }
+const SVG_PP_PLAY = '<svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg>';
+const SVG_PP_PAUSE = '<svg viewBox="0 0 24 24"><rect class="f" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="f" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg>';
+function setPpIcon(playing){ const b = $('btnPlayPause'); if (b) b.innerHTML = playing ? SVG_PP_PAUSE : SVG_PP_PLAY; }
 function closeSheet(){ $('sheetOverlay').classList.add('hidden'); $('sheet').innerHTML = ''; }
 function openSheet(item, opts){
   opts = opts || {};
@@ -1326,6 +1356,7 @@ async function loadComments(){
       el.innerHTML = '<p class="note">' + (err ? 'コメントを取れませんでした（' + err + '）。' : 'コメントがありません。') + '</p>';
       return;
     }
+    $('btnComments').textContent = 'コメント（' + list.length + '）';
     list.forEach((c) => {
       const wrap = document.createElement('div');
       const row = document.createElement('div'); row.className = 'row';
@@ -1762,6 +1793,7 @@ function wire(){
     });
   });
   $('btnPlayPause').addEventListener('click', () => playerCmd(isPlaying ? 'pause' : 'play'));
+  $('nowPlaying').addEventListener('click', () => $('nowPlaying').classList.toggle('expanded'));
   $('selRate').addEventListener('change', () => playerCmd('setRate', { rate: Number($('selRate').value) }));
   $('btnCaptions').addEventListener('click', () => {
     capOn = !capOn;
