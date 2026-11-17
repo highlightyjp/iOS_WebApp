@@ -204,6 +204,11 @@
   <div id="chYoutube"></div>
   <h2>Twitch</h2>
   <div id="chTwitch"></div>
+  <div id="channelDetail" class="hidden">
+    <div class="controls"><button id="btnChannelBack" class="small">← チャンネル一覧へ</button></div>
+    <div id="channelDetailHead"></div>
+    <div id="channelDetailList"></div>
+  </div>
 </section>
 
 <section class="view" id="view-queue">
@@ -294,7 +299,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh11';
+const SH_BUILD = '2026-11-17-sh12';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -996,13 +1001,15 @@ function renderChannels(){
     const m = document.createElement('div'); m.className = 'meta'; m.textContent = c.id;
     main.appendChild(t); main.appendChild(m); row.appendChild(main);
     const acts = document.createElement('div'); acts.className = 'acts';
+    const bOpen = document.createElement('button'); bOpen.className = 'small'; bOpen.textContent = '開く';
+    bOpen.addEventListener('click', () => openChannelYt(c));
     const bList = document.createElement('button'); bList.className = 'small primary'; bList.textContent = '投稿を再生';
     bList.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'youtube', kind: 'uploads', list: 'UU' + c.id.slice(2), title: channelNameYt(c.id) + ' の投稿', channel: channelNameYt(c.id), id: null }); });
     const bMute = document.createElement('button'); bMute.className = 'small'; bMute.textContent = c.muted ? 'ミュート中' : 'ミュート';
     bMute.addEventListener('click', () => { c.muted = !c.muted; saveState(); renderChannels(); renderHome(); });
     const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
     bDel.addEventListener('click', () => { S.subs.youtube = S.subs.youtube.filter((x) => x.id !== c.id); saveState(); renderChannels(); renderHome(); });
-    acts.appendChild(bList); acts.appendChild(bMute); acts.appendChild(bDel); row.appendChild(acts); cy.appendChild(row);
+    acts.appendChild(bOpen); acts.appendChild(bList); acts.appendChild(bMute); acts.appendChild(bDel); row.appendChild(acts); cy.appendChild(row);
   }
   const ct = $('chTwitch'); ct.innerHTML = '';
   if (!S.subs.twitch.length) ct.innerHTML = '<p class="note">未登録です。</p>';
@@ -1020,11 +1027,72 @@ function renderChannels(){
     } else m.textContent = 'オフライン';
     main.appendChild(m); row.appendChild(main);
     const acts = document.createElement('div'); acts.className = 'acts';
+    const bOpenT = document.createElement('button'); bOpenT.className = 'small'; bOpenT.textContent = '開く';
+    bOpenT.addEventListener('click', () => openChannelTw(name));
     const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
     bPlay.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); });
     const bDel = document.createElement('button'); bDel.className = 'small'; bDel.textContent = '削除';
     bDel.addEventListener('click', () => { S.subs.twitch = S.subs.twitch.filter((x) => x !== name); saveState(); renderChannels(); renderHome(); });
-    acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); ct.appendChild(row);
+    acts.appendChild(bOpenT); acts.appendChild(bPlay); acts.appendChild(bDel); row.appendChild(acts); ct.appendChild(row);
+  }
+}
+function channelDetailShow(show){
+  $('channelDetail').classList.toggle('hidden', !show);
+  document.querySelectorAll('#view-channels > h2, #view-channels > #chYoutube, #view-channels > #chTwitch').forEach((el) => { el.style.display = show ? 'none' : ''; });
+}
+function closeChannel(){ channelDetailShow(false); }
+async function openChannelYt(c){
+  channelDetailShow(true);
+  const head = $('channelDetailHead'), list = $('channelDetailList');
+  head.innerHTML = ''; list.innerHTML = '<p class="note">読み込んでいます…</p>';
+  const row = document.createElement('div'); row.className = 'row';
+  if (c.img){ const av = document.createElement('img'); av.className = 'avatar'; av.src = c.img; av.alt = ''; row.appendChild(av); }
+  else { const av = document.createElement('div'); av.className = 'avatarTxt'; av.textContent = (channelNameYt(c.id) || '?').slice(0, 1); row.appendChild(av); }
+  const main = document.createElement('div'); main.className = 'main';
+  const t = document.createElement('div'); t.className = 'title'; t.textContent = channelNameYt(c.id);
+  const m = document.createElement('div'); m.className = 'meta'; m.textContent = 'YouTube・' + c.id;
+  main.appendChild(t); main.appendChild(m); row.appendChild(main);
+  const acts = document.createElement('div'); acts.className = 'acts';
+  const bList = document.createElement('button'); bList.className = 'small primary'; bList.textContent = '投稿を再生';
+  bList.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'youtube', kind: 'uploads', list: 'UU' + c.id.slice(2), title: channelNameYt(c.id) + ' の投稿', channel: channelNameYt(c.id), id: null }); });
+  const bMute = document.createElement('button'); bMute.className = 'small'; bMute.textContent = c.muted ? 'ミュート中' : 'ミュート';
+  bMute.addEventListener('click', () => { c.muted = !c.muted; saveState(); bMute.textContent = c.muted ? 'ミュート中' : 'ミュート'; renderHome(); });
+  acts.appendChild(bList); acts.appendChild(bMute); row.appendChild(acts); head.appendChild(row);
+  let items = feedItems.filter((it) => it.channel_id === c.id);
+  if (!items.length){
+    try{
+      const url = FEED_HOME + '?t=' + encodeURIComponent(FEED_TOKEN) + '&c=' + encodeURIComponent(c.id);
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok){ const d = await res.json(); items = (d.sections && d.sections.youtube_videos) || []; }
+    }catch(e){}
+  }
+  list.innerHTML = '';
+  if (!items.length){ list.innerHTML = '<p class="note">最近の動画がありません。</p>'; return; }
+  const h = document.createElement('h2'); h.textContent = '最近の動画'; list.appendChild(h);
+  items.forEach((it) => list.appendChild(cardRow(it, { queue: true, later: true })));
+}
+function openChannelTw(name){
+  channelDetailShow(true);
+  const head = $('channelDetailHead'), list = $('channelDetailList');
+  head.innerHTML = ''; list.innerHTML = '';
+  const info = twLive[name.toLowerCase()];
+  const row = document.createElement('div'); row.className = 'row';
+  const av = document.createElement('div'); av.className = 'avatarTxt'; av.textContent = (name || '?').slice(0, 1).toUpperCase(); row.appendChild(av);
+  const main = document.createElement('div'); main.className = 'main';
+  const t = document.createElement('div'); t.className = 'title'; t.textContent = name;
+  const m = document.createElement('div'); m.className = 'meta';
+  if (info){ const d = document.createElement('span'); d.className = 'livedot'; m.appendChild(d); m.appendChild(document.createTextNode('Twitch・ライブ中・' + info.viewers + '人')); }
+  else m.textContent = 'Twitch・オフライン';
+  main.appendChild(t); main.appendChild(m); row.appendChild(main);
+  const acts = document.createElement('div'); acts.className = 'acts';
+  const bPlay = document.createElement('button'); bPlay.className = 'small primary'; bPlay.textContent = '再生';
+  bPlay.addEventListener('click', () => { queueCursor = -1; playItem({ source: 'twitch', channel_name: name, title: name, id: null }); });
+  acts.appendChild(bPlay); row.appendChild(acts); head.appendChild(row);
+  if (info){
+    const h = document.createElement('h2'); h.textContent = '配信中'; list.appendChild(h);
+    list.appendChild(cardRow({ source: 'twitch', channel_name: name, title: info.title || (name + ' のライブ'), game: info.game || '', viewers: info.viewers, live: true, id: null }, { queue: true, later: false }));
+  } else {
+    list.innerHTML = '<p class="note">いまはオフラインです。過去の配信（アーカイブ）は、開発者アプリの登録が終わるとここに出ます。</p>';
   }
 }
 function renderQueue(){
@@ -1069,6 +1137,7 @@ function renderBackups(){
   }
 }
 function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); renderUpNext(); }
+$('btnChannelBack').addEventListener('click', closeChannel);
 
 /* ---------- 設定まわりの操作 ---------- */
 let setMsgEl = null;
