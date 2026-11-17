@@ -240,10 +240,16 @@
 
   <div class="block">
     <h3>基盤キー</h3>
-    <p class="note">登録チャンネルとフォローの取り込み、それと連携の状態の表示は、あなたの一覧を守るため、自宅基盤のキーが必要です。新着・検索・コメントはキーなしで動きます。キーはこの端末の中にだけ保存されます。</p>
+    <p class="note">登録チャンネルとフォローの取り込み、それと連携の状態の表示は、あなたの一覧を守るため、自宅基盤のキーが必要です。新着・検索・コメントはキーなしで動きます。</p>
+    <p class="note" id="apiKeyState"></p>
+    <div class="controls"><button id="btnPairStart">連携コードを出す</button></div>
+    <p class="note">コードはアイリスから届きます（有効は5分）。届いたら下に入れて「連携する」を押してください。</p>
+    <input type="text" id="inPairCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6桁のコード" />
+    <div class="controls"><button id="btnPairExchange" class="primary">連携する</button></div>
+    <p class="note" id="pairState"></p>
+    <p class="note">キーを直接入れる場合（予備）：</p>
     <input type="password" id="inApiKey" placeholder="自宅基盤のキー" autocomplete="off" />
     <div class="controls"><button id="btnSaveApiKey">キーを保存する</button></div>
-    <p class="note" id="apiKeyState"></p>
   </div>
 
   <div class="block">
@@ -277,7 +283,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh8';
+const SH_BUILD = '2026-11-17-sh9';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -756,6 +762,36 @@ async function refreshOauthStatus(){
     el.textContent = (e && e.message === 'need-key') ? '連携の状態は未確認です（基盤キーが未設定のため）。取り込みと状態の表示には、設定の「基盤キー」が必要です。' : '連携の状態を取れませんでした（自宅の基盤に届いていません）。';
   }
 }
+async function pairStart(){
+  $('pairState').textContent = 'コードを出しています…';
+  try{
+    const d = await apiGet('/pair/start');
+    if (d.errors && d.errors.pairing) throw new Error(d.errors.pairing);
+    $('pairState').textContent = 'コードを出しました。アイリスから届く6桁のコードを入れてください（有効は5分です）。';
+  }catch(e){ $('pairState').textContent = 'コードを出せませんでした。自宅の基盤に届いていません。'; }
+}
+async function pairExchange(){
+  const code = $('inPairCode').value.trim();
+  if (!/^\d{6}$/.test(code)){ $('pairState').textContent = '6桁の数字を入れてください。'; return; }
+  $('pairState').textContent = '連携しています…';
+  try{
+    const d = await apiGet('/pair/exchange?code=' + encodeURIComponent(code));
+    const err = d.errors && d.errors.pairing;
+    if (err){
+      const msgs = { 'bad-code': 'コードが違いました。', 'expired': 'コードの有効期限が切れました。もう一度コードを出してください。', 'no-pending': '出ているコードがありません。先に「連携コードを出す」を押してください。', 'too-many-tries': '試行が多すぎたため、このコードは無効になりました。もう一度コードを出してください。' };
+      $('pairState').textContent = msgs[err] || ('連携できませんでした（' + err + '）。');
+      return;
+    }
+    const key = d.sections && d.sections.pairing && d.sections.pairing.device_key;
+    if (!key){ $('pairState').textContent = '連携できませんでした。'; return; }
+    try{ localStorage.setItem('streamhub.v1.apikey', key); }catch(e){}
+    $('inApiKey').value = key;
+    $('apiKeyState').textContent = '基盤キーは保存済みです。';
+    $('pairState').textContent = '連携しました。取り込みと状態の表示が使えます。';
+    $('inPairCode').value = '';
+    refreshOauthStatus(); refreshTwitchLive();
+  }catch(e){ $('pairState').textContent = '自宅の基盤に届きませんでした。'; }
+}
 async function importSubs(){
   try{
     const d = await apiGet('/subs');
@@ -1042,6 +1078,8 @@ function wire(){
     setMsg(v ? '基盤キーを保存しました。' : '基盤キーを消しました。');
     refreshOauthStatus(); refreshTwitchLive();
   });
+  $('btnPairStart').addEventListener('click', pairStart);
+  $('btnPairExchange').addEventListener('click', pairExchange);
   $('btnImportSubs').addEventListener('click', importSubs);
   $('btnImportFollows').addEventListener('click', importFollows);
   $('chkSb').checked = !!S.settings.sb;
