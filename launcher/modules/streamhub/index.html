@@ -24,7 +24,7 @@
   #playerFrameWrap iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   #playerIdle{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--sub); font-size:14px; padding:0 18px; text-align:center; }
-  #nowPlaying{ font-size:14px; font-weight:700; margin-top:8px; overflow-wrap:anywhere; }
+  #nowPlaying{ font-size:16.5px; font-weight:700; margin-top:10px; line-height:1.45; overflow-wrap:anywhere; }
   #playState{ color:var(--sub); font-size:12.5px; min-height:1.4em; }
   .controls{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; align-items:center; }
   .controls button, .controls select{ border-radius:999px; background:rgba(255,255,255,.09); border-color:transparent; padding:8px 14px; }
@@ -36,10 +36,10 @@
   button.primary{ background:#f1f1f1; border-color:transparent; color:#0f0f0f; font-weight:700; }
   button.small{ padding:5px 10px; font-size:13px; border-radius:8px; }
   button:disabled{ opacity:.45; }
-  nav.tabs{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; gap:2px;
-    padding:6px 10px calc(6px + env(safe-area-inset-bottom)); margin:0;
-    background:#0f0f0f;
-    border-top:1px solid rgba(255,255,255,.14); }
+  nav.tabs{ position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:40; display:flex; gap:2px;
+    padding:6px 8px; margin:0;
+    background:rgba(26,26,26,.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.16); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.55); }
   nav.tabs button{ flex:1; padding:4px 0 2px; font-weight:500; background:transparent; border-color:transparent; color:var(--sub);
     display:flex; flex-direction:column; align-items:center; gap:1px; font-size:10.5px; border-radius:0; }
   nav.tabs button .tic{ font-size:19px; line-height:1.1; }
@@ -61,13 +61,14 @@
   .warn{ color:#ffd479; font-size:13px; }
   input[type=text], input[type=search], textarea{ width:100%; background:rgba(255,255,255,.05); color:var(--text);
     border:1px solid var(--border); border-radius:10px; padding:10px; font-size:14px; }
+  input[type=search]{ border-radius:999px; padding:10px 16px; }
   textarea{ min-height:76px; }
   label.chk{ display:flex; gap:8px; align-items:flex-start; margin:10px 0; font-size:14px; }
   .block{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px; }
   .block h3{ margin:0 0 8px; font-size:15px; }
   .hidden{ display:none !important; }
   select{ appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text);
-    border-radius:10px; padding:8px 10px; font-size:14px; }
+    border-radius:999px; padding:8px 13px; font-size:14px; }
   #chatBox{ margin-top:10px; }
   #chatWrap iframe{ width:100%; height:320px; border:1px solid var(--border); border-radius:12px; background:#000; display:block; }
   #sleepLine{ color:var(--sub); font-size:12.5px; min-height:1.2em; }
@@ -106,8 +107,9 @@
   .twacts button{ border-radius:999px; background:rgba(255,255,255,.09); border-color:transparent; padding:4px 11px; font-size:12px; }
   #homeChips{ gap:26px; border-bottom:1px solid rgba(255,255,255,.12); padding:0 2px; margin-bottom:16px; }
   #homeChips button{ background:transparent; border:none; border-radius:0; padding:8px 2px; font-size:15.5px; color:var(--sub); font-weight:500; }
-  #homeChips button.on{ background:transparent; color:#fff; font-weight:700; box-shadow:inset 0 -2.5px 0 #fff; }
+  #homeChips button.on{ background:transparent; color:#fff; font-weight:700; box-shadow:inset 0 -2.5px 0 var(--accent); }
   #view-home h2{ font-size:21px; font-weight:800; }
+  #twLiveCount:not(:empty){ background:#e91916; color:#fff; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px; vertical-align:3px; }
   .livedot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#e91916; margin-right:5px; }
   .chips{ display:flex; gap:8px; margin:2px 0 12px; overflow-x:auto; }
   .chips button{ flex:none; border-radius:999px; padding:6px 14px; font-size:13px; }
@@ -118,7 +120,7 @@
   #upNext .chip{ flex:none; max-width:230px; background:rgba(255,255,255,.08); border:none; border-radius:999px; padding:7px 12px; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
   #upNext .chip.now{ background:#f1f1f1; color:#0f0f0f; font-weight:700; }
   #miniBar{ display:none; }
-  #playerBox.mini{ position:fixed; left:10px; right:10px; bottom:calc(76px + env(safe-area-inset-bottom)); top:auto; z-index:35;
+  #playerBox.mini{ position:fixed; left:10px; right:10px; bottom:calc(88px + env(safe-area-inset-bottom)); top:auto; z-index:35;
     background:rgba(20,24,32,.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
     border:1px solid var(--border); border-radius:14px; padding:8px; display:flex; gap:10px; align-items:center; }
   #playerBox.mini #playerFrameWrap{ width:104px; flex:none; margin:0; border-radius:8px; }
@@ -368,7 +370,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh22';
+const SH_BUILD = '2026-11-17-sh23';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -1272,7 +1274,7 @@ function renderHome(){
       tw.appendChild(itemRow({ source: 'twitch', channel_name: name, channel: name, title: name, id: null }, { queue: true }));
     }
   }
-  const lcEl = $('twLiveCount'); if (lcEl) lcEl.textContent = liveCount ? '（ライブ ' + liveCount + '）' : '';
+  const lcEl = $('twLiveCount'); if (lcEl) lcEl.textContent = liveCount ? 'ライブ ' + liveCount : '';
   const tabLbl = document.querySelector('nav.tabs button[data-tab="channels"] .tlabel');
   if (tabLbl) tabLbl.textContent = liveCount ? ('ライブ' + liveCount) : 'チャンネル';
   if (homeFilter === 'live' && S.subs.twitch.length && !liveCount){
