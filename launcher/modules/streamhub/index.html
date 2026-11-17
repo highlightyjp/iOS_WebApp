@@ -242,6 +242,9 @@
     <button id="btnListSave" class="small">今のキューを保存</button>
   </div>
   <div id="playlistsBox"></div>
+  <h2>保存したもの</h2>
+  <p class="note" id="libraryUsage">自宅に保存した動画です。</p>
+  <div id="libraryBox"></div>
 </section>
 
 <section class="view" id="view-settings">
@@ -322,7 +325,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh16';
+const SH_BUILD = '2026-11-17-sh17';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -516,7 +519,9 @@ function playItem(item){
   pendingSeek = 0;
   $('playerBox').classList.remove('mini');
   let url = '';
-  if (item.source === 'youtube' && item.kind === 'uploads'){
+  if (item.source === 'library'){
+    url = API_HOME + '/file/' + encodeURIComponent(item.file || '') + '?t=' + encodeURIComponent(FEED_TOKEN);
+  } else if (item.source === 'youtube' && item.kind === 'uploads'){
     url = PLAYER + '?type=youtube&list=' + encodeURIComponent(item.list) + '&autoplay=1';
   } else if (item.source === 'youtube'){
     const resumeAt = savedResume(item);
@@ -738,6 +743,20 @@ function cardRow(item, opts){
     });
     acts.appendChild(bL);
   }
+  const saveVid = item.video_id || (item.id && item.id.startsWith('yt:') ? item.id.slice(3) : '');
+  if (item.source === 'youtube' && saveVid && item.kind !== 'uploads'){
+    const bS = document.createElement('button'); bS.className = 'small'; bS.textContent = '保存';
+    bS.addEventListener('click', async () => {
+      bS.disabled = true; bS.textContent = '頼んでいます…';
+      try{
+        const d = await apiGet('/save?v=' + encodeURIComponent(saveVid) + '&title=' + encodeURIComponent(item.title || '') + '&ch=' + encodeURIComponent(item.channel || ''));
+        const st = (d.sections && d.sections.save && d.sections.save.state) || '';
+        bS.textContent = st === 'already' ? '保存済み' : st === 'full' ? '容量いっぱい' : st === 'error' ? '失敗' : '保存中…';
+        renderLibrary();
+      }catch(e){ bS.textContent = '届かなかった'; }
+    });
+    acts.appendChild(bS);
+  }
   card.appendChild(acts);
   return card;
 }
@@ -767,7 +786,7 @@ function renderLater(){
     el.appendChild(row);
   });
 }
-const KEY_PATHS = ['/oauth/status', '/subs', '/follows', '/twitchlive'];
+const KEY_PATHS = ['/oauth/status', '/subs', '/follows', '/twitchlive', '/save', '/libdel'];
 function storedApiKey(){ try{ return localStorage.getItem('streamhub.v1.apikey') || ''; }catch(e){ return ''; } }
 async function apiGet(path){
   const ctl = new AbortController();
@@ -1262,7 +1281,38 @@ function renderPlaylists(){
     acts.appendChild(bLoad); acts.appendChild(bAdd); acts.appendChild(bDel); row.appendChild(acts); box.appendChild(row);
   });
 }
-function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); renderUpNext(); renderPlaylists(); }
+async function renderLibrary(){
+  const box = $('libraryBox'); if (!box) return;
+  try{
+    const d = await apiGet('/library');
+    const lib = (d.sections && d.sections.library) || { items: [] };
+    const usage = $('libraryUsage');
+    if (usage) usage.textContent = '自宅に保存した動画です。使用量 ' + Math.round((lib.used || 0) / 1e6) + ' MB ／ ' + Math.round((lib.cap || 0) / 1e9) + ' GB。';
+    box.innerHTML = '';
+    const items = lib.items || [];
+    if (!items.length){ box.innerHTML = '<p class="note">まだ保存したものはありません。動画の「保存」から頼めます。</p>'; return; }
+    items.forEach((it) => {
+      const row = document.createElement('div'); row.className = 'row';
+      const main = document.createElement('div'); main.className = 'main';
+      const t = document.createElement('div'); t.className = 'title'; t.textContent = it.title || it.id || '';
+      const m = document.createElement('div'); m.className = 'meta';
+      m.textContent = it.state === 'downloading' ? '保存中…' : it.state === 'error' ? '保存に失敗しました' : ((it.channel || '') + (it.size ? '・' + Math.round(it.size / 1e6) + ' MB' : '') + (it.saved_at ? '・' + fmtDate(it.saved_at) : ''));
+      main.appendChild(t); main.appendChild(m); row.appendChild(main);
+      const acts = document.createElement('div'); acts.className = 'acts';
+      if (it.state === 'saved'){
+        const bP = document.createElement('button'); bP.className = 'small primary'; bP.textContent = '再生';
+        bP.addEventListener('click', () => { document.querySelector('nav.tabs button[data-tab="home"]').click(); queueCursor = -1; playItem({ source: 'library', file: it.file, title: it.title, id: it.id }); });
+        const bD = document.createElement('button'); bD.className = 'small'; bD.textContent = '削除';
+        bD.addEventListener('click', async () => { bD.disabled = true; try{ await apiGet('/libdel?v=' + encodeURIComponent(it.id)); }catch(e){} renderLibrary(); });
+        acts.appendChild(bP); acts.appendChild(bD);
+      }
+      row.appendChild(acts); box.appendChild(row);
+    });
+  }catch(e){
+    box.innerHTML = '<p class="note">保存したものを確認できませんでした（自宅の基盤に届いていません）。</p>';
+  }
+}
+function renderAll(){ renderHome(); renderChannels(); renderQueue(); renderBackups(); renderLater(); renderUpNext(); renderPlaylists(); renderLibrary(); }
 $('btnListSave').addEventListener('click', () => {
   if (!S.queue.length){ $('inpListName').placeholder = 'キューが空です'; return; }
   const name = ($('inpListName').value || '').trim() || ('リスト ' + new Date().toLocaleDateString('ja-JP'));
