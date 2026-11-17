@@ -70,6 +70,9 @@
   .card .thumb{ position:relative; border-radius:14px; overflow:hidden; background:#000; border:1px solid var(--border); cursor:pointer; }
   .card .thumb img{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
   .card .thumb .ph{ width:100%; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; color:var(--sub); font-size:13px; }
+  .card .thumb .pbar{ position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(255,255,255,.28); }
+  .card .thumb .pbar i{ display:block; height:100%; background:#e5484d; }
+  .card .thumb .badge.resume{ left:auto; right:8px; background:rgba(16,18,24,.88); color:#fff; }
   .badge{ position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.72); color:#fff; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:6px; }
   .badge.live{ background:#e91916; }
   .badge.viewers{ left:auto; right:8px; }
@@ -283,7 +286,7 @@
 
 <script>
 'use strict';
-const SH_BUILD = '2026-11-17-sh9';
+const SH_BUILD = '2026-11-17-sh10';
 const PLAYER = 'https://highlightyjp.github.io/iOS_WebApp/launcher/player.html';
 const FEED_HOME = 'https://laptop-5n65vljc.tail7a1cbb.ts.net:10000/v1/streamhub/feed';
 const API_HOME = FEED_HOME.replace(/\/feed$/, '');
@@ -312,6 +315,7 @@ function normalizeState(s){
     queue: Array.isArray(s.queue) ? s.queue : [],
     later: Array.isArray(s.later) ? s.later : [],
     read: (s.read && typeof s.read === 'object') ? s.read : {},
+    positions: (s.positions && typeof s.positions === 'object') ? s.positions : {},
     history: Array.isArray(s.history) ? s.history : [],
     settings: Object.assign({ sb: false, fallback: true, hideRead: false, hideShorts: false }, s.settings || {})
   };
@@ -417,6 +421,30 @@ async function fetchViaRelay(ids){
   all.sort((a, b) => String(b.started_at || '').localeCompare(String(a.started_at || '')));
   return all;
 }
+/* ---------- 再生位置（記憶と再開） ---------- */
+function posTrackable(item){
+  if (!item || !item.id) return false;
+  if (item.source === 'youtube') return !!item.video_id;
+  if (item.source === 'twitch') return !!item.video_id;
+  return false;
+}
+function fmtClock(sec){
+  sec = Math.max(0, Math.floor(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), ss = sec % 60;
+  return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+}
+function savedResume(item){
+  if (!posTrackable(item)) return 0;
+  const p = S.positions[item.id];
+  if (p && p.t > 10 && p.d && p.t < p.d - 15) return Math.floor(p.t);
+  return 0;
+}
+function savePositions(){
+  try{ localStorage.setItem(LS_STATE, JSON.stringify(S)); }catch(e){}
+}
+let pendingSeek = 0;
+setInterval(() => { if (currentItem && isPlaying && posTrackable(currentItem)) playerCmd('getState'); }, 5000);
+
 /* ---------- プレイヤー ---------- */
 let playerFrame = null;
 let currentItem = null;
@@ -447,22 +475,25 @@ function clearPlayer(){
 }
 function playItem(item){
   currentItem = item;
+  pendingSeek = 0;
   $('playerBox').classList.remove('mini');
   let url = '';
   if (item.source === 'youtube' && item.kind === 'uploads'){
     url = PLAYER + '?type=youtube&list=' + encodeURIComponent(item.list) + '&autoplay=1';
   } else if (item.source === 'youtube'){
-    url = PLAYER + '?type=youtube&id=' + encodeURIComponent(item.video_id) + '&autoplay=1' + (S.settings.sb ? '&sb=1' : '');
+    const resumeAt = savedResume(item);
+    url = PLAYER + '?type=youtube&id=' + encodeURIComponent(item.video_id) + '&autoplay=1' + (S.settings.sb ? '&sb=1' : '') + (resumeAt ? '&start=' + resumeAt : '');
   } else if (item.source === 'twitch' && item.clip){
     url = PLAYER + '?type=twitch&clip=' + encodeURIComponent(item.clip);
   } else if (item.source === 'twitch' && item.video_id){
     url = PLAYER + '?type=twitch&video=' + encodeURIComponent(item.video_id);
+    pendingSeek = savedResume(item);
   } else if (item.source === 'twitch'){
     url = PLAYER + '?type=twitch&channel=' + encodeURIComponent(item.channel_name || item.channel || '');
   }
   if (!url) return;
   setPlayerSrc(url);
-  $('nowPlaying').textContent = item.title || '';
+  $('nowPlaying').textContent = (item.title || '') + (savedResume(item) ? '（続きから）' : '');
   $('playState').textContent = '読み込み中…';
   $('btnPlayPause').disabled = false; $('btnStop').disabled = false; $('btnMini').disabled = false;
   $('selRate').disabled = false;
@@ -545,14 +576,21 @@ window.addEventListener('message', (ev) => {
   const d = ev.data;
   if (!d || d.contract !== 'streamhub-player/v1' || !d.event) return;
   const st = $('playState');
-  if (d.event === 'ready') st.textContent = '準備ができました';
+  if (d.event === 'ready'){ st.textContent = '準備ができました'; if (pendingSeek > 0){ playerCmd('seekTo', { sec: pendingSeek }); pendingSeek = 0; } }
   if (d.event === 'playing'){ st.textContent = '再生中'; isPlaying = true; $('btnPlayPause').textContent = '一時停止'; }
-  if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; $('btnPlayPause').textContent = '再生'; }
+  if (d.event === 'paused'){ st.textContent = '一時停止中'; isPlaying = false; $('btnPlayPause').textContent = '再生'; if (currentItem && posTrackable(currentItem)) playerCmd('getState'); }
+  if (d.event === 'state'){
+    if (currentItem && posTrackable(currentItem) && typeof d.time === 'number' && typeof d.duration === 'number' && d.duration > 0){
+      if (d.time >= d.duration - 10){ if (S.positions[currentItem.id]){ delete S.positions[currentItem.id]; savePositions(); } }
+      else if (d.time > 0){ S.positions[currentItem.id] = { t: Math.floor(d.time), d: Math.floor(d.duration), at: Date.now() }; savePositions(); }
+    }
+  }
   if (d.event === 'online') st.textContent = '配信中です';
   if (d.event === 'offline') st.textContent = 'このチャンネルは今は配信していません';
   if (d.event === 'error') st.textContent = '再生できませんでした' + (d.code ? '（コード ' + esc(d.code) + '）' : '');
   if (d.event === 'ended'){
     isPlaying = false; $('btnPlayPause').textContent = '再生';
+    if (currentItem && currentItem.id && S.positions[currentItem.id]){ delete S.positions[currentItem.id]; savePositions(); }
     if (queueCursor >= 0 && queueCursor < S.queue.length - 1){
       st.textContent = '終わりました。次へ進みます';
       playQueueAt(queueCursor + 1);
@@ -614,6 +652,13 @@ function cardRow(item, opts){
     if (item.viewers != null){ const v = document.createElement('span'); v.className = 'badge viewers'; v.textContent = item.viewers + '人が視聴中'; th.appendChild(v); }
   } else if (item.kind === 'short'){
     const b = document.createElement('span'); b.className = 'badge'; b.textContent = 'Shorts'; th.appendChild(b);
+  }
+  const posP = (item.id && S.positions[item.id]) ? S.positions[item.id] : null;
+  if (posP && posP.d > 0 && posP.t > 10 && posP.t < posP.d - 15){
+    const rb = document.createElement('span'); rb.className = 'badge resume'; rb.textContent = '続き ' + fmtClock(posP.t); th.appendChild(rb);
+    const bar = document.createElement('div'); bar.className = 'pbar';
+    const fill = document.createElement('i'); fill.style.width = Math.min(100, Math.round(posP.t / posP.d * 100)) + '%';
+    bar.appendChild(fill); th.appendChild(bar);
   }
   th.addEventListener('click', () => { queueCursor = -1; playItem(item); });
   card.appendChild(th);
