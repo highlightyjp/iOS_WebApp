@@ -165,6 +165,16 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
     <div id="homeRails"></div>
     <div id="shelf"></div>
     <div id="moreArea"></div>
+    <div class="card" id="offlineCard">
+      <div class="title" style="font-size:15px">オフライン保存</div>
+      <div class="small" id="offlineStatus" style="margin-top:6px">状態を確認中…</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="mini" id="offlineSaveBtn">全件保存する</button>
+        <button class="mini gray" id="offlineDelBtn">保存を消す</button>
+      </div>
+      <div class="small" id="offlineProg" style="margin-top:8px"></div>
+      <div class="note" style="margin-top:6px">ネットが無い時でも本棚と本文が読めるように、索引・本文・AA画像をこの端末の中に保存する。保存には通信と端末の空き容量が要る（索引・本文・AA画像で約61MB）。読んだ作品は自動で保存される。</div>
+    </div>
     <div class="note" id="buildNote"></div>
   </main>
 </div>
@@ -211,7 +221,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 </div>
 <script>
 'use strict';
-var SS_BUILD = '2026-11-16-ss19';
+var SS_BUILD = '2026-11-21-ss21';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -523,11 +533,11 @@ function renderShelf(reset){
   renderHome();
 }
 function loadIndex(){
-  fetch('data/index.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(idx){
+  fetchJson('data/index.json').then(function(idx){
     INDEX = idx;
     $('freshMeta').textContent = '回収済み ' + Number(idx.pages_done || 0).toLocaleString() + ' / 全 ' + Number(idx.pages_total || 0).toLocaleString() + ' ページ・' + idx.stories.length + ' 物語（データ生成 ' + String(idx.generated_at || '').replace('T', ' ') + '）';
     $('sortSel').value = settings.sort || 'recommend';
-    renderStates(); renderTags(); renderShelf();
+    renderStates(); renderTags(); renderShelf(); ssRenderStatus();
   }).catch(function(){
     $('freshMeta').textContent = '索引データ（data/index.json）が読めなかった。';
   });
@@ -786,7 +796,7 @@ function openStory(id, resume){
   var story = INDEX.stories.filter(function(s){ return s.id === id; })[0];
   if(!story) return;
   shelfScrollY = window.scrollY || 0; /* 戻った時に同じ場所へ復帰する（Baymardの指摘する離脱要因の対策） */
-  fetch('data/texts/' + encodeURIComponent(id) + '.json?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(doc){
+  fetchJson('data/texts/' + encodeURIComponent(id) + '.json').then(function(doc){
     (doc.parts || []).forEach(function(pt, i){ pt._idx = i; });
     cur = { story: story, seq: buildSequence(story, doc.parts || []), aa: doc.aa || [] };
     $('shelfView').style.display = 'none';
@@ -905,6 +915,140 @@ $('lhMinus').addEventListener('click', function(){
   settings.lineHeight = Math.max(1.5, Math.round((settings.lineHeight - 0.1) * 10) / 10); saveObj('ss.settings.v1', settings); applyTextStyle();
 });
 $('partsBtn').addEventListener('click', openPartSheet);
+
+/* ============ オフライン保存（ss21） ============
+   sw.js の DATA_CACHE と cache 名を揃える。ページ側でも保持と読み戻しを持ち、
+   Service Worker が使えない環境でも「ページが開けた時」は保存分で読める形にする */
+var SS_DATA_CACHE = 'ss-data-' + SS_BUILD;
+var ssSwState = ('serviceWorker' in navigator) ? '登録中' : '使えない環境';
+function ssKey(path){
+  var u = new URL(path, location.href);
+  u.searchParams.delete('ts'); u.searchParams.delete('v'); u.searchParams.delete('sv');
+  u.hash = '';
+  return u.href;
+}
+function ssOpenCache(){
+  if(!('caches' in window)) return Promise.reject(new Error('no-cache-api'));
+  return caches.open(SS_DATA_CACHE);
+}
+function fetchJson(path){
+  return fetch(path + '?ts=' + Date.now(), { cache:'no-store' }).then(function(r){
+    if(!r.ok) throw new Error('http ' + r.status);
+    var cl = r.clone();
+    ssOpenCache().then(function(c){ return c.put(ssKey(path), cl); }).catch(function(){});
+    return r.json();
+  }).catch(function(err){
+    return ssOpenCache().then(function(c){ return c.match(ssKey(path)); }).then(function(hit){
+      if(hit) return hit.json();
+      throw err;
+    });
+  });
+}
+function ssProg(t){ var el = $('offlineProg'); if(el) el.textContent = t; }
+function ssCounts(){
+  return ssOpenCache().then(function(c){ return c.keys(); }).then(function(keys){
+    var texts = 0, aas = 0, idx = false;
+    keys.forEach(function(k){
+      if(/\/data\/texts\//.test(k.url)) texts++;
+      else if(/\/data\/aa\//.test(k.url)) aas++;
+      else if(/\/data\/index\.json$/.test(k.url)) idx = true;
+    });
+    return { texts:texts, aas:aas, idx:idx };
+  }).catch(function(){ return null; });
+}
+function ssRenderStatus(msg){
+  var el = $('offlineStatus');
+  if(!el) return;
+  ssCounts().then(function(cnt){
+    if(!cnt){ el.textContent = 'この環境では保存の仕組み（Cache Storage）が使えない。'; return; }
+    var tTotal = INDEX ? INDEX.stories.length : 0;
+    var line = '保存済み：索引 ' + (cnt.idx ? 'あり' : 'なし') +
+      '・本文 ' + cnt.texts + (tTotal ? ' / ' + tTotal : '') + ' 件' +
+      '・AA画像 ' + cnt.aas + ' 枚' +
+      '／オフライン対応（ページごと）：' + ssSwState;
+    if(navigator.storage && navigator.storage.estimate){
+      navigator.storage.estimate().then(function(est){
+        if(est && est.usage) line += '／端末内の使用量 約 ' + Math.round(est.usage / 1048576) + ' MB';
+        el.textContent = (msg ? msg + '　' : '') + line;
+      }).catch(function(){ el.textContent = (msg ? msg + '　' : '') + line; });
+    } else {
+      el.textContent = (msg ? msg + '　' : '') + line;
+    }
+  });
+}
+function ssEnsureText(id){
+  var path = 'data/texts/' + encodeURIComponent(id) + '.json';
+  return ssOpenCache().then(function(c){ return c.match(ssKey(path)); }).then(function(hit){
+    if(hit) return hit.json().catch(function(){ return null; });
+    return fetchJson(path).catch(function(){ return null; });
+  }).catch(function(){ return null; });
+}
+function ssEnsureBin(path){
+  return ssOpenCache().then(function(c){
+    return c.match(ssKey(path)).then(function(hit){
+      if(hit) return true;
+      return fetch(path, { cache:'no-store' }).then(function(r){
+        if(!r.ok) return false;
+        return c.put(ssKey(path), r).then(function(){ return true; }).catch(function(){ return false; });
+      }).catch(function(){ return false; });
+    });
+  }).catch(function(){ return false; });
+}
+var ssSaving = false;
+function ssSaveAll(){
+  if(ssSaving || !INDEX) return;
+  ssSaving = true;
+  var btn = $('offlineSaveBtn');
+  btn.textContent = '保存中…';
+  var total = INDEX.stories.length, done = 0, failed = 0;
+  var aaSet = {};
+  var queue = INDEX.stories.map(function(st){ return st.id; });
+  function worker(){
+    if(!queue.length) return Promise.resolve();
+    var id = queue.shift();
+    return ssEnsureText(id).then(function(doc){
+      if(doc){ done++; (doc.aa || []).forEach(function(e){ if(e && e.img) aaSet[e.img] = true; }); }
+      else failed++;
+      if((done + failed) % 20 === 0 || done + failed === total) ssProg('本文を保存中 ' + (done + failed) + ' / ' + total + ' 件（失敗 ' + failed + '）');
+    }).then(worker);
+  }
+  var ws = [];
+  for(var i = 0; i < 4; i++) ws.push(worker());
+  Promise.all(ws).then(function(){
+    var imgs = Object.keys(aaSet);
+    var atotal = imgs.length, adone = 0, afailed = 0;
+    var aq = imgs.slice();
+    function aworker(){
+      if(!aq.length) return Promise.resolve();
+      var img = aq.shift();
+      return ssEnsureBin('data/' + img).then(function(ok){
+        if(ok) adone++; else afailed++;
+        if((adone + afailed) % 20 === 0 || adone + afailed === atotal) ssProg('AA画像を保存中 ' + (adone + afailed) + ' / ' + atotal + ' 枚（失敗 ' + afailed + '）');
+      }).then(aworker);
+    }
+    var aws = [];
+    for(var j = 0; j < 4; j++) aws.push(aworker());
+    return Promise.all(aws).then(function(){ return { atotal:atotal, adone:adone, afailed:afailed }; });
+  }).then(function(res){
+    ssSaving = false;
+    btn.textContent = '全件保存する';
+    ssProg('');
+    ssRenderStatus('保存が終わった。本文 ' + done + ' / ' + total + ' 件、AA画像 ' + res.adone + ' / ' + res.atotal + ' 枚。');
+  });
+}
+$('offlineSaveBtn').addEventListener('click', ssSaveAll);
+$('offlineDelBtn').addEventListener('click', function(){
+  if(ssSaving) return;
+  if(!('caches' in window)) return;
+  caches.delete(SS_DATA_CACHE).then(function(){ ssProg(''); ssRenderStatus('保存を消した。'); });
+});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    ssSwState = (reg.active || reg.installing || reg.waiting) ? '有効' : '登録中';
+    ssRenderStatus();
+  }).catch(function(){ ssSwState = '使えない環境'; ssRenderStatus(); });
+}
+ssRenderStatus();
 
 /* ============ 開始 ============ */
 loadIndex();
