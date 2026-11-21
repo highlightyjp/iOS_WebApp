@@ -15886,7 +15886,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 3.0.1 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 3.0.2 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -16450,6 +16450,135 @@ $("btnShareText").onclick = function () {
 QB_HIST_SEL = Number(qbStoreGet("qrb_hist_sel") || 0);
 qbRestoreLastRecv();
 qbRenderTpl();
+</script>
+<script>
+/* ===== F7: launcher-test/v1 対応（入口URLに test=1 が付いた時だけ） =====
+   通常表示ではなく自己テスト19項目を自動実行し、結果を親（殻）へ
+   postMessage で返す。契約は launcher-native/contracts.md の
+   launcher-test/v1（2026-11-08 凍結＋2026-11-10 付記）。
+   隔離：試験が書くのは試験専用キー（名前に test を含む物）だけ。
+   自己テスト本体は履歴キー等へ一時的に書くため、開始前に本編の
+   保存を控え、終了後に控えへ戻してから同一性を照合する。 */
+(function () {
+  var isTest = false;
+  try { isTest = /[?&]test=1(&|$)/.test(String((typeof location !== "undefined" && location.search) || "")); } catch (e) { isTest = false; }
+  if (!isTest) return;
+  var MODULE_ID = "qrbridge";
+  var VERSION = "3.0.2";
+  var KNOWN_KEYS = ["qrb_hist", "qrb_hist_sel", "qrb_last_recv", "qrb_resend", "qrb_set", "qrb_tpl"];
+  var t0 = 0, lastSet = 0, itemMs = {};
+  try {
+    var rawItems = QB_REPORT.items;
+    QB_REPORT.items = new Proxy(rawItems, {
+      set: function (t, k, v) {
+        var now = performance.now();
+        if (t0) { itemMs[k] = Math.max(0, Math.round(now - (lastSet || t0))); lastSet = now; }
+        t[k] = v;
+        return true;
+      }
+    });
+  } catch (e) { /* 計測できない環境では ms を 0 のままにする */ }
+  function post(msg) {
+    try { if (typeof window !== "undefined" && window.parent && typeof window.parent.postMessage === "function") window.parent.postMessage(msg, "*"); } catch (e) {}
+  }
+  function isTestKey(k) { return /test/i.test(k); }
+  function enumKeys() {
+    var keys = [];
+    try {
+      if (typeof localStorage.key === "function" && typeof localStorage.length === "number") {
+        for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k) keys.push(k); }
+        return keys;
+      }
+    } catch (e) {}
+    return KNOWN_KEYS.slice();
+  }
+  function snapshot() {
+    var snap = {};
+    enumKeys().forEach(function (k) {
+      if (isTestKey(k)) return;
+      try { var v = localStorage.getItem(k); if (v !== null) snap[k] = v; } catch (e) {}
+    });
+    return snap;
+  }
+  function restore(snap) {
+    try {
+      enumKeys().forEach(function (k) {
+        if (isTestKey(k) || !/^qb/.test(k)) return;
+        if (!(k in snap)) {
+          try { localStorage.removeItem(k); } catch (e) {}
+          try { delete QB_MEM[k]; } catch (e) {}
+        }
+      });
+      Object.keys(snap).forEach(function (k) {
+        try {
+          if (localStorage.getItem(k) !== snap[k]) {
+            localStorage.setItem(k, snap[k]);
+            try { QB_MEM[k] = snap[k]; } catch (e) {}
+          }
+        } catch (e) {}
+      });
+    } catch (e) {}
+  }
+  function sameAs(snap) {
+    try {
+      var keys = Object.keys(snap);
+      for (var i = 0; i < keys.length; i++) if (localStorage.getItem(keys[i]) !== snap[keys[i]]) return false;
+      var cur = enumKeys();
+      for (var j = 0; j < cur.length; j++) {
+        var k = cur[j];
+        if (!isTestKey(k) && /^qb/.test(k) && !(k in snap)) return false;
+      }
+      return true;
+    } catch (e) { return false; }
+  }
+  function mapResult(r) { return r === "合格" ? "pass" : r === "不合格" ? "fail" : "na"; }
+  function finish(startedAt, snap, completed) {
+    if (!completed && !QB_REPORT.items[19]) {
+      try { QB_REPORT.items[19] = { label: "暗号化（QE）の往復", result: "取得できない", detail: "制限時間内に完了しなかった" }; } catch (e) {}
+    }
+    restore(snap);
+    var same = sameAs(snap);
+    var items = [], perf = [];
+    for (var k = 1; k <= 19; k++) {
+      var it = QB_REPORT.items[k];
+      var ms = itemMs[k] || 0;
+      if (!it) {
+        items.push({ id: "t" + k, gate: null, label: "項目" + k, result: "na", detail: "実施されなかった", ms: ms });
+        perf.push({ id: "t" + k, label: "項目" + k, ms: ms });
+      } else {
+        var r = mapResult(it.result);
+        var d = it.detail || "";
+        if (r === "na" && !d) d = String(it.result);
+        items.push({ id: "t" + k, gate: null, label: it.label, result: r, detail: d, ms: ms });
+        perf.push({ id: "t" + k, label: it.label, ms: ms });
+      }
+    }
+    var passN = 0;
+    items.forEach(function (x) { if (x.result === "pass") passN++; });
+    post({ contract: "launcher-test/v1", moduleId: MODULE_ID, version: VERSION, startedAt: startedAt, items: items, perf: perf, untouched: { checked: true, same: same }, summary: "QRブリッジ自己テスト " + passN + "/19 合格" });
+  }
+  function run() {
+    var startedAt = new Date().toISOString();
+    post({ contract: "launcher-test/v1", moduleId: MODULE_ID, status: "started" });
+    try { var tab = document.getElementById("tabTest"); if (tab && typeof tab.click === "function") tab.click(); } catch (e) {}
+    var snap = snapshot();
+    t0 = performance.now(); lastSet = 0;
+    var btn = document.getElementById("btnTest");
+    try { if (btn && typeof btn.click === "function") btn.click(); else if (btn && btn.onclick) btn.onclick(); } catch (e) {}
+    var waited = 0;
+    (function poll() {
+      var done = false;
+      try { done = !!QB_REPORT.items[19]; } catch (e) {}
+      if (done || waited >= 120000) { finish(startedAt, snap, done); return; }
+      waited += 250;
+      setTimeout(poll, 250);
+    })();
+  }
+  try {
+    if (typeof document !== "undefined" && document.readyState === "loading" && typeof document.addEventListener === "function") document.addEventListener("DOMContentLoaded", run);
+    else setTimeout(run, 0);
+  } catch (e) { setTimeout(run, 0); }
+})();
 </script>
 </body>
 </html>

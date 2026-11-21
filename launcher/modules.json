@@ -1,6 +1,6 @@
 {
   "contract": "launcher-modules/v1",
-  "generated_at": "2026-11-09T13:08:56Z",
+  "generated_at": "2026-11-21T20:53:47Z",
   "modules": [
     {
       "color": [
@@ -61,6 +61,19 @@
       "name": "クロギリ",
       "status": "ready",
       "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/kurogiri/"
+    },
+    {
+      "color": [
+        "#06b6d4",
+        "#0891b2"
+      ],
+      "desc": "QRコードでテキストやファイルを端末間で受け渡す",
+      "icon": "📷",
+      "id": "qrbridge",
+      "name": "QRブリッジ",
+      "status": "ready",
+      "test": true,
+      "url": "https://highlightyjp.github.io/iOS_WebApp/launcher/modules/qrbridge/index.html"
     }
   ]
 }
