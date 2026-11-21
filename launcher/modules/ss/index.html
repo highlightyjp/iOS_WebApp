@@ -122,6 +122,10 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 .note{ font-size:12.5px; color:var(--label3); margin-top:10px; }
 .act{ display:flex; align-items:center; justify-content:center; width:100%; border:none; cursor:pointer;
   border-radius:999px; padding:14px; margin-top:14px; background:var(--tint); color:#fff; font-size:15.5px; font-weight:700; }
+.tabbar{ display:flex; gap:6px; max-width:720px; margin:12px auto 0; padding:0 16px; }
+.tabbar .tab{ flex:1; border:1.5px solid var(--sep); background:var(--card); color:var(--label2);
+  border-radius:999px; padding:10px; font-size:14.5px; font-weight:700; cursor:pointer; }
+.tabbar .tab.on{ background:var(--tint); border-color:var(--tint); color:#fff; }
 .tagSheet{ position:fixed; inset:0; z-index:60; display:none; background:rgba(20,24,40,.38); }
 .tagSheet.open{ display:flex; flex-direction:column; justify-content:flex-end; }
 .tagPanel{ background:var(--card); border-radius:28px 28px 0 0; max-height:86vh; display:flex; flex-direction:column;
@@ -146,6 +150,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 <div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 <div id="shelfView">
   <header><h1>のくす書庫</h1><div class="meta" id="freshMeta">読み込み中…</div></header>
+  <div class="tabbar"><button class="tab on" id="tabShelf">本棚</button><button class="tab" id="tabSaved">保存済み</button></div>
   <main>
     <div class="toolbar">
       <input type="search" id="q" placeholder="題名・タグで探す">
@@ -165,6 +170,14 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
     <div id="homeRails"></div>
     <div id="shelf"></div>
     <div id="moreArea"></div>
+    <div id="savedView" style="display:none">
+      <div class="card">
+        <div class="title" style="font-size:15px">保存済みの話</div>
+        <div class="small" id="savedMeta" style="margin-top:6px">読み込み中…</div>
+        <div class="note">ここにある話はネットが無くても読める。AA画像が未保存の話は、開いて「保存」を押すと揃う。</div>
+      </div>
+      <div id="savedList"></div>
+    </div>
     <div class="card" id="offlineCard">
       <div class="title" style="font-size:15px">オフライン保存</div>
       <div class="small" id="offlineStatus" style="margin-top:6px">状態を確認中…</div>
@@ -182,7 +195,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 <div id="readerView" style="display:none">
   <main>
     <div class="bar glass">
-      <div class="grp"><button id="backBtn">本棚へ</button><button id="bmBtn">しおり</button><button id="bmGoBtn" style="display:none">しおりへ</button><button id="partsBtn">編一覧</button></div>
+      <div class="grp"><button id="backBtn">本棚へ</button><button id="bmBtn">しおり</button><button id="bmGoBtn" style="display:none">しおりへ</button><button id="partsBtn">編一覧</button><button id="saveBtn">保存する</button></div>
       <div class="grp"><button id="dirBtn">縦書き</button><button id="fsMinus">A−</button><button id="fsPlus">A＋</button><button id="lhMinus">行間−</button><button id="lhPlus">行間＋</button></div>
     </div>
     <h1 id="rTitle" style="font-size:23px;margin-top:16px"></h1>
@@ -221,7 +234,7 @@ input[type=search]{ width:100%; padding:13px 16px; border-radius:999px; border:1
 </div>
 <script>
 'use strict';
-var SS_BUILD = '2026-11-21-ss21';
+var SS_BUILD = '2026-11-21-ss22';
 /* 版の自己確認：公開側の build.txt が新しければ、版パラメータを付けて自分を読み直す（WebViewキャッシュ対策） */
 function checkBuild(){
   fetch('build.txt?ts=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.text(); }).then(function(t){
@@ -533,7 +546,7 @@ function renderShelf(reset){
   renderHome();
 }
 function loadIndex(){
-  fetchJson('data/index.json').then(function(idx){
+  fetchIndexJson().then(function(idx){
     INDEX = idx;
     $('freshMeta').textContent = '回収済み ' + Number(idx.pages_done || 0).toLocaleString() + ' / 全 ' + Number(idx.pages_total || 0).toLocaleString() + ' ページ・' + idx.stories.length + ' 物語（データ生成 ' + String(idx.generated_at || '').replace('T', ' ') + '）';
     $('sortSel').value = settings.sort || 'recommend';
@@ -811,6 +824,8 @@ function openStory(id, resume){
     if(resume && p && p.part != null){
       setTimeout(function(){ jumpToPart(p.part); }, 60);
     }
+    ssMarkSaved(id);
+    ssUpdateSaveBtn();
     updateNextBtn();
   }).catch(function(){
     alert('本文データが読めなかった。');
@@ -878,6 +893,7 @@ function updateNextBtn(){
 $('nextPartBtn').addEventListener('click', function(){ jumpToPart(currentSeqIndex() + 1); });
 $('backBtn').addEventListener('click', function(){
   saveProgress();
+  ssRenderStatus(); ssRefreshSavedIds(); if(ssTab === 'saved') ssRenderSaved();
   cur = null;
   $('readerView').style.display = 'none';
   $('shelfView').style.display = 'block';
@@ -919,7 +935,7 @@ $('partsBtn').addEventListener('click', openPartSheet);
 /* ============ オフライン保存（ss21） ============
    sw.js の DATA_CACHE と cache 名を揃える。ページ側でも保持と読み戻しを持ち、
    Service Worker が使えない環境でも「ページが開けた時」は保存分で読める形にする */
-var SS_DATA_CACHE = 'ss-data-' + SS_BUILD;
+var SS_DATA_CACHE = 'ss-data-v1'; /* ss22〜：データの保持はアプリの版から切り離す。世代交代は索引の generated_at で管理 */
 var ssSwState = ('serviceWorker' in navigator) ? '登録中' : '使えない環境';
 function ssKey(path){
   var u = new URL(path, location.href);
@@ -1033,9 +1049,242 @@ function ssSaveAll(){
     ssSaving = false;
     btn.textContent = '全件保存する';
     ssProg('');
+    INDEX.stories.forEach(function(st){ ssMarkSaved(st.id); });
+    ssRefreshSavedIds();
     ssRenderStatus('保存が終わった。本文 ' + done + ' / ' + total + ' 件、AA画像 ' + res.adone + ' / ' + res.atotal + ' 枚。');
   });
 }
+
+/* ============ ss22：データ移行・世代管理・リーダーの保存・保存済みタブ ============ */
+function ssMarkSaved(id){
+  var m = loadObj('ss.savedAt.v1') || {};
+  m[id] = Date.now();
+  saveObj('ss.savedAt.v1', m);
+}
+/* ss21 の版つきデータ cache があれば、中身を ss-data-v1 へ移してから消す（代表の保存分を版上げで消さない） */
+function ssMigrate(){
+  if(!('caches' in window)) return Promise.resolve();
+  var done = false;
+  try{ done = !!localStorage.getItem('ss.mig.v1'); }catch(e){}
+  if(done) return Promise.resolve();
+  var finish = function(){ try{ localStorage.setItem('ss.mig.v1', '1'); }catch(e){} };
+  return caches.keys().then(function(names){
+    var old = null;
+    names.forEach(function(n){ if(/^ss-data-2026-/.test(n)) old = n; });
+    if(!old){ finish(); return; }
+    return caches.open(old).then(function(oc){
+      return oc.keys().then(function(keys){
+        if(!keys.length){ finish(); return caches.delete(old); }
+        return ssOpenCache().then(function(nc){
+          /* 新側に索引だけ先にある場合でも、旧側の本文は新側に無い。全件写してから旧を消す */
+          var chain = Promise.resolve();
+          for(var i = 0; i < keys.length; i += 100){
+            (function(batch){
+              chain = chain.then(function(){
+                return Promise.all(batch.map(function(k){
+                  return oc.match(k).then(function(resp){ if(resp) return nc.put(k, resp); });
+                }));
+              });
+            })(keys.slice(i, i + 100));
+          }
+          return chain.then(function(){ finish(); return caches.delete(old); });
+        });
+      });
+    });
+  }).catch(function(){});
+}
+/* 索引の取得：ネット優先。データが再生成されていたら古い保存を入れ替える */
+function fetchIndexJson(){
+  var path = 'data/index.json';
+  return fetch(path + '?ts=' + Date.now(), { cache:'no-store' }).then(function(r){
+    if(!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  }).then(function(idx){
+    var gen = String(idx.generated_at || '');
+    var prev = null;
+    try{ prev = localStorage.getItem('ss.dataGen'); }catch(e){}
+    if(gen){ try{ localStorage.setItem('ss.dataGen', gen); }catch(e){} }
+    var putBack = function(){
+      ssOpenCache().then(function(c){
+        var resp = new Response(JSON.stringify(idx), { headers:{ 'Content-Type':'application/json' } });
+        return c.put(ssKey(path), resp);
+      }).catch(function(){});
+    };
+    if(prev && gen && prev !== gen){
+      ssOpenCache().then(function(c){
+        return c.keys().then(function(keys){
+          return Promise.all(keys.map(function(k){ return c.delete(k); }));
+        });
+      }).then(putBack).catch(function(){});
+    } else {
+      putBack();
+    }
+    return idx;
+  }).catch(function(err){
+    return ssOpenCache().then(function(c){ return c.match(ssKey(path)); }).then(function(hit){
+      if(hit) return hit.json();
+      throw err;
+    });
+  });
+}
+/* 1話の保存状態（本文の有無と AA 画像の揃い） */
+function ssStoryState(id){
+  return ssOpenCache().then(function(c){
+    return c.match(ssKey('data/texts/' + encodeURIComponent(id) + '.json')).then(function(hit){
+      if(!hit) return { text:false, aaTotal:0, aaHave:0 };
+      return hit.json().then(function(doc){
+        var imgs = {};
+        (doc.aa || []).forEach(function(e){ if(e && e.img) imgs[e.img] = true; });
+        var list = Object.keys(imgs);
+        if(!list.length) return { text:true, aaTotal:0, aaHave:0 };
+        return Promise.all(list.map(function(img){
+          return c.match(ssKey('data/' + img)).then(function(h){ return h ? 1 : 0; });
+        })).then(function(rs){
+          var have = 0;
+          rs.forEach(function(x){ have += x; });
+          return { text:true, aaTotal:list.length, aaHave:have };
+        });
+      }).catch(function(){ return { text:true, aaTotal:0, aaHave:0 }; });
+    });
+  }).catch(function(){ return { text:false, aaTotal:0, aaHave:0 }; });
+}
+var ssSavingStory = false;
+function ssUpdateSaveBtn(){
+  var btn = $('saveBtn');
+  if(!btn || !cur) return;
+  ssStoryState(cur.story.id).then(function(st){
+    if(!cur) return;
+    var full = st.text && st.aaHave >= st.aaTotal;
+    btn.textContent = full ? '保存済み' : '保存する';
+    btn.classList.toggle('on', full);
+  });
+}
+function ssSaveCurrent(){
+  if(!cur || ssSavingStory) return;
+  ssSavingStory = true;
+  var btn = $('saveBtn');
+  var id = cur.story.id;
+  btn.textContent = '保存中…';
+  fetchJson('data/texts/' + encodeURIComponent(id) + '.json').then(function(doc){
+    var imgs = {};
+    ((doc && doc.aa) || []).forEach(function(e){ if(e && e.img) imgs[e.img] = true; });
+    var list = Object.keys(imgs);
+    var i = 0;
+    function next(){
+      if(i >= list.length) return Promise.resolve();
+      var img = list[i++];
+      if(list.length > 1) btn.textContent = '保存中 ' + i + '/' + list.length;
+      return ssEnsureBin('data/' + img).then(next);
+    }
+    return next();
+  }).then(function(){
+    ssSavingStory = false;
+    ssMarkSaved(id);
+    ssUpdateSaveBtn();
+    ssRenderStatus();
+    ssRefreshSavedIds();
+  }).catch(function(){
+    ssSavingStory = false;
+    btn.textContent = '保存する';
+  });
+}
+$('saveBtn').addEventListener('click', ssSaveCurrent);
+/* 保存済みタブ */
+var ssSavedIds = {};
+var ssTab = 'shelf';
+function ssRefreshSavedIds(){
+  return ssOpenCache().then(function(c){ return c.keys(); }).then(function(keys){
+    var ids = {};
+    keys.forEach(function(k){
+      var m = k.url.match(/\/data\/texts\/([^\/]+)\.json$/);
+      if(m) ids[decodeURIComponent(m[1])] = true;
+    });
+    ssSavedIds = ids;
+    var tab = $('tabSaved');
+    if(tab) tab.textContent = '保存済み（' + Object.keys(ids).length + '）';
+    return ids;
+  }).catch(function(){ return ssSavedIds; });
+}
+function ssSwitchTab(which){
+  ssTab = which;
+  $('tabShelf').classList.toggle('on', which === 'shelf');
+  $('tabSaved').classList.toggle('on', which === 'saved');
+  var shelfEls = [document.querySelector('.toolbar'), $('homeRails'), $('shelf'), $('moreArea'), $('offlineCard')];
+  shelfEls.forEach(function(el){ if(el) el.style.display = which === 'shelf' ? '' : 'none'; });
+  $('savedView').style.display = which === 'saved' ? '' : 'none';
+  if(which === 'saved') ssRefreshSavedIds().then(ssRenderSaved);
+  window.scrollTo(0, 0);
+}
+function ssRenderSaved(){
+  var host = $('savedList');
+  if(!host || !INDEX) return;
+  var savedAt = loadObj('ss.savedAt.v1') || {};
+  var list = INDEX.stories.filter(function(st){ return ssSavedIds[st.id]; });
+  list.sort(function(a, b){
+    var ta = savedAt[b.id] || (progress[b.id] || {}).ts || 0;
+    var tb = savedAt[a.id] || (progress[a.id] || {}).ts || 0;
+    if(ta !== tb) return ta - tb;
+    return a.title < b.title ? -1 : 1;
+  });
+  $('savedMeta').textContent = list.length + ' 件の話が保存されている。';
+  host.innerHTML = '';
+  if(!list.length){
+    host.innerHTML = '<div class="card">まだ保存された話がない。話を開いて「保存」を押すか、本棚の「全件保存する」でまとめて保存できる。</div>';
+    return;
+  }
+  var frag = document.createDocumentFragment();
+  list.slice(0, 200).forEach(function(st){
+    var wrap = storyNode(st);
+    var del = document.createElement('button');
+    del.className = 'mini gray';
+    del.style.margin = '2px 0 10px';
+    del.textContent = 'この話の保存を消す';
+    del.addEventListener('click', function(){ ssDeleteStory(st.id); });
+    wrap.appendChild(del);
+    frag.appendChild(wrap);
+    ssStoryState(st.id).then(function(state){
+      if(state.text && state.aaTotal > state.aaHave && wrap.isConnected){
+        var note = document.createElement('div');
+        note.className = 'small';
+        note.style.margin = '0 6px 4px';
+        note.textContent = 'AA画像が未保存（' + state.aaHave + ' / ' + state.aaTotal + '）。開いて「保存」を押すと揃う。';
+        wrap.appendChild(note);
+      }
+    });
+  });
+  host.appendChild(frag);
+  if(list.length > 200){
+    var more = document.createElement('div');
+    more.className = 'countLine';
+    more.textContent = '先頭 200 件を表示中（全 ' + list.length + ' 件）';
+    host.appendChild(more);
+  }
+}
+function ssDeleteStory(id){
+  ssOpenCache().then(function(c){
+    var key = ssKey('data/texts/' + encodeURIComponent(id) + '.json');
+    return c.match(key).then(function(hit){
+      var imgs = [];
+      var read = hit ? hit.json().then(function(doc){
+        (doc.aa || []).forEach(function(e){ if(e && e.img) imgs.push(e.img); });
+      }).catch(function(){}) : Promise.resolve();
+      return read.then(function(){
+        var dels = [c.delete(key)];
+        imgs.forEach(function(img){ dels.push(c.delete(ssKey('data/' + img))); });
+        return Promise.all(dels);
+      });
+    });
+  }).then(function(){
+    var m = loadObj('ss.savedAt.v1') || {};
+    delete m[id];
+    saveObj('ss.savedAt.v1', m);
+    ssRefreshSavedIds().then(function(){ ssRenderSaved(); ssRenderStatus(); });
+  }).catch(function(){});
+}
+$('tabShelf').addEventListener('click', function(){ ssSwitchTab('shelf'); });
+$('tabSaved').addEventListener('click', function(){ ssSwitchTab('saved'); });
+ssMigrate().then(function(){ ssRenderStatus(); ssRefreshSavedIds(); });
+
 $('offlineSaveBtn').addEventListener('click', ssSaveAll);
 $('offlineDelBtn').addEventListener('click', function(){
   if(ssSaving) return;

@@ -1,12 +1,14 @@
-/* のくす書庫 オフライン用 Service Worker（ss21）
-   cache 名の build は index.html の SS_BUILD と build.txt と必ず揃える。
+/* のくす書庫 オフライン用 Service Worker（ss22）
+   アプリ側の cache 名の build は index.html の SS_BUILD と build.txt と必ず揃える。
+   データ側の cache（ss-data-v1）はアプリの版から切り離し、版上げで保存分を消さない。
+   データの世代交代は、ページ側が索引の generated_at を見て入れ替える。
    役割：ページ本体とフォントを先に保持し、索引・本文・AA画像は読まれた分と
-   「全件保存」で入れられた分を端末内に保持して、オフラインでも返す。
+   「全件保存」「リーダーの保存」で入れられた分を端末内に保持して、オフラインでも返す。
    build.txt だけは版の照合に使うため、絶対にキャッシュから返さない。 */
 'use strict';
-var SS_SW_BUILD = '2026-11-21-ss21';
+var SS_SW_BUILD = '2026-11-21-ss22';
 var APP_CACHE = 'ss-app-' + SS_SW_BUILD;
-var DATA_CACHE = 'ss-data-' + SS_SW_BUILD;
+var DATA_CACHE = 'ss-data-v1';
 var APP_ASSETS = ['./', 'index.html', 'fonts/aa.woff2', 'fonts/aa-mona.woff2', 'fonts/NOTICE.txt'];
 
 function keyOf(url) {
@@ -35,7 +37,8 @@ self.addEventListener('activate', function (e) {
   e.waitUntil(
     caches.keys().then(function (names) {
       return Promise.all(names.map(function (n) {
-        if (n.indexOf('ss-') === 0 && n !== APP_CACHE && n !== DATA_CACHE) return caches.delete(n);
+        /* 消すのは古いアプリ側だけ。データ側はページ側が移行・世代交代を管理する */
+        if (n.indexOf('ss-app-') === 0 && n !== APP_CACHE) return caches.delete(n);
       }));
     }).then(function () { return self.clients.claim(); })
   );
