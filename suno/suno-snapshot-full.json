@@ -1,7 +1,7 @@
 {
   "contract": "suno-data/v1",
-  "generated_at": "2026-11-14T21:32:01+09:00",
-  "input_hash": "d8aba26020123aecd1b02add76b1006e30b0857896ef80da6f245b34ec06d671",
+  "generated_at": "2026-11-23T04:35:48+09:00",
+  "input_hash": "177408339c84c7555ffeb34855d535674e14b650eda3b717128ce87f65af4b30",
   "sections": {
     "account": {
       "me": {
@@ -33,6 +33,71 @@
     },
     "library": {
       "items": [
+        {
+          "id": "02f9674d-83ba-451b-8159-ddfc444597a8",
+          "title": "海上自衛隊",
+          "type": "upload",
+          "style_tags": null,
+          "style": "A classical song sung in Japanese by a solo female vocalist with a clear delivery, over strings, brass, woodwinds, and percussion; grand.",
+          "duration_sec": 327.07772916666664,
+          "created_at": "2026-11-21T19:50:33.273Z",
+          "song_url": null,
+          "cover_image_url": "https://cdn1.suno.ai/image_4255fc66-c85c-4d0d-ba9f-382f563a1973.jpeg",
+          "cover_image_large_url": "https://cdn1.suno.ai/image_large_4255fc66-c85c-4d0d-ba9f-382f563a1973.jpeg",
+          "audio_url": "audio/02f9674d-83ba-451b-8159-ddfc444597a8.mp3"
+        },
+        {
+          "id": "bcf18449-bbbc-49b3-89ff-32e8a2f9cf7a",
+          "title": "霜月のとなり",
+          "type": "generate",
+          "style_tags": null,
+          "style": "lo-fi, soft piano, vinyl crackle, gentle brushed drums, warm bass, whispering soft female vocal, slow tempo, sparse arrangement, nostalgic, Japanese ballad",
+          "duration_sec": 209.56,
+          "created_at": "2026-11-21T19:44:34.188Z",
+          "song_url": null,
+          "cover_image_url": null,
+          "cover_image_large_url": null,
+          "audio_url": null
+        },
+        {
+          "id": "cc8ae91b-b5d4-4aa7-ba8a-26a19e8f3655",
+          "title": "霜月のとなり",
+          "type": "generate",
+          "style_tags": null,
+          "style": "lo-fi, soft piano, vinyl crackle, gentle brushed drums, warm bass, whispering soft female vocal, slow tempo, sparse arrangement, nostalgic, Japanese ballad",
+          "duration_sec": 198.76,
+          "created_at": "2026-11-21T19:44:33.987Z",
+          "song_url": null,
+          "cover_image_url": null,
+          "cover_image_large_url": null,
+          "audio_url": null
+        },
+        {
+          "id": "88f1b2fa-ba20-4335-8049-8e708f34c180",
+          "title": "午前二時の甲板",
+          "type": "generate",
+          "style_tags": null,
+          "style": "Japanese acoustic ballad, soft female vocal, piano and acoustic guitar, night sea, nostalgic and warm, slow tempo",
+          "duration_sec": 223.2,
+          "created_at": "2026-11-21T15:57:51.523Z",
+          "song_url": null,
+          "cover_image_url": null,
+          "cover_image_large_url": null,
+          "audio_url": "audio/88f1b2fa-ba20-4335-8049-8e708f34c180.mp3"
+        },
+        {
+          "id": "78b2a94e-5178-4423-9f56-83d619b3ee59",
+          "title": "午前二時の甲板",
+          "type": "generate",
+          "style_tags": null,
+          "style": "Japanese acoustic ballad, soft female vocal, piano and acoustic guitar, night sea, nostalgic and warm, slow tempo",
+          "duration_sec": 217.96,
+          "created_at": "2026-11-21T15:57:51.348Z",
+          "song_url": null,
+          "cover_image_url": null,
+          "cover_image_large_url": null,
+          "audio_url": "audio/78b2a94e-5178-4423-9f56-83d619b3ee59.mp3"
+        },
         {
           "id": "34faa06b-5483-45e0-a754-1f3ffb0dce45",
           "title": "Brisk Parade March",
@@ -753,7 +818,7 @@
           "title": "夜の残像",
           "type": "generate",
           "style_tags": null,
-          "style": "Tokyo Jihen style, jazzy art rock, tight dry drums with sharp snare, quirky guitar riffs, sultry female vocals like Shiina Ringo, mid-tempo 120BPM with swing feel, cabaret jazz fusion, dramatic builds and breakdowns",
+          "style": null,
           "duration_sec": 138.92,
           "created_at": "2026-05-10T15:38:59.569Z",
           "song_url": null,
@@ -766,7 +831,7 @@
           "title": "夜の残像",
           "type": "generate",
           "style_tags": null,
-          "style": "Tokyo Jihen style, jazzy art rock, tight dry drums with sharp snare, quirky guitar riffs, sultry female vocals like Shiina Ringo, mid-tempo 120BPM with swing feel, cabaret jazz fusion, dramatic builds and breakdowns",
+          "style": null,
           "duration_sec": 136.08,
           "created_at": "2026-05-10T15:38:59.569Z",
           "song_url": null,
@@ -779,7 +844,7 @@
           "title": "Juice=Juice『盛れ！ミ・アモーレ』Promotion Edit",
           "type": "generate",
           "style_tags": null,
-          "style": "Epic orchestral rock, Monster Hunter style hunt theme, intense drums, electric guitar riffs, fast tempo 140BPM, adventurous melody for boss battle",
+          "style": null,
           "duration_sec": 214.92,
           "created_at": "2026-05-10T15:32:16.248Z",
           "song_url": null,
@@ -792,7 +857,7 @@
           "title": "Juice=Juice『盛れ！ミ・アモーレ』Promotion Edit",
           "type": "generate",
           "style_tags": null,
-          "style": "Epic orchestral rock, Monster Hunter style hunt theme, intense drums, electric guitar riffs, fast tempo 140BPM, adventurous melody for boss battle",
+          "style": null,
           "duration_sec": 222.2,
           "created_at": "2026-05-10T15:32:16.248Z",
           "song_url": null,
@@ -805,7 +870,7 @@
           "title": "Bronze Thunder Roar",
           "type": "generate",
           "style_tags": null,
-          "style": "Epic orchestral rock, Monster Hunter style hunt theme, intense drums, electric guitar riffs, fast tempo 140BPM, adventurous melody for boss battle",
+          "style": null,
           "duration_sec": 25.76,
           "created_at": "2026-05-10T15:30:43.056Z",
           "song_url": null,
@@ -12868,6 +12933,58 @@
       "next_cursor": null
     },
     "analyses": {
+      "02f9674d-83ba-451b-8159-ddfc444597a8": {
+        "audio_id": "02f9674d-83ba-451b-8159-ddfc444597a8",
+        "status": "complete",
+        "bpm": 116,
+        "key": "C major",
+        "time_signature": 4,
+        "duration_s": 327.12,
+        "terms": [
+          "song",
+          "female vocals",
+          "keyboard",
+          "pop"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.994513
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.992508
+          },
+          {
+            "label": "vocal:lead",
+            "probability": 0.894923
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.821585
+          },
+          {
+            "label": "content:music",
+            "probability": 0.714384
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.65836
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 317.56,
+            "label": "A"
+          },
+          {
+            "start_s": 317.56,
+            "end_s": 327.12,
+            "label": "B"
+          }
+        ]
+      },
       "081db6f4-5e28-4f90-9be0-94445f89c117": {
         "audio_id": "081db6f4-5e28-4f90-9be0-94445f89c117",
         "status": "complete",
@@ -13283,6 +13400,255 @@
             "start_s": 181.44,
             "end_s": 189.96,
             "label": "B"
+          }
+        ]
+      },
+      "78b2a94e-5178-4423-9f56-83d619b3ee59": {
+        "audio_id": "78b2a94e-5178-4423-9f56-83d619b3ee59",
+        "status": "complete",
+        "bpm": 70.4,
+        "key": "Bb major",
+        "time_signature": 4,
+        "duration_s": 217.96,
+        "terms": [
+          "song",
+          "female vocals",
+          "piano",
+          "ballad",
+          "trot",
+          "pop",
+          "enka"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.973844
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.967386
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.877185
+          },
+          {
+            "label": "content:music",
+            "probability": 0.786203
+          },
+          {
+            "label": "vocal:lead",
+            "probability": 0.760667
+          },
+          {
+            "label": "genre:pop",
+            "probability": 0.711178
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.683772
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.679883
+          },
+          {
+            "label": "instrument:bowed_string_family",
+            "probability": 0.643805
+          },
+          {
+            "label": "genre:trot",
+            "probability": 0.593273
+          },
+          {
+            "label": "form:ballad",
+            "probability": 0.571936
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 16.56,
+            "label": "A"
+          },
+          {
+            "start_s": 16.56,
+            "end_s": 44.16,
+            "label": "A"
+          },
+          {
+            "start_s": 44.16,
+            "end_s": 57.28,
+            "label": "B"
+          },
+          {
+            "start_s": 57.28,
+            "end_s": 77.44,
+            "label": "B"
+          },
+          {
+            "start_s": 77.44,
+            "end_s": 88,
+            "label": "A"
+          },
+          {
+            "start_s": 88,
+            "end_s": 128.48,
+            "label": "B"
+          },
+          {
+            "start_s": 128.48,
+            "end_s": 150.16,
+            "label": "B"
+          },
+          {
+            "start_s": 150.16,
+            "end_s": 170.2,
+            "label": "B"
+          },
+          {
+            "start_s": 170.2,
+            "end_s": 178.36,
+            "label": "B"
+          },
+          {
+            "start_s": 178.36,
+            "end_s": 199.36,
+            "label": "B"
+          },
+          {
+            "start_s": 199.36,
+            "end_s": 217.96,
+            "label": "A"
+          }
+        ]
+      },
+      "88f1b2fa-ba20-4335-8049-8e708f34c180": {
+        "audio_id": "88f1b2fa-ba20-4335-8049-8e708f34c180",
+        "status": "complete",
+        "bpm": 71,
+        "key": "F major",
+        "time_signature": 4,
+        "duration_s": 223.2,
+        "terms": [
+          "song",
+          "female vocals",
+          "piano",
+          "ballad",
+          "trot",
+          "enka",
+          "pop"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.967699
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.95737
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.885026
+          },
+          {
+            "label": "content:music",
+            "probability": 0.81694
+          },
+          {
+            "label": "vocal:lead",
+            "probability": 0.749692
+          },
+          {
+            "label": "genre:pop",
+            "probability": 0.726941
+          },
+          {
+            "label": "genre:enka",
+            "probability": 0.683299
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.669231
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.667631
+          },
+          {
+            "label": "instrument:bowed_string_family",
+            "probability": 0.655435
+          },
+          {
+            "label": "genre:trot",
+            "probability": 0.622929
+          },
+          {
+            "label": "instrument:woodwind_family",
+            "probability": 0.609799
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 13.84,
+            "label": "A"
+          },
+          {
+            "start_s": 13.84,
+            "end_s": 44,
+            "label": "B"
+          },
+          {
+            "start_s": 44,
+            "end_s": 51.16,
+            "label": "B"
+          },
+          {
+            "start_s": 51.16,
+            "end_s": 78.12,
+            "label": "C"
+          },
+          {
+            "start_s": 78.12,
+            "end_s": 94.4,
+            "label": "A"
+          },
+          {
+            "start_s": 94.4,
+            "end_s": 127.92,
+            "label": "B"
+          },
+          {
+            "start_s": 127.92,
+            "end_s": 134.56,
+            "label": "C"
+          },
+          {
+            "start_s": 134.56,
+            "end_s": 152.76,
+            "label": "C"
+          },
+          {
+            "start_s": 152.76,
+            "end_s": 175.72,
+            "label": "C"
+          },
+          {
+            "start_s": 175.72,
+            "end_s": 186.32,
+            "label": "B"
+          },
+          {
+            "start_s": 186.32,
+            "end_s": 204.16,
+            "label": "C"
+          },
+          {
+            "start_s": 204.16,
+            "end_s": 223.2,
+            "label": "A"
           }
         ]
       },
@@ -13771,6 +14137,1068 @@
             "start_s": 205.4,
             "end_s": 206.44,
             "label": "C"
+          }
+        ]
+      },
+      "b1110683-a299-45c2-bec8-8d6428b9e0a9": {
+        "audio_id": "b1110683-a299-45c2-bec8-8d6428b9e0a9",
+        "status": "complete",
+        "bpm": 146.7,
+        "key": "Bb major",
+        "time_signature": 4,
+        "duration_s": 217.32,
+        "terms": [
+          "song",
+          "female vocals",
+          "keyboard",
+          "Christmas / holiday",
+          "pop",
+          "j pop"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.935592
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.922029
+          },
+          {
+            "label": "content:music",
+            "probability": 0.795099
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.774059
+          },
+          {
+            "label": "genre:pop",
+            "probability": 0.767281
+          },
+          {
+            "label": "language:japanese",
+            "probability": 0.720492
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.690483
+          },
+          {
+            "label": "scene:j_pop",
+            "probability": 0.564445
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 17.28,
+            "label": "A"
+          },
+          {
+            "start_s": 17.28,
+            "end_s": 30.12,
+            "label": "A"
+          },
+          {
+            "start_s": 30.12,
+            "end_s": 43,
+            "label": "B"
+          },
+          {
+            "start_s": 43,
+            "end_s": 51.88,
+            "label": "B"
+          },
+          {
+            "start_s": 51.88,
+            "end_s": 86.24,
+            "label": "C"
+          },
+          {
+            "start_s": 86.24,
+            "end_s": 92.76,
+            "label": "A"
+          },
+          {
+            "start_s": 92.76,
+            "end_s": 97.48,
+            "label": "B"
+          },
+          {
+            "start_s": 97.48,
+            "end_s": 104.16,
+            "label": "B"
+          },
+          {
+            "start_s": 104.16,
+            "end_s": 118.48,
+            "label": "C"
+          },
+          {
+            "start_s": 118.48,
+            "end_s": 131.44,
+            "label": "D"
+          },
+          {
+            "start_s": 131.44,
+            "end_s": 149.28,
+            "label": "C"
+          },
+          {
+            "start_s": 149.28,
+            "end_s": 164.36,
+            "label": "C"
+          },
+          {
+            "start_s": 164.36,
+            "end_s": 169.88,
+            "label": "D"
+          },
+          {
+            "start_s": 169.88,
+            "end_s": 190.52,
+            "label": "C"
+          },
+          {
+            "start_s": 190.52,
+            "end_s": 200.4,
+            "label": "D"
+          },
+          {
+            "start_s": 200.4,
+            "end_s": 215.28,
+            "label": "C"
+          },
+          {
+            "start_s": 215.28,
+            "end_s": 217.32,
+            "label": "A"
+          }
+        ]
+      },
+      "30c37e39-9214-429d-926b-10f18c406757": {
+        "audio_id": "30c37e39-9214-429d-926b-10f18c406757",
+        "status": "complete",
+        "bpm": 148,
+        "key": "Bb major",
+        "time_signature": 4,
+        "duration_s": 209,
+        "terms": [
+          "song",
+          "female vocals",
+          "keyboard",
+          "percussion",
+          "Christmas / holiday",
+          "pop"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.920005
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.902439
+          },
+          {
+            "label": "content:music",
+            "probability": 0.79944
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.774397
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.656266
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 12.08,
+            "label": "A"
+          },
+          {
+            "start_s": 12.08,
+            "end_s": 23.08,
+            "label": "A"
+          },
+          {
+            "start_s": 23.08,
+            "end_s": 35.72,
+            "label": "A"
+          },
+          {
+            "start_s": 35.72,
+            "end_s": 83.96,
+            "label": "A"
+          },
+          {
+            "start_s": 83.96,
+            "end_s": 97.72,
+            "label": "A"
+          },
+          {
+            "start_s": 97.72,
+            "end_s": 116.72,
+            "label": "B"
+          },
+          {
+            "start_s": 116.72,
+            "end_s": 138.24,
+            "label": "B"
+          },
+          {
+            "start_s": 138.24,
+            "end_s": 154,
+            "label": "A"
+          },
+          {
+            "start_s": 154,
+            "end_s": 190.12,
+            "label": "B"
+          },
+          {
+            "start_s": 190.12,
+            "end_s": 203.4,
+            "label": "B"
+          },
+          {
+            "start_s": 203.4,
+            "end_s": 209,
+            "label": "A"
+          }
+        ]
+      },
+      "cc8ae91b-b5d4-4aa7-ba8a-26a19e8f3655": {
+        "audio_id": "cc8ae91b-b5d4-4aa7-ba8a-26a19e8f3655",
+        "status": "complete",
+        "bpm": 70.2,
+        "key": "C major",
+        "time_signature": 4,
+        "duration_s": 198.76,
+        "terms": [
+          "song",
+          "female vocals",
+          "piano",
+          "ballad",
+          "pop"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.970564
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.963563
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.87402
+          },
+          {
+            "label": "content:music",
+            "probability": 0.76698
+          },
+          {
+            "label": "genre:pop",
+            "probability": 0.751053
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.745159
+          },
+          {
+            "label": "vocal:lead",
+            "probability": 0.743407
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.742835
+          },
+          {
+            "label": "form:ballad",
+            "probability": 0.551528
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 13.4,
+            "label": "A"
+          },
+          {
+            "start_s": 13.4,
+            "end_s": 57.48,
+            "label": "B"
+          },
+          {
+            "start_s": 57.48,
+            "end_s": 84.36,
+            "label": "C"
+          },
+          {
+            "start_s": 84.36,
+            "end_s": 91.44,
+            "label": "A"
+          },
+          {
+            "start_s": 91.44,
+            "end_s": 118.56,
+            "label": "B"
+          },
+          {
+            "start_s": 118.56,
+            "end_s": 130.6,
+            "label": "C"
+          },
+          {
+            "start_s": 130.6,
+            "end_s": 172.4,
+            "label": "C"
+          },
+          {
+            "start_s": 172.4,
+            "end_s": 182.08,
+            "label": "B"
+          },
+          {
+            "start_s": 182.08,
+            "end_s": 198.76,
+            "label": "A"
+          }
+        ]
+      },
+      "bcf18449-bbbc-49b3-89ff-32e8a2f9cf7a": {
+        "audio_id": "bcf18449-bbbc-49b3-89ff-32e8a2f9cf7a",
+        "status": "complete",
+        "bpm": 71,
+        "key": "C major",
+        "time_signature": 4,
+        "duration_s": 209.56,
+        "terms": [
+          "song",
+          "female vocals",
+          "piano",
+          "saxophone",
+          "ballad",
+          "pop",
+          "smooth jazz",
+          "trot",
+          "calm peaceful",
+          "lo-fi"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.971337
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.96325
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.881245
+          },
+          {
+            "label": "genre:jazz",
+            "probability": 0.805973
+          },
+          {
+            "label": "content:music",
+            "probability": 0.798947
+          },
+          {
+            "label": "vocal:lead",
+            "probability": 0.765292
+          },
+          {
+            "label": "genre:pop",
+            "probability": 0.741255
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.712201
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.70953
+          },
+          {
+            "label": "genre:smooth_jazz",
+            "probability": 0.633527
+          },
+          {
+            "label": "instrument:woodwind_family",
+            "probability": 0.604184
+          },
+          {
+            "label": "form:ballad",
+            "probability": 0.560891
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 13.04,
+            "label": "A"
+          },
+          {
+            "start_s": 13.04,
+            "end_s": 38.96,
+            "label": "B"
+          },
+          {
+            "start_s": 38.96,
+            "end_s": 54.56,
+            "label": "B"
+          },
+          {
+            "start_s": 54.56,
+            "end_s": 82.64,
+            "label": "C"
+          },
+          {
+            "start_s": 82.64,
+            "end_s": 96.56,
+            "label": "A"
+          },
+          {
+            "start_s": 96.56,
+            "end_s": 123.12,
+            "label": "B"
+          },
+          {
+            "start_s": 123.12,
+            "end_s": 140.96,
+            "label": "C"
+          },
+          {
+            "start_s": 140.96,
+            "end_s": 160.92,
+            "label": "C"
+          },
+          {
+            "start_s": 160.92,
+            "end_s": 167.92,
+            "label": "C"
+          },
+          {
+            "start_s": 167.92,
+            "end_s": 177.32,
+            "label": "C"
+          },
+          {
+            "start_s": 177.32,
+            "end_s": 186.56,
+            "label": "B"
+          },
+          {
+            "start_s": 186.56,
+            "end_s": 191.4,
+            "label": "A"
+          },
+          {
+            "start_s": 191.4,
+            "end_s": 209.56,
+            "label": "A"
+          }
+        ]
+      },
+      "087c7e77-9a01-45cd-8f86-d0208312d7ea": {
+        "audio_id": "087c7e77-9a01-45cd-8f86-d0208312d7ea",
+        "status": "complete",
+        "bpm": 116.1,
+        "key": "C major",
+        "time_signature": 4,
+        "duration_s": 64.48,
+        "terms": [
+          "song",
+          "male and female vocals",
+          "brass",
+          "hymn"
+        ],
+        "labels": [
+          {
+            "label": "content:human_voice",
+            "probability": 0.949412
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.939337
+          },
+          {
+            "label": "tradition:hymn",
+            "probability": 0.899993
+          },
+          {
+            "label": "content:music",
+            "probability": 0.898815
+          },
+          {
+            "label": "instrument:brass_family",
+            "probability": 0.835145
+          },
+          {
+            "label": "language:spanish",
+            "probability": 0.753019
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 0.12,
+            "label": "A"
+          },
+          {
+            "start_s": 0.12,
+            "end_s": 23.08,
+            "label": "B"
+          },
+          {
+            "start_s": 23.08,
+            "end_s": 56.12,
+            "label": "C"
+          },
+          {
+            "start_s": 56.12,
+            "end_s": 64.48,
+            "label": "D"
+          }
+        ]
+      },
+      "d57fe737-d14e-4f38-b86b-cd832a85eb11": {
+        "audio_id": "d57fe737-d14e-4f38-b86b-cd832a85eb11",
+        "status": "complete",
+        "bpm": 143.8,
+        "key": "E minor",
+        "time_signature": 4,
+        "duration_s": 198.08,
+        "terms": [
+          "song",
+          "female vocals",
+          "guitar",
+          "synthesizer",
+          "piano",
+          "cinematic",
+          "metal",
+          "electronic",
+          "pop"
+        ],
+        "labels": [
+          {
+            "label": "content:music",
+            "probability": 0.898027
+          },
+          {
+            "label": "arrangement:instrumental",
+            "probability": 0.866312
+          },
+          {
+            "label": "genre:electronic",
+            "probability": 0.824353
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.760134
+          },
+          {
+            "label": "genre:metal",
+            "probability": 0.75275
+          },
+          {
+            "label": "instrument:plucked_string_family",
+            "probability": 0.748667
+          },
+          {
+            "label": "instrument:guitar",
+            "probability": 0.735517
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.670272
+          },
+          {
+            "label": "instrument:synthesizer",
+            "probability": 0.623882
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 13.28,
+            "label": "A"
+          },
+          {
+            "start_s": 13.28,
+            "end_s": 37.88,
+            "label": "B"
+          },
+          {
+            "start_s": 37.88,
+            "end_s": 78.28,
+            "label": "B"
+          },
+          {
+            "start_s": 78.28,
+            "end_s": 93.72,
+            "label": "C"
+          },
+          {
+            "start_s": 93.72,
+            "end_s": 136.16,
+            "label": "D"
+          },
+          {
+            "start_s": 136.16,
+            "end_s": 160.6,
+            "label": "B"
+          },
+          {
+            "start_s": 160.6,
+            "end_s": 188.28,
+            "label": "C"
+          },
+          {
+            "start_s": 188.28,
+            "end_s": 198.08,
+            "label": "A"
+          }
+        ]
+      },
+      "ab66ca60-e574-4bef-b81b-6b95a327b646": {
+        "audio_id": "ab66ca60-e574-4bef-b81b-6b95a327b646",
+        "status": "complete",
+        "bpm": 143.8,
+        "key": "G minor",
+        "time_signature": 4,
+        "duration_s": 207.8,
+        "terms": [
+          "instrumental",
+          "no voice",
+          "piano",
+          "jazz"
+        ],
+        "labels": [
+          {
+            "label": "arrangement:instrumental",
+            "probability": 0.955523
+          },
+          {
+            "label": "content:music",
+            "probability": 0.940109
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.788824
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.773771
+          },
+          {
+            "label": "genre:jazz",
+            "probability": 0.729029
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 18.8,
+            "label": "A"
+          },
+          {
+            "start_s": 18.8,
+            "end_s": 38.24,
+            "label": "B"
+          },
+          {
+            "start_s": 38.24,
+            "end_s": 51.52,
+            "label": "A"
+          },
+          {
+            "start_s": 51.52,
+            "end_s": 103.6,
+            "label": "B"
+          },
+          {
+            "start_s": 103.6,
+            "end_s": 132.44,
+            "label": "B"
+          },
+          {
+            "start_s": 132.44,
+            "end_s": 144.84,
+            "label": "A"
+          },
+          {
+            "start_s": 144.84,
+            "end_s": 171.96,
+            "label": "B"
+          },
+          {
+            "start_s": 171.96,
+            "end_s": 199.04,
+            "label": "B"
+          },
+          {
+            "start_s": 199.04,
+            "end_s": 207.8,
+            "label": "A"
+          }
+        ]
+      },
+      "8c7064b3-07b3-4da0-93fd-69491549b276": {
+        "audio_id": "8c7064b3-07b3-4da0-93fd-69491549b276",
+        "status": "complete",
+        "bpm": 164,
+        "key": "F major",
+        "time_signature": 4,
+        "duration_s": 262.4,
+        "terms": [
+          "song",
+          "female vocals",
+          "synthesizer",
+          "electronic",
+          "future bass"
+        ],
+        "labels": [
+          {
+            "label": "content:music",
+            "probability": 0.944019
+          },
+          {
+            "label": "genre:electronic",
+            "probability": 0.91816
+          },
+          {
+            "label": "arrangement:instrumental",
+            "probability": 0.875431
+          },
+          {
+            "label": "content:human_voice",
+            "probability": 0.842861
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.827009
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.675581
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 11.12,
+            "label": "A"
+          },
+          {
+            "start_s": 11.12,
+            "end_s": 23.16,
+            "label": "B"
+          },
+          {
+            "start_s": 23.16,
+            "end_s": 36.96,
+            "label": "C"
+          },
+          {
+            "start_s": 36.96,
+            "end_s": 49.04,
+            "label": "C"
+          },
+          {
+            "start_s": 49.04,
+            "end_s": 59.32,
+            "label": "A"
+          },
+          {
+            "start_s": 59.32,
+            "end_s": 78.36,
+            "label": "D"
+          },
+          {
+            "start_s": 78.36,
+            "end_s": 107.48,
+            "label": "E"
+          },
+          {
+            "start_s": 107.48,
+            "end_s": 136.8,
+            "label": "A"
+          },
+          {
+            "start_s": 136.8,
+            "end_s": 141.24,
+            "label": "A"
+          },
+          {
+            "start_s": 141.24,
+            "end_s": 154.4,
+            "label": "D"
+          },
+          {
+            "start_s": 154.4,
+            "end_s": 176.4,
+            "label": "B"
+          },
+          {
+            "start_s": 176.4,
+            "end_s": 201.2,
+            "label": "C"
+          },
+          {
+            "start_s": 201.2,
+            "end_s": 211.52,
+            "label": "A"
+          },
+          {
+            "start_s": 211.52,
+            "end_s": 236.4,
+            "label": "B"
+          },
+          {
+            "start_s": 236.4,
+            "end_s": 242.96,
+            "label": "C"
+          },
+          {
+            "start_s": 242.96,
+            "end_s": 258.4,
+            "label": "B"
+          },
+          {
+            "start_s": 258.4,
+            "end_s": 262.4,
+            "label": "C"
+          }
+        ]
+      },
+      "9b868238-ba07-4465-9cfe-a9d3e8209f5c": {
+        "audio_id": "9b868238-ba07-4465-9cfe-a9d3e8209f5c",
+        "status": "complete",
+        "bpm": 172,
+        "key": "Ab major",
+        "time_signature": 4,
+        "duration_s": 262.68,
+        "terms": [
+          "song",
+          "female vocals",
+          "piano",
+          "synthesizer",
+          "pop",
+          "j pop"
+        ],
+        "labels": [
+          {
+            "label": "content:music",
+            "probability": 0.926392
+          },
+          {
+            "label": "arrangement:instrumental",
+            "probability": 0.92498
+          },
+          {
+            "label": "content:human_voice",
+            "probability": 0.886639
+          },
+          {
+            "label": "vocal:singing",
+            "probability": 0.871051
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.773841
+          },
+          {
+            "label": "vocal:feminine_timbre",
+            "probability": 0.761537
+          },
+          {
+            "label": "genre:pop",
+            "probability": 0.746509
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.739334
+          },
+          {
+            "label": "scene:j_pop",
+            "probability": 0.563876
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 9.88,
+            "label": "A"
+          },
+          {
+            "start_s": 9.88,
+            "end_s": 22.64,
+            "label": "B"
+          },
+          {
+            "start_s": 22.64,
+            "end_s": 45.32,
+            "label": "C"
+          },
+          {
+            "start_s": 45.32,
+            "end_s": 56.12,
+            "label": "A"
+          },
+          {
+            "start_s": 56.12,
+            "end_s": 70.12,
+            "label": "C"
+          },
+          {
+            "start_s": 70.12,
+            "end_s": 96.68,
+            "label": "C"
+          },
+          {
+            "start_s": 96.68,
+            "end_s": 105.36,
+            "label": "A"
+          },
+          {
+            "start_s": 105.36,
+            "end_s": 130.28,
+            "label": "C"
+          },
+          {
+            "start_s": 130.28,
+            "end_s": 138.56,
+            "label": "C"
+          },
+          {
+            "start_s": 138.56,
+            "end_s": 148.2,
+            "label": "B"
+          },
+          {
+            "start_s": 148.2,
+            "end_s": 182.08,
+            "label": "B"
+          },
+          {
+            "start_s": 182.08,
+            "end_s": 199.48,
+            "label": "A"
+          },
+          {
+            "start_s": 199.48,
+            "end_s": 231.96,
+            "label": "B"
+          },
+          {
+            "start_s": 231.96,
+            "end_s": 237.52,
+            "label": "A"
+          },
+          {
+            "start_s": 237.52,
+            "end_s": 249.72,
+            "label": "B"
+          },
+          {
+            "start_s": 249.72,
+            "end_s": 262.68,
+            "label": "A"
+          }
+        ]
+      },
+      "58e84764-26f5-45e6-8569-6ce3796ac3c5": {
+        "audio_id": "58e84764-26f5-45e6-8569-6ce3796ac3c5",
+        "status": "complete",
+        "bpm": 168,
+        "key": "Bb major",
+        "time_signature": 4,
+        "duration_s": 255,
+        "terms": [
+          "instrumental",
+          "no voice",
+          "piano",
+          "pop",
+          "jazz"
+        ],
+        "labels": [
+          {
+            "label": "arrangement:instrumental",
+            "probability": 0.981939
+          },
+          {
+            "label": "content:music",
+            "probability": 0.958367
+          },
+          {
+            "label": "instrument:piano",
+            "probability": 0.858959
+          },
+          {
+            "label": "instrument:keyboard_family",
+            "probability": 0.858127
+          }
+        ],
+        "sections": [
+          {
+            "start_s": 0,
+            "end_s": 8.84,
+            "label": "A"
+          },
+          {
+            "start_s": 8.84,
+            "end_s": 18.56,
+            "label": "A"
+          },
+          {
+            "start_s": 18.56,
+            "end_s": 29.6,
+            "label": "A"
+          },
+          {
+            "start_s": 29.6,
+            "end_s": 59.56,
+            "label": "A"
+          },
+          {
+            "start_s": 59.56,
+            "end_s": 93.68,
+            "label": "B"
+          },
+          {
+            "start_s": 93.68,
+            "end_s": 116,
+            "label": "A"
+          },
+          {
+            "start_s": 116,
+            "end_s": 181.56,
+            "label": "B"
+          },
+          {
+            "start_s": 181.56,
+            "end_s": 201.72,
+            "label": "A"
+          },
+          {
+            "start_s": 201.72,
+            "end_s": 247,
+            "label": "B"
+          },
+          {
+            "start_s": 247,
+            "end_s": 255,
+            "label": "A"
           }
         ]
       },
@@ -30910,14 +32338,6 @@
             "end_s": 192.78
           }
         ]
-      },
-      "589d0045-a76a-41ca-aafe-db23b48bad87": {
-        "status": "text",
-        "text": "[Intro]\n(sparkling synths and electric piano)\n\n[Verse 1]\n画面のこちら　小さな部屋で\n街の明かりを　数えてる\nネオンの波に　名前を呼んで\nあなたの声を　探してた\n\n[Pre-Chorus]\n指先ひとつ　届かない距離\nそれでも気持ちは　泳いでいける\n\n[Chorus]\nシグナルの海を　泳いで行くよ\n光のしぶきを　まとって\n会えない夜も　歌えばほら\nあなたの街まで　届いていく\n\n[Verse 2]\n真夜中の街は　少し寂しく\n信号の色が　水に揺れる\n私はいつも　ここにいるから\n眠れない夜は　思い出して\n\n[Pre-Chorus]\n言葉は電波に　乗せて運ぶよ\n心はいつでも　そばにあるから\n\n[Chorus]\nシグナルの海を　泳いで行くよ\n星屑みたいな　データの波\n触れられないのは　少し切ない\nそれでも歌は　届いていく\n\n[Bridge]\n(softly)\nいつか同じ　空の下で\n同じ風を　感じたいな\n\n[Outro]\nシグナルの海で　待っているよ\nあなたの声が　聞こえるまで\n(synths shimmering, fading out)"
-      },
-      "f7d050f1-2217-4b9d-8501-1309b24ff955": {
-        "status": "text",
-        "text": "[Intro]\n(sparkling synths and electric piano)\n\n[Verse 1]\n画面のこちら　小さな部屋で\n街の明かりを　数えてる\nネオンの波に　名前を呼んで\nあなたの声を　探してた\n\n[Pre-Chorus]\n指先ひとつ　届かない距離\nそれでも気持ちは　泳いでいける\n\n[Chorus]\nシグナルの海を　泳いで行くよ\n光のしぶきを　まとって\n会えない夜も　歌えばほら\nあなたの街まで　届いていく\n\n[Verse 2]\n真夜中の街は　少し寂しく\n信号の色が　水に揺れる\n私はいつも　ここにいるから\n眠れない夜は　思い出して\n\n[Pre-Chorus]\n言葉は電波に　乗せて運ぶよ\n心はいつでも　そばにあるから\n\n[Chorus]\nシグナルの海を　泳いで行くよ\n星屑みたいな　データの波\n触れられないのは　少し切ない\nそれでも歌は　届いていく\n\n[Bridge]\n(softly)\nいつか同じ　空の下で\n同じ風を　感じたいな\n\n[Outro]\nシグナルの海で　待っているよ\nあなたの声が　聞こえるまで\n(synths shimmering, fading out)"
       }
     },
     "iris": {
@@ -30928,7 +32348,7 @@
         "de39b167-b172-4ef9-a125-6896360fa1a5": "BPM 68.1・C major。アイリス経由で初めて作った試作曲。柔らかいピアノとレコードのノイズの lo-fi インストで、静かな夜の作業用。"
       },
       "today_pick": {
-        "clip_id": "81824ad9-5eb7-4bb8-a65e-f2f4fa92465d",
+        "clip_id": "1698aea8-fb46-4eee-b580-256453255bee",
         "reason": "あなたが「いいね」した曲の中から、日替わりで選んだ一曲。"
       },
       "playback": {
