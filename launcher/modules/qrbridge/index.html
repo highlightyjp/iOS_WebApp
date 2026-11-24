@@ -15691,7 +15691,7 @@ $("btnCam").onclick = async function () {
   st.innerHTML = "コードを探しています\nQRと色コードの両方を自動で認識します。色コードは画面の中央に大きく写してください";
   var c5cv = document.createElement("canvas"); c5cv.width = 1152; c5cv.height = 1152;
   var c5ctx = c5cv.getContext("2d", { willReadFrequently: true });
-  var lastC5Try = 0, lastSig = -1, failStreak = 0;
+  var lastC5Try = 0, lastSig = -1, failStreak = 0, lastFrameKey = "";
   var cv = $("scanCanvas");
   var ctx = cv.getContext("2d", { willReadFrequently: true });
   var tick = function () {
@@ -15703,8 +15703,12 @@ $("btnCam").onclick = async function () {
       var res = jsQR(img.data, img.width, img.height);
       if (res && res.binaryData && res.binaryData.length) {
         if (qbParityOf(img, res.location) < 0) { requestAnimationFrame(tick); return; }
-        var outcome = handleBytes(new Uint8Array(res.binaryData), st);
-        if (outcome === "progress") { setTimeout(tick, 350); return; }
+        var frameBytes = new Uint8Array(res.binaryData);
+        var frameKey = frameBytes.length + ":" + qbCrc32(frameBytes);
+        if (frameKey === lastFrameKey) { requestAnimationFrame(tick); return; }
+        lastFrameKey = frameKey;
+        var outcome = handleBytes(frameBytes, st);
+        if (outcome === "progress") { requestAnimationFrame(tick); return; }
         scanning = false;
         stream.getTracks().forEach(function (t) { t.stop(); });
         $("btnCam").textContent = "カメラで読み取る";
@@ -15886,7 +15890,7 @@ function renderReport() {
     lines.push("項目" + k + " " + it.label + ": " + it.result + (it.detail ? "（" + it.detail + "）" : ""));
     if (it.result === "合格" || it.result === "不合格" || it.result === "要確認") { judged++; if (it.result === "合格") pass++; }
   });
-  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 3.0.2 / モデル版 " + QB_SEED.v;
+  var head = "【QRブリッジ自己テスト結果】\n日時: " + new Date().toLocaleString("ja-JP") + " / アプリ版 3.0.3 / モデル版 " + QB_SEED.v;
   var tail = "合計: 合格 " + pass + " / 判定 " + judged;
   var prev = null;
   try { prev = JSON.parse(localStorage.getItem("qb-testlog-v1") || "null"); } catch (e) { prev = null; }
@@ -16464,7 +16468,7 @@ qbRenderTpl();
   try { isTest = /[?&]test=1(&|$)/.test(String((typeof location !== "undefined" && location.search) || "")); } catch (e) { isTest = false; }
   if (!isTest) return;
   var MODULE_ID = "qrbridge";
-  var VERSION = "3.0.2";
+  var VERSION = "3.0.3";
   var KNOWN_KEYS = ["qrb_hist", "qrb_hist_sel", "qrb_last_recv", "qrb_resend", "qrb_set", "qrb_tpl"];
   var t0 = 0, lastSet = 0, itemMs = {};
   try {
