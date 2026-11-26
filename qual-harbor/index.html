@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>資格ゲーム本編（港町・運航）</title>
+<style>
+  :root{
+    --ink:#2b2f36; --paper:#f6f3ec; --floor:#d9cfba; --wall:#e9e6dd;
+    --accent:#c8552e; --good:#2e7d4f; --sea:#3d7ea6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:#23262b;font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;color:var(--ink)}
+  #stage{position:relative;max-width:430px;height:100dvh;margin:0 auto;overflow:hidden;background:var(--wall)}
+  svg.scene{position:absolute;inset:0;width:100%;height:100%}
+  /* 上の帯：数字はここに集める */
+  #topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:10px 12px;pointer-events:none;z-index:3}
+  #power{background:rgba(246,243,236,.95);border:2px solid var(--ink);border-radius:10px;padding:5px 12px}
+  #power small{display:block;font-size:10px;color:#6a7078;letter-spacing:.06em}
+  #power b{font-size:24px;line-height:1.05}
+  #power b small{font-size:11px;color:var(--ink);display:inline}
+  #power .delta{font-size:12px;font-weight:700;color:var(--accent)}
+  #nextjoin{background:rgba(246,243,236,.95);border:2px dashed var(--accent);border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--accent);text-align:right;max-width:172px}
+  #nextjoin small{display:block;font-size:10px;font-weight:400;color:#6a7078}
+  #power.jump b{display:inline-block;animation:jump .45s ease}
+  /* 出荷の内訳チップ（加入2で常設される。数字は上の帯に集める原則どおり） */
+  #leftcol{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  #breakdown{display:none;background:rgba(246,243,236,.95);border:2px solid var(--good);border-radius:10px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--ink)}
+  #breakdown.show{display:block}
+  #breakdown small{display:block;font-size:10px;color:#6a7078;letter-spacing:.06em;font-weight:400}
+  #breakdown b{font-size:15px}
+  #breakdown .legacy{color:var(--accent)}
+  #breakdown.jump b{display:inline-block;animation:jump .45s ease}
+  @keyframes jump{0%{transform:scale(1)}35%{transform:scale(1.28)}100%{transform:scale(1)}}
+  /* 吊るされた用事の札 */
+  .tagcard{position:absolute;right:12px;width:158px;background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:8px 10px;box-shadow:3px 4px 0 rgba(43,47,54,.22);cursor:pointer;z-index:3}
+  .tagcard::before{content:"";position:absolute;top:-14px;left:50%;width:2px;height:14px;background:var(--ink)}
+  .tagcard h3{font-size:11px;color:var(--accent);letter-spacing:.08em}
+  .tagcard p{font-size:12.5px;font-weight:700;line-height:1.5;margin-top:2px}
+  .tagcard .sub{font-size:10.5px;font-weight:400;color:#6a7078}
+  #tag-scene{top:424px}
+  #tag-next{top:424px;display:none}
+  #tag-next2{top:424px;display:none}
+  #tag-next3{top:424px;display:none}
+  #tag-records{top:556px;display:none}
+  /* 吹き出し */
+  #bubble{position:absolute;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-size:13px;font-weight:700;display:none;max-width:216px;box-shadow:2px 3px 0 rgba(43,47,54,.2);z-index:6}
+  #bubble::after{content:"";position:absolute;bottom:-9px;left:26px;border:5px solid transparent;border-top:7px solid var(--ink)}
+  /* 下のシート（見通し／場面／照合） */
+  .sheet{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(246,243,236,.98);border:2px solid var(--ink);border-radius:14px;padding:12px 14px;display:none;z-index:8;box-shadow:0 -4px 18px rgba(43,47,54,.18);max-height:66dvh;overflow-y:auto}
+  .sheet.show{display:block}
+  .sheet h4{font-size:13.5px;line-height:1.5}
+  .sheet h4 b{color:var(--accent)}
+  .sheet .meta{font-size:10.5px;color:#6a7078;margin-bottom:6px;letter-spacing:.03em}
+  .dist{display:flex;align-items:flex-end;gap:4px;height:52px;margin:8px 0 2px}
+  .dist i{flex:1;background:var(--sea);border-radius:3px 3px 0 0;min-height:4px;position:relative}
+  .dist i.worst{background:var(--accent)}
+  .dist i.actual{background:var(--good);outline:3px solid var(--ink);outline-offset:-1px}
+  .dist-labels{display:flex;justify-content:space-between;font-size:10.5px;color:#6a7078}
+  .sheet .note{font-size:11px;color:#6a7078;margin-top:6px;line-height:1.55}
+  .sheet .big{font-size:15px;font-weight:700;line-height:1.55}
+  .startcard{margin-top:10px;background:var(--accent);color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:14.5px;cursor:pointer}
+  .nextcard{margin-top:10px;background:var(--ink);color:#fff;border-radius:10px;padding:11px;text-align:center;font-weight:700;font-size:14px;cursor:pointer}
+  /* 問題 */
+  #q-stem{font-size:15px;font-weight:700;line-height:1.65;margin:4px 0 10px}
+  .choice{border:2px solid var(--ink);border-radius:10px;background:#fff;padding:10px 12px;margin-bottom:8px;font-size:13.5px;line-height:1.5;cursor:pointer;position:relative}
+  .choice .ch{display:inline-block;font-weight:700;margin-right:8px;color:var(--sea)}
+  .choice.picked{border-color:var(--accent);background:#fdf1e8}
+  .choice.right{border-color:var(--good);background:#e9f5ee}
+  .choice.wrong{border-color:var(--accent);background:#fdeeea}
+  .choice.locked{pointer-events:none}
+  #q-explain{display:none;background:#fff8d6;border:2px solid var(--ink);border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.6;margin-top:2px}
+  #q-explain b{color:var(--accent)}
+  #q-next{display:none}
+  .dots{display:flex;gap:5px;margin:2px 0 8px}
+  .dots i{width:9px;height:9px;border-radius:50%;border:2px solid var(--ink);background:transparent}
+  .dots i.done{background:var(--ink)}
+  .dots i.now{background:var(--accent);border-color:var(--accent)}
+  /* スタンプ（選んだ選択肢の中に押す） */
+  #stamp{position:absolute;right:4px;top:-20px;font-size:56px;font-weight:900;display:none;z-index:9;pointer-events:none;line-height:1}
+  #stamp.ok{color:var(--good)}
+  #stamp.ng{color:var(--accent)}
+  #stamp.pop{display:block;animation:stampin .28s ease-out}
+  @keyframes stampin{0%{transform:scale(2.1) rotate(-14deg);opacity:0}60%{transform:scale(.92) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
+  /* 照合 */
+  .review-line{font-size:13px;line-height:1.65;margin-top:7px}
+  .review-line b{color:var(--accent)}
+  .critique{border-left:4px solid var(--accent);background:#fff;padding:7px 10px;font-size:12.5px;line-height:1.6;margin-top:8px;border-radius:0 8px 8px 0}
+  .critique b{color:var(--accent)}
+  .changed{border:2px solid var(--good);background:#eef7f1;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.7;margin-top:8px}
+  .changed b{color:var(--good)}
+  #reset{position:absolute;left:12px;bottom:12px;font-size:10.5px;color:#8a8f96;text-decoration:underline;cursor:pointer;z-index:2}
+  .hotspot{cursor:pointer}
+  .hotspot .ring{fill:none;stroke:#fff;stroke-width:3;stroke-dasharray:6 5;opacity:.9}
+  .pile-x{font-size:17px;font-weight:900;fill:#fff;text-anchor:middle;pointer-events:none}
+  /* ===== 型替え（場面2）：場の中に立つ見通しの板／検品パネル／宿題の札 ===== */
+  #board2{position:absolute;left:50%;transform:translateX(-50%);top:428px;width:316px;background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:10px 12px;box-shadow:4px 5px 0 rgba(43,47,54,.25);display:none;z-index:6}
+  #board2.show{display:block}
+  #board2::before{content:"";position:absolute;bottom:-16px;left:50%;width:2px;height:16px;background:var(--ink)}
+  #board2 .meta{font-size:10.5px;color:#6a7078;letter-spacing:.03em;margin-bottom:4px}
+  #board2 h4{font-size:13px;line-height:1.55}
+  #board2 h4 b{color:var(--good)}
+  .dist.mini{height:36px;margin:6px 0 2px}
+  #board2 .note{font-size:11px;color:#6a7078;margin-top:6px;line-height:1.55}
+  /* 検品パネル：シートより薄く開き、場の上半分が見えたまま解く */
+  #panel2{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(246,243,236,.98);border:2px solid var(--good);border-radius:14px;padding:10px 14px 12px;display:none;z-index:8;box-shadow:0 -4px 18px rgba(43,47,54,.18);max-height:58dvh;overflow-y:auto}
+  #panel2.show{display:block}
+  #livebar{background:#fff8d6;border:2px solid var(--ink);border-radius:9px;padding:6px 10px;font-size:12px;line-height:1.5;margin-bottom:8px}
+  #livebar b{color:var(--accent)}
+  #boxrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  #boxfx{width:26px;height:26px;background:#c49a58;border:2px solid var(--ink);border-radius:4px;position:relative;flex:none;transition:transform .45s ease,opacity .45s ease,background .2s}
+  #boxfx.pass{transform:translateX(52px);opacity:0;background:var(--good)}
+  #boxfx.reject{transform:translateX(-16px) rotate(-14deg);background:#a03a2a}
+  #boxfx .bx{position:absolute;inset:0;display:none;color:#fff;font-weight:900;font-size:17px;text-align:center;line-height:23px}
+  #boxfx.reject .bx{display:block}
+  #boxlabel{font-size:11.5px;color:#6a7078;line-height:1.45}
+  #fieldline{font-size:11.5px;color:#6a7078;line-height:1.5;margin-bottom:6px}
+  #fieldline b{color:var(--accent)}
+  /* 宿題の札：左の壁に貼る */
+  #tag-homework{left:12px;right:auto;top:424px;display:none}
+  #q-stem2{font-size:15px;font-weight:700;line-height:1.65;margin:4px 0 10px}
+  #q-explain2{display:none;background:#fff8d6;border:2px solid var(--ink);border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.6;margin-top:2px}
+  #q-explain2 b{color:var(--accent)}
+  #q-next2{display:none}
+  /* パネル内は選択肢を詰め、「つぎへ」は下端に貼り付けて折り目の下に沈ませない */
+  #panel2 .choice{padding:8px 11px;margin-bottom:6px}
+  #panel2 #q-next2{position:sticky;bottom:0;box-shadow:0 -6px 10px rgba(246,243,236,.9)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg class="scene" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" aria-label="港町：海と桟橋と荷捌き場と、住人">
+    <!-- 空と海（港の背景） -->
+    <rect x="0" y="0" width="390" height="150" fill="#dcebf2"/>
+    <circle cx="330" cy="52" r="22" fill="#f4d35e" stroke="#2b2f36" stroke-width="2"/>
+    <g fill="#ffffff" opacity="0.85">
+      <ellipse cx="70" cy="48" rx="30" ry="10"/>
+      <ellipse cx="95" cy="42" rx="22" ry="9"/>
+      <ellipse cx="215" cy="86" rx="26" ry="9"/>
+      <ellipse cx="238" cy="80" rx="18" ry="8"/>
+    </g>
+    <path id="gull1" d="M0 0 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="#2b2f36" stroke-width="1.6"/>
+    <path id="gull2" d="M0 0 q4 -4 8 0 q4 -4 8 0" fill="none" stroke="#2b2f36" stroke-width="1.4"/>
+    <!-- 対岸の倉庫群（地平線） -->
+    <g fill="#9db8c4">
+      <rect x="0" y="128" width="52" height="22"/>
+      <rect x="58" y="118" width="38" height="32"/>
+      <rect x="300" y="124" width="44" height="26"/>
+      <rect x="350" y="132" width="40" height="18"/>
+    </g>
+    <rect x="0" y="150" width="390" height="250" fill="#3d7ea6"/>
+    <rect x="0" y="150" width="390" height="26" fill="#5b93b5"/>
+    <!-- 貨物船（港を行き来する。戦う船ではない） -->
+    <g id="cargoship">
+      <rect x="-88" y="-36" width="50" height="26" fill="#c8552e" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="-32" y="-36" width="50" height="26" fill="#e9e6dd" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="24" y="-36" width="42" height="26" fill="#c49a58" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="-60" y="-58" width="50" height="20" fill="#2e7d4f" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="-4" y="-58" width="50" height="20" fill="#b98d4f" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="76" y="-54" width="26" height="44" fill="#f6f3ec" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="81" y="-48" width="7" height="7" fill="#3d7ea6"/>
+      <rect x="91" y="-48" width="7" height="7" fill="#3d7ea6"/>
+      <rect x="84" y="-70" width="11" height="16" fill="#2b2f36"/>
+      <path d="M-118 -8 L118 -8 L96 14 L-96 14 Z" fill="#7a4a3a" stroke="#2b2f36" stroke-width="2"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.55">
+      <path class="wave" d="M-20 372 q10 -7 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+      <path class="wave" d="M-20 392 q10 -7 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+    </g>
+    <!-- 岸壁（ここから下が荷捌き場） -->
+    <rect x="0" y="400" width="390" height="444" fill="#c9ced2"/>
+    <line x1="0" y1="400" x2="390" y2="400" stroke="#2b2f36" stroke-width="2"/>
+    <line x1="0" y1="438" x2="390" y2="438" stroke="#f4d35e" stroke-width="3" stroke-dasharray="14 8"/>
+    <text x="300" y="486" text-anchor="middle" font-size="19" font-weight="900" fill="rgba(43,47,54,.10)">荷捌き場</text>
+    <!-- 桟橋（船着き場。仲間はここに船で着く） -->
+    <g id="pier">
+      <rect x="10" y="352" width="62" height="50" fill="#9a8f78" stroke="#2b2f36" stroke-width="2"/>
+      <line x1="10" y1="368" x2="72" y2="368" stroke="#2b2f36" stroke-width="1.2"/>
+      <line x1="10" y1="384" x2="72" y2="384" stroke="#2b2f36" stroke-width="1.2"/>
+      <rect x="16" y="402" width="7" height="18" fill="#7d7460"/>
+      <rect x="59" y="402" width="7" height="18" fill="#7d7460"/>
+      <text x="41" y="340" text-anchor="middle" font-size="11" font-weight="700" fill="#2b2f36" style="paint-order:stroke" stroke="#dcebf2" stroke-width="3">桟橋・船着き場</text>
+    </g>
+    <!-- 連絡船（加入の時にここへ着ける） -->
+    <g id="ferry" style="display:none">
+      <rect x="104" y="338" width="30" height="18" fill="#f6f3ec" stroke="#2b2f36" stroke-width="1.6"/>
+      <rect x="110" y="343" width="6" height="6" fill="#3d7ea6"/>
+      <rect x="120" y="343" width="6" height="6" fill="#3d7ea6"/>
+      <rect x="98" y="330" width="42" height="8" fill="#c8552e" stroke="#2b2f36" stroke-width="1.4"/>
+      <path d="M88 358 L152 358 L142 372 L96 372 Z" fill="#f6f3ec" stroke="#2b2f36" stroke-width="1.8"/>
+    </g>
+    <!-- ガントリークレーン（岸壁の印。荷を吊る） -->
+    <g id="crane">
+      <rect x="318" y="252" width="7" height="150" fill="#8a9298" stroke="#2b2f36" stroke-width="1.4"/>
+      <rect x="374" y="252" width="7" height="150" fill="#8a9298" stroke="#2b2f36" stroke-width="1.4"/>
+      <rect x="304" y="242" width="92" height="13" fill="#8a9298" stroke="#2b2f36" stroke-width="1.4"/>
+      <g id="crane-hook">
+        <line x1="348" y1="255" x2="348" y2="298" stroke="#2b2f36" stroke-width="1.6"/>
+        <rect x="339" y="298" width="18" height="13" fill="#c49a58" stroke="#2b2f36" stroke-width="1.4"/>
+      </g>
+    </g>
+    <!-- 荷物の山（左） -->
+    <g id="pile">
+      <text x="86" y="600" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2f36">たまっている荷物</text>
+      <g id="pile-boxes"></g>
+      <text id="pile-count" x="86" y="728" text-anchor="middle" font-size="12" font-weight="700" fill="#c8552e">残り 9 件</text>
+    </g>
+    <!-- ハルの持ち場（中央） -->
+    <g id="desk-haru">
+      <rect x="150" y="600" width="76" height="16" fill="#9a8f78" stroke="#2b2f36" stroke-width="2"/>
+      <rect x="158" y="616" width="8" height="34" fill="#7d7460"/>
+      <rect x="210" y="616" width="8" height="34" fill="#7d7460"/>
+      <rect x="146" y="558" width="84" height="20" rx="6" fill="#f6f3ec" stroke="#2b2f36" stroke-width="1.6"/>
+      <text x="188" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#2b2f36">ハルの持ち場</text>
+    </g>
+    <!-- ミライの机（右・空席。誰が来るかは隠さない） -->
+    <g id="desk-mirai" class="hotspot" tabindex="0" role="button" aria-label="ミライの運航デスク。場面を終えるとミライが船で加入します">
+      <circle class="ring" cx="308" cy="600" r="52"/>
+      <rect id="mirai-desk-top" x="270" y="600" width="76" height="16" fill="#efece4" stroke="#2b2f36" stroke-width="2" stroke-dasharray="5 4"/>
+      <rect x="278" y="616" width="8" height="34" fill="#bdb5a2"/>
+      <rect x="330" y="616" width="8" height="34" fill="#bdb5a2"/>
+      <rect x="250" y="558" width="120" height="20" rx="6" fill="#fff" stroke="#c8552e" stroke-width="2"/>
+      <text x="310" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#c8552e">ミライの運航デスク</text>
+      <text id="mirai-seat-note" x="310" y="676" text-anchor="middle" font-size="10.5" fill="#6a7078">場面を終えると、船で来ます</text>
+    </g>
+    <!-- 検品台（サトルの持ち場。ミライ加入後に予告として現れる） -->
+    <g id="stand" class="hotspot" tabindex="0" role="button" aria-label="検品台。中項目1.2の場面を終えるとサトルが加入します" style="display:none">
+      <rect id="stand-plate" x="170" y="688" width="90" height="20" rx="6" fill="#fff" stroke="#2e7d4f" stroke-width="2"/>
+      <text id="stand-plate-text" x="215" y="702" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2e7d4f">検品台</text>
+      <rect id="stand-top" x="180" y="714" width="70" height="13" fill="#efece4" stroke="#2b2f36" stroke-width="2" stroke-dasharray="5 4"/>
+      <rect x="188" y="727" width="7" height="22" fill="#bdb5a2"/>
+      <rect x="235" y="727" width="7" height="22" fill="#bdb5a2"/>
+      <text id="stand-note" x="215" y="766" text-anchor="middle" font-size="10.5" fill="#6a7078">サトルが来ると、ここで検品します</text>
+      <text id="reject-count" x="215" y="788" text-anchor="middle" font-size="12" font-weight="700" fill="#2e7d4f" style="display:none">はねた荷物 0 件</text>
+      <g id="stand-result" style="display:none">
+        <rect x="118" y="796" width="194" height="40" rx="6" fill="#f6f3ec" stroke="#2e7d4f" stroke-width="2"/>
+        <text id="stand-result1" x="215" y="813" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2f36"></text>
+        <text id="stand-result2" x="215" y="829" text-anchor="middle" font-size="10.5" fill="#6a7078"></text>
+      </g>
+    </g>
+    <!-- 記録棚（イオリの持ち場。サトル加入後に予告として現れる） -->
+    <g id="shelf" class="hotspot" tabindex="0" role="button" aria-label="記録棚。中項目2.1の場面を終えるとイオリが加入します" style="display:none">
+      <rect id="shelf-plate" x="246" y="448" width="126" height="20" rx="6" fill="#fff" stroke="#3d7ea6" stroke-width="2"/>
+      <text id="shelf-plate-text" x="309" y="462" text-anchor="middle" font-size="11.5" font-weight="700" fill="#3d7ea6">記録棚</text>
+      <rect class="shelf-board" x="252" y="482" width="114" height="8" fill="#efece4" stroke="#2b2f36" stroke-width="1.6" stroke-dasharray="5 4"/>
+      <rect x="258" y="466" width="7" height="16" fill="#c8552e"/>
+      <rect x="267" y="466" width="7" height="16" fill="#3d7ea6"/>
+      <rect x="276" y="466" width="7" height="16" fill="#c49a58"/>
+      <rect class="shelf-board" x="252" y="508" width="114" height="8" fill="#efece4" stroke="#2b2f36" stroke-width="1.6" stroke-dasharray="5 4"/>
+      <rect x="258" y="492" width="7" height="16" fill="#2e7d4f"/>
+      <rect x="267" y="492" width="7" height="16" fill="#e9e6dd"/>
+      <rect x="276" y="492" width="7" height="16" fill="#7a4a3a"/>
+      <text id="shelf-note" x="309" y="536" text-anchor="middle" font-size="10.5" fill="#6a7078">イオリが来ると、学習の記録がここに残ります</text>
+    </g>
+    <!-- 住人：イオリ（記録係。加入前は入口の外。加入で歩いて記録棚に着く） -->
+    <g id="iori" style="display:none">
+      <ellipse cx="0" cy="4" rx="13" ry="3" fill="rgba(43,47,54,.22)"/>
+      <circle cx="0" cy="-36" r="9" fill="#f0c8a0" stroke="#2b2f36" stroke-width="2"/>
+      <path d="M-8 -27 L8 -27 L10 -2 L-10 -2 Z" fill="#3d7ea6" stroke="#2b2f36" stroke-width="2"/>
+      <rect x="9" y="-32" width="17" height="21" fill="#fff" stroke="#2b2f36" stroke-width="1.6"/>
+      <text x="17.5" y="-17" text-anchor="middle" font-size="11" font-weight="900" fill="#3d7ea6">記</text>
+      <text id="iori-name" x="0" y="-66" text-anchor="middle" font-size="11" font-weight="700" fill="#3d7ea6">イオリ</text>
+    </g>
+    <!-- 住人：ハル（荷物の山と机の間を往復） -->
+    <g id="haru">
+      <ellipse cx="0" cy="4" rx="13" ry="3" fill="rgba(43,47,54,.22)"/>
+      <circle cx="0" cy="-36" r="9" fill="#f0c8a0" stroke="#2b2f36" stroke-width="2"/>
+      <path d="M-8 -27 L8 -27 L10 -2 L-10 -2 Z" fill="#3d7ea6" stroke="#2b2f36" stroke-width="2"/>
+      <rect class="carry" x="8" y="-30" width="18" height="15" fill="#c49a58" stroke="#2b2f36" stroke-width="1.6" style="display:none"/>
+      <text id="haru-name" x="0" y="-66" text-anchor="middle" font-size="11" font-weight="700" fill="#2b2f36">ハル</text>
+    </g>
+    <!-- 住人：ミライ（加入前は入口の外。加入で歩いて入る） -->
+    <g id="mirai" style="display:none">
+      <ellipse cx="0" cy="4" rx="13" ry="3" fill="rgba(43,47,54,.22)"/>
+      <circle cx="0" cy="-36" r="9" fill="#e8b88a" stroke="#2b2f36" stroke-width="2"/>
+      <path d="M-8 -27 L8 -27 L10 -2 L-10 -2 Z" fill="#c8552e" stroke="#2b2f36" stroke-width="2"/>
+      <rect class="carry" x="8" y="-30" width="18" height="15" fill="#c49a58" stroke="#2b2f36" stroke-width="1.6" style="display:none"/>
+      <text id="mirai-name" x="0" y="-66" text-anchor="middle" font-size="11" font-weight="700" fill="#c8552e">ミライ</text>
+    </g>
+    <!-- 住人：サトル（検品役。加入前は入口の外。加入で歩いて検品台に着く） -->
+    <g id="satoru" style="display:none">
+      <ellipse cx="0" cy="4" rx="13" ry="3" fill="rgba(43,47,54,.22)"/>
+      <circle cx="0" cy="-36" r="9" fill="#d9b48c" stroke="#2b2f36" stroke-width="2"/>
+      <path d="M-9 -42 A9.5 9.5 0 0 1 9 -42 L9 -39 L-9 -39 Z" fill="#2e7d4f" stroke="#2b2f36" stroke-width="1.6"/>
+      <path d="M-8 -27 L8 -27 L10 -2 L-10 -2 Z" fill="#2e7d4f" stroke="#2b2f36" stroke-width="2"/>
+      <rect x="9" y="-32" width="17" height="21" fill="#fff" stroke="#2b2f36" stroke-width="1.6"/>
+      <text x="17.5" y="-17" text-anchor="middle" font-size="11" font-weight="900" fill="#c8552e">検</text>
+      <text id="satoru-name" x="0" y="-66" text-anchor="middle" font-size="11" font-weight="700" fill="#2e7d4f">サトル</text>
+    </g>
+    <text id="satoru-stamp" x="252" y="676" font-size="38" font-weight="900" fill="#c8552e" style="display:none">×</text>
+    <!-- 片づいた荷物の置き場（右下） -->
+    <g id="done-pile">
+      <text x="330" y="770" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2f36">出荷した荷物</text>
+      <text id="done-count" x="330" y="792" text-anchor="middle" font-size="15" font-weight="700" fill="#2e7d4f">0 件</text>
+      <text id="done-note" x="330" y="814" text-anchor="middle" font-size="11" font-weight="700" fill="#c8552e"></text>
+    </g>
+  </svg>
+
+  <div id="topbar">
+    <div id="leftcol">
+      <div id="power"><small>この港の荷捌き能力</small><b id="power-num">10</b> <small>件/時</small> <span class="delta" id="power-delta"></span></div>
+      <div id="breakdown"><small>出荷の内訳（検品が入ってから数える）</small><span class="legacy">未点検 <b id="bd-legacy">0</b> 件</span> ／ 点検済み <b id="bd-checked">0</b> 件</div>
+    </div>
+    <div id="nextjoin">次の仲間：ミライ<small>中項目1.1「人工知能とは」担当<br>この場面を終えると船で加入</small></div>
+  </div>
+
+  <div class="tagcard" id="tag-scene" role="button" tabindex="0" aria-label="今日の場面：中項目1.1 人工知能とは、四択5問">
+    <h3>今日の場面</h3>
+    <p>中項目1.1「人工知能とは」<br><span class="sub">四択 5問 ・ 終えるとミライが船で加入</span></p>
+  </div>
+
+  <div class="tagcard" id="tag-next" role="button" tabindex="0" aria-label="次の場面：中項目1.2 人工知能をめぐる動向、四択5問。終えるとサトルが加入">
+    <h3>次の場面（触ると見通しが開きます）</h3>
+    <p>中項目1.2「人工知能をめぐる動向」<br><span class="sub">四択 5問 ・ 終えるとサトルが船で加入</span></p>
+  </div>
+
+  <div class="tagcard" id="tag-next3" role="button" tabindex="0" aria-label="次の場面：中項目2.1、四択5問。終えるとイオリが加入">
+    <h3>次の場面（触ると見通しが開きます）</h3>
+    <p>中項目2.1<br><span class="sub">四択 5問 ・ 終えるとイオリが船で加入</span></p>
+  </div>
+
+  <div class="tagcard" id="tag-records" role="button" tabindex="0" aria-label="学習の記録：イオリの台帳">
+    <h3>学習の記録</h3>
+    <p id="tag-records-body">イオリの台帳<br><span class="sub">触ると3場面の記録が読めます</span></p>
+  </div>
+
+  <div class="tagcard" id="tag-next2" aria-label="次の用事：落とした単元の見直し">
+    <h3>次の用事（吊るされています）</h3>
+    <p>落とした単元の見直し（復習）<br><span class="sub">担当：ミライとサトル ・ 宿題の単元から</span></p>
+  </div>
+
+  <div class="tagcard" id="tag-homework" role="button" tabindex="0" aria-label="サトルの宿題の札：検品結果と批評">
+    <h3>サトルの検品メモ</h3>
+    <p id="tag-homework-body">落とした単元の見直し<br><span class="sub">触ると検品結果と批評が読めます</span></p>
+  </div>
+
+  <div id="bubble"></div>
+  <div id="stamp"></div>
+
+  <!-- 見通し1（ミライ） -->
+  <div class="sheet" id="forecast" aria-live="polite">
+    <p class="meta">見通し ・ 誰が来るかは隠しません</p>
+    <h4>この場面（中項目1.1「人工知能とは」四択5問）を終えると、担当の <b>ミライ</b> が船で着いて、加入します。</h4>
+    <p class="big" style="margin-top:6px">加入後の荷捌き能力の見通し ― いま <span id="fc-now">10</span> 件/時</p>
+    <div class="dist" id="fc-dist"></div>
+    <div class="dist-labels"><span>最悪側 14</span><span>ふつう 17前後</span><span>良い側 20</span></div>
+    <p class="note">最悪側の <b>14</b> は、今回の出来に関わらず固い下限です（来れば必ず +4）。上の幅は、場面で扱った単元の実測（正答の数）で決まります。結果が出たら、この見通しと実績を並べて照らします。</p>
+    <div class="startcard" id="start-btn">場面をはじめる（5問）</div>
+  </div>
+
+  <!-- 見通し2（サトル）：シートではなく、場の中に立つ板（型替え） -->
+  <div id="board2" aria-live="polite">
+    <p class="meta">検品台の見通し板 ・ 誰が来るかは隠しません</p>
+    <h4>中項目1.2の場面を終えると、担当の <b>サトル</b> が船で着いて、ここに来ます。運び手ではなく<b>検品役</b>です。</h4>
+    <p class="note" id="bd-status"></p>
+    <div class="dist mini" id="bd-dist"></div>
+    <div class="dist-labels"><span>最悪側 60%</span><span>ふつう 85%前後</span><span>良い側 100%</span></div>
+    <p class="note">いまの見通しは <b>60〜100%</b>。まだ1問も実測していないので、幅はいっぱいです。最悪側 <b>60%</b> は出来に関わらず固い下限、ただし残りは混入します（ゼロにはなりません）。場面の間、この幅は実測で狭まっていきます。荷捌き能力（速さ）は変わりません。変わるのは「正しさ」です。</p>
+    <div class="startcard" id="start2-btn">検品の場面をはじめる（5問）</div>
+  </div>
+
+  <!-- 場面2（検品パネル）：場が見えたまま、荷物を検品する形で解く（型替え） -->
+  <div id="panel2">
+    <div id="livebar"></div>
+    <div id="boxrow">
+      <div id="boxfx"><span class="bx">×</span></div>
+      <div id="boxlabel"></div>
+    </div>
+    <div id="fieldline"></div>
+    <p class="meta" id="p2-meta"></p>
+    <div class="dots" id="p2-dots"></div>
+    <p id="q-stem2"></p>
+    <div id="q-choices2"></div>
+    <div id="q-explain2"></div>
+    <div class="nextcard" id="q-next2">つぎへ</div>
+  </div>
+
+  <!-- 宿題の札の中身：照合の詳細（総評・批評・変わったこと）はここに集約（型替え） -->
+  <div class="sheet" id="homework" aria-live="polite">
+    <p class="meta">検品結果 ・ 見通しと実績の照合（詳細）</p>
+    <h4 id="hw-title">サトルの検品結果</h4>
+    <p class="review-line" id="hw-compare"></p>
+    <p class="review-line" id="hw-overall"></p>
+    <div id="hw-critiques"></div>
+    <div class="changed" id="hw-changed"></div>
+    <div class="nextcard" id="homework-close">札を戻す</div>
+  </div>
+
+  <!-- 場面（問題） -->
+  <div class="sheet" id="quiz">
+    <p class="meta" id="q-meta"></p>
+    <div class="dots" id="q-dots"></div>
+    <p id="q-stem"></p>
+    <div id="q-choices"></div>
+    <div id="q-explain"></div>
+    <div class="nextcard" id="q-next">つぎへ</div>
+  </div>
+
+  <!-- 照合1（見通しと実績：荷捌き能力） -->
+  <div class="sheet" id="review">
+    <p class="meta">結果の開示 ・ 見通しと実績の照合</p>
+    <h4 id="rv-title">場面が終わりました</h4>
+    <div class="dist" id="rv-dist"></div>
+    <div class="dist-labels"><span>最悪側 14</span><span>ふつう 17前後</span><span>良い側 20</span></div>
+    <p class="review-line" id="rv-compare"></p>
+    <p class="review-line" id="rv-overall"></p>
+    <div id="rv-critiques"></div>
+    <div class="startcard" id="welcome-btn">ミライを迎える</div>
+  </div>
+
+  <!-- 変わったこと1 -->
+  <div class="sheet" id="changed">
+    <p class="meta">加入しました</p>
+    <h4><b>ミライ</b> が場に加わりました</h4>
+    <div class="changed" id="changed-list"></div>
+    <p class="note">次の場面は、もう吊るしてあります（右上の札）。止め時は自分で作る形です。</p>
+    <div class="nextcard" id="changed-close">場に戻る</div>
+  </div>
+
+  <!-- 見通し3（イオリ）：3場面を通した正答率の見通し -->
+  <div class="sheet" id="forecast3" aria-live="polite">
+    <p class="meta">見通し ・ 誰が来るかは隠しません</p>
+    <h4>この場面（中項目2.1 四択5問）を終えると、担当の <b>イオリ</b> が船で着いて、記録棚に着きます。記録係です。</h4>
+    <p class="big" style="margin-top:6px">3場面を通した正答率の見通し ― いまの実測 <span id="fc3-now">0/10</span> 問</p>
+    <div class="dist" id="fc3-dist"></div>
+    <div class="dist-labels"><span id="fc3-lo"></span><span>この場面の出来で決まります</span><span id="fc3-hi"></span></div>
+    <p class="note">イオリが着くと、これまでの学習の記録（場面ごとの正答と、落とした単元の数）が台帳として場に残り続けます。見通しの下限は、いまの実測そのものです（この場面で全部落としても、記録はそこまで残ります）。結果が出たら、見通しと実績を並べて照らします。</p>
+    <div class="startcard" id="start3-btn">場面をはじめる（5問）</div>
+  </div>
+
+  <!-- 照合3（記録の照合） -->
+  <div class="sheet" id="review3">
+    <p class="meta">結果の開示 ・ 見通しと実績の照合（記録）</p>
+    <h4 id="rv3-title">場面が終わりました</h4>
+    <div class="dist" id="rv3-dist"></div>
+    <div class="dist-labels"><span id="rv3-lo"></span><span></span><span id="rv3-hi"></span></div>
+    <p class="review-line" id="rv3-compare"></p>
+    <p class="review-line" id="rv3-overall"></p>
+    <div id="rv3-critiques"></div>
+    <div class="startcard" id="welcome3-btn">イオリを迎える</div>
+  </div>
+
+  <!-- 変わったこと3 -->
+  <div class="sheet" id="changed3">
+    <p class="meta">加入しました</p>
+    <h4><b>イオリ</b> が場に加わりました</h4>
+    <div class="changed" id="changed3-list"></div>
+    <p class="note">次の用事は、もう吊るしてあります（右上の札）。止め時は自分で作る形です。</p>
+    <div class="nextcard" id="changed3-close">場に戻る</div>
+  </div>
+
+  <!-- 学習の記録（イオリの台帳） -->
+  <div class="sheet" id="records" aria-live="polite">
+    <p class="meta">学習の記録 ・ イオリの台帳</p>
+    <h4>3場面の記録</h4>
+    <div id="rec-lines"></div>
+    <div class="changed" id="rec-note"></div>
+    <div class="nextcard" id="records-close">札を戻す</div>
+  </div>
+
+  <div id="reset">記録を消して最初から</div>
+</div>
+
+<script src="pool-g.js"></script>
+<script>
+(function(){
+  "use strict";
+  /* ===== 問題：既存プール（qual/questions-g.js）から原文のまま ===== */
+  /* ===== 問題：検証済みプール（pool-g.js）から中項目ごとに引く ===== */
+  function poolByRef(ref, n){
+    var all = (window.QUAL_POOL_G || []).filter(function(q){ return q.syllabus_ref === ref; });
+    all.sort(function(a, b){ return a.id < b.id ? -1 : 1; });
+    return all.slice(0, n);
+  }
+  var QUESTIONS1 = poolByRef('1.1', 5);
+  var QUESTIONS2 = poolByRef('1.2', 5);
+  var QUESTIONS3 = poolByRef('2.1', 5);
+  var SCENES=[
+    { label:'中項目1.1「人工知能とは」', qs:QUESTIONS1, joiner:'ミライ' },
+    { label:'中項目1.2「人工知能をめぐる動向」', qs:QUESTIONS2, joiner:'サトル' },
+    { label:'中項目2.1', qs:QUESTIONS3, joiner:'イオリ' }
+  ];
+  var BASE_POWER=10;
+  /* 加入1の寄与：正答数 0..5 → +4,+5,+6,+8,+9,+10（最悪でも +4 は固い） */
+  function contribution(correct){ return [4,5,6,8,9,10][correct]; }
+  var FORECAST_BARS=[ /* [荷捌き能力, 高さ] 最悪側→良い側 */
+    [14,10],[15,18],[16,28],[17,40],[18,34],[19,22],[20,13]
+  ];
+  /* 加入2の寄与：正答数 0..5 → はねられる割合 60,70,80,90,95,100%（最悪でも 60% は固い） */
+  function catchFor(correct){ return [60,70,80,90,95,100][correct]; }
+  var FORECAST2_BARS=[ /* [割合%, 高さ] 最悪側→良い側 */
+    [60,12],[70,20],[80,30],[85,38],[90,30],[95,20],[100,13]
+  ];
+
+  /* ===== 状態 ===== */
+  var SAVE_KEY='qual-harbor-v1';
+  var S={ stage:0, /* 0=加入前 1=ミライ加入済み 2=サトル加入済み */
+          phase:'idle', /* idle|forecast|quiz|review|joining|joined|forecast2(板)|quiz2(パネル)|joining2|joined2 */
+          qIndex:0, correct:0, missed:[], power:BASE_POWER,
+          done:0, pile:9,
+          correct1:0, correct2:0, correct3:0, ioriHome:false,
+          contaminated:0, rejected:0, defectiveSeen:0, leaked:0,
+          legacyUnchecked:0, checkedDone:0, /* 加入2で確定する出荷の内訳（実測） */
+          catchRate:0, catchAcc:0, pendingPower:0, pendingCatch:0,
+          satoruHome:false, firstCatchSaid:false,
+          scene2StartContaminated:-1, scene2EndContaminated:-1,
+          liveLo:60, liveHi:100, cleanedCount:0 };
+  try{
+    var saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    if(saved && saved.v===2){
+      S.stage=saved.stage||0; S.power=saved.power||BASE_POWER;
+      S.correct1=saved.correct1||0; S.correct2=saved.correct2||0; S.correct3=saved.correct3||0;
+      S.done=saved.done||0; S.contaminated=saved.contaminated||0;
+      S.rejected=saved.rejected||0; S.catchRate=saved.catchRate||0;
+      S.checkedDone=saved.checkedDone||0;
+      /* 内訳の無い旧セーブでは、加入前の出荷＝総数−混入（漏れ分）で復元する */
+      S.legacyUnchecked=(typeof saved.legacyUnchecked==='number')? saved.legacyUnchecked
+        : Math.max(0,(saved.done||0)-(saved.contaminated||0)-S.checkedDone);
+    } else if(saved && saved.joined){
+      /* 旧形式（加入1のみ）の読み替え */
+      S.stage=1; S.power=saved.power||BASE_POWER; S.correct1=saved.correct||0; S.correct=S.correct1;
+    }
+  }catch(e){}
+  function save(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify({
+      v:2, stage:S.stage, power:S.power, correct1:S.correct1, correct2:S.correct2, correct3:S.correct3,
+      done:S.done, contaminated:S.contaminated, rejected:S.rejected, catchRate:S.catchRate,
+      legacyUnchecked:S.legacyUnchecked, checkedDone:S.checkedDone
+    })); }catch(e){}
+  }
+
+  /* ===== 音（小さな手応え） ===== */
+  var AC=null;
+  function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+  function tone(freq,dur,type,delay,vol){
+    var c=ac(); if(!c)return;
+    var o=c.createOscillator(), g=c.createGain(), t0=c.currentTime+(delay||0);
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol||0.06,t0); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0+dur+0.02);
+  }
+  function sndSelect(){ tone(660,0.06,'sine',0,0.04); }
+  function sndRight(){ tone(523,0.09,'sine',0,0.06); tone(784,0.13,'sine',0.07,0.06); }
+  function sndWrong(){ tone(196,0.16,'square',0,0.035); }
+  function sndTick(){ tone(880,0.04,'sine',0,0.03); }
+  function sndJoin(){ [523,659,784,1046].forEach(function(f,i){ tone(f,0.16,'sine',i*0.09,0.06); }); }
+  function sndCatch(){ tone(392,0.08,'square',0,0.04); tone(587,0.1,'sine',0.05,0.05); }
+  function buzz(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+  /* ===== 場のアニメーション（仮想時計。ヒットストップで止まる） ===== */
+  var vtime=0, lastReal=performance.now(), freezeUntil=0;
+  function hitStop(ms){ freezeUntil=performance.now()+ms; }
+  var SVGNS='http://www.w3.org/2000/svg';
+  var pileBoxes=document.getElementById('pile-boxes');
+  var pileEls=[], pileMarks=[];
+  (function buildPile(){
+    var pos=[[52,676],[86,676],[120,676],[52,644],[86,644],[120,644],[52,612],[86,612],[120,612]];
+    pos.forEach(function(p,i){
+      var r=document.createElementNS(SVGNS,'rect');
+      r.setAttribute('x',p[0]); r.setAttribute('y',p[1]);
+      r.setAttribute('width',30); r.setAttribute('height',30);
+      r.setAttribute('fill', i%2? '#c49a58':'#b98d4f');
+      r.setAttribute('stroke','#2b2f36'); r.setAttribute('stroke-width','1.6');
+      pileBoxes.appendChild(r); pileEls.push(r);
+      var t=document.createElementNS(SVGNS,'text');
+      t.setAttribute('x',p[0]+15); t.setAttribute('y',p[1]+22);
+      t.setAttribute('class','pile-x'); t.textContent='×';
+      t.style.display='none';
+      pileBoxes.appendChild(t); pileMarks.push(t);
+    });
+  })();
+  /* 山の中身：下から積んだ順の配列。末尾が一番上。true=まちがい荷物
+     まちがい荷物はミライ加入後（stage>=1）から混ざる。約3件に1件 */
+  var pileStack=[];
+  function seedPile(n){
+    pileStack=[];
+    for(var i=0;i<n;i++) pileStack.push(S.stage>=1 && i%3===1);
+    S.pile=pileStack.length;
+  }
+  function refillPile(){ seedPile(9); renderPile(); }
+  seedPile(S.pile);
+  function renderPile(){
+    pileEls.forEach(function(r,i){
+      var vis = i < pileStack.length;
+      r.style.display = vis? 'block':'none';
+      if(vis){
+        var def=pileStack[i];
+        r.setAttribute('fill', def? '#a03a2a' : (i%2? '#c49a58':'#b98d4f'));
+        pileMarks[i].style.display = def? 'block':'none';
+      } else pileMarks[i].style.display='none';
+    });
+    document.getElementById('pile-count').textContent='残り '+S.pile+' 件';
+    document.getElementById('done-count').textContent=S.done+' 件';
+    renderQuality();
+    renderBreakdown();
+  }
+  function renderQuality(){
+    var note=document.getElementById('done-note');
+    if(S.contaminated>0){
+      note.textContent='うち まちがい '+S.contaminated+' 件が混入';
+      note.setAttribute('fill','#c8552e');
+    } else if(S.stage>=2){
+      note.textContent='混入 0 件（検品中）';
+      note.setAttribute('fill','#2e7d4f');
+    } else note.textContent='';
+    document.getElementById('reject-count').textContent='はねた荷物 '+S.rejected+' 件';
+  }
+  /* 出荷の内訳チップ：加入2以降だけ出す。加入の瞬間のカウントアップ中は触らない */
+  var breakdownRevealing=false;
+  function renderBreakdown(){
+    var chip=document.getElementById('breakdown');
+    if(S.stage>=2) chip.classList.add('show'); else chip.classList.remove('show');
+    if(breakdownRevealing) return;
+    document.getElementById('bd-legacy').textContent=S.legacyUnchecked;
+    document.getElementById('bd-checked').textContent=S.checkedDone;
+  }
+  /* 運び手：山(86,660)→机の前。ハルは机x=188、ミライは机x=310、山は共通 */
+  function makeCarrier(el, deskX, cycle, offset){
+    return { el:el, carry:el.querySelector('.carry'), nameEl:el.querySelector('text'), deskX:deskX, cycle:cycle, offset:offset,
+             carrying:false, jobDefective:false, dy:-66 };
+  }
+  var haru=makeCarrier(document.getElementById('haru'), 168, 6.0, 0);
+  var mirai=makeCarrier(document.getElementById('mirai'), 288, 6.0, 3.0);
+  var carriers=[haru];
+  function carrierPos(c, s){
+    var ph=((s + c.offset) % c.cycle)/c.cycle;
+    var fromX=118, toX=c.deskX;
+    var x, carrying;
+    if(ph<0.42){ x=fromX+(toX-fromX)*(ph/0.42); carrying=true; }
+    else if(ph<0.5){ x=toX; carrying=true; }
+    else if(ph<0.92){ x=toX-(toX-fromX)*((ph-0.5)/0.42); carrying=false; }
+    else { x=fromX; carrying=false; }
+    return {x:x, carrying:carrying, ph:ph};
+  }
+  var deliveredFlag={};
+  var satoruEl=document.getElementById('satoru');
+  var satoruNameEl=document.getElementById('satoru-name');
+  /* ===== 名前ラベルの置き方（弱点2への設計） =====
+     手法1（衝突ずらし）：運び手の浮遊名札は、固定ラベル（持ち場の名札・山のラベル等）に
+       重なる時は上へずらす。ずらし量は急に跳ばないよう少しずつ寄せる。
+     手法2（持ち場名札への統合）：常駐するサトルは浮遊名札を消し、検品台の名札に
+       名前を併記する（solidifyStand で実施）。
+     固定ラベルの矩形（場の座標）。表示中のみの物（はねた荷物・実績板）も常時避ける */
+  var FIXED_LABELS=[
+    {x1:14, x2:158, y1:586, y2:603},   /* たまっている荷物 */
+    {x1:146,x2:230, y1:556, y2:580},   /* ハルの持ち場の名札 */
+    {x1:250,x2:370, y1:556, y2:580},   /* ミライの運航デスクの名札 */
+    {x1:170,x2:260, y1:686, y2:710},   /* 検品台の名札 */
+    {x1:0,  x2:84,  y1:326, y2:344},   /* 桟橋・船着き場 */
+    {x1:262,x2:390, y1:756, y2:774},   /* 出荷した荷物 */
+    {x1:36, x2:136, y1:714, y2:732},   /* 残り N 件 */
+    {x1:150,x2:280, y1:774, y2:792},   /* はねた荷物 */
+    {x1:118,x2:312, y1:794, y2:838}    /* 実績板 */
+  ];
+  var NAME_BASE_DY=-66, NAME_HALF_W=24;
+  function nameBox(x, baseY, dy){ return {x1:x-NAME_HALF_W, x2:x+NAME_HALF_W, y1:baseY+dy-12, y2:baseY+dy+3}; }
+  function boxHit(a,b){ return a.x1<b.x2 && a.x2>b.x1 && a.y1<b.y2 && a.y2>b.y1; }
+  function nameTargetDy(x, baseY, extra){
+    var dy=NAME_BASE_DY;
+    while(dy>-132){
+      var box=nameBox(x, baseY, dy);
+      var hit=FIXED_LABELS.some(function(r){ return boxHit(box,r); }) ||
+              (extra||[]).some(function(r){ return boxHit(box,r); });
+      if(!hit) break;
+      dy-=6;
+    }
+    return dy;
+  }
+  /* 名札を目標位置へ寄せて描き、実際に置いた矩形を返す（次の人の回避に使う）。
+     避ける方向（上へ）は即時。戻る方向（下へ）は少しずつ寄せるが、
+     戻る途中の位置が固定ラベルに重なる間は下ろさない（目標だけでなく経路も見る）。
+     経路を見ないと、持ち上がった名札が下りる途中で持ち場の名札を横切って一瞬重なる */
+  function applyName(nameEl, holder, x, baseY, extra){
+    var target=nameTargetDy(x, baseY, extra);
+    var cur=(typeof holder.dy==='number')? holder.dy : NAME_BASE_DY;
+    var next;
+    if(target<cur) next=target;
+    else if(target>cur){
+      var cand=cur+Math.min(3, target-cur);
+      var box=nameBox(x, baseY, cand);
+      var hit=FIXED_LABELS.some(function(r){ return boxHit(box,r); }) ||
+              (extra||[]).some(function(r){ return boxHit(box,r); });
+      next = hit ? cur : cand;
+    } else next=cur;
+    holder.dy=next;
+    nameEl.setAttribute('y', next.toFixed(1));
+    return nameBox(x, baseY, next);
+  }
+  var shipEl=document.getElementById('cargoship');
+  var waveEls=Array.prototype.slice.call(document.querySelectorAll('.wave'));
+  var craneHookEl=document.getElementById('crane-hook');
+  var gull1El=document.getElementById('gull1');
+  var gull2El=document.getElementById('gull2');
+  var satoruStampEl=document.getElementById('satoru-stamp');
+  var stampTimer=null;
+  function satoruCatchFx(){
+    satoruStampEl.style.display='block';
+    clearTimeout(stampTimer);
+    stampTimer=setTimeout(function(){ satoruStampEl.style.display='none'; },650);
+    sndCatch();
+    if(!S.firstCatchSaid){ S.firstCatchSaid=true; say('まちがい荷物、はねた', 150, 560); }
+  }
+  /* 1件の受け渡し：山の一番上を取り、行き先で振り分ける */
+  function deliver(defective){
+    if(defective){
+      S.defectiveSeen++;
+      if(S.stage>=2){
+        S.catchAcc += S.catchRate/100;
+        if(S.catchAcc>=1){ S.catchAcc-=1; S.rejected++; satoruCatchFx(); }
+        else { S.done++; S.contaminated++; S.leaked++; }
+      } else { S.done++; S.contaminated++; S.leaked++; }
+    } else { S.done++; if(S.stage>=2) S.checkedDone++; /* 検品を通った出荷は「点検済み」として数える */ }
+    renderPile();
+    save();
+  }
+  function frame(now){
+    var dt=(now-lastReal)/1000; lastReal=now;
+    if(now>=freezeUntil) vtime+=Math.min(dt,0.05);
+    var s=vtime;
+    var placedNames=[];
+    carriers.forEach(function(c,ci){
+      var p=carrierPos(c,s);
+      var bob=Math.abs(Math.sin(s*6+ci*2))*2;
+      c.el.setAttribute('transform','translate('+p.x.toFixed(1)+','+(664-bob).toFixed(1)+')');
+      /* 名札は固定ラベルと、先に置いた相方の名札を避けて出す */
+      placedNames.push(applyName(c.nameEl, c, p.x, 664, placedNames));
+      c.carry.style.display=p.carrying?'block':'none';
+      /* 持ち上げた瞬間に、山の一番上の中身を覗く（色で分かる） */
+      if(p.carrying && !c.carrying){
+        c.jobDefective = pileStack.length? !!pileStack[pileStack.length-1] : false;
+        c.carry.setAttribute('fill', c.jobDefective? '#a03a2a':'#c49a58');
+      }
+      c.carrying=p.carrying;
+      /* 机に着いた瞬間に1件片づく */
+      var key=ci+'-'+Math.floor((s+c.offset)/c.cycle);
+      if(p.ph>=0.42 && p.ph<0.5 && !deliveredFlag[key]){
+        deliveredFlag[key]=1;
+        if(pileStack.length>0){
+          var def=pileStack.pop();
+          S.pile=pileStack.length;
+          deliver(def);
+          if(pileStack.length===0){
+            setTimeout(function(){ refillPile(); if(S.stage===1) say('船から新しい荷物が届いた。まちがい荷物も混ざっている', 60, 560); }, 1600);
+          }
+        }
+      }
+    });
+    /* 検品パネルの「場のいま」：解いている間も場が進んでいることを実測で出す */
+    if(panel2El.classList.contains('show')){
+      var fl='港では荷物が動いています：出荷した '+S.done+' 件 ／ まちがい荷物の混入 <b>'+S.contaminated+' 件</b>（この場面の間に +'+Math.max(0,S.contaminated-S.scene2StartContaminated)+' 件）';
+      if(fl!==frame._fl){ frame._fl=fl; document.getElementById('fieldline').innerHTML=fl; }
+    }
+    /* 港の動き：貨物船の往復、波、クレーンの揺れ、カモメ、連絡船の揺れ */
+    var shipX=-260+((s*13+330)%920);
+    shipEl.setAttribute('transform','translate('+shipX.toFixed(1)+','+(352+Math.sin(s*0.9)*2.5).toFixed(2)+')');
+    waveEls.forEach(function(w){ w.setAttribute('transform','translate('+(((s*18)%26)-13).toFixed(1)+',0)'); });
+    craneHookEl.setAttribute('transform','rotate('+(Math.sin(s*0.7)*3).toFixed(2)+' 348 255)');
+    gull1El.setAttribute('transform','translate('+(((s*7)%470)-40).toFixed(1)+','+(64+Math.sin(s*0.8)*5).toFixed(1)+')');
+    gull2El.setAttribute('transform','translate('+(((s*5+180)%470)-40).toFixed(1)+','+(96+Math.cos(s*0.6)*5).toFixed(1)+')');
+    if(ferryState==='moored') ferryEl.setAttribute('transform','translate(0,'+(Math.sin(s*1.3)*1.5).toFixed(2)+')');
+    /* サトルは運ばない。検品台で小さく揺れているだけ */
+    if(S.satoruHome){
+      var sbob=Math.abs(Math.sin(s*2))*1.5;
+      satoruEl.setAttribute('transform','translate(215,'+(746-sbob).toFixed(1)+')');
+    }
+    /* イオリは運ばない。記録棚の前で小さく揺れているだけ */
+    if(S.ioriHome){
+      var ibob=Math.abs(Math.sin(s*2+1))*1.5;
+      ioriEl.setAttribute('transform','translate(309,'+(548-ibob).toFixed(1)+')');
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  renderPile();
+
+  /* ===== 吹き出し ===== */
+  var bubble=document.getElementById('bubble'), bubbleTimer=null;
+  function say(text,x,y){
+    bubble.textContent=text;
+    bubble.style.left=Math.min(x,160)+'px'; bubble.style.top=y+'px';
+    bubble.style.display='block';
+    clearTimeout(bubbleTimer);
+    bubbleTimer=setTimeout(function(){ bubble.style.display='none'; },3600);
+  }
+
+  /* ===== 見通し（共通の分布描画） ===== */
+  function drawDist(el, bars, actual, worstVal){
+    el.innerHTML='';
+    bars.forEach(function(b){
+      var bar=document.createElement('i');
+      bar.style.height=b[1]+'px';
+      if(b[0]===worstVal) bar.className='worst';
+      if(actual!==null && actual!==undefined && b[0]===actual) bar.className='actual';
+      el.appendChild(bar);
+    });
+  }
+  var forecastEl=document.getElementById('forecast');
+  drawDist(document.getElementById('fc-dist'), FORECAST_BARS, null);
+  function openForecast(){
+    if(S.stage>=1) return;
+    S.phase='forecast';
+    forecastEl.classList.add('show');
+    sndSelect();
+  }
+  document.getElementById('desk-mirai').addEventListener('click', openForecast);
+  document.getElementById('tag-scene').addEventListener('click', openForecast);
+
+  /* ===== 見通し2（型替え）：シートではなく、場の中に立つ板 ===== */
+  var board2El=document.getElementById('board2');
+  drawDist(document.getElementById('bd-dist'), FORECAST2_BARS, null);
+  function openBoard2(){
+    if(S.stage!==1) return;
+    S.phase='forecast2';
+    document.getElementById('bd-status').innerHTML=
+      'いまの港の実測：出荷した荷物 <b>'+S.done+' 件</b>のうち、まちがい荷物の混入は <b>'+S.contaminated+' 件</b>。'+
+      '届く荷物の約3件に1件がまちがい荷物で、検品する人がいないため、そのまま出荷側へ流れています。';
+    board2El.classList.add('show');
+    sndSelect();
+  }
+  document.getElementById('tag-next').addEventListener('click', openBoard2);
+  document.getElementById('stand').addEventListener('click', openBoard2);
+
+  /* ===== 場面1（問題）：従来型のシート ===== */
+  var cur=0; /* 現在の場面 0=中項目1.1 1=中項目1.2 */
+  var quizEl=document.getElementById('quiz');
+  var qMeta=document.getElementById('q-meta'), qStem=document.getElementById('q-stem'),
+      qChoices=document.getElementById('q-choices'), qExplain=document.getElementById('q-explain'),
+      qNext=document.getElementById('q-next'), qDots=document.getElementById('q-dots');
+  var stamp=document.getElementById('stamp');
+  var answered=false;
+  function startScene(idx){
+    cur=idx;
+    S.phase= idx===0? 'quiz' : (idx===2? 'quiz3':'quiz2');
+    S.qIndex=0; S.correct=0; S.missed=[];
+    quizEl.classList.add('show');
+    showQuestion();
+  }
+  document.getElementById('start-btn').addEventListener('click', function(){
+    sndSelect(); forecastEl.classList.remove('show'); startScene(0);
+  });
+  document.getElementById('start2-btn').addEventListener('click', function(){
+    sndSelect(); board2El.classList.remove('show'); startScene2();
+  });
+  function curQs(){ return SCENES[cur].qs; }
+  function showQuestion(){
+    answered=false;
+    var qs=curQs(), q=qs[S.qIndex];
+    qMeta.textContent=SCENES[cur].label+' ・ 四択 ・ 問 '+(S.qIndex+1)+'/'+qs.length+' ・ キーワード：'+q.keyword+'（シラバス '+q.syllabus_ref+'）';
+    qDots.innerHTML='';
+    qs.forEach(function(_,i){
+      var d=document.createElement('i');
+      if(i<S.qIndex)d.className='done'; if(i===S.qIndex)d.className='now';
+      qDots.appendChild(d);
+    });
+    qStem.textContent=q.stem;
+    qExplain.style.display='none'; qNext.style.display='none';
+    qChoices.innerHTML='';
+    q.choices.forEach(function(text,i){
+      var div=document.createElement('div');
+      div.className='choice'; div.setAttribute('role','button'); div.setAttribute('tabindex','0');
+      div.innerHTML='<span class="ch">'+'アイウエ'[i]+'</span>'+text;
+      div.addEventListener('click', function(){ answer(i, div); });
+      qChoices.appendChild(div);
+    });
+  }
+  function popStamp(ok, hostEl){
+    stamp.textContent= ok? '○':'×';
+    stamp.className= ok? 'ok pop':'ng pop';
+    hostEl.appendChild(stamp);
+    stamp.style.display='block';
+    setTimeout(function(){ stamp.className=''; stamp.style.display='none'; }, 1100);
+  }
+  function answer(i, el){
+    if(answered) return; answered=true;
+    var q=curQs()[S.qIndex];
+    var right= i===q.answer;
+    hitStop(140); buzz(right? 25:60);
+    var cards=qChoices.querySelectorAll('.choice');
+    cards.forEach(function(c){ c.classList.add('locked'); });
+    el.classList.add('picked');
+    cards[q.answer].classList.add('right');
+    if(!right) el.classList.add('wrong');
+    popStamp(right, el);
+    if(right){ S.correct++; sndRight(); }
+    else { S.missed.push(q); sndWrong(); }
+    qExplain.innerHTML='<b>'+(right? '批評：その通り。':'批評：ここは引っかけ。')+'</b>'+q.explanation;
+    qExplain.style.display='block';
+    qNext.textContent= S.qIndex===curQs().length-1? '場面を終える':'つぎへ';
+    qNext.style.display='block';
+  }
+  qNext.addEventListener('click', function(){
+    sndSelect();
+    if(S.qIndex<curQs().length-1){ S.qIndex++; showQuestion(); }
+    else { quizEl.classList.remove('show'); if(cur===2) openReview3(); else openReview(); }
+  });
+
+  /* ===== 場面2（型替え）：検品パネル。場が見えたまま解き、見通しは実測で狭まる ===== */
+  var panel2El=document.getElementById('panel2');
+  var p2Meta=document.getElementById('p2-meta'), qStem2=document.getElementById('q-stem2'),
+      qChoices2=document.getElementById('q-choices2'), qExplain2=document.getElementById('q-explain2'),
+      qNext2=document.getElementById('q-next2'), p2Dots=document.getElementById('p2-dots'),
+      livebar=document.getElementById('livebar'), boxfx=document.getElementById('boxfx'),
+      boxlabel=document.getElementById('boxlabel');
+  var answered2=false;
+  function liveRange(){
+    var answeredCount=S.qIndex+(answered2?1:0);
+    var remaining=QUESTIONS2.length-answeredCount;
+    return { lo:catchFor(S.correct), hi:catchFor(S.correct+remaining), remaining:remaining };
+  }
+  function renderLivebar(finalRate){
+    if(finalRate!==undefined && finalRate!==null){
+      S.liveLo=S.liveHi=finalRate;
+      livebar.innerHTML='いまの見通し：はね率は <b>'+finalRate+'%</b> に確定しました。場面が終わると、実績として検品台の板に出ます。';
+      return;
+    }
+    var r=liveRange();
+    S.liveLo=r.lo; S.liveHi=r.hi;
+    var answeredCount=S.qIndex+(answered2?1:0);
+    if(answeredCount===0){
+      livebar.innerHTML='いまの見通し：はね率 <b>60〜100%</b>（まだ実測なし。答えるたびに、ここまでの実測で幅が狭まります）';
+    } else {
+      livebar.innerHTML='いまの見通し：ここまで <b>'+answeredCount+'問中 '+S.correct+'問</b> → 最終のはね率は <b>'+r.lo+'〜'+r.hi+'%</b> の範囲に狭まりました'+(r.remaining>0? '（残り'+r.remaining+'問で、まだ動きます）':'');
+    }
+  }
+  function startScene2(){
+    cur=1;
+    S.phase='quiz2';
+    S.qIndex=0; S.correct=0; S.missed=[];
+    S.scene2StartContaminated=S.contaminated;
+    panel2El.classList.add('show');
+    showQuestion2();
+  }
+  function showQuestion2(){
+    answered2=false;
+    var qs=QUESTIONS2, q=qs[S.qIndex];
+    p2Meta.textContent=SCENES[1].label+' ・ 検品中 ・ 問 '+(S.qIndex+1)+'/'+qs.length+' ・ キーワード：'+q.keyword+'（シラバス '+q.syllabus_ref+'）';
+    p2Dots.innerHTML='';
+    qs.forEach(function(_,i){
+      var d=document.createElement('i');
+      if(i<S.qIndex)d.className='done'; if(i===S.qIndex)d.className='now';
+      p2Dots.appendChild(d);
+    });
+    boxfx.className=''; void boxfx.offsetWidth;
+    boxlabel.textContent='検品台に、荷物が1件届きました。この荷物を通してよいか、根拠を選んでください';
+    qStem2.textContent=q.stem;
+    qExplain2.style.display='none'; qNext2.style.display='none';
+    qChoices2.innerHTML='';
+    q.choices.forEach(function(text,i){
+      var div=document.createElement('div');
+      div.className='choice'; div.setAttribute('role','button'); div.setAttribute('tabindex','0');
+      div.innerHTML='<span class="ch">'+'アイウエ'[i]+'</span>'+text;
+      div.addEventListener('click', function(){ answer2(i, div); });
+      qChoices2.appendChild(div);
+    });
+    renderLivebar();
+  }
+  function answer2(i, el){
+    if(answered2) return; answered2=true;
+    var q=QUESTIONS2[S.qIndex];
+    var right= i===q.answer;
+    hitStop(140); buzz(right? 25:60);
+    var cards=qChoices2.querySelectorAll('.choice');
+    cards.forEach(function(c){ c.classList.add('locked'); });
+    el.classList.add('picked');
+    cards[q.answer].classList.add('right');
+    if(!right) el.classList.add('wrong');
+    popStamp(right, el);
+    if(right){ S.correct++; sndRight(); boxfx.className='pass'; boxlabel.textContent='根拠は合っていました。この荷物は通します'; }
+    else { S.missed.push(q); sndWrong(); boxfx.className='reject'; boxlabel.textContent='根拠がずれていました。この荷物は、ここではねます'; }
+    qExplain2.innerHTML='<b>'+(right? '批評：その通り。':'批評：ここは引っかけ。')+'</b>'+q.explanation;
+    qExplain2.style.display='block';
+    renderLivebar();
+    qNext2.textContent= S.qIndex===QUESTIONS2.length-1? '検品を終える':'つぎの荷物へ';
+    qNext2.style.display='block';
+  }
+  qNext2.addEventListener('click', function(){
+    sndSelect();
+    if(S.qIndex<QUESTIONS2.length-1){ S.qIndex++; showQuestion2(); }
+    else { panel2El.classList.remove('show'); finishScene2(); }
+  });
+  /* 照合2（型替え）：シートは出さない。結果は場の中で、加入と一緒に開く */
+  var OVERALL2={
+    5:'批評：評価の言葉まで含めて、芯が通っている。サトルは初日から検品を任せられる。はね残しゼロも狙える出来だった。',
+    4:'批評：大枠は掴めている。落とした1問は評価まわりの言葉。検品の目が、もう少しで完成する所だった。',
+    3:'批評：半分は取れた。ただし「測り方」の言葉に穴がある。検品役としては、まず自分の物差しを固める所から。',
+    2:'批評：学習の種類は言えても、評価の言葉が曖昧。この単元は、サトル自身の宿題が一番多い。',
+    1:'批評：ほぼ手探りだった。それでも下限の6割は変わらない。サトルの宿題がはっきりした場面だった。',
+    0:'批評：全問落とした。はねられるのは下限の6割まで。残りは混入する。この単元の出直しを勧める。'
+  };
+  function finishScene2(){
+    S.correct2=S.correct;
+    var rate=catchFor(S.correct);
+    S.pendingCatch=rate;
+    S.scene2EndContaminated=S.contaminated;
+    renderLivebar(rate);
+    say('検品おわり。はね率は '+rate+'% で確定', 120, 470);
+    setTimeout(function(){ doJoin2(); }, 1600);
+  }
+
+  /* ===== 照合1（場面1は従来型のまま：シートで開く） ===== */
+  var reviewEl=document.getElementById('review');
+  function fillCritiques(el, hostName){
+    el.innerHTML='';
+    S.missed.forEach(function(q){
+      var d=document.createElement('div');
+      d.className='critique';
+      d.innerHTML='<b>『'+q.keyword+'』</b> ― '+q.explanation+' ここは'+hostName+'の最初の宿題になります。';
+      el.appendChild(d);
+    });
+  }
+  function openReview(){
+    if(cur===0){
+      S.phase='review';
+      S.correct1=S.correct;
+      var actual=BASE_POWER+contribution(S.correct);
+      S.pendingPower=actual;
+      drawDist(document.getElementById('rv-dist'), FORECAST_BARS, actual, 14);
+      document.getElementById('rv-compare').innerHTML=
+        '見通しは <b>14〜20</b>（最悪側 14）。実績は <b>'+actual+' 件/時</b>（'+QUESTIONS1.length+'問中 '+S.correct+' 問）。'+
+        (actual>=17? '見通しの、ふつう〜良い側に入りました。': actual>=15? '見通しの幅の内側、下限よりは上です。':'最悪側に近い結果です。下限は割っていません。');
+      var overall={
+        5:'批評：全問、根拠まで言える解き方だった。ミライは初日から即戦力。文句のつけようがない。',
+        4:'批評：土台はしっかりしている。落とした1問は「知らなかった」ではなく「引っかかった」方。直し甲斐のある落とし方だった。',
+        3:'批評：半分は取れた。ただし基本の言葉の取り違えが残っている。この単元は、もう一度扱う価値がある。',
+        2:'批評：言葉の輪郭がまだ曖昧。焦って先へ進むより、この単元の言葉を先に固めた方が、後が速くなる。',
+        1:'批評：今日の所は、ほぼ手探りだった。正直に言うと、この単元は出直しを勧める。',
+        0:'批評：全問落とした。ただ、下限の +4 は変わらない。ミライの宿題がはっきりした、という点では収穫のある場面だった。'
+      };
+      document.getElementById('rv-overall').textContent=overall[S.correct];
+      fillCritiques(document.getElementById('rv-critiques'), 'ミライ');
+      reviewEl.classList.add('show');
+    }
+  }
+
+  /* ===== 連絡船（加入の物理的な「来る」） ===== */
+  var ferryEl=document.getElementById('ferry');
+  var ferryState='away'; /* away|arriving|moored */
+  function ferryArrive(cb){
+    if(ferryState==='moored'){ cb(); return; }
+    ferryState='arriving';
+    ferryEl.style.display='block';
+    var t0=performance.now(), dur=900;
+    (function anim(now){
+      var pr=Math.min((now-t0)/dur,1);
+      var e=1-Math.pow(1-pr,2);
+      ferryEl.setAttribute('transform','translate('+(-190+190*e).toFixed(1)+',0)');
+      if(pr<1) requestAnimationFrame(anim);
+      else { ferryState='moored'; cb(); }
+    })(t0);
+  }
+
+  /* ===== 加入の瞬間 1（ミライ） ===== */
+  var changedEl=document.getElementById('changed');
+  document.getElementById('welcome-btn').addEventListener('click', function(){
+    reviewEl.classList.remove('show');
+    S.phase='joining';
+    sndJoin();
+    say('船で着きました、ミライです。運航をやります', 60, 470);
+    ferryArrive(function(){
+      var miraiEl=document.getElementById('mirai');
+      miraiEl.style.display='block';
+      /* 桟橋(41,452)から運航デスク(288,664)まで歩く：実時間で約2.4秒 */
+      var start=performance.now(), dur=2400, fromX=41, fromY=452, toX=288, toY=664;
+      carriers=[]; /* 歩行中はハルも止めて、場の視線を集める */
+      function walk(now){
+        var p=Math.min((now-start)/dur,1);
+        var x=fromX+(toX-fromX)*p, y=fromY+(toY-fromY)*p;
+        var bob=Math.abs(Math.sin(now/90))*3;
+        miraiEl.setAttribute('transform','translate('+x.toFixed(1)+','+(y-bob).toFixed(1)+')');
+        applyName(mirai.nameEl, mirai, x, y, []);
+        if(p<1){ requestAnimationFrame(walk); }
+        else { finishJoin(); }
+      }
+      requestAnimationFrame(walk);
+    });
+  });
+  function solidifyMiraiDesk(){
+    var top=document.getElementById('mirai-desk-top');
+    top.removeAttribute('stroke-dasharray');
+    top.setAttribute('fill','#9a8f78');
+  }
+  function finishJoin(){
+    S.stage=1; S.power=S.pendingPower;
+    carriers=[haru, mirai];
+    solidifyMiraiDesk();
+    document.getElementById('mirai-seat-note').textContent='ミライが運航を見ている';
+    document.querySelector('#desk-mirai .ring').style.display='none';
+    var numEl=document.getElementById('power-num'), powerBox=document.getElementById('power');
+    var from=BASE_POWER, to=S.power, t0=performance.now();
+    document.getElementById('power-delta').textContent='+'+(to-from);
+    (function countUp(now){
+      var p=Math.min((now-t0)/700,1);
+      var v=Math.round(from+(to-from)*p);
+      numEl.textContent=v;
+      if(p<1){ if(v!==countUp._last){ sndTick(); countUp._last=v; } requestAnimationFrame(countUp); }
+      else { powerBox.classList.remove('jump'); void powerBox.offsetWidth; powerBox.classList.add('jump'); }
+    })(t0);
+    say('ミライが着いた。これで2人だ', 150, 470);
+    save();
+    document.getElementById('tag-scene').style.display='none';
+    document.getElementById('stand').style.display='block';
+    var nj=document.getElementById('nextjoin');
+    nj.innerHTML='次の仲間：サトル<small>中項目1.2「人工知能をめぐる動向」担当<br>あと1場面で加入</small>';
+    setTimeout(function(){
+      document.getElementById('tag-next').style.display='block';
+      document.getElementById('changed-list').innerHTML=
+        '・荷捌き能力が <b>'+BASE_POWER+' → '+S.power+' 件/時</b> に上がった（見通しと実績の照合どおり）<br>'+
+        '・運び手が <b>1人 → 2人</b> になった。荷物の山の減り方が目に見えて速くなる<br>'+
+        '・ミライの担当は中項目1.1。落とした単元は、ミライの宿題として場に残る<br>'+
+        '・最近、届く荷物に <b>まちがい荷物</b>（赤い箱）が混ざり始めた。検品する人がいないので、そのまま出荷側へ流れている<br>'+
+        '・次の場面（中項目1.2）の見通しが開いた。検品台の予告も場に出た';
+      changedEl.classList.add('show');
+    }, 1200);
+  }
+  document.getElementById('changed-close').addEventListener('click', function(){
+    sndSelect(); changedEl.classList.remove('show'); S.phase='joined';
+  });
+
+  /* ===== 加入の瞬間 2（サトル）：照合シートを挟まず、場の中で加入する ===== */
+  function doJoin2(){
+    S.phase='joining2';
+    sndJoin();
+    say('船で着きました、サトルです。検品をやります', 60, 470);
+    ferryArrive(function(){
+      satoruEl.style.display='block';
+      /* 桟橋(41,452)から検品台(215,746)まで歩く：実時間で約2.2秒 */
+      var start=performance.now(), dur=2200;
+      var fromX=41, fromY=452, toX=215, toY=746;
+      var satoruWalk={ dy:-66 };
+      carriers=[]; /* 歩行中は運び手を止めて、場の視線を集める */
+      function walk(now){
+        var p=Math.min((now-start)/dur,1);
+        var x=fromX+(toX-fromX)*p, y=fromY+(toY-fromY)*p;
+        var bob=Math.abs(Math.sin(now/90))*3;
+        satoruEl.setAttribute('transform','translate('+x.toFixed(1)+','+(y-bob).toFixed(1)+')');
+        applyName(satoruNameEl, satoruWalk, x, y, []);
+        if(p<1){ requestAnimationFrame(walk); }
+        else { finishJoin2(); }
+      }
+      requestAnimationFrame(walk);
+    });
+  }
+  function solidifyStand(){
+    var top=document.getElementById('stand-top');
+    top.removeAttribute('stroke-dasharray');
+    top.setAttribute('fill','#9a8f78');
+    /* 検品の基準を場に常設する：予告の文言を、実績の基準表示に差し替える */
+    var note=document.getElementById('stand-note');
+    if(S.catchRate>0){ note.textContent='基準：はね率 '+S.catchRate+'% で点検中'; note.style.display='block'; }
+    else note.style.display='none';
+    document.getElementById('reject-count').style.display='block';
+    /* 手法2（持ち場名札への統合）：常駐するサトルの浮遊名札は消し、検品台の名札に名前を併記する */
+    document.getElementById('satoru-name').style.display='none';
+    document.getElementById('stand-plate-text').textContent='検品台・サトル';
+  }
+  function finishJoin2(){
+    S.stage=2; S.catchRate=S.pendingCatch; S.satoruHome=true;
+    solidifyStand();
+    renderQuality();
+    /* 加入の瞬間の主役は、タイミングに依存しない恒常変化に置く（弱点1への設計）：
+       (1) 検品の基準が検品台に常設された（solidifyStand で名札と基準表示が変わる）
+       (2) これまでの出荷は全部「未点検のまま出ていた」ことが実測で確定し、
+           内訳として場に刻まれる。出荷は場面1の間も進むので、この確定は必ず起きる。
+       たまっていた混入の清掃は、内訳が確定する前の掃除として従の位置に置く */
+    var cleaned=S.contaminated;
+    var doneEl=document.getElementById('done-count');
+    var fromDone=S.done, toDone=S.done-cleaned, t0=performance.now();
+    S.rejected+=cleaned; S.contaminated=0; S.done=toDone;
+    S.legacyUnchecked=toDone; S.checkedDone=0;
+    S.cleanedCount=cleaned;
+    var afterCleaning=function(){
+      carriers=[haru, mirai];
+      renderPile();
+      revealBreakdown();
+      save();
+    };
+    if(cleaned>0){
+      say('たまっていた まちがい荷物、全部はねた', 120, 560);
+      sndCatch();
+      (function countDown(now){
+        var p=Math.min((now-t0)/700,1);
+        var v=Math.round(fromDone+(toDone-fromDone)*p);
+        doneEl.textContent=v+' 件';
+        if(p<1){ if(v!==countDown._last){ sndTick(); countDown._last=v; } requestAnimationFrame(countDown); }
+        else afterCleaning();
+      })(t0);
+    } else {
+      /* 混入ゼロでも山場は立つ：はねるものが無かったことは実測としてそのまま言い、
+         未点検の確定（必ず起きる）を主役にする */
+      say('はねる混入は無かった。でも、これまでの出荷は全部、未点検のまま出ている', 40, 470);
+      afterCleaning();
+    }
+    document.getElementById('nextjoin').innerHTML='次の仲間：イオリ<small>中項目2.1 担当<br>あと1場面で加入</small>';
+    document.getElementById('shelf').style.display='block';
+    engraveStandResult();
+    fillHomework(fromDone, toDone, cleaned);
+    setTimeout(function(){
+      document.getElementById('tag-next').style.display='none';
+      document.getElementById('tag-next3').style.display='block';
+      document.getElementById('tag-homework').style.display='block';
+      S.phase='joined2';
+    }, 1200);
+  }
+  /* 内訳チップの登場：未点検の件数を数え上げて刻む（加入の瞬間の主役の数字） */
+  function revealBreakdown(){
+    var chip=document.getElementById('breakdown');
+    chip.classList.add('show');
+    breakdownRevealing=true;
+    var legacyEl=document.getElementById('bd-legacy');
+    var to=S.legacyUnchecked, t0=performance.now();
+    document.getElementById('bd-checked').textContent='0';
+    (function countUp(now){
+      var p=Math.min((now-t0)/700,1);
+      legacyEl.textContent=Math.round(to*p);
+      if(p<1){ if(countUp._last!==legacyEl.textContent){ sndTick(); countUp._last=legacyEl.textContent; } requestAnimationFrame(countUp); }
+      else {
+        breakdownRevealing=false;
+        chip.classList.remove('jump'); void chip.offsetWidth; chip.classList.add('jump');
+        renderBreakdown();
+      }
+    })(t0);
+  }
+  /* 検品台の板に実績を刻む（照合の主要数値は場の中に残す） */
+  function engraveStandResult(){
+    document.getElementById('stand-result1').textContent='実績：はね率 '+S.catchRate+'%';
+    document.getElementById('stand-result2').textContent='見通し 60〜100% の内側でした';
+    document.getElementById('stand-result').style.display='block';
+  }
+  /* 照合の詳細（総評・批評・変わったこと）は宿題の札に集約する */
+  function fillHomework(fromDone, toDone, cleaned){
+    document.getElementById('hw-compare').innerHTML=
+      '見通しは <b>60〜100%</b>（最悪側 60%）。実績は <b>'+S.catchRate+'%</b>（'+QUESTIONS2.length+'問中 '+S.correct2+' 問）。'+
+      (S.catchRate>=90? '見通しの良い側に入りました。はね残しはわずかです。': S.catchRate>=80? '見通しの幅の内側、ふつうより上です。':'最悪側に近い結果です。下限は割っていません。');
+    document.getElementById('hw-overall').textContent=OVERALL2[S.correct2];
+    fillCritiques(document.getElementById('hw-critiques'), 'サトル');
+    document.getElementById('hw-changed').innerHTML=
+      '・<b>検品が入った。</b>まちがい荷物をはねられる割合は、見通し 60〜100% → 実績 <b>'+S.catchRate+'%</b>。検品台には基準として常設された<br>'+
+      (cleaned>0
+        ? '・加入の瞬間に、たまっていた混入 <b>'+cleaned+' 件</b>をはねた。出荷した荷物は '+fromDone+' → '+toDone+' 件に<b>正直に減った</b>（水増しが取れた、ということ）<br>'
+        : '・たまっていた混入は <b>0 件</b>だった（実測）。加入の瞬間にはねるものは無かった<br>')+
+      '・<b>出荷の数え方が変わった。</b>これまで出た荷物は全部、検品を通っていない。その事実が「未点検 <b>'+S.legacyUnchecked+' 件</b>」として場に刻まれた。これからの出荷は<b>点検済み</b>として数える<br>'+
+      '・荷捌き能力は <b>'+S.power+' 件/時のまま</b>。サトルは運ばない。変わったのは速さではなく正しさ<br>'+
+      '・はね残し <b>'+(100-S.catchRate)+'%</b> は、これからも混入する。ゼロにはならない<br>'+
+      '・サトルの担当は中項目1.2。落とした単元は、サトルの宿題として場に残る';
+    var hwBody=document.getElementById('tag-homework-body');
+    if(S.missed.length>0){
+      hwBody.innerHTML='落とした単元 '+S.missed.length+' 件の見直し<br><span class="sub">触ると検品結果と批評が読めます</span>';
+    } else {
+      hwBody.innerHTML='宿題なし（全問正解）<br><span class="sub">触ると検品結果が読めます</span>';
+    }
+  }
+  var homeworkEl=document.getElementById('homework');
+  document.getElementById('tag-homework').addEventListener('click', function(){
+    sndSelect(); homeworkEl.classList.add('show');
+  });
+  document.getElementById('homework-close').addEventListener('click', function(){
+    sndSelect(); homeworkEl.classList.remove('show');
+  });
+
+  /* ===== 場面3（イオリ）：見通しは3場面通しの正答率。加入で記録が常設される ===== */
+  var ioriEl=document.getElementById('iori');
+  function rateBars(){
+    var C=S.correct1+S.correct2, bars=[];
+    for(var k=0;k<=5;k++) bars.push([Math.round((C+k)/15*100), 12+k*7]);
+    return bars;
+  }
+  function totalCorrect(){ return S.correct1+S.correct2+S.correct3; }
+  function totalMissed(){ return 15-totalCorrect(); }
+  var forecast3El=document.getElementById('forecast3');
+  function openForecast3(){
+    if(S.stage!==2) return;
+    S.phase='forecast3';
+    var C=S.correct1+S.correct2, bars=rateBars();
+    document.getElementById('fc3-now').textContent=C+'/10';
+    document.getElementById('fc3-lo').textContent='最悪側 '+bars[0][0]+'%';
+    document.getElementById('fc3-hi').textContent='良い側 '+bars[5][0]+'%';
+    drawDist(document.getElementById('fc3-dist'), bars, null, bars[0][0]);
+    forecast3El.classList.add('show');
+    sndSelect();
+  }
+  document.getElementById('tag-next3').addEventListener('click', openForecast3);
+  document.getElementById('shelf').addEventListener('click', openForecast3);
+  document.getElementById('start3-btn').addEventListener('click', function(){
+    sndSelect(); forecast3El.classList.remove('show'); startScene(2);
+  });
+  var review3El=document.getElementById('review3');
+  function openReview3(){
+    S.phase='review3';
+    S.correct3=S.correct;
+    var bars=rateBars(), R=Math.round(totalCorrect()/15*100);
+    drawDist(document.getElementById('rv3-dist'), bars, R, bars[0][0]);
+    document.getElementById('rv3-lo').textContent='最悪側 '+bars[0][0]+'%';
+    document.getElementById('rv3-hi').textContent='良い側 '+bars[5][0]+'%';
+    document.getElementById('rv3-compare').innerHTML=
+      '見通しは <b>'+bars[0][0]+'〜'+bars[5][0]+'%</b>。実績は <b>'+R+'%</b>（15問中 '+totalCorrect()+' 問）。'+
+      (S.correct>=4? 'この場面は良い側で取れました。': S.correct>=2? '見通しの幅の内側です。':'最悪側に近い結果です。下限は割っていません。');
+    var overall3={
+      5:'批評：全問取れた。この単元は、記録する側が一番よく分かっている。',
+      4:'批評：土台はしっかりしている。落とした1問は、記録の最初の宿題になる。',
+      3:'批評：半分は取れた。言葉の取り違えが残る単元は、台帳に残して後で扱える。',
+      2:'批評：輪郭はまだ曖昧。ただ、落とした所は全部記録に残る。忘れずに済むのが記録の仕事。',
+      1:'批評：今日の所は手探りだった。落とした4問は、そのまま台帳の宿題になる。',
+      0:'批評：全問落とした。それでも記録は残る。何を落としたかが分かることが、次の一歩になる。'
+    };
+    document.getElementById('rv3-overall').textContent=overall3[S.correct];
+    fillCritiques(document.getElementById('rv3-critiques'), 'イオリ');
+    review3El.classList.add('show');
+  }
+  function solidifyShelf(){
+    document.querySelectorAll('.shelf-board').forEach(function(b){
+      b.removeAttribute('stroke-dasharray'); b.setAttribute('fill','#9a8f78');
+    });
+    document.getElementById('iori-name').style.display='none';
+    document.getElementById('shelf-plate-text').textContent='記録棚・イオリ';
+    document.getElementById('shelf-note').textContent='記録：正答 '+totalCorrect()+'/15 ・ 宿題 '+totalMissed()+' 件';
+  }
+  var changed3El=document.getElementById('changed3');
+  document.getElementById('welcome3-btn').addEventListener('click', function(){
+    review3El.classList.remove('show');
+    S.phase='joining3';
+    sndJoin();
+    say('船で着きました、イオリです。記録をやります', 60, 470);
+    ferryArrive(function(){
+      ioriEl.style.display='block';
+      var start=performance.now(), dur=2200, fromX=41, fromY=452, toX=309, toY=548;
+      var ioriWalk={ dy:-66 };
+      carriers=[];
+      function walk(now){
+        var p=Math.min((now-start)/dur,1);
+        var x=fromX+(toX-fromX)*p, y=fromY+(toY-fromY)*p;
+        var bob=Math.abs(Math.sin(now/90))*3;
+        ioriEl.setAttribute('transform','translate('+x.toFixed(1)+','+(y-bob).toFixed(1)+')');
+        applyName(document.getElementById('iori-name'), ioriWalk, x, y, []);
+        if(p<1){ requestAnimationFrame(walk); }
+        else { finishJoin3(); }
+      }
+      requestAnimationFrame(walk);
+    });
+  });
+  function finishJoin3(){
+    S.stage=3; S.ioriHome=true;
+    carriers=[haru, mirai];
+    solidifyShelf();
+    say('イオリが着いた。これで3人だ', 150, 470);
+    save();
+    document.getElementById('tag-next3').style.display='none';
+    document.getElementById('nextjoin').innerHTML='次の用事：見直しの札<small>落とした単元の復習<br>担当はミライとサトルとイオリ</small>';
+    setTimeout(function(){
+      document.getElementById('tag-records').style.display='block';
+      document.getElementById('tag-next2').style.display='block';
+      document.getElementById('changed3-list').innerHTML=
+        '・<b>記録棚が常設された。</b>3場面の記録が台帳として場に残り続ける<br>'+
+        '・記録の数字：正答 <b>'+totalCorrect()+'/15</b> ・ 宿題（落とした単元） <b>'+totalMissed()+' 件</b>。見通しと実績の照合どおり<br>'+
+        '・落とした単元は、イオリの宿題として記録に残る（右の「学習の記録」の札からいつでも読める）<br>'+
+        '・次の用事（見直し＝復習）が吊るされた';
+      changed3El.classList.add('show');
+    }, 1200);
+  }
+  document.getElementById('changed3-close').addEventListener('click', function(){
+    sndSelect(); changed3El.classList.remove('show'); S.phase='joined3';
+  });
+  /* 学習の記録（イオリの台帳） */
+  var recordsEl=document.getElementById('records');
+  document.getElementById('tag-records').addEventListener('click', function(){
+    sndSelect();
+    document.getElementById('rec-lines').innerHTML=
+      '<p class="review-line">中項目1.1「人工知能とは」：正答 <b>'+S.correct1+'/5</b>（担当 ミライ）</p>'+
+      '<p class="review-line">中項目1.2「人工知能をめぐる動向」：正答 <b>'+S.correct2+'/5</b>（担当 サトル）</p>'+
+      '<p class="review-line">中項目2.1：正答 <b>'+S.correct3+'/5</b>（担当 イオリ）</p>'+
+      '<p class="review-line">合計：正答 <b>'+totalCorrect()+'/15</b> ・ 宿題（落とした単元） <b>'+totalMissed()+' 件</b></p>';
+    document.getElementById('rec-note').innerHTML='記録はイオリが台帳に残します。落とした単元の批評は、検品メモ（サトル）と各場面の照合にあります。';
+    recordsEl.classList.add('show');
+  });
+  document.getElementById('records-close').addEventListener('click', function(){
+    sndSelect(); recordsEl.classList.remove('show');
+  });
+
+  /* ===== 加入済みで読み込まれた場合 ===== */
+  function applyMiraiJoinedVisuals(){
+    ferryEl.style.display='block'; ferryState='moored';
+    var miraiEl2=document.getElementById('mirai');
+    miraiEl2.style.display='block';
+    carriers=[haru, mirai];
+    document.getElementById('power-num').textContent=S.power;
+    document.getElementById('power-delta').textContent='+'+(S.power-BASE_POWER);
+    solidifyMiraiDesk();
+    document.getElementById('mirai-seat-note').textContent='ミライが運航を見ている';
+    document.querySelector('#desk-mirai .ring').style.display='none';
+    document.getElementById('tag-scene').style.display='none';
+    document.getElementById('stand').style.display='block';
+  }
+  if(S.stage>=3){
+    applyMiraiJoinedVisuals();
+    satoruEl.style.display='block';
+    S.satoruHome=true;
+    solidifyStand();
+    engraveStandResult();
+    document.getElementById('shelf').style.display='block';
+    ioriEl.style.display='block';
+    S.ioriHome=true;
+    solidifyShelf();
+    document.getElementById('tag-records').style.display='block';
+    document.getElementById('tag-next2').style.display='block';
+    document.getElementById('nextjoin').innerHTML='次の用事：見直しの札<small>落とした単元の復習<br>担当はミライとサトルとイオリ</small>';
+    S.phase='joined3';
+    renderQuality();
+  } else if(S.stage>=2){
+    applyMiraiJoinedVisuals();
+    satoruEl.style.display='block';
+    S.satoruHome=true;
+    solidifyStand();
+    engraveStandResult();
+    document.getElementById('shelf').style.display='block';
+    document.getElementById('tag-next3').style.display='block';
+    document.getElementById('nextjoin').innerHTML='次の仲間：イオリ<small>中項目2.1 担当<br>あと1場面で加入</small>';
+    S.phase='joined2';
+    renderQuality();
+  } else if(S.stage===1){
+    applyMiraiJoinedVisuals();
+    document.getElementById('tag-next').style.display='block';
+    document.getElementById('nextjoin').innerHTML='次の仲間：サトル<small>中項目1.2「人工知能をめぐる動向」担当<br>あと1場面で加入</small>';
+    S.phase='joined';
+  } else {
+    setTimeout(function(){ say('おはよう。今日も船が来る。ミライの運航デスク、まだ空いてる', 60, 470); }, 2500);
+  }
+  renderPile();
+
+  document.getElementById('reset').addEventListener('click', function(){
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    location.reload();
+  });
+
+  /* 検証用に状態を出す */
+  window.__harborState=window.__joinState=function(){
+    return { phase:S.phase, stage:S.stage, correct:S.correct, correct1:S.correct1, correct2:S.correct2,
+             missed:S.missed.map(function(q){return q.id;}),
+             power:S.power, catchRate:S.catchRate,
+             joined:S.stage>=1, miraiJoined:S.stage>=1, satoruJoined:S.stage>=2, ioriJoined:S.stage>=3,
+             correct3:S.correct3, totalCorrect:(S.correct1+S.correct2+S.correct3),
+             done:S.done, pile:S.pile, contaminated:S.contaminated, rejected:S.rejected,
+             defectiveSeen:S.defectiveSeen, leaked:S.leaked,
+             scene2StartContaminated:S.scene2StartContaminated,
+             scene2EndContaminated:S.scene2EndContaminated,
+             liveLo:S.liveLo, liveHi:S.liveHi, cleanedCount:S.cleanedCount,
+             legacyUnchecked:S.legacyUnchecked, checkedDone:S.checkedDone,
+             breakdownShown:document.getElementById('breakdown').classList.contains('show'),
+             standNote:document.getElementById('stand-note').textContent,
+             standPlate:document.getElementById('stand-plate-text').textContent,
+             satoruNameHidden:document.getElementById('satoru-name').style.display==='none',
+             haruNameDy:haru.dy, miraiNameDy:mirai.dy,
+             carriers:carriers.length };
+  };
+})();
+</script>
+</body>
+</html>
